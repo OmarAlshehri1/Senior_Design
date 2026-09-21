@@ -1,5 +1,22 @@
 export function formatSAR(amount) {
-  return `${amount.toLocaleString('en-US')} SAR`;
+  return formatAmount(amount, 'SAR');
+}
+
+export function formatAmount(amount, currency) {
+  if (!Number.isFinite(amount)) return 'Not available';
+  const formattedAmount = amount.toLocaleString('en-US');
+  const formattedCurrency = displayValue(currency, '');
+  return formattedCurrency ? `${formattedAmount} ${formattedCurrency}` : formattedAmount;
+}
+
+export function displayValue(value, fallback = 'Not available') {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === 'string' && value.trim() === '') return fallback;
+  return value;
+}
+
+export function formatScore(score) {
+  return Number.isFinite(score) ? `${score}/100` : 'Not available';
 }
 
 export function ruleStatusPillClass(ruleStatus) {
@@ -18,5 +35,6 @@ export function riskStatusPillClass(status) {
 export function riskBadgeClass(status) {
   if (status === 'High Risk') return 'risk-badge badge-high';
   if (status === 'Medium Risk') return 'risk-badge badge-medium';
-  return 'risk-badge badge-low';
+  if (status === 'Low Risk') return 'risk-badge badge-low';
+  return 'risk-badge badge-neutral';
 }

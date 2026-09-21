@@ -15,7 +15,7 @@ export default function AuditRules() {
       <div className="page-header">
         <div>
           <h1>Audit Rules</h1>
-          <p>Predefined rule-based checks used during transaction auditing.</p>
+          <p>Read-only demo definitions. No audit rule engine is connected yet.</p>
         </div>
       </div>
 
@@ -28,7 +28,7 @@ export default function AuditRules() {
                 <span className="rule-card-icon">
                   <Icon />
                 </span>
-                <span className="active-pill">{rule.status}</span>
+                <span className="demo-pill">{rule.status}</span>
               </div>
               <h3>{rule.label}</h3>
               <p>{rule.description}</p>

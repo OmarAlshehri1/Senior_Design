@@ -1,109 +1,179 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useApp } from '../context/AppContext';
+import useApp from '../context/useApp';
 import TransactionsTable from '../components/TransactionsTable';
 import { SearchIcon } from '../components/icons';
+import {
+  TRANSACTION_SORT_OPTIONS,
+  filterAndSortTransactions,
+  getRiskFilterFromQuery,
+} from '../utils/transactions';
 
 const riskFilters = ['All', 'Low', 'Medium', 'High'];
+
+function EmptyTransactionsState({ hasTransactions, hasSearch }) {
+  let title = 'No transactions available.';
+  let guidance = 'Evaluated transactions will appear here when they are available.';
+
+  if (hasTransactions && hasSearch) {
+    title = 'No transactions found.';
+    guidance = 'Try a different transaction ID, vendor, or category, or clear the filters.';
+  } else if (hasTransactions) {
+    title = 'No transactions match the selected filters.';
+    guidance = 'Try adjusting your filters or clearing them.';
+  }
+
+  return (
+    <div className="transactions-empty-state" role="status">
+      <h3>{title}</h3>
+      <p>{guidance}</p>
+    </div>
+  );
+}
 
 export default function Transactions() {
   const { transactions } = useApp();
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get('vendor') || '');
-  const [riskFilter, setRiskFilter] = useState('All');
   const [ruleFilter, setRuleFilter] = useState('All');
-  const [sortBy, setSortBy] = useState('none');
+  const [sortBy, setSortBy] = useState(TRANSACTION_SORT_OPTIONS.NEWEST);
+  const riskFilter = getRiskFilterFromQuery(searchParams.get('risk'));
 
-  const filtered = useMemo(() => {
-    let list = transactions.filter((t) => !t.processing);
+  const evaluatedTransactions = useMemo(
+    () => transactions.filter((transaction) => !transaction?.processing),
+    [transactions]
+  );
 
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      list = list.filter(
-        (t) =>
-          t.id.toLowerCase().includes(q) ||
-          t.vendor.toLowerCase().includes(q) ||
-          t.category.toLowerCase().includes(q)
-      );
-    }
+  const filtered = useMemo(
+    () => filterAndSortTransactions(transactions, {
+      search,
+      riskFilter,
+      ruleFilter,
+      sortBy,
+    }),
+    [transactions, search, riskFilter, ruleFilter, sortBy]
+  );
 
-    if (riskFilter !== 'All') {
-      list = list.filter((t) => t.status === `${riskFilter} Risk`);
-    }
+  const filtersActive = Boolean(search.trim())
+    || riskFilter !== 'All'
+    || ruleFilter !== 'All';
+  const resultLabel = filtersActive
+    ? `${filtered.length} of ${evaluatedTransactions.length} Transactions`
+    : `${evaluatedTransactions.length} Transactions`;
 
-    if (ruleFilter !== 'All') {
-      list = list.filter((t) => t.ruleStatus === ruleFilter);
-    }
+  const updateRiskFilter = (filter) => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (filter === 'All') nextParams.delete('risk');
+    else nextParams.set('risk', filter.toLowerCase());
+    setSearchParams(nextParams);
+  };
 
-    if (sortBy === 'desc') {
-      list = [...list].sort((a, b) => b.riskScore - a.riskScore);
-    } else if (sortBy === 'asc') {
-      list = [...list].sort((a, b) => a.riskScore - b.riskScore);
-    }
-
-    return list;
-  }, [transactions, search, riskFilter, ruleFilter, sortBy]);
+  const clearFilters = () => {
+    setSearch('');
+    setRuleFilter('All');
+    setSortBy(TRANSACTION_SORT_OPTIONS.NEWEST);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('risk');
+    nextParams.delete('vendor');
+    setSearchParams(nextParams);
+  };
 
   return (
     <>
-      <div className="page-header">
+      <div className="page-header transactions-page-header">
         <div>
           <h1>Transactions</h1>
-          <p>Browse and filter all evaluated transactions.</p>
+          <p>Browse, filter, and review evaluated transactions.</p>
         </div>
+        <span className="transactions-result-count" aria-live="polite">{resultLabel}</span>
       </div>
 
-      <div className="toolbar">
-        <div className="search-input" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <SearchIcon width={15} height={15} color="#9aa1ae" />
-          <input
-            style={{ border: 'none', outline: 'none', width: '100%', fontSize: 13.5 }}
-            placeholder="Search by ID, vendor, or category..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              if (searchParams.get('vendor')) setSearchParams({});
-            }}
-          />
-        </div>
+      <div className="transactions-toolbar" aria-label="Transaction search and filters">
+        <label className="transactions-search">
+          <span className="control-label">Search</span>
+          <span className="search-input">
+            <SearchIcon width={16} height={16} color="#7b8493" aria-hidden="true" />
+            <input
+              placeholder="Search by transaction ID, vendor, or category"
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                if (searchParams.get('vendor')) {
+                  const nextParams = new URLSearchParams(searchParams);
+                  nextParams.delete('vendor');
+                  setSearchParams(nextParams);
+                }
+              }}
+            />
+          </span>
+        </label>
 
-        <div className="filter-chip-group">
-          {riskFilters.map((f) => (
-            <button
-              key={f}
-              className={`filter-chip${riskFilter === f ? ' active' : ''}`}
-              onClick={() => setRiskFilter(f)}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
+        <fieldset className="filter-fieldset">
+          <legend className="control-label">Risk Level</legend>
+          <div className="filter-chip-group">
+            {riskFilters.map((filter) => (
+              <button
+                type="button"
+                key={filter}
+                className={`filter-chip${riskFilter === filter ? ' active' : ''}`}
+                aria-pressed={riskFilter === filter}
+                onClick={() => updateRiskFilter(filter)}
+              >
+                {filter}
+              </button>
+            ))}
+          </div>
+        </fieldset>
 
-        <select className="select-input" value={ruleFilter} onChange={(e) => setRuleFilter(e.target.value)}>
-          <option value="All">All Rule Statuses</option>
-          <option value="Passed">Passed</option>
-          <option value="Review">Review</option>
-        </select>
+        <label className="transactions-select-control">
+          <span className="control-label">Rule Status</span>
+          <select
+            className="select-input"
+            value={ruleFilter}
+            onChange={(event) => setRuleFilter(event.target.value)}
+          >
+            <option value="All">All Statuses</option>
+            <option value="Passed">Passed</option>
+            <option value="Review">Review</option>
+          </select>
+        </label>
 
-        <select className="select-input" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-          <option value="none">Sort by Risk Score</option>
-          <option value="desc">Risk Score: High to Low</option>
-          <option value="asc">Risk Score: Low to High</option>
-        </select>
+        <label className="transactions-select-control">
+          <span className="control-label">Sort By</span>
+          <select
+            className="select-input"
+            value={sortBy}
+            onChange={(event) => setSortBy(event.target.value)}
+          >
+            <option value={TRANSACTION_SORT_OPTIONS.NEWEST}>Newest</option>
+            <option value={TRANSACTION_SORT_OPTIONS.OLDEST}>Oldest</option>
+            <option value={TRANSACTION_SORT_OPTIONS.HIGHEST_RISK}>Highest Risk</option>
+            <option value={TRANSACTION_SORT_OPTIONS.LOWEST_RISK}>Lowest Risk</option>
+            <option value={TRANSACTION_SORT_OPTIONS.HIGHEST_AMOUNT}>Highest Amount</option>
+            <option value={TRANSACTION_SORT_OPTIONS.LOWEST_AMOUNT}>Lowest Amount</option>
+          </select>
+        </label>
+
+        {filtersActive && (
+          <button type="button" className="btn btn-secondary clear-filters-btn" onClick={clearFilters}>
+            Clear Filters
+          </button>
+        )}
       </div>
 
-      <div className="card">
+      <section className="card transactions-card" aria-labelledby="transactions-results-heading">
         <div className="card-header">
-          <h2>{filtered.length} Transactions</h2>
+          <h2 id="transactions-results-heading">{resultLabel}</h2>
         </div>
         {filtered.length > 0 ? (
           <TransactionsTable transactions={filtered} />
         ) : (
-          <p style={{ padding: 24, color: 'var(--text-secondary)', fontSize: 13.5 }}>
-            No transactions match your filters.
-          </p>
+          <EmptyTransactionsState
+            hasTransactions={evaluatedTransactions.length > 0}
+            hasSearch={Boolean(search.trim())}
+          />
         )}
-      </div>
+      </section>
     </>
   );
 }

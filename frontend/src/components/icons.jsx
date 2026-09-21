@@ -150,3 +150,15 @@ export const ArrowLeftIcon = (p) => (
     <path d="M11 18l-6-6 6-6" />
   </svg>
 );
+
+export const MenuIcon = (p) => (
+  <svg {...base} {...p}>
+    <path d="M4 6h16M4 12h16M4 18h16" />
+  </svg>
+);
+
+export const XIcon = (p) => (
+  <svg {...base} {...p}>
+    <path d="M18 6L6 18M6 6l12 12" />
+  </svg>
+);

@@ -1,139 +1,175 @@
-import { createContext, useContext, useMemo, useState, useCallback } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import AppContext from './contextStore';
 import {
-  initialTransactions,
+  buildDemoRuleResults,
   initialAlerts,
-  dashboardSummary,
+  initialTransactions,
   vendors,
 } from '../data/mockData';
-
-const AppContext = createContext(null);
+import { deriveDashboardSummary } from '../utils/dashboard';
+import { getRiskLevel, RISK_LEVELS } from '../utils/risk';
+import { findTransactionById } from '../utils/transactions';
+import { reviewAlertForTransaction } from '../utils/alerts';
 
 let nextTxNumber = 10497;
-let nextAlertNumber = 6;
+let nextAlertNumber = 7;
 
-function pad(n) {
-  return n.toString().padStart(2, '0');
+const simulationScenarios = [
+  {
+    amount: 3200,
+    failedRule: null,
+    ruleScore: 24,
+    aiScore: 18,
+    riskScore: 22,
+    explanation: 'All rule results are marked Passed in this simulated frontend transaction.',
+    riskExplanation: 'No failed audit rules are recorded, and the transaction remains within the recorded low-risk range.',
+  },
+  {
+    amount: 14500,
+    failedRule: 'approvalLimit',
+    ruleScore: 68,
+    aiScore: 48,
+    riskScore: 60,
+    explanation: 'Approval Limit is marked Failed in this simulated Medium Risk transaction.',
+    riskExplanation: 'The recorded risk score reflects an approval-limit exception that requires auditor review.',
+  },
+  {
+    amount: 18750,
+    failedRule: 'duplicatePayment',
+    ruleScore: 90,
+    aiScore: 80,
+    riskScore: 86,
+    explanation: 'Duplicate Payment is marked Failed and the simulated transaction is High Risk.',
+    riskExplanation: 'The recorded risk score is supported by a possible duplicate payment and elevated transaction signals.',
+  },
+];
+
+function formatDate(date) {
+  return new Intl.DateTimeFormat('en-US', { dateStyle: 'long' }).format(date);
 }
 
-function nowTimeString() {
-  const d = new Date();
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function nowTimeStringWithSeconds() {
-  const d = new Date();
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+function formatTime(date) {
+  return new Intl.DateTimeFormat('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(date);
 }
 
 export function AppProvider({ children }) {
   const [transactions, setTransactions] = useState(initialTransactions);
   const [alerts, setAlerts] = useState(initialAlerts);
-  const [summary, setSummary] = useState(dashboardSummary);
   const [notification, setNotification] = useState(null);
   const [simulating, setSimulating] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(() => new Date().toISOString());
+  const [lastSimulatedTransactionId, setLastSimulatedTransactionId] = useState(null);
 
   const showNotification = useCallback((message, type = 'success') => {
-    setNotification({ message, type, key: Date.now() });
+    const key = Date.now();
+    setNotification({ message, type, key });
     setTimeout(() => {
-      setNotification((current) => (current && current.message === message ? null : current));
+      setNotification((current) => (current?.key === key ? null : current));
     }, 3500);
   }, []);
 
   const markAlertReviewed = useCallback((transactionId) => {
-    setAlerts((prev) =>
-      prev.map((a) => (a.transactionId === transactionId ? { ...a, status: 'Reviewed' } : a))
-    );
-    setTransactions((prev) =>
-      prev.map((t) => (t.id === transactionId ? { ...t, alertStatus: 'Reviewed' } : t))
-    );
+    setAlerts((previous) => reviewAlertForTransaction(previous, transactionId));
+    setLastUpdated(new Date().toISOString());
   }, []);
 
   const simulateNewTransaction = useCallback(() => {
     if (simulating) return;
     setSimulating(true);
 
+    const transactionNumber = nextTxNumber++;
+    const scenario = simulationScenarios[(transactionNumber - 10497) % simulationScenarios.length];
     const vendor = vendors[Math.floor(Math.random() * vendors.length)];
-    const id = `TX-${nextTxNumber++}`;
-    const amount = Math.floor(Math.random() * 15000) + 5000;
-    const time = nowTimeString();
+    const id = `TX-${transactionNumber}`;
+    const now = new Date();
+    const timestamp = now.toISOString();
+    const time = formatTime(now);
 
     const pendingTransaction = {
       id,
+      timestamp,
       vendor: vendor.name,
       category: vendor.category,
-      amount,
-      date: 'August 30, 2026',
+      amount: scenario.amount,
+      currency: 'SAR',
+      date: formatDate(now),
       time,
       ruleStatus: 'Processing',
+      ruleScore: null,
       aiScore: null,
       riskScore: null,
-      status: 'Processing',
       rules: null,
       processing: true,
     };
 
-    setTransactions((prev) => [pendingTransaction, ...prev]);
-    setSummary((prev) => ({
-      ...prev,
-      totalTransactionsToday: prev.totalTransactionsToday + 1,
-    }));
-    showNotification('Processing transaction...', 'info');
+    setTransactions((previous) => [pendingTransaction, ...previous]);
+    setLastSimulatedTransactionId(id);
+    setLastUpdated(timestamp);
+    showNotification('Adding a simulated frontend transaction...', 'info');
 
     setTimeout(() => {
-      const aiScore = Math.floor(Math.random() * 16) + 70; // 70-85
-      const riskScore = Math.floor(Math.random() * 16) + 76; // 76-91
+      const riskLevel = getRiskLevel(scenario.riskScore);
+      const createsAlert = riskLevel === RISK_LEVELS.HIGH;
+      const finishedAt = new Date();
 
       const finishedTransaction = {
         ...pendingTransaction,
-        ruleStatus: 'Review',
-        aiScore,
-        riskScore,
-        status: 'High Risk',
+        ruleStatus: scenario.failedRule ? 'Review' : 'Passed',
+        ruleScore: scenario.ruleScore,
+        aiScore: scenario.aiScore,
+        riskScore: scenario.riskScore,
         processing: false,
-        rules: {
-          duplicatePayment: { status: 'FAILED', detail: 'Possible duplicate payment detected' },
-          approvalLimit: { status: 'PASSED', detail: 'Within approved transaction limit' },
-          invoiceSplitting: { status: 'PASSED', detail: 'No invoice splitting pattern detected' },
-          ghostVendor: { status: 'PASSED', detail: 'Vendor verified and recognized' },
-          segregationOfDuties: { status: 'PASSED', detail: 'Requester and approver differ' },
-        },
-        ruleBasedRisk: Math.min(100, riskScore + 4),
-        aiAnomalyRisk: aiScore,
-        aiStatus: 'Unusual Transaction',
-        aiReason: "Transaction amount and payment pattern are unusual compared with this vendor's normal activity.",
-        alertStatus: 'Active',
-        alertGenerated: nowTimeStringWithSeconds(),
-        flagReason: 'Duplicate payment rule violation combined with unusual transaction behavior.',
+        rules: buildDemoRuleResults(scenario.failedRule),
+        aiStatus: scenario.aiScore >= 50 ? 'Elevated Anomaly Score' : 'Routine Demo Score',
+        aiExplanation: scenario.aiScore >= 50
+          ? 'The transaction shows elevated anomaly indicators compared with the current activity baseline.'
+          : 'The transaction is broadly consistent with the current activity baseline.',
+        riskExplanation: scenario.riskExplanation,
+        dataQuality: { status: 'Complete', missingFields: [] },
       };
 
-      setTransactions((prev) => prev.map((t) => (t.id === id ? finishedTransaction : t)));
+      setTransactions((previous) => previous.map((transaction) => (
+        transaction.id === id ? finishedTransaction : transaction
+      )));
 
-      setSummary((prev) => ({
-        ...prev,
-        transactionsEvaluated: prev.transactionsEvaluated + 1,
-        highRiskTransactions: prev.highRiskTransactions + 1,
-      }));
-
-      const newAlert = {
-        id: `AL-${nextAlertNumber++}`,
-        transactionId: id,
-        title: 'Duplicate Payment Detected',
-        description: 'Payment made to the same vendor within 7 days.',
-        time,
-        severity: 'High',
-        riskScore,
-        status: 'Active',
-        reason: 'Duplicate payment rule violation combined with unusual transaction behavior.',
-      };
-      setAlerts((prev) => [newAlert, ...prev]);
+      if (createsAlert) {
+        const newAlert = {
+          id: `AL-${nextAlertNumber++}`,
+          transactionId: id,
+          timestamp: finishedAt.toISOString(),
+          title: 'Duplicate Payment Detected',
+          description: 'Possible duplicate payment detected for the same vendor and amount.',
+          time: formatTime(finishedAt),
+          severity: riskLevel.replace(' Risk', ''),
+          riskScore: scenario.riskScore,
+          status: 'Active',
+          reason: scenario.explanation,
+        };
+        setAlerts((previous) => [newAlert, ...previous]);
+      }
 
       setSimulating(false);
-      showNotification(`New high-risk transaction flagged: ${id}`, 'alert');
+      setLastUpdated(finishedAt.toISOString());
+      showNotification('Demo transaction added.', 'success');
     }, 1000);
   }, [simulating, showNotification]);
 
   const getTransaction = useCallback(
-    (id) => transactions.find((t) => t.id === id),
+    (id) => findTransactionById(transactions, id),
+    [transactions]
+  );
+
+  const getAlertForTransaction = useCallback(
+    (transactionId) => alerts.find((alert) => alert.transactionId === transactionId),
+    [alerts]
+  );
+
+  const { summary, riskCounts, riskOverview } = useMemo(
+    () => deriveDashboardSummary(transactions),
     [transactions]
   );
 
@@ -142,21 +178,35 @@ export function AppProvider({ children }) {
       transactions,
       alerts,
       summary,
+      riskCounts,
+      riskOverview,
       notification,
       simulating,
+      lastUpdated,
+      lastSimulatedTransactionId,
       showNotification,
       markAlertReviewed,
       simulateNewTransaction,
       getTransaction,
+      getAlertForTransaction,
     }),
-    [transactions, alerts, summary, notification, simulating, showNotification, markAlertReviewed, simulateNewTransaction, getTransaction]
+    [
+      transactions,
+      alerts,
+      summary,
+      riskCounts,
+      riskOverview,
+      notification,
+      simulating,
+      lastUpdated,
+      lastSimulatedTransactionId,
+      showNotification,
+      markAlertReviewed,
+      simulateNewTransaction,
+      getTransaction,
+      getAlertForTransaction,
+    ]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
-}
-
-export function useApp() {
-  const ctx = useContext(AppContext);
-  if (!ctx) throw new Error('useApp must be used within an AppProvider');
-  return ctx;
 }
