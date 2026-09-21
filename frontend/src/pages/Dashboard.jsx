@@ -1,28 +1,35 @@
 import { Link } from 'react-router-dom';
-import { useApp } from '../context/AppContext';
+import useApp from '../context/useApp';
 import SummaryCards from '../components/SummaryCards';
 import DonutChart from '../components/DonutChart';
 import TransactionsTable from '../components/TransactionsTable';
 import AlertsList from '../components/AlertsList';
-import { riskOverview } from '../data/mockData';
 import { DocIcon, CheckShieldIcon } from '../components/icons';
+import { sortNewestFirst } from '../utils/transactions';
 
 export default function Dashboard() {
-  const { transactions, alerts, summary, simulateNewTransaction, simulating } = useApp();
+  const {
+    transactions,
+    alerts,
+    summary,
+    riskOverview,
+    simulateNewTransaction,
+    simulating,
+    lastSimulatedTransactionId,
+  } = useApp();
 
-  const recentTransactions = transactions.slice(0, 7);
-  const recentAlerts = alerts.slice(0, 3);
-  const newestId = transactions[0]?.processing || transactions[0]?.status === 'High Risk' ? transactions[0].id : undefined;
+  const recentTransactions = sortNewestFirst(transactions).slice(0, 7);
+  const recentAlerts = sortNewestFirst(alerts).slice(0, 3);
 
   return (
     <>
       <div className="page-header">
         <div>
           <h1>Dashboard</h1>
-          <p>Overview of today&apos;s transaction audit activity.</p>
+          <p>Overview of the current simulated frontend dataset.</p>
         </div>
-        <button className="btn btn-primary" onClick={simulateNewTransaction} disabled={simulating}>
-          {simulating ? 'Processing transaction...' : 'Simulate New Transaction'}
+        <button type="button" className="btn btn-primary" onClick={simulateNewTransaction} disabled={simulating}>
+          {simulating ? 'Adding demo transaction...' : 'Simulate Demo Transaction'}
         </button>
       </div>
 
@@ -56,11 +63,9 @@ export default function Dashboard() {
         <div className="card">
           <div className="card-header">
             <h2>Recent Transactions</h2>
-            <Link to="/transactions">
-              <button className="btn btn-secondary">View All Transactions</button>
-            </Link>
+            <Link className="btn btn-secondary" to="/transactions">View All Transactions</Link>
           </div>
-          <TransactionsTable transactions={recentTransactions} highlightId={newestId} />
+          <TransactionsTable transactions={recentTransactions} highlightId={lastSimulatedTransactionId} />
         </div>
       </div>
 
@@ -71,28 +76,25 @@ export default function Dashboard() {
               <DocIcon />
             </span>
             <div>
-              <h3>Generate Daily Audit Report</h3>
-              <p>Generate a comprehensive report of today&apos;s transactions, alerts, and audit summary.</p>
+              <h3>Daily Report Preview</h3>
+              <p>View a frontend-only summary. File generation requires backend integration.</p>
             </div>
           </div>
-          <Link to="/reports">
-            <button className="btn btn-primary">
-              <DocIcon width={15} height={15} />
-              Generate Report
-            </button>
+          <Link className="btn btn-primary" to="/reports">
+            <DocIcon width={15} height={15} />
+            View Report Preview
           </Link>
         </div>
 
-        <div className="status-card">
+        <div className="status-card demo-status">
           <span className="status-card-icon">
             <CheckShieldIcon />
           </span>
           <div>
             <h3>System Status</h3>
-            <div className="status-value">Monitoring Active</div>
+            <div className="status-value">Frontend Demo Mode</div>
             <div className="status-sub">
-              <span className="dot-pulse" />
-              All systems are running smoothly.
+              Backend monitoring is not connected.
             </div>
           </div>
         </div>

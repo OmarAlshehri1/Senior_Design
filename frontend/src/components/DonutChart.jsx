@@ -2,7 +2,7 @@ export default function DonutChart({ low, medium, high, total }) {
   const lowDeg = (low / 100) * 360;
   const medDeg = (medium / 100) * 360;
 
-  const background = `conic-gradient(
+  const background = total === 0 ? '#e5e8ee' : `conic-gradient(
     #16a34a 0deg ${lowDeg}deg,
     #ea8c1e ${lowDeg}deg ${lowDeg + medDeg}deg,
     #dc2626 ${lowDeg + medDeg}deg 360deg
@@ -11,6 +11,8 @@ export default function DonutChart({ low, medium, high, total }) {
   return (
     <div className="donut-wrap">
       <div
+        role="img"
+        aria-label={`${low}% low risk, ${medium}% medium risk, and ${high}% high risk`}
         style={{
           width: 150,
           height: 150,

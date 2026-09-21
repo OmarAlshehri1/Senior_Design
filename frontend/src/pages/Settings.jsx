@@ -6,7 +6,7 @@ export default function Settings() {
       <div className="page-header">
         <div>
           <h1>Settings</h1>
-          <p>Organization and audit configuration for this prototype.</p>
+          <p>Read-only frontend demo configuration.</p>
         </div>
       </div>
 
@@ -22,16 +22,16 @@ export default function Settings() {
         </div>
         <div className="summary-list-row">
           <span className="k">Monitoring</span>
-          <span className="v" style={{ color: 'var(--green)' }}>Active</span>
+          <span className="v" style={{ color: 'var(--orange)' }}>Backend Not Connected</span>
         </div>
       </div>
 
       <div className="card" style={{ padding: 20 }}>
-        <h2 style={{ fontSize: 15, margin: '0 0 14px 0' }}>Active Audit Rules</h2>
+        <h2 style={{ fontSize: 15, margin: '0 0 14px 0' }}>Demo Audit Rule Definitions</h2>
         {auditRules.map((rule) => (
           <div className="summary-list-row" key={rule.key} style={{ marginBottom: 8 }}>
             <span className="k">{rule.label}</span>
-            <span className="active-pill">{rule.status}</span>
+            <span className="demo-pill">{rule.status}</span>
           </div>
         ))}
       </div>

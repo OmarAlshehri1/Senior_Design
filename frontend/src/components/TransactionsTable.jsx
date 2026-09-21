@@ -1,8 +1,18 @@
 import { useNavigate } from 'react-router-dom';
 import { formatSAR, ruleStatusPillClass, riskStatusPillClass } from './statusUtils';
+import { getRiskLevel } from '../utils/risk';
 
 export default function TransactionsTable({ transactions, highlightId }) {
   const navigate = useNavigate();
+
+  const openTransaction = (id) => navigate(`/transactions/${id}`);
+
+  const handleRowKeyDown = (event, id) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      openTransaction(id);
+    }
+  };
 
   return (
     <div className="table-wrap">
@@ -17,15 +27,21 @@ export default function TransactionsTable({ transactions, highlightId }) {
             <th>Rule Status</th>
             <th>AI Score</th>
             <th>Risk Score</th>
-            <th>Status</th>
+            <th>Risk Level</th>
           </tr>
         </thead>
         <tbody>
-          {transactions.map((t) => (
-            <tr
+          {transactions.map((t) => {
+            const riskLevel = getRiskLevel(t.riskScore) ?? 'Processing';
+
+            return <tr
               key={t.id}
               className={`clickable${t.id === highlightId ? ' row-new' : ''}`}
-              onClick={() => navigate(`/transactions/${t.id}`)}
+              role="link"
+              tabIndex={0}
+              aria-label={`View transaction ${t.id}`}
+              onClick={() => openTransaction(t.id)}
+              onKeyDown={(event) => handleRowKeyDown(event, t.id)}
             >
               <td>{t.id}</td>
               <td className="vendor-cell">{t.vendor}</td>
@@ -36,12 +52,12 @@ export default function TransactionsTable({ transactions, highlightId }) {
                 <span className={ruleStatusPillClass(t.ruleStatus)}>{t.ruleStatus}</span>
               </td>
               <td>{t.aiScore ?? '—'}</td>
-              <td>{t.riskScore !== null ? `${t.riskScore}/100` : '—'}</td>
+              <td>{Number.isFinite(t.riskScore) ? `${t.riskScore}/100` : '—'}</td>
               <td>
-                <span className={riskStatusPillClass(t.status)}>{t.status}</span>
+                <span className={riskStatusPillClass(riskLevel)}>{riskLevel}</span>
               </td>
-            </tr>
-          ))}
+            </tr>;
+          })}
         </tbody>
       </table>
     </div>

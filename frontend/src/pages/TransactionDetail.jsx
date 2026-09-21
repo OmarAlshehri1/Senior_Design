@@ -1,7 +1,8 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useApp } from '../context/AppContext';
+import useApp from '../context/useApp';
 import { formatSAR, riskBadgeClass } from '../components/statusUtils';
 import { ArrowLeftIcon } from '../components/icons';
+import { getRiskLevel } from '../utils/risk';
 
 const ruleLabels = {
   duplicatePayment: 'Duplicate Payment',
@@ -16,17 +17,16 @@ const ruleOrder = ['duplicatePayment', 'approvalLimit', 'invoiceSplitting', 'gho
 export default function TransactionDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getTransaction, markAlertReviewed, showNotification } = useApp();
+  const { getTransaction, getAlertForTransaction, markAlertReviewed, showNotification } = useApp();
   const tx = getTransaction(id);
+  const alert = getAlertForTransaction(id);
 
   if (!tx) {
     return (
       <div className="card" style={{ padding: 32, textAlign: 'center' }}>
         <p>Transaction {id} was not found.</p>
-        <Link to="/transactions">
-          <button className="btn btn-secondary" style={{ marginTop: 12 }}>
-            Back to Transactions
-          </button>
+        <Link className="btn btn-secondary" style={{ marginTop: 12 }} to="/transactions">
+          Back to Transactions
         </Link>
       </div>
     );
@@ -40,13 +40,11 @@ export default function TransactionDetail() {
     );
   }
 
+  const riskLevel = getRiskLevel(tx.riskScore);
+
   const handleMarkReviewed = () => {
     markAlertReviewed(tx.id);
-    showNotification('Transaction marked as reviewed.', 'success');
-  };
-
-  const handleReview = () => {
-    showNotification('Opening transaction review...', 'info');
+    showNotification('Demo alert marked as reviewed for this session.', 'success');
   };
 
   const handleRelated = () => {
@@ -56,6 +54,7 @@ export default function TransactionDetail() {
   return (
     <>
       <button
+        type="button"
         className="btn btn-secondary"
         style={{ marginBottom: 16 }}
         onClick={() => navigate(-1)}
@@ -68,7 +67,7 @@ export default function TransactionDetail() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <h1 style={{ margin: 0, fontSize: 19 }}>{tx.id}</h1>
-            <span className={riskBadgeClass(tx.status)}>{tx.status.toUpperCase()}</span>
+            <span className={riskBadgeClass(riskLevel)}>{riskLevel.toUpperCase()}</span>
           </div>
           <div className="detail-meta">
             <div className="detail-meta-item">
@@ -90,7 +89,7 @@ export default function TransactionDetail() {
           </div>
         </div>
         <div className="risk-score-big">
-          <div className="cap">Final Risk Score</div>
+          <div className="cap">Risk Score</div>
           <div className="num">{tx.riskScore}/100</div>
         </div>
       </div>
@@ -99,7 +98,7 @@ export default function TransactionDetail() {
         <div className="detail-col">
           <div className="card">
             <div className="card-header">
-              <h2>Rule-Based Audit</h2>
+              <h2>Rule Audit Results</h2>
             </div>
             {ruleOrder.map((key) => {
               const rule = tx.rules[key];
@@ -109,21 +108,21 @@ export default function TransactionDetail() {
                     <div className="rule-name">{ruleLabels[key]}</div>
                     <div className="rule-detail">{rule.detail}</div>
                   </div>
-                  <span className={`rule-tag ${rule.status === 'FAILED' ? 'tag-failed' : 'tag-passed'}`}>
+                  <span className={`rule-tag ${rule.status === 'Failed' ? 'tag-failed' : 'tag-passed'}`}>
                     {rule.status}
                   </span>
                 </div>
               );
             })}
             <div className="section-footer-score">
-              <span>Rule-Based Risk Score</span>
-              <span>{tx.ruleBasedRisk}/100</span>
+              <span>Rule Score</span>
+              <span>{tx.ruleScore}/100</span>
             </div>
           </div>
 
           <div className="card">
             <div className="card-header">
-              <h2>AI Analysis</h2>
+              <h2>AI Assessment (Demo)</h2>
             </div>
             <div className="ai-block">
               <div className="ai-row">
@@ -131,14 +130,14 @@ export default function TransactionDetail() {
                 <span className="v">{tx.aiStatus}</span>
               </div>
               <div className="ai-row">
-                <span className="k">AI Anomaly Score</span>
-                <span className="v">{tx.aiAnomalyRisk}/100</span>
+                <span className="k">AI Score</span>
+                <span className="v">{tx.aiScore}/100</span>
               </div>
               <div>
                 <div className="ai-row" style={{ marginBottom: 6 }}>
-                  <span className="k">Reason</span>
+                  <span className="k">Demo note</span>
                 </div>
-                <p className="ai-reason">{tx.aiReason}</p>
+                <p className="ai-reason">{tx.aiExplanation}</p>
               </div>
             </div>
           </div>
@@ -151,27 +150,27 @@ export default function TransactionDetail() {
             </div>
             <div className="summary-list">
               <div className="summary-list-row">
-                <span className="k">Rule-Based Risk</span>
-                <span className="v">{tx.ruleBasedRisk}/100</span>
+                <span className="k">Rule Score</span>
+                <span className="v">{tx.ruleScore}/100</span>
               </div>
               <div className="summary-list-row">
-                <span className="k">AI Anomaly Risk</span>
-                <span className="v">{tx.aiAnomalyRisk}/100</span>
+                <span className="k">AI Score</span>
+                <span className="v">{tx.aiScore}/100</span>
               </div>
               <div className="summary-list-row">
-                <span className="k">Final Risk Score</span>
+                <span className="k">Risk Score</span>
                 <span className="v">{tx.riskScore}/100</span>
               </div>
               <div className="summary-list-row">
                 <span className="k">Risk Level</span>
-                <span className={riskBadgeClass(tx.status)} style={{ fontSize: 11.5 }}>
-                  {tx.status.toUpperCase()}
+                <span className={riskBadgeClass(riskLevel)} style={{ fontSize: 11.5 }}>
+                  {riskLevel.toUpperCase()}
                 </span>
               </div>
             </div>
           </div>
 
-          {tx.alertStatus !== 'None' && (
+          {alert && (
             <div className="card">
               <div className="card-header">
                 <h2>Alert Information</h2>
@@ -181,41 +180,48 @@ export default function TransactionDetail() {
                   <span className="k" style={{ color: 'var(--text-secondary)', fontSize: 13.5 }}>
                     Alert Status
                   </span>
-                  <span className={tx.alertStatus === 'Active' ? 'status-active' : 'status-reviewed'}>
-                    {tx.alertStatus}
+                  <span className={alert.status === 'Active' ? 'status-active' : 'status-reviewed'}>
+                    {alert.status}
                   </span>
                 </div>
                 <div className="alert-status-row">
                   <span className="k" style={{ color: 'var(--text-secondary)', fontSize: 13.5 }}>
                     Alert Generated
                   </span>
-                  <span style={{ fontWeight: 600, fontSize: 13.5 }}>{tx.alertGenerated}</span>
+                  <span style={{ fontWeight: 600, fontSize: 13.5 }}>{alert.time}</span>
                 </div>
                 <div>
                   <div style={{ fontSize: 13.5, color: 'var(--text-secondary)', marginBottom: 6 }}>
                     Reason for Flag
                   </div>
-                  <p className="alert-reason-text">{tx.flagReason}</p>
+                  <p className="alert-reason-text">{alert.reason}</p>
                 </div>
               </div>
             </div>
           )}
 
           <div className="card" style={{ padding: 18 }}>
+            <p className="demo-action-note">Review changes are local to this frontend demo.</p>
             <div className="action-buttons">
-              <button className="btn btn-secondary" onClick={handleReview}>
-                Review Transaction
+              <button
+                type="button"
+                className="btn btn-secondary"
+                title="Available after backend integration"
+                disabled
+              >
+                Review Workflow Requires Backend
               </button>
-              <button className="btn btn-secondary" onClick={handleRelated}>
+              <button type="button" className="btn btn-secondary" onClick={handleRelated}>
                 View Related Transactions
               </button>
-              {tx.alertStatus !== 'None' && (
+              {alert && (
                 <button
                   className="btn btn-primary"
+                  type="button"
                   onClick={handleMarkReviewed}
-                  disabled={tx.alertStatus === 'Reviewed'}
+                  disabled={alert.status === 'Reviewed'}
                 >
-                  {tx.alertStatus === 'Reviewed' ? 'Reviewed' : 'Mark as Reviewed'}
+                  {alert.status === 'Reviewed' ? 'Reviewed' : 'Mark as Reviewed'}
                 </button>
               )}
             </div>

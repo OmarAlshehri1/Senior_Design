@@ -8,6 +8,7 @@ import Alerts from './pages/Alerts';
 import AuditRules from './pages/AuditRules';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
+import NotFound from './pages/NotFound';
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
           <Route path="/audit-rules" element={<AuditRules />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Layout>
     </AppProvider>

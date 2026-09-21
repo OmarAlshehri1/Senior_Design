@@ -33,8 +33,8 @@ export default function SummaryCards({ summary }) {
   return (
     <div className="summary-grid">
       <SummaryCard
-        label="Total Transactions Today"
-        value={summary.totalTransactionsToday.toLocaleString('en-US')}
+        label="Total Transactions"
+        value={summary.totalTransactions.toLocaleString('en-US')}
         valueClass="value-blue"
         iconClass="icon-blue"
         icon={DocIcon}

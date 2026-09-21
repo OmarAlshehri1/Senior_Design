@@ -1,12 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { DuplicateIcon, LimitIcon, SplitIcon } from './icons';
-
-function iconFor(title) {
-  if (title.includes('Duplicate')) return { Icon: DuplicateIcon, bg: '#fdecec', color: '#dc2626' };
-  if (title.includes('Approval')) return { Icon: LimitIcon, bg: '#fdf1e2', color: '#ea8c1e' };
-  if (title.includes('Splitting')) return { Icon: SplitIcon, bg: '#fdf1e2', color: '#ea8c1e' };
-  return { Icon: LimitIcon, bg: '#fdf1e2', color: '#ea8c1e' };
-}
+import { getAlertPresentation } from './alertUtils';
 
 export default function AlertsList({ alerts }) {
   const navigate = useNavigate();
@@ -14,12 +7,13 @@ export default function AlertsList({ alerts }) {
   return (
     <div className="alert-list">
       {alerts.map((alert) => {
-        const { Icon, bg, color } = iconFor(alert.title);
+        const { Icon, bg, color } = getAlertPresentation(alert.title);
         return (
-          <div
+          <button
+            type="button"
             key={alert.id}
             className="alert-item"
-            style={{ cursor: 'pointer' }}
+            aria-label={`View ${alert.title} for transaction ${alert.transactionId}`}
             onClick={() => navigate(`/transactions/${alert.transactionId}`)}
           >
             <span className="alert-icon" style={{ background: bg, color }}>
@@ -33,7 +27,7 @@ export default function AlertsList({ alerts }) {
               <div className="alert-desc">{alert.description}</div>
               <span className={`severity-pill severity-${alert.severity}`}>{alert.severity}</span>
             </div>
-          </div>
+          </button>
         );
       })}
     </div>

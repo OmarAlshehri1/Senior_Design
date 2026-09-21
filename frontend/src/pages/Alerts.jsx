@@ -1,26 +1,26 @@
 import { useNavigate } from 'react-router-dom';
-import { useApp } from '../context/AppContext';
-import { DuplicateIcon, LimitIcon, SplitIcon, GhostIcon, UsersIcon } from '../components/icons';
-
-function iconFor(title) {
-  if (title.includes('Duplicate')) return { Icon: DuplicateIcon, bg: '#fdecec', color: '#dc2626' };
-  if (title.includes('Approval')) return { Icon: LimitIcon, bg: '#fdf1e2', color: '#ea8c1e' };
-  if (title.includes('Splitting')) return { Icon: SplitIcon, bg: '#fdf1e2', color: '#ea8c1e' };
-  if (title.includes('Ghost')) return { Icon: GhostIcon, bg: '#fdecec', color: '#dc2626' };
-  if (title.includes('Segregation')) return { Icon: UsersIcon, bg: '#fdf1e2', color: '#ea8c1e' };
-  return { Icon: LimitIcon, bg: '#fdf1e2', color: '#ea8c1e' };
-}
+import useApp from '../context/useApp';
+import { getAlertPresentation } from '../components/alertUtils';
 
 export default function Alerts() {
   const { alerts } = useApp();
   const navigate = useNavigate();
+
+  const openTransaction = (transactionId) => navigate(`/transactions/${transactionId}`);
+
+  const handleRowKeyDown = (event, transactionId) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      openTransaction(transactionId);
+    }
+  };
 
   return (
     <>
       <div className="page-header">
         <div>
           <h1>Alerts</h1>
-          <p>All audit rule violations and anomaly alerts.</p>
+          <p>Simulated alerts from the current frontend demo dataset.</p>
         </div>
       </div>
 
@@ -39,12 +39,16 @@ export default function Alerts() {
             </thead>
             <tbody>
               {alerts.map((alert) => {
-                const { Icon, bg, color } = iconFor(alert.title);
+                const { Icon, bg, color } = getAlertPresentation(alert.title);
                 return (
                   <tr
                     key={alert.id}
                     className="clickable"
-                    onClick={() => navigate(`/transactions/${alert.transactionId}`)}
+                    role="link"
+                    tabIndex={0}
+                    aria-label={`View transaction ${alert.transactionId} for ${alert.title}`}
+                    onClick={() => openTransaction(alert.transactionId)}
+                    onKeyDown={(event) => handleRowKeyDown(event, alert.transactionId)}
                   >
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

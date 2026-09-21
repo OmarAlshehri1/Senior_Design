@@ -1,30 +1,22 @@
-import { useState } from 'react';
-import { useApp } from '../context/AppContext';
-import { riskOverview } from '../data/mockData';
+import useApp from '../context/useApp';
 import { DocIcon } from '../components/icons';
 
 export default function Reports() {
-  const { summary, alerts } = useApp();
-  const [generated, setGenerated] = useState(false);
-
-  const handleGenerate = () => {
-    setGenerated(false);
-    setTimeout(() => setGenerated(true), 600);
-  };
+  const { summary, alerts, riskOverview } = useApp();
 
   return (
     <>
       <div className="page-header">
         <div>
           <h1>Reports</h1>
-          <p>Daily audit report summary for Retail Store Operations.</p>
+          <p>Frontend-only report preview based on the current simulated dataset.</p>
         </div>
       </div>
 
       <div className="report-grid">
         <div className="card report-stat">
           <div className="label">Total Transactions</div>
-          <div className="value">{summary.totalTransactionsToday.toLocaleString('en-US')}</div>
+          <div className="value">{summary.totalTransactions.toLocaleString('en-US')}</div>
         </div>
         <div className="card report-stat">
           <div className="label">Evaluated Transactions</div>
@@ -61,19 +53,21 @@ export default function Reports() {
       <div className="card" style={{ padding: 22 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
           <div>
-            <h3 style={{ margin: '0 0 4px 0', fontSize: 15 }}>Generate Daily Audit Report</h3>
+            <h3 style={{ margin: '0 0 4px 0', fontSize: 15 }}>Daily Audit Report Generation</h3>
             <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)' }}>
-              Compile today&apos;s transactions, alerts, and audit summary into a report.
+              File generation will be available after backend integration.
             </p>
           </div>
-          <button className="btn btn-primary" onClick={handleGenerate}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            title="Available after backend integration"
+            disabled
+          >
             <DocIcon width={15} height={15} />
-            Generate Daily Audit Report
+            Backend Required to Generate Report
           </button>
         </div>
-        {generated && (
-          <div className="report-success-banner">✓ Report generated successfully.</div>
-        )}
       </div>
     </>
   );
