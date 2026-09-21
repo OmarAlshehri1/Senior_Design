@@ -22,36 +22,36 @@ const ruleDefs = [
     key: 'duplicatePayment',
     label: 'Duplicate Payment',
     description: 'Detects payments made to the same vendor for the same amount within a short time window.',
-    passedDetail: 'No duplicate payment indicated in this demo fixture',
-    failedDetail: 'Demo fixture indicates a possible duplicate payment',
+    passedDetail: 'No matching payment was identified for the same vendor and amount.',
+    failedDetail: 'Possible duplicate payment found for the same vendor and amount.',
   },
   {
     key: 'approvalLimit',
     label: 'Approval Limit',
     description: 'Flags transactions that exceed the predefined approval limit for their category.',
-    passedDetail: 'Approval limit marked as satisfied in this demo fixture',
-    failedDetail: 'Demo fixture indicates an approval limit exception',
+    passedDetail: 'The amount is within the configured approval limits.',
+    failedDetail: 'The amount may exceed the configured approval limits.',
   },
   {
     key: 'invoiceSplitting',
     label: 'Invoice Splitting',
     description: 'Detects multiple smaller invoices used to avoid an approval threshold.',
-    passedDetail: 'No invoice splitting indicated in this demo fixture',
-    failedDetail: 'Demo fixture indicates a possible invoice splitting pattern',
+    passedDetail: 'No related invoice-splitting pattern was identified.',
+    failedDetail: 'Related purchases may indicate an invoice-splitting pattern.',
   },
   {
     key: 'ghostVendor',
     label: 'Ghost Vendor',
     description: 'Flags payments to vendors with no verifiable registration or transaction history.',
-    passedDetail: 'Vendor marked as verified in this demo fixture',
-    failedDetail: 'Demo fixture marks the vendor as unverified',
+    passedDetail: 'The vendor is present in the registered vendor list.',
+    failedDetail: 'The vendor could not be verified against the registered vendor list.',
   },
   {
     key: 'segregationOfDuties',
     label: 'Segregation of Duties',
     description: 'Flags cases where the same person requested and approved a transaction.',
-    passedDetail: 'Requester and approver marked as different in this demo fixture',
-    failedDetail: 'Demo fixture marks the requester and approver as the same user',
+    passedDetail: 'Requester and approver are recorded as different users.',
+    failedDetail: 'Requester and approver appear to be the same user.',
   },
 ];
 
@@ -75,6 +75,14 @@ export function buildDemoRuleResults(failedRule = null) {
 }
 
 const fixtureDate = 'August 30, 2026';
+
+const riskExplanations = {
+  duplicatePayment: 'The recorded risk score is supported by a possible duplicate payment and elevated transaction signals.',
+  approvalLimit: 'The recorded risk score reflects an approval-limit exception that requires auditor review.',
+  invoiceSplitting: 'The recorded risk score reflects a possible invoice-splitting pattern across related purchases.',
+  ghostVendor: 'The recorded risk score reflects vendor-verification concerns that require auditor review.',
+  segregationOfDuties: 'The recorded risk score reflects a segregation-of-duties exception involving the requester and approver.',
+};
 
 function fixtureTimestamp(time) {
   return `2026-08-30T${time}:00+03:00`;
@@ -227,10 +235,16 @@ function toFullTransaction({ failedRule = null, alert: _alert = null, ...transac
     ...transaction,
     timestamp: fixtureTimestamp(transaction.time),
     date: fixtureDate,
+    currency: 'SAR',
     ruleStatus: failedRule ? 'Review' : 'Passed',
     rules: buildDemoRuleResults(failedRule),
-    aiStatus: transaction.aiScore >= 50 ? 'Elevated Demo Score' : 'Routine Demo Score',
-    aiExplanation: 'Simulated AI score for frontend display; no anomaly model was run.',
+    aiStatus: transaction.aiScore >= 50 ? 'Elevated Anomaly Score' : 'Routine Demo Score',
+    aiExplanation: transaction.aiScore >= 50
+      ? 'The transaction shows elevated anomaly indicators compared with the current activity baseline.'
+      : 'The transaction is broadly consistent with the current activity baseline.',
+    riskExplanation: riskExplanations[failedRule]
+      || 'No failed audit rules are recorded, and the transaction remains within the recorded low-risk range.',
+    dataQuality: { status: 'Complete', missingFields: [] },
   };
 }
 

@@ -1,5 +1,11 @@
 import { useNavigate } from 'react-router-dom';
-import { formatSAR, ruleStatusPillClass, riskStatusPillClass } from './statusUtils';
+import {
+  displayValue,
+  formatSAR,
+  formatScore,
+  ruleStatusPillClass,
+  riskStatusPillClass,
+} from './statusUtils';
 import { getRiskLevel } from '../utils/risk';
 
 export default function TransactionsTable({ transactions, highlightId }) {
@@ -15,14 +21,14 @@ export default function TransactionsTable({ transactions, highlightId }) {
   };
 
   return (
-    <div className="table-wrap">
-      <table className="data-table">
+    <div className="transactions-table-wrap">
+      <table className="data-table transactions-table">
         <thead>
           <tr>
             <th>Transaction ID</th>
             <th>Vendor</th>
             <th>Category</th>
-            <th>Amount (SAR)</th>
+            <th>Amount</th>
             <th>Time</th>
             <th>Rule Status</th>
             <th>AI Score</th>
@@ -31,32 +37,44 @@ export default function TransactionsTable({ transactions, highlightId }) {
           </tr>
         </thead>
         <tbody>
-          {transactions.map((t) => {
-            const riskLevel = getRiskLevel(t.riskScore) ?? 'Processing';
+          {transactions.map((transaction) => {
+            const riskLevel = getRiskLevel(transaction?.riskScore) ?? 'Not available';
+            const transactionId = displayValue(transaction?.id);
+            const vendor = displayValue(transaction?.vendor);
+            const canOpenTransaction = typeof transaction?.id === 'string'
+              && transaction.id.trim().length > 0;
 
-            return <tr
-              key={t.id}
-              className={`clickable${t.id === highlightId ? ' row-new' : ''}`}
-              role="link"
-              tabIndex={0}
-              aria-label={`View transaction ${t.id}`}
-              onClick={() => openTransaction(t.id)}
-              onKeyDown={(event) => handleRowKeyDown(event, t.id)}
-            >
-              <td>{t.id}</td>
-              <td className="vendor-cell">{t.vendor}</td>
-              <td>{t.category}</td>
-              <td>{formatSAR(t.amount)}</td>
-              <td>{t.time}</td>
-              <td>
-                <span className={ruleStatusPillClass(t.ruleStatus)}>{t.ruleStatus}</span>
-              </td>
-              <td>{t.aiScore ?? '—'}</td>
-              <td>{Number.isFinite(t.riskScore) ? `${t.riskScore}/100` : '—'}</td>
-              <td>
-                <span className={riskStatusPillClass(riskLevel)}>{riskLevel}</span>
-              </td>
-            </tr>;
+            return (
+              <tr
+                key={transaction?.id ?? `${vendor}-${transaction?.timestamp}`}
+                className={`${canOpenTransaction ? 'clickable' : ''}${transaction?.id === highlightId ? ' row-new' : ''}`}
+                role={canOpenTransaction ? 'link' : undefined}
+                tabIndex={canOpenTransaction ? 0 : undefined}
+                aria-label={canOpenTransaction
+                  ? `View transaction ${transactionId}, ${riskLevel}`
+                  : undefined}
+                onClick={() => canOpenTransaction && openTransaction(transaction.id)}
+                onKeyDown={(event) => (
+                  canOpenTransaction && handleRowKeyDown(event, transaction.id)
+                )}
+              >
+                <td data-label="Transaction ID">{transactionId}</td>
+                <td className="vendor-cell" data-label="Vendor" title={vendor}>{vendor}</td>
+                <td data-label="Category">{displayValue(transaction?.category)}</td>
+                <td data-label="Amount">{formatSAR(transaction?.amount)}</td>
+                <td data-label="Time">{displayValue(transaction?.time)}</td>
+                <td data-label="Rule Status">
+                  <span className={ruleStatusPillClass(transaction?.ruleStatus)}>
+                    {displayValue(transaction?.ruleStatus)}
+                  </span>
+                </td>
+                <td data-label="AI Score">{formatScore(transaction?.aiScore)}</td>
+                <td data-label="Risk Score">{formatScore(transaction?.riskScore)}</td>
+                <td data-label="Risk Level">
+                  <span className={riskStatusPillClass(riskLevel)}>{riskLevel}</span>
+                </td>
+              </tr>
+            );
           })}
         </tbody>
       </table>

@@ -1,233 +1,268 @@
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import useApp from '../context/useApp';
-import { formatSAR, riskBadgeClass } from '../components/statusUtils';
+import {
+  displayValue,
+  formatAmount,
+  formatScore,
+  riskBadgeClass,
+  ruleStatusPillClass,
+} from '../components/statusUtils';
 import { ArrowLeftIcon } from '../components/icons';
 import { getRiskLevel } from '../utils/risk';
+import { AUDIT_RULE_DEFINITIONS, getTransactionDataQuality } from '../utils/transactions';
 
-const ruleLabels = {
-  duplicatePayment: 'Duplicate Payment',
-  approvalLimit: 'Approval Limit',
-  invoiceSplitting: 'Invoice Splitting',
-  ghostVendor: 'Ghost Vendor',
-  segregationOfDuties: 'Segregation of Duties',
-};
+function DetailField({ label, value }) {
+  return (
+    <div className="transaction-info-item">
+      <dt>{label}</dt>
+      <dd>{displayValue(value)}</dd>
+    </div>
+  );
+}
 
-const ruleOrder = ['duplicatePayment', 'approvalLimit', 'invoiceSplitting', 'ghostVendor', 'segregationOfDuties'];
+function DetailNotFound({ id }) {
+  return (
+    <div className="card transaction-not-found">
+      <span className="transaction-not-found-label">Transaction lookup</span>
+      <h1>Transaction not found.</h1>
+      <p>No evaluated transaction exists with the ID “{displayValue(id)}”.</p>
+      <Link className="btn btn-primary" to="/transactions">
+        <ArrowLeftIcon width={15} height={15} />
+        Back to Transactions
+      </Link>
+    </div>
+  );
+}
 
 export default function TransactionDetail() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const { getTransaction, getAlertForTransaction, markAlertReviewed, showNotification } = useApp();
-  const tx = getTransaction(id);
+  const transaction = getTransaction(id);
   const alert = getAlertForTransaction(id);
 
-  if (!tx) {
+  if (!transaction) return <DetailNotFound id={id} />;
+
+  if (transaction.processing) {
     return (
-      <div className="card" style={{ padding: 32, textAlign: 'center' }}>
-        <p>Transaction {id} was not found.</p>
-        <Link className="btn btn-secondary" style={{ marginTop: 12 }} to="/transactions">
-          Back to Transactions
-        </Link>
+      <div className="card transaction-processing-state" role="status">
+        <h1>Transaction processing</h1>
+        <p>{displayValue(transaction.id)} is still being prepared for review.</p>
+        <Link className="btn btn-secondary" to="/transactions">Back to Transactions</Link>
       </div>
     );
   }
 
-  if (tx.processing) {
-    return (
-      <div className="card" style={{ padding: 32, textAlign: 'center' }}>
-        <p>Transaction {id} is still being processed...</p>
-      </div>
-    );
-  }
-
-  const riskLevel = getRiskLevel(tx.riskScore);
+  const riskLevel = getRiskLevel(transaction.riskScore) ?? 'Not available';
+  const alertRiskLevel = alert
+    ? getRiskLevel(alert.riskScore) ?? 'Not available'
+    : null;
+  const dataQuality = getTransactionDataQuality(transaction);
+  const reviewState = alert?.status === 'Reviewed' ? 'Reviewed' : 'Not Reviewed';
+  const timestamp = [transaction.date, transaction.time]
+    .filter((value) => value !== null && value !== undefined && String(value).trim())
+    .join(' · ');
+  const hasVendor = typeof transaction.vendor === 'string' && transaction.vendor.trim();
+  const hasVendorId = transaction.vendorId !== null
+    && transaction.vendorId !== undefined
+    && String(transaction.vendorId).trim();
 
   const handleMarkReviewed = () => {
-    markAlertReviewed(tx.id);
-    showNotification('Demo alert marked as reviewed for this session.', 'success');
-  };
-
-  const handleRelated = () => {
-    navigate(`/transactions?vendor=${encodeURIComponent(tx.vendor)}`);
+    markAlertReviewed(transaction.id);
+    showNotification('Transaction marked as reviewed for this demo session.', 'success');
   };
 
   return (
-    <>
-      <button
-        type="button"
-        className="btn btn-secondary"
-        style={{ marginBottom: 16 }}
-        onClick={() => navigate(-1)}
-      >
+    <div className="transaction-detail-page">
+      <Link className="detail-back-link" to="/transactions">
         <ArrowLeftIcon width={15} height={15} />
-        Back
-      </button>
+        Back to Transactions
+      </Link>
 
-      <div className="card detail-header-card">
+      <header className="transaction-detail-header">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <h1 style={{ margin: 0, fontSize: 19 }}>{tx.id}</h1>
-            <span className={riskBadgeClass(riskLevel)}>{riskLevel.toUpperCase()}</span>
+          <span className="detail-eyebrow">Transaction</span>
+          <div className="transaction-title-row">
+            <h1>{displayValue(transaction.id)}</h1>
+            <span className={riskBadgeClass(riskLevel)}>{riskLevel}</span>
           </div>
-          <div className="detail-meta">
-            <div className="detail-meta-item">
-              <div className="label">Vendor</div>
-              <div className="value">{tx.vendor}</div>
-            </div>
-            <div className="detail-meta-item">
-              <div className="label">Category</div>
-              <div className="value">{tx.category}</div>
-            </div>
-            <div className="detail-meta-item">
-              <div className="label">Amount</div>
-              <div className="value">{formatSAR(tx.amount)}</div>
-            </div>
-            <div className="detail-meta-item">
-              <div className="label">Date &amp; Time</div>
-              <div className="value">{tx.date}, {tx.time}</div>
-            </div>
+          <p className="transaction-detail-vendor">{displayValue(transaction.vendor)}</p>
+        </div>
+        {timestamp && <time className="transaction-detail-time">{timestamp}</time>}
+      </header>
+
+      <section className="card risk-summary-card" aria-labelledby="risk-summary-heading">
+        <div className="card-header">
+          <h2 id="risk-summary-heading">Risk Summary</h2>
+        </div>
+        <div className="risk-summary-grid">
+          <div className="risk-summary-primary">
+            <span>Final Risk Score</span>
+            <strong>{formatScore(transaction.riskScore)}</strong>
+          </div>
+          <div className="risk-summary-item">
+            <span>Risk Level</span>
+            <strong className={riskBadgeClass(riskLevel)}>{riskLevel}</strong>
+          </div>
+          <div className="risk-summary-item">
+            <span>Rule Score</span>
+            <strong>{formatScore(transaction.ruleScore)}</strong>
+          </div>
+          <div className="risk-summary-item">
+            <span>AI Score</span>
+            <strong>{formatScore(transaction.aiScore)}</strong>
+          </div>
+          <div className="risk-summary-item">
+            <span>Rule Status</span>
+            <strong className={ruleStatusPillClass(transaction.ruleStatus)}>
+              {displayValue(transaction.ruleStatus)}
+            </strong>
           </div>
         </div>
-        <div className="risk-score-big">
-          <div className="cap">Risk Score</div>
-          <div className="num">{tx.riskScore}/100</div>
+      </section>
+
+      <section className="card transaction-info-card" aria-labelledby="transaction-info-heading">
+        <div className="card-header">
+          <h2 id="transaction-info-heading">Transaction Information</h2>
         </div>
+        <dl className="transaction-info-grid">
+          <DetailField label="Transaction ID" value={transaction.id} />
+          <DetailField label="Vendor" value={transaction.vendor} />
+          {hasVendorId && <DetailField label="Vendor ID" value={transaction.vendorId} />}
+          <DetailField label="Category" value={transaction.category} />
+          <DetailField label="Amount" value={formatAmount(transaction.amount, transaction.currency)} />
+          <DetailField label="Currency" value={transaction.currency} />
+          <DetailField label="Date" value={transaction.date} />
+          <DetailField label="Time" value={transaction.time} />
+        </dl>
+      </section>
+
+      <section className="card audit-results-card" aria-labelledby="audit-results-heading">
+        <div className="card-header">
+          <div>
+            <h2 id="audit-results-heading">Audit Rule Results</h2>
+            <p>Evidence recorded for the five project audit rules.</p>
+          </div>
+        </div>
+        <div className="audit-results-list">
+          {AUDIT_RULE_DEFINITIONS.map(({ key, label }) => {
+            const result = transaction.rules?.[key];
+            const status = displayValue(result?.status);
+            const isPassed = status === 'Passed';
+            const isFailed = status === 'Failed';
+
+            return (
+              <article
+                className={`audit-result${isFailed ? ' audit-result-failed' : ''}`}
+                key={key}
+              >
+                <span
+                  className={`audit-result-icon ${isPassed ? 'is-passed' : isFailed ? 'is-failed' : 'is-unknown'}`}
+                  aria-hidden="true"
+                >
+                  {isPassed ? '✓' : isFailed ? '!' : '—'}
+                </span>
+                <div className="audit-result-content">
+                  <h3>{label}</h3>
+                  <p>{displayValue(result?.detail)}</p>
+                </div>
+                <span className={`rule-tag ${isFailed ? 'tag-failed' : isPassed ? 'tag-passed' : 'tag-unknown'}`}>
+                  {status}
+                </span>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <div className="transaction-analysis-grid">
+        <section className="card analysis-card" aria-labelledby="ai-analysis-heading">
+          <div className="card-header">
+            <h2 id="ai-analysis-heading">AI Analysis</h2>
+          </div>
+          <div className="analysis-card-body">
+            <div className="analysis-score-row">
+              <span>AI Score</span>
+              <strong>{formatScore(transaction.aiScore)}</strong>
+            </div>
+            <span className="analysis-status">{displayValue(transaction.aiStatus)}</span>
+            <p>{displayValue(transaction.aiExplanation)}</p>
+          </div>
+        </section>
+
+        <section className="card analysis-card" aria-labelledby="risk-explanation-heading">
+          <div className="card-header">
+            <h2 id="risk-explanation-heading">Risk Explanation</h2>
+          </div>
+          <div className="analysis-card-body">
+            <p>{displayValue(transaction.riskExplanation)}</p>
+          </div>
+        </section>
       </div>
 
-      <div className="detail-grid">
-        <div className="detail-col">
-          <div className="card">
-            <div className="card-header">
-              <h2>Rule Audit Results</h2>
-            </div>
-            {ruleOrder.map((key) => {
-              const rule = tx.rules[key];
-              return (
-                <div className="rule-row" key={key}>
-                  <div>
-                    <div className="rule-name">{ruleLabels[key]}</div>
-                    <div className="rule-detail">{rule.detail}</div>
-                  </div>
-                  <span className={`rule-tag ${rule.status === 'Failed' ? 'tag-failed' : 'tag-passed'}`}>
-                    {rule.status}
-                  </span>
-                </div>
-              );
-            })}
-            <div className="section-footer-score">
-              <span>Rule Score</span>
-              <span>{tx.ruleScore}/100</span>
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="card-header">
-              <h2>AI Assessment (Demo)</h2>
-            </div>
-            <div className="ai-block">
-              <div className="ai-row">
-                <span className="k">AI Status</span>
-                <span className="v">{tx.aiStatus}</span>
-              </div>
-              <div className="ai-row">
-                <span className="k">AI Score</span>
-                <span className="v">{tx.aiScore}/100</span>
-              </div>
-              <div>
-                <div className="ai-row" style={{ marginBottom: 6 }}>
-                  <span className="k">Demo note</span>
-                </div>
-                <p className="ai-reason">{tx.aiExplanation}</p>
-              </div>
-            </div>
-          </div>
+      <section className="card data-quality-card" aria-labelledby="data-quality-heading">
+        <div>
+          <span className="detail-section-label" id="data-quality-heading">Data Quality</span>
+          <strong className={`data-quality-status quality-${dataQuality.status.toLowerCase().replaceAll(' ', '-')}`}>
+            {dataQuality.status}
+          </strong>
         </div>
+        <p>
+          {dataQuality.missingFields.length > 0
+            ? `Missing fields: ${dataQuality.missingFields.join(', ')}.`
+            : 'All fields required for this frontend review are available.'}
+        </p>
+      </section>
 
-        <div className="detail-col">
-          <div className="card">
-            <div className="card-header">
-              <h2>Risk Summary</h2>
-            </div>
-            <div className="summary-list">
-              <div className="summary-list-row">
-                <span className="k">Rule Score</span>
-                <span className="v">{tx.ruleScore}/100</span>
-              </div>
-              <div className="summary-list-row">
-                <span className="k">AI Score</span>
-                <span className="v">{tx.aiScore}/100</span>
-              </div>
-              <div className="summary-list-row">
-                <span className="k">Risk Score</span>
-                <span className="v">{tx.riskScore}/100</span>
-              </div>
-              <div className="summary-list-row">
-                <span className="k">Risk Level</span>
-                <span className={riskBadgeClass(riskLevel)} style={{ fontSize: 11.5 }}>
-                  {riskLevel.toUpperCase()}
-                </span>
-              </div>
-            </div>
+      <div className={`transaction-review-grid${alert ? '' : ' without-alert'}`}>
+        <section className="card review-state-card" aria-labelledby="review-state-heading">
+          <div className="card-header">
+            <h2 id="review-state-heading">Review State</h2>
           </div>
-
-          {alert && (
-            <div className="card">
-              <div className="card-header">
-                <h2>Alert Information</h2>
-              </div>
-              <div className="alert-info-block">
-                <div className="alert-status-row">
-                  <span className="k" style={{ color: 'var(--text-secondary)', fontSize: 13.5 }}>
-                    Alert Status
-                  </span>
-                  <span className={alert.status === 'Active' ? 'status-active' : 'status-reviewed'}>
-                    {alert.status}
-                  </span>
-                </div>
-                <div className="alert-status-row">
-                  <span className="k" style={{ color: 'var(--text-secondary)', fontSize: 13.5 }}>
-                    Alert Generated
-                  </span>
-                  <span style={{ fontWeight: 600, fontSize: 13.5 }}>{alert.time}</span>
-                </div>
-                <div>
-                  <div style={{ fontSize: 13.5, color: 'var(--text-secondary)', marginBottom: 6 }}>
-                    Reason for Flag
-                  </div>
-                  <p className="alert-reason-text">{alert.reason}</p>
-                </div>
-              </div>
+          <div className="review-state-body">
+            <div className="review-state-row">
+              <span>Current state</span>
+              <strong className={reviewState === 'Reviewed' ? 'reviewed-state' : 'not-reviewed-state'}>
+                {reviewState}
+              </strong>
             </div>
-          )}
-
-          <div className="card" style={{ padding: 18 }}>
-            <p className="demo-action-note">Review changes are local to this frontend demo.</p>
-            <div className="action-buttons">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                title="Available after backend integration"
-                disabled
-              >
-                Review Workflow Requires Backend
-              </button>
-              <button type="button" className="btn btn-secondary" onClick={handleRelated}>
-                View Related Transactions
-              </button>
+            <p>Review status is currently maintained for this session.</p>
+            <div className="review-actions">
               {alert && (
                 <button
                   className="btn btn-primary"
                   type="button"
                   onClick={handleMarkReviewed}
-                  disabled={alert.status === 'Reviewed'}
+                  disabled={reviewState === 'Reviewed'}
                 >
-                  {alert.status === 'Reviewed' ? 'Reviewed' : 'Mark as Reviewed'}
+                  {reviewState === 'Reviewed' ? 'Reviewed' : 'Mark as Reviewed'}
                 </button>
+              )}
+              {hasVendor && (
+                <Link
+                  className="btn btn-secondary"
+                  to={`/transactions?vendor=${encodeURIComponent(transaction.vendor)}`}
+                >
+                  View Related Transactions
+                </Link>
               )}
             </div>
           </div>
-        </div>
+        </section>
+
+        {alert && (
+          <section className="card related-alert-card" aria-labelledby="related-alert-heading">
+            <div className="card-header">
+              <h2 id="related-alert-heading">Related Alert</h2>
+            </div>
+            <dl className="related-alert-list">
+              <DetailField label="Alert Type" value={alert.title} />
+              <DetailField label="Risk Level" value={alertRiskLevel} />
+              <DetailField label="Time" value={alert.time} />
+              <DetailField label="Review State" value={reviewState} />
+            </dl>
+          </section>
+        )}
       </div>
-    </>
+    </div>
   );
 }

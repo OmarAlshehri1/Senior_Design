@@ -8,6 +8,7 @@ import {
 } from '../data/mockData';
 import { deriveDashboardSummary } from '../utils/dashboard';
 import { getRiskLevel, RISK_LEVELS } from '../utils/risk';
+import { findTransactionById } from '../utils/transactions';
 
 let nextTxNumber = 10497;
 let nextAlertNumber = 7;
@@ -20,6 +21,7 @@ const simulationScenarios = [
     aiScore: 18,
     riskScore: 22,
     explanation: 'All rule results are marked Passed in this simulated frontend transaction.',
+    riskExplanation: 'No failed audit rules are recorded, and the transaction remains within the recorded low-risk range.',
   },
   {
     amount: 14500,
@@ -28,6 +30,7 @@ const simulationScenarios = [
     aiScore: 48,
     riskScore: 60,
     explanation: 'Approval Limit is marked Failed in this simulated Medium Risk transaction.',
+    riskExplanation: 'The recorded risk score reflects an approval-limit exception that requires auditor review.',
   },
   {
     amount: 18750,
@@ -36,6 +39,7 @@ const simulationScenarios = [
     aiScore: 80,
     riskScore: 86,
     explanation: 'Duplicate Payment is marked Failed and the simulated transaction is High Risk.',
+    riskExplanation: 'The recorded risk score is supported by a possible duplicate payment and elevated transaction signals.',
   },
 ];
 
@@ -94,6 +98,7 @@ export function AppProvider({ children }) {
       vendor: vendor.name,
       category: vendor.category,
       amount: scenario.amount,
+      currency: 'SAR',
       date: formatDate(now),
       time,
       ruleStatus: 'Processing',
@@ -122,8 +127,12 @@ export function AppProvider({ children }) {
         riskScore: scenario.riskScore,
         processing: false,
         rules: buildDemoRuleResults(scenario.failedRule),
-        aiStatus: scenario.aiScore >= 50 ? 'Elevated Demo Score' : 'Routine Demo Score',
-        aiExplanation: 'Simulated AI score for frontend display; no anomaly model was run.',
+        aiStatus: scenario.aiScore >= 50 ? 'Elevated Anomaly Score' : 'Routine Demo Score',
+        aiExplanation: scenario.aiScore >= 50
+          ? 'The transaction shows elevated anomaly indicators compared with the current activity baseline.'
+          : 'The transaction is broadly consistent with the current activity baseline.',
+        riskExplanation: scenario.riskExplanation,
+        dataQuality: { status: 'Complete', missingFields: [] },
       };
 
       setTransactions((previous) => previous.map((transaction) => (
@@ -153,7 +162,7 @@ export function AppProvider({ children }) {
   }, [simulating, showNotification]);
 
   const getTransaction = useCallback(
-    (id) => transactions.find((transaction) => transaction.id === id),
+    (id) => findTransactionById(transactions, id),
     [transactions]
   );
 
