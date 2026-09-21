@@ -2,7 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { initialAlerts, initialTransactions } from '../src/data/mockData.js';
-import { deriveDashboardSummary } from '../src/utils/dashboard.js';
+import {
+  DASHBOARD_RISK_LINKS,
+  deriveDashboardSummary,
+  getRecentTransactions,
+} from '../src/utils/dashboard.js';
 import { getRiskLevel } from '../src/utils/risk.js';
 
 const boundaryCases = [
@@ -22,7 +26,7 @@ test('getRiskLevel uses the approved boundaries', () => {
 });
 
 test('dashboard summary and distribution are derived from transaction risk scores', () => {
-  const { summary, riskOverview } = deriveDashboardSummary(initialTransactions);
+  const { summary, riskCounts, riskOverview } = deriveDashboardSummary(initialTransactions);
 
   assert.deepEqual(summary, {
     totalTransactions: 24,
@@ -30,8 +34,27 @@ test('dashboard summary and distribution are derived from transaction risk score
     highRiskTransactions: 2,
     averageRiskScore: 34,
   });
+  assert.deepEqual(riskCounts, { low: 18, medium: 4, high: 2 });
   assert.deepEqual(riskOverview, { low: 75, medium: 17, high: 8 });
   assert.equal(riskOverview.low + riskOverview.medium + riskOverview.high, 100);
+});
+
+test('dashboard risk actions use supported transaction filter links', () => {
+  assert.deepEqual(DASHBOARD_RISK_LINKS, {
+    low: '/transactions?risk=low',
+    medium: '/transactions?risk=medium',
+    high: '/transactions?risk=high',
+  });
+});
+
+test('dashboard recent transactions are newest first and limited', () => {
+  const recent = getRecentTransactions(initialTransactions, 4);
+
+  assert.deepEqual(
+    recent.map(({ id }) => id),
+    ['TX-10496', 'TX-10482', 'TX-10481', 'TX-10480']
+  );
+  assert.equal(recent.length, 4);
 });
 
 test('Review status remains separate from Medium Risk classification', () => {

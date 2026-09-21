@@ -8,11 +8,19 @@ import { sortNewestFirst } from '../utils/transactions';
 
 const riskFilters = ['All', 'Low', 'Medium', 'High'];
 
+function riskFilterFromSearchParams(searchParams) {
+  const requestedRisk = searchParams.get('risk');
+  if (!requestedRisk) return 'All';
+
+  const normalizedRisk = `${requestedRisk[0]?.toUpperCase() || ''}${requestedRisk.slice(1).toLowerCase()}`;
+  return riskFilters.includes(normalizedRisk) ? normalizedRisk : 'All';
+}
+
 export default function Transactions() {
   const { transactions } = useApp();
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get('vendor') || '');
-  const [riskFilter, setRiskFilter] = useState('All');
+  const riskFilter = riskFilterFromSearchParams(searchParams);
   const [ruleFilter, setRuleFilter] = useState('All');
   const [sortBy, setSortBy] = useState('none');
 
@@ -65,7 +73,11 @@ export default function Transactions() {
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
-              if (searchParams.get('vendor')) setSearchParams({});
+              if (searchParams.get('vendor')) {
+                const nextParams = new URLSearchParams(searchParams);
+                nextParams.delete('vendor');
+                setSearchParams(nextParams);
+              }
             }}
           />
         </div>
@@ -76,7 +88,12 @@ export default function Transactions() {
               type="button"
               key={f}
               className={`filter-chip${riskFilter === f ? ' active' : ''}`}
-              onClick={() => setRiskFilter(f)}
+              onClick={() => {
+                const nextParams = new URLSearchParams(searchParams);
+                if (f === 'All') nextParams.delete('risk');
+                else nextParams.set('risk', f.toLowerCase());
+                setSearchParams(nextParams);
+              }}
             >
               {f}
             </button>

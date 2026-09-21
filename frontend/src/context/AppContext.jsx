@@ -136,7 +136,7 @@ export function AppProvider({ children }) {
           transactionId: id,
           timestamp: finishedAt.toISOString(),
           title: 'Duplicate Payment Detected',
-          description: 'The demo fixture contains a possible duplicate payment.',
+          description: 'Possible duplicate payment detected for the same vendor and amount.',
           time: formatTime(finishedAt),
           severity: riskLevel.replace(' Risk', ''),
           riskScore: scenario.riskScore,
@@ -148,10 +148,7 @@ export function AppProvider({ children }) {
 
       setSimulating(false);
       setLastUpdated(finishedAt.toISOString());
-      showNotification(
-        `Simulated transaction added: ${id} (${riskLevel})`,
-        createsAlert ? 'alert' : 'success'
-      );
+      showNotification('Demo transaction added.', 'success');
     }, 1000);
   }, [simulating, showNotification]);
 
@@ -165,7 +162,7 @@ export function AppProvider({ children }) {
     [alerts]
   );
 
-  const { summary, riskOverview } = useMemo(
+  const { summary, riskCounts, riskOverview } = useMemo(
     () => deriveDashboardSummary(transactions),
     [transactions]
   );
@@ -175,6 +172,7 @@ export function AppProvider({ children }) {
       transactions,
       alerts,
       summary,
+      riskCounts,
       riskOverview,
       notification,
       simulating,
@@ -190,6 +188,7 @@ export function AppProvider({ children }) {
       transactions,
       alerts,
       summary,
+      riskCounts,
       riskOverview,
       notification,
       simulating,

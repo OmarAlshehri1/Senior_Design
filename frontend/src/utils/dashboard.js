@@ -1,4 +1,15 @@
 import { deriveRiskDistribution, getRiskLevel } from './risk.js';
+import { sortNewestFirst } from './transactions.js';
+
+export const DASHBOARD_RISK_LINKS = Object.freeze({
+  low: '/transactions?risk=low',
+  medium: '/transactions?risk=medium',
+  high: '/transactions?risk=high',
+});
+
+export function getRecentTransactions(transactions, limit = 6) {
+  return sortNewestFirst(transactions).slice(0, limit);
+}
 
 export function deriveDashboardSummary(transactions) {
   const evaluated = transactions.filter(
@@ -17,6 +28,7 @@ export function deriveDashboardSummary(transactions) {
       highRiskTransactions: counts.high,
       averageRiskScore: evaluated.length ? Math.round(riskScoreTotal / evaluated.length) : 0,
     },
+    riskCounts: counts,
     riskOverview: percentages,
   };
 }

@@ -1,61 +1,44 @@
-export default function DonutChart({ low, medium, high, total }) {
-  const lowDeg = (low / 100) * 360;
-  const medDeg = (medium / 100) * 360;
+import { Link } from 'react-router-dom';
+import { DASHBOARD_RISK_LINKS } from '../utils/dashboard';
+
+export default function DonutChart({ counts, percentages, total }) {
+  const lowDeg = (percentages.low / 100) * 360;
+  const mediumDeg = (percentages.medium / 100) * 360;
 
   const background = total === 0 ? '#e5e8ee' : `conic-gradient(
     #16a34a 0deg ${lowDeg}deg,
-    #ea8c1e ${lowDeg}deg ${lowDeg + medDeg}deg,
-    #dc2626 ${lowDeg + medDeg}deg 360deg
+    #ea8c1e ${lowDeg}deg ${lowDeg + mediumDeg}deg,
+    #dc2626 ${lowDeg + mediumDeg}deg 360deg
   )`;
 
   return (
     <div className="donut-wrap">
       <div
+        className="donut-chart"
         role="img"
-        aria-label={`${low}% low risk, ${medium}% medium risk, and ${high}% high risk`}
-        style={{
-          width: 150,
-          height: 150,
-          borderRadius: '50%',
-          background,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-        }}
+        aria-label={`${counts.low} low risk transactions, ${counts.medium} medium risk transactions, and ${counts.high} high risk transactions`}
+        style={{ background }}
       >
-        <div
-          style={{
-            width: 100,
-            height: 100,
-            borderRadius: '50%',
-            background: '#fff',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <div style={{ fontSize: 20, fontWeight: 700 }}>{total.toLocaleString('en-US')}</div>
-          <div style={{ fontSize: 11, color: '#6b7280' }}>Evaluated</div>
+        <div className="donut-center">
+          <strong>{total.toLocaleString('en-US')}</strong>
+          <span>Evaluated</span>
         </div>
       </div>
       <div className="donut-legend">
-        <div className="legend-row">
-          <span className="legend-dot dot-low" />
-          Low Risk
-          <strong>{low}%</strong>
-        </div>
-        <div className="legend-row">
-          <span className="legend-dot dot-medium" />
-          Medium Risk
-          <strong>{medium}%</strong>
-        </div>
-        <div className="legend-row">
-          <span className="legend-dot dot-high" />
-          High Risk
-          <strong>{high}%</strong>
-        </div>
+        {['low', 'medium', 'high'].map((level) => (
+          <Link
+            key={level}
+            className="legend-row"
+            to={DASHBOARD_RISK_LINKS[level]}
+            aria-label={`View ${level} risk transactions: ${counts[level]}, ${percentages[level]} percent`}
+          >
+            <span className="legend-label">
+              <span className={`legend-dot dot-${level}`} />
+              {`${level[0].toUpperCase()}${level.slice(1)} Risk`}
+            </span>
+            <strong>{counts[level]} <span aria-hidden="true">·</span> {percentages[level]}%</strong>
+          </Link>
+        ))}
       </div>
     </div>
   );

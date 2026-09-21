@@ -96,7 +96,7 @@ const transactionFixtures = [
     alert: {
       id: 'AL-3',
       title: 'Invoice Splitting Detected',
-      description: 'The demo fixture contains a possible split-invoice pattern.',
+      description: 'Possible invoice splitting detected across related purchases.',
       status: 'Active',
       reason: 'Invoice Splitting is marked Failed in this simulated transaction.',
     },
@@ -115,7 +115,7 @@ const transactionFixtures = [
     alert: {
       id: 'AL-2',
       title: 'Approval Limit Exception',
-      description: 'The demo fixture marks an approval limit exception.',
+      description: 'Transaction may exceed the configured approval limit.',
       status: 'Active',
       reason: 'Approval Limit is marked Failed in this simulated transaction.',
     },
@@ -142,7 +142,7 @@ const transactionFixtures = [
     alert: {
       id: 'AL-5',
       title: 'Segregation of Duties Violation',
-      description: 'The demo fixture uses the same requester and approver.',
+      description: 'Requester and approver appear to be the same user.',
       status: 'Reviewed',
       reason: 'Segregation of Duties is marked Failed in this simulated transaction.',
     },
@@ -165,7 +165,7 @@ const transactionFixtures = [
     alert: {
       id: 'AL-6',
       title: 'Duplicate Payment Detected',
-      description: 'The demo fixture contains a possible duplicate payment.',
+      description: 'Possible duplicate payment detected for the same vendor and amount.',
       status: 'Active',
       reason: 'Duplicate Payment is marked Failed and the transaction is High Risk.',
     },
@@ -192,7 +192,7 @@ const transactionFixtures = [
     alert: {
       id: 'AL-4',
       title: 'Ghost Vendor Flagged',
-      description: 'The demo fixture marks this vendor as unverified.',
+      description: 'Vendor could not be verified against the registered vendor list.',
       status: 'Reviewed',
       reason: 'Ghost Vendor is marked Failed in this simulated transaction.',
     },
@@ -215,7 +215,7 @@ const transactionFixtures = [
     alert: {
       id: 'AL-1',
       title: 'Duplicate Payment Detected',
-      description: 'The demo fixture contains a possible duplicate payment.',
+      description: 'Possible duplicate payment detected for the same vendor and amount.',
       status: 'Active',
       reason: 'Duplicate Payment is marked Failed and the transaction is High Risk.',
     },

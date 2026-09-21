@@ -1,22 +1,10 @@
+import { Link } from 'react-router-dom';
 import { DocIcon, ClipboardCheckIcon, TriangleAlertIcon, GaugeIcon } from './icons';
+import { DASHBOARD_RISK_LINKS } from '../utils/dashboard';
 
-function Sparkline({ variant, seed }) {
-  const bars = Array.from({ length: 28 }, (_, i) => {
-    const v = Math.abs(Math.sin(i * 12.9898 * (seed + 1)) * 43758.5453) % 1;
-    return Math.round(20 + v * 80);
-  });
-  return (
-    <div className="sparkline">
-      {bars.map((h, i) => (
-        <span key={i} className={`spark-${variant}`} style={{ height: `${h}%` }} />
-      ))}
-    </div>
-  );
-}
-
-function SummaryCard({ label, value, valueClass, iconClass, icon: Icon, sparkVariant, seed }) {
-  return (
-    <div className="summary-card">
+function SummaryCard({ label, value, context, valueClass, iconClass, icon: Icon, to }) {
+  const content = (
+    <>
       <div className="summary-card-top">
         <span className="summary-card-label">{label}</span>
         <span className={`summary-card-icon ${iconClass}`}>
@@ -24,12 +12,30 @@ function SummaryCard({ label, value, valueClass, iconClass, icon: Icon, sparkVar
         </span>
       </div>
       <div className={`summary-card-value ${valueClass}`}>{value}</div>
-      <Sparkline variant={sparkVariant} seed={seed} />
-    </div>
+      <div className="summary-card-context">{context}</div>
+    </>
   );
+
+  if (to) {
+    return (
+      <Link
+        className="summary-card summary-card-link"
+        to={to}
+        aria-label={`${label}: ${value}. ${context}`}
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return <div className="summary-card">{content}</div>;
 }
 
-export default function SummaryCards({ summary }) {
+export default function SummaryCards({ summary, highRiskPercentage }) {
+  const evaluatedPercentage = summary.totalTransactions
+    ? Math.round((summary.transactionsEvaluated / summary.totalTransactions) * 100)
+    : 0;
+
   return (
     <div className="summary-grid">
       <SummaryCard
@@ -38,8 +44,7 @@ export default function SummaryCards({ summary }) {
         valueClass="value-blue"
         iconClass="icon-blue"
         icon={DocIcon}
-        sparkVariant="blue"
-        seed={1}
+        context="Current dataset"
       />
       <SummaryCard
         label="Transactions Evaluated"
@@ -47,8 +52,7 @@ export default function SummaryCards({ summary }) {
         valueClass="value-green"
         iconClass="icon-green"
         icon={ClipboardCheckIcon}
-        sparkVariant="green"
-        seed={2}
+        context={`${evaluatedPercentage}% evaluated`}
       />
       <SummaryCard
         label="High-Risk Transactions"
@@ -56,8 +60,8 @@ export default function SummaryCards({ summary }) {
         valueClass="value-red"
         iconClass="icon-red"
         icon={TriangleAlertIcon}
-        sparkVariant="red"
-        seed={3}
+        context={`${highRiskPercentage}% of evaluated`}
+        to={DASHBOARD_RISK_LINKS.high}
       />
       <SummaryCard
         label="Average Risk Score"
@@ -65,8 +69,7 @@ export default function SummaryCards({ summary }) {
         valueClass="value-orange"
         iconClass="icon-orange"
         icon={GaugeIcon}
-        sparkVariant="orange"
-        seed={4}
+        context="Current dataset average"
       />
     </div>
   );

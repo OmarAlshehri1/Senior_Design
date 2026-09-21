@@ -31,7 +31,7 @@ export default function Topbar({ mobileNavOpen, onMenuToggle }) {
         <span className="demo-mode-chip">Demo Mode</span>
       </div>
       <div className="topbar-right">
-        <span className="updated-time">Demo data updated: {formatUpdatedTime(lastUpdated)}</span>
+        <span className="updated-time">Last Updated: {formatUpdatedTime(lastUpdated)}</span>
         <button
           type="button"
           className="topbar-icon-btn"

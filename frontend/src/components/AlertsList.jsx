@@ -1,11 +1,11 @@
 import { useNavigate } from 'react-router-dom';
 import { getAlertPresentation } from './alertUtils';
 
-export default function AlertsList({ alerts }) {
+export default function AlertsList({ alerts, variant = 'default' }) {
   const navigate = useNavigate();
 
   return (
-    <div className="alert-list">
+    <div className={`alert-list${variant === 'dashboard' ? ' dashboard-alert-list' : ''}`}>
       {alerts.map((alert) => {
         const { Icon, bg, color } = getAlertPresentation(alert.title);
         return (
@@ -25,7 +25,7 @@ export default function AlertsList({ alerts }) {
                 <span className="alert-time">{alert.time}</span>
               </div>
               <div className="alert-desc">{alert.description}</div>
-              <span className={`severity-pill severity-${alert.severity}`}>{alert.severity}</span>
+              <span className={`severity-pill severity-${alert.severity}`}>{alert.severity} Risk</span>
             </div>
           </button>
         );
