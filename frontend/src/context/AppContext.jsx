@@ -9,6 +9,7 @@ import {
 import { deriveDashboardSummary } from '../utils/dashboard';
 import { getRiskLevel, RISK_LEVELS } from '../utils/risk';
 import { findTransactionById } from '../utils/transactions';
+import { reviewAlertForTransaction } from '../utils/alerts';
 
 let nextTxNumber = 10497;
 let nextAlertNumber = 7;
@@ -72,11 +73,7 @@ export function AppProvider({ children }) {
   }, []);
 
   const markAlertReviewed = useCallback((transactionId) => {
-    setAlerts((previous) =>
-      previous.map((alert) => (
-        alert.transactionId === transactionId ? { ...alert, status: 'Reviewed' } : alert
-      ))
-    );
+    setAlerts((previous) => reviewAlertForTransaction(previous, transactionId));
     setLastUpdated(new Date().toISOString());
   }, []);
 
