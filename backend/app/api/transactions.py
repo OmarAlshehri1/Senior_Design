@@ -40,7 +40,7 @@ async def import_transactions(
         )
 
     try:
-        result = await run_in_threadpool(
+        result: dict[str, object] = await run_in_threadpool(
             parse_transaction_workbook,
             content,
         )
@@ -49,6 +49,23 @@ async def import_transactions(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=str(exc),
         ) from exc
+
+    transactions = result.get("transactions")
+
+    if not isinstance(transactions, list):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Importer returned an invalid transaction list.",
+        )
+
+    preview_limit = 10
+
+    result["returned_rows"] = min(
+        len(transactions),
+        preview_limit,
+    )
+    result["has_more"] = len(transactions) > preview_limit
+    result["transactions"] = transactions[:preview_limit]
 
     return result
 

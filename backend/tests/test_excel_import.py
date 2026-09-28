@@ -7,8 +7,6 @@ from app.main import app
 
 from pathlib import Path
 
-from app.services.excel_import import parse_transaction_workbook
-
 client = TestClient(app)
 
 
@@ -144,11 +142,28 @@ def test_imports_full_sme_retail_dataset() -> None:
         / "SME_Retail_Expenses_Purchases_10k_Dataset.xlsx"
     )
 
-    result = parse_transaction_workbook(
-        dataset_path.read_bytes()
+    response = client.post(
+        "/api/v1/transactions/import",
+        files={
+            "file": (
+                dataset_path.name,
+                dataset_path.read_bytes(),
+                (
+                    "application/vnd.openxmlformats-officedocument."
+                    "spreadsheetml.sheet"
+                ),
+            )
+        },
     )
+
+    assert response.status_code == 200
+
+    result = response.json()
 
     assert result["source_schema"] == "SME_RETAIL_EXPENSES"
     assert result["total_rows"] == 10_000
     assert result["accepted_rows"] == 10_000
     assert result["rejected_rows"] == 0
+    assert result["returned_rows"] == 10
+    assert result["has_more"] is True
+    assert len(result["transactions"]) == 10

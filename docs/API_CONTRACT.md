@@ -276,10 +276,18 @@ Response `200 OK` summary example:
   "partial_rows": 10000,
   "rejected_rows": 0,
   "processing_time_seconds": 1.7353,
-  "transactions": [],
+  "returned_rows": 10,
+  "has_more": true,
+  "transactions": [
+    {
+      "id": "EXP-2026-006253",
+      "data_quality_status": "PARTIAL"
+    }
+  ],
   "errors": []
 }
 ```
+All rows are validated, but the response includes at most 10 preview transactions to prevent oversized HTTP responses. `has_more` indicates that additional accepted rows exist. Full dataset retrieval will use database-backed pagination in a later stage.
 
 The current SME retail dataset does not provide `approval_limit`, so its imported transactions are marked `PARTIAL`. The service does not invent missing approval limits.
 
