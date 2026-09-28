@@ -2,3 +2,5 @@ fastapi
 uvicorn
 httpx
 pytest
+openpyxl
+python-multipart

@@ -2,7 +2,7 @@
 
 This document is the preliminary contract between the React frontend and FastAPI backend. It defines planned field names and payload shapes so frontend and backend development can proceed independently.
 
-`GET /api/v1/health` and `POST /api/v1/transactions` are implemented. The remaining endpoints in this document are contracts only and are not implemented yet. Shapes may be extended through team agreement, but existing names should not be changed without coordinating both branches.
+`GET /api/v1/health`, `POST /api/v1/transactions`, and `POST /api/v1/transactions/import` are implemented. The remaining endpoints in this document are contracts only and are not implemented yet. Shapes may be extended through team agreement, but existing names should not be changed without coordinating both branches.
 
 ## Conventions
 
@@ -244,6 +244,52 @@ Response `201 Created`:
 A transaction with missing optional fields returns `data_quality_status` as `PARTIAL` and lists the unavailable fields in `missing_fields`. Unknown fields or invalid values return `422 Unprocessable Entity`.
 
 This initial implementation validates and returns the transaction in memory. Database persistence, rule evaluation, anomaly scoring, and alert generation will be added in later stages.
+
+### `POST /api/v1/transactions/import`
+
+Accepts an Excel `.xlsx` file as `multipart/form-data` and imports transaction rows in batches. The maximum upload size is 20 MB and the maximum supported worksheet size is 50,000 transaction rows.
+
+Supported input schemas:
+
+- The standardized transaction schema documented above.
+- The SME retail expenses schema used by `SME_Retail_Expenses_Purchases_10k_Dataset.xlsx`.
+
+The SME retail adapter applies the following mappings:
+
+| Source column | Standard field |
+| --- | --- |
+| `transaction_id` | `id` |
+| `expense_category` | `category` |
+| `amount_sar` | `amount` |
+| `approved_by_role` | `approver_role` |
+
+The adapter also assigns `SAR` as the currency. Source metadata such as branch, employee role, and payment method is retained separately. `violation_type` and `is_anomaly` are retained as ground-truth evaluation labels and are not used as model input features.
+
+Response `200 OK` summary example:
+
+```json
+{
+  "source_schema": "SME_RETAIL_EXPENSES",
+  "total_rows": 10000,
+  "accepted_rows": 10000,
+  "complete_rows": 0,
+  "partial_rows": 10000,
+  "rejected_rows": 0,
+  "processing_time_seconds": 1.7353,
+  "transactions": [],
+  "errors": []
+}
+```
+
+The current SME retail dataset does not provide `approval_limit`, so its imported transactions are marked `PARTIAL`. The service does not invent missing approval limits.
+
+Error responses:
+
+- `400 Bad Request`: unsupported file extension.
+- `413 Content Too Large`: file exceeds 20 MB.
+- `422 Unprocessable Content`: invalid workbook or unsupported column structure.
+
+The importer currently validates and returns transactions in memory. Database persistence, pagination, rule evaluation, and anomaly scoring will be added later.
 
 ### `GET /api/v1/alerts`
 

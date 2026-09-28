@@ -1,12 +1,56 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, File, HTTPException, UploadFile, status
+from starlette.concurrency import run_in_threadpool
 
 from app.schemas.transaction import TransactionCreate
+from app.services.excel_import import (
+    ExcelImportError,
+    parse_transaction_workbook,
+)
 
 
 router = APIRouter(
     prefix="/transactions",
     tags=["transactions"],
 )
+
+MAX_UPLOAD_BYTES = 20 * 1024 * 1024
+
+
+@router.post("/import")
+async def import_transactions(
+    file: UploadFile = File(...),
+) -> dict[str, object]:
+    filename = file.filename or ""
+
+    if not filename.lower().endswith(".xlsx"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only .xlsx Excel files are supported.",
+        )
+
+    try:
+        content = await file.read(MAX_UPLOAD_BYTES + 1)
+    finally:
+        await file.close()
+
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            detail="The Excel file exceeds the 20 MB limit.",
+        )
+
+    try:
+        result = await run_in_threadpool(
+            parse_transaction_workbook,
+            content,
+        )
+    except ExcelImportError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc),
+        ) from exc
+
+    return result
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
