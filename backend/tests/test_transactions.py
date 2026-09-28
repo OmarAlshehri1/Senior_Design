@@ -31,6 +31,7 @@ def test_create_complete_transaction() -> None:
     assert body["transaction"]["id"] == "TX-TEST-001"
     assert body["data_quality_status"] == "COMPLETE"
     assert body["missing_fields"] == []
+    assert body["persisted_rows"] == 1
 
 
 def test_create_partial_transaction() -> None:
@@ -45,6 +46,7 @@ def test_create_partial_transaction() -> None:
     assert body["data_quality_status"] == "PARTIAL"
     assert "vendor_id" in body["missing_fields"]
     assert "amount" in body["missing_fields"]
+    assert body["persisted_rows"] == 1
 
 
 def test_reject_invalid_currency() -> None:
