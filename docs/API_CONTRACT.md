@@ -2,7 +2,7 @@
 
 This document is the preliminary contract between the React frontend and FastAPI backend. It defines planned field names and payload shapes so frontend and backend development can proceed independently.
 
-Except for `GET /api/v1/health`, the endpoints in this document are contracts only and are not implemented yet. Shapes may be extended through team agreement, but existing names should not be changed without coordinating both branches.
+`GET /api/v1/health` and `POST /api/v1/transactions` are implemented. The remaining endpoints in this document are contracts only and are not implemented yet. Shapes may be extended through team agreement, but existing names should not be changed without coordinating both branches.
 
 ## Conventions
 
@@ -197,7 +197,53 @@ Returns one `Transaction`, including its `rule_results` and optional `explanatio
 
 ### `POST /api/v1/transactions`
 
-Accepts a transaction for future validation and evaluation. The exact ingestion request fields, idempotency strategy, and synchronous/asynchronous processing behavior remain team decisions. The response will use the `Transaction` shape.
+Accepts one standardized transaction for schema validation and data-quality assessment. The transaction `id` is required. The remaining fields are optional so incomplete source transactions can be accepted and reported instead of silently rejected.
+
+Request example:
+
+```json
+{
+  "id": "TX-TEST-001",
+  "timestamp": "2026-09-28T08:00:00Z",
+  "vendor_id": "VEN-001",
+  "vendor_name": "Riyadh Wholesale Trading",
+  "invoice_number": "INV-1001",
+  "category": "Inventory",
+  "amount": 18750,
+  "currency": "SAR",
+  "created_by": "EMP-101",
+  "approved_by": "MGR-201",
+  "approver_role": "Store Manager",
+  "approval_limit": 20000
+}
+```
+
+Response `201 Created`:
+
+```json
+{
+  "transaction": {
+    "id": "TX-TEST-001",
+    "timestamp": "2026-09-28T08:00:00Z",
+    "vendor_id": "VEN-001",
+    "vendor_name": "Riyadh Wholesale Trading",
+    "invoice_number": "INV-1001",
+    "category": "Inventory",
+    "amount": "18750",
+    "currency": "SAR",
+    "created_by": "EMP-101",
+    "approved_by": "MGR-201",
+    "approver_role": "Store Manager",
+    "approval_limit": "20000"
+  },
+  "data_quality_status": "COMPLETE",
+  "missing_fields": []
+}
+```
+
+A transaction with missing optional fields returns `data_quality_status` as `PARTIAL` and lists the unavailable fields in `missing_fields`. Unknown fields or invalid values return `422 Unprocessable Entity`.
+
+This initial implementation validates and returns the transaction in memory. Database persistence, rule evaluation, anomaly scoring, and alert generation will be added in later stages.
 
 ### `GET /api/v1/alerts`
 
