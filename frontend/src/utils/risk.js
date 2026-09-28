@@ -4,12 +4,22 @@ export const RISK_LEVELS = {
   HIGH: 'High Risk',
 };
 
+export const RISK_THRESHOLDS = Object.freeze({
+  LOW: Object.freeze({ label: RISK_LEVELS.LOW, min: 0, max: 49 }),
+  MEDIUM: Object.freeze({ label: RISK_LEVELS.MEDIUM, min: 50, max: 74 }),
+  HIGH: Object.freeze({ label: RISK_LEVELS.HIGH, min: 75, max: 100 }),
+});
+
 // Temporary display classification for frontend mock data only.
 // The backend will be authoritative after API integration.
 export function getRiskLevel(riskScore) {
-  if (!Number.isFinite(riskScore) || riskScore < 0 || riskScore > 100) return null;
-  if (riskScore >= 75) return RISK_LEVELS.HIGH;
-  if (riskScore >= 50) return RISK_LEVELS.MEDIUM;
+  if (
+    !Number.isFinite(riskScore)
+    || riskScore < RISK_THRESHOLDS.LOW.min
+    || riskScore > RISK_THRESHOLDS.HIGH.max
+  ) return null;
+  if (riskScore >= RISK_THRESHOLDS.HIGH.min) return RISK_LEVELS.HIGH;
+  if (riskScore >= RISK_THRESHOLDS.MEDIUM.min) return RISK_LEVELS.MEDIUM;
   return RISK_LEVELS.LOW;
 }
 

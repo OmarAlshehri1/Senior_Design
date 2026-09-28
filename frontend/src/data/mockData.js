@@ -1,5 +1,6 @@
 import { getRiskLevel } from '../utils/risk.js';
 import { sortNewestFirst } from '../utils/transactions.js';
+import { AUDIT_RULES } from './auditRules.js';
 
 // Frontend-only fixtures. No audit engine or machine-learning model runs here.
 export const vendors = [
@@ -17,49 +18,32 @@ export const vendors = [
   { name: 'Qassim Transport Co.', category: 'Logistics' },
 ];
 
-const ruleDefs = [
-  {
-    key: 'duplicatePayment',
-    label: 'Duplicate Payment',
-    description: 'Detects payments made to the same vendor for the same amount within a short time window.',
+const ruleResultDetails = {
+  duplicatePayment: {
     passedDetail: 'No matching payment was identified for the same vendor and amount.',
     failedDetail: 'Possible duplicate payment found for the same vendor and amount.',
   },
-  {
-    key: 'approvalLimit',
-    label: 'Approval Limit',
-    description: 'Flags transactions that exceed the predefined approval limit for their category.',
+  approvalLimit: {
     passedDetail: 'The amount is within the configured approval limits.',
     failedDetail: 'The amount may exceed the configured approval limits.',
   },
-  {
-    key: 'invoiceSplitting',
-    label: 'Invoice Splitting',
-    description: 'Detects multiple smaller invoices used to avoid an approval threshold.',
+  invoiceSplitting: {
     passedDetail: 'No related invoice-splitting pattern was identified.',
     failedDetail: 'Related purchases may indicate an invoice-splitting pattern.',
   },
-  {
-    key: 'ghostVendor',
-    label: 'Ghost Vendor',
-    description: 'Flags payments to vendors with no verifiable registration or transaction history.',
+  ghostVendor: {
     passedDetail: 'The vendor is present in the registered vendor list.',
     failedDetail: 'The vendor could not be verified against the registered vendor list.',
   },
-  {
-    key: 'segregationOfDuties',
-    label: 'Segregation of Duties',
-    description: 'Flags cases where the same person requested and approved a transaction.',
+  segregationOfDuties: {
     passedDetail: 'Requester and approver are recorded as different users.',
     failedDetail: 'Requester and approver appear to be the same user.',
   },
-];
+};
 
-export const auditRules = ruleDefs.map((rule) => ({
-  key: rule.key,
-  label: rule.label,
-  description: rule.description,
-  status: 'Demo Only',
+const ruleDefs = AUDIT_RULES.map((rule) => ({
+  ...rule,
+  ...ruleResultDetails[rule.key],
 }));
 
 export function buildDemoRuleResults(failedRule = null) {
@@ -106,7 +90,7 @@ const transactionFixtures = [
       title: 'Invoice Splitting Detected',
       description: 'Possible invoice splitting detected across related purchases.',
       status: 'Active',
-      reason: 'Invoice Splitting is marked Failed in this simulated transaction.',
+      reason: 'Invoice Splitting is marked Failed in the recorded transaction evidence.',
     },
   },
   {
@@ -125,7 +109,7 @@ const transactionFixtures = [
       title: 'Approval Limit Exception',
       description: 'Transaction may exceed the configured approval limit.',
       status: 'Active',
-      reason: 'Approval Limit is marked Failed in this simulated transaction.',
+      reason: 'Approval Limit is marked Failed in the recorded transaction evidence.',
     },
   },
   {
@@ -152,7 +136,7 @@ const transactionFixtures = [
       title: 'Segregation of Duties Violation',
       description: 'Requester and approver appear to be the same user.',
       status: 'Reviewed',
-      reason: 'Segregation of Duties is marked Failed in this simulated transaction.',
+      reason: 'Segregation of Duties is marked Failed in the recorded transaction evidence.',
     },
   },
   {
@@ -202,7 +186,7 @@ const transactionFixtures = [
       title: 'Ghost Vendor Flagged',
       description: 'Vendor could not be verified against the registered vendor list.',
       status: 'Reviewed',
-      reason: 'Ghost Vendor is marked Failed in this simulated transaction.',
+      reason: 'Ghost Vendor is marked Failed in the recorded transaction evidence.',
     },
   },
   {
@@ -238,7 +222,7 @@ function toFullTransaction({ failedRule = null, alert: _alert = null, ...transac
     currency: 'SAR',
     ruleStatus: failedRule ? 'Review' : 'Passed',
     rules: buildDemoRuleResults(failedRule),
-    aiStatus: transaction.aiScore >= 50 ? 'Elevated Anomaly Score' : 'Routine Demo Score',
+    aiStatus: transaction.aiScore >= 50 ? 'Elevated Anomaly Score' : 'Routine Anomaly Score',
     aiExplanation: transaction.aiScore >= 50
       ? 'The transaction shows elevated anomaly indicators compared with the current activity baseline.'
       : 'The transaction is broadly consistent with the current activity baseline.',

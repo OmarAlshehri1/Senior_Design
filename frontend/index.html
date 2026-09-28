@@ -2,12 +2,29 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Continuous Auditing System</title>
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      ;(function restoreGitHubPagesRoute(location) {
+        if (location.search.slice(0, 2) !== '?/') return
+
+        const restoredRoute = location.search
+          .slice(1)
+          .split('&')
+          .map((segment) => segment.replace(/~and~/g, '&'))
+          .join('?')
+
+        window.history.replaceState(
+          null,
+          '',
+          location.pathname.slice(0, -1) + restoredRoute + location.hash,
+        )
+      })(window.location)
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

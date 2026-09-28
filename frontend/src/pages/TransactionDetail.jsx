@@ -68,7 +68,7 @@ export default function TransactionDetail() {
 
   const handleMarkReviewed = () => {
     markAlertReviewed(transaction.id);
-    showNotification('Transaction marked as reviewed for this demo session.', 'success');
+    showNotification('Transaction marked as reviewed for this session.', 'success');
   };
 
   return (

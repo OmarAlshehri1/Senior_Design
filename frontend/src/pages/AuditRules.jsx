@@ -1,4 +1,6 @@
-import { auditRules } from '../data/mockData';
+import { useState } from 'react';
+import { AUDIT_RULES } from '../data/auditRules';
+import { toggleExpandedRuleIds } from '../utils/auditRules';
 import { UsersIcon, LimitIcon, DuplicateIcon, SplitIcon, GhostIcon } from '../components/icons';
 
 const iconMap = {
@@ -10,29 +12,73 @@ const iconMap = {
 };
 
 export default function AuditRules() {
+  const [expandedRuleIds, setExpandedRuleIds] = useState(() => new Set());
+
+  const toggleRule = (ruleId) => {
+    setExpandedRuleIds((current) => toggleExpandedRuleIds(current, ruleId));
+  };
+
   return (
     <>
-      <div className="page-header">
+      <div className="page-header audit-rules-page-header">
         <div>
           <h1>Audit Rules</h1>
-          <p>Read-only demo definitions. No audit rule engine is connected yet.</p>
+          <p>Review the controls used to evaluate transaction compliance and risk.</p>
         </div>
+        <span className="audit-rules-count">5 Audit Rules</span>
       </div>
 
-      <div className="rules-grid">
-        {auditRules.map((rule) => {
+      <div className="rules-grid" aria-label="Audit rule definitions">
+        {AUDIT_RULES.map((rule) => {
           const Icon = iconMap[rule.key];
+          const isExpanded = expandedRuleIds.has(rule.id);
+          const detailsId = `${rule.id.toLowerCase()}-details`;
+
           return (
-            <div className="card rule-card" key={rule.key}>
+            <article className="card rule-card" key={rule.id}>
               <div className="rule-card-top">
-                <span className="rule-card-icon">
-                  <Icon />
+                <span className="rule-card-icon" aria-hidden="true">
+                  <Icon aria-hidden="true" />
                 </span>
-                <span className="demo-pill">{rule.status}</span>
+                <span className="defined-pill">{rule.status}</span>
               </div>
-              <h3>{rule.label}</h3>
-              <p>{rule.description}</p>
-            </div>
+              <span className="rule-id">{rule.id}</span>
+              <h2>{rule.name}</h2>
+              <span className="rule-category">{rule.category}</span>
+              <p className="rule-description">{rule.description}</p>
+
+              <button
+                type="button"
+                className="rule-details-toggle"
+                aria-expanded={isExpanded}
+                aria-controls={detailsId}
+                onClick={() => toggleRule(rule.id)}
+              >
+                {isExpanded ? 'Hide Details' : 'View Details'}
+                <span className={`rule-toggle-chevron${isExpanded ? ' is-expanded' : ''}`} aria-hidden="true">
+                  ↓
+                </span>
+              </button>
+
+              <div className="rule-details" id={detailsId} hidden={!isExpanded}>
+                <section aria-labelledby={`${rule.id}-fields-heading`}>
+                  <h3 id={`${rule.id}-fields-heading`}>Required Fields</h3>
+                  <div className="rule-field-list">
+                    {rule.requiredFields.map((field) => (
+                      <span className="rule-field-chip" key={field}>{field}</span>
+                    ))}
+                  </div>
+                </section>
+                <section aria-labelledby={`${rule.id}-evaluation-heading`}>
+                  <h3 id={`${rule.id}-evaluation-heading`}>Evaluation</h3>
+                  <p>{rule.evaluation}</p>
+                </section>
+                <section className="rule-configuration" aria-labelledby={`${rule.id}-configuration-heading`}>
+                  <h3 id={`${rule.id}-configuration-heading`}>Configuration</h3>
+                  <p>{rule.configurationNote}</p>
+                </section>
+              </div>
+            </article>
           );
         })}
       </div>
