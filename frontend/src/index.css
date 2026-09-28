@@ -1195,13 +1195,15 @@ table.data-table {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 18px;
+  align-items: start;
 }
 
 .rule-card {
-  padding: 20px;
+  min-width: 0;
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .rule-card-top {
@@ -1225,6 +1227,43 @@ table.data-table {
 .rule-card-icon svg {
   width: 18px;
   height: 18px;
+}
+
+.audit-rules-page-header {
+  align-items: flex-end;
+}
+
+.audit-rules-count {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.defined-pill {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--green-light);
+  color: var(--green);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.rule-id {
+  color: var(--blue);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.rule-category {
+  width: fit-content;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #eef2f7;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 650;
 }
 
 .active-pill {
@@ -1259,16 +1298,96 @@ table.data-table {
   font-weight: 800;
 }
 
-.rule-card h3 {
+.rule-card > h2 {
   margin: 0;
   font-size: 15px;
 }
 
-.rule-card p {
+.rule-description,
+.rule-details p {
   margin: 0;
   font-size: 13px;
   color: var(--text-secondary);
   line-height: 1.5;
+}
+
+.rule-details-toggle {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 4px;
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  color: var(--blue);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rule-details-toggle:focus-visible {
+  border-radius: 4px;
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+}
+
+.rule-toggle-chevron {
+  display: inline-block;
+  font-size: 12px;
+  transition: transform 0.15s ease;
+}
+
+.rule-toggle-chevron.is-expanded {
+  transform: rotate(180deg);
+}
+
+.rule-details {
+  display: grid;
+  gap: 14px;
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.rule-details section {
+  min-width: 0;
+}
+
+.rule-details h3 {
+  margin: 0 0 7px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.rule-field-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rule-field-chip {
+  max-width: 100%;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-size: 11.5px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.rule-configuration {
+  padding: 10px 12px;
+  border-left: 3px solid var(--border);
+  background: #f8fafc;
+}
+
+.rule-configuration p {
+  font-size: 12.5px;
 }
 
 /* ---------- Reports page ---------- */
@@ -1460,6 +1579,12 @@ table.data-table {
   .page-content {
     padding: 20px 16px 32px;
   }
+  .audit-rules-page-header {
+    align-items: flex-start;
+  }
+  .audit-rules-count {
+    width: 100%;
+  }
   .summary-grid {
     grid-template-columns: 1fr;
     gap: 12px;
@@ -1491,6 +1616,9 @@ table.data-table {
   }
   .dashboard-transactions-table tbody td:nth-child(n) {
     grid-column: 1;
+  }
+  .rule-card {
+    padding: 16px;
   }
 }
 

@@ -1,4 +1,5 @@
 import { getRiskLevel } from './risk.js';
+import { AUDIT_RULES } from '../data/auditRules.js';
 
 export const TRANSACTION_SORT_OPTIONS = Object.freeze({
   NEWEST: 'newest',
@@ -9,13 +10,9 @@ export const TRANSACTION_SORT_OPTIONS = Object.freeze({
   LOWEST_AMOUNT: 'lowest-amount',
 });
 
-export const AUDIT_RULE_DEFINITIONS = Object.freeze([
-  { key: 'segregationOfDuties', label: 'Segregation of Duties' },
-  { key: 'approvalLimit', label: 'Approval Limits' },
-  { key: 'duplicatePayment', label: 'Duplicate Payments' },
-  { key: 'invoiceSplitting', label: 'Invoice Splitting' },
-  { key: 'ghostVendor', label: 'Ghost Vendors' },
-]);
+export const AUDIT_RULE_DEFINITIONS = Object.freeze(
+  AUDIT_RULES.map(({ key, name }) => Object.freeze({ key, label: name }))
+);
 
 const riskFilters = ['All', 'Low', 'Medium', 'High'];
 
