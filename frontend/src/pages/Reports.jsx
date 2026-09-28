@@ -51,7 +51,7 @@ export default function Reports() {
           <h2 id="report-information-heading">Report Information</h2>
           <dl className="report-information-list">
             <div><dt>Report Type</dt><dd>Daily Audit Summary</dd></div>
-            <div><dt>Data Source</dt><dd>Current Frontend Dataset</dd></div>
+            <div><dt>Data Source</dt><dd>Current Dataset</dd></div>
             <div><dt>Report Status</dt><dd><span className="report-status-badge">Preview</span></dd></div>
             <div><dt>Preview Date</dt><dd>{formatPreviewDate(report.previewDate)}</dd></div>
           </dl>

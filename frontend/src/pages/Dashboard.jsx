@@ -35,7 +35,7 @@ export default function Dashboard() {
           onClick={simulateNewTransaction}
           disabled={simulating}
         >
-          {simulating ? 'Adding Transaction...' : 'Simulate Transaction'}
+          {simulating ? 'Adding Test Transaction...' : 'Add Test Transaction'}
         </button>
       </div>
 

@@ -28,7 +28,6 @@ export default function Topbar({ mobileNavOpen, onMenuToggle }) {
         <ShieldIcon width={20} height={20} color="#2563eb" />
         <span className="topbar-title">Continuous Auditing System</span>
         <span className="topbar-organization">Retail Store Operations</span>
-        <span className="demo-mode-chip">Demo Mode</span>
       </div>
       <div className="topbar-right">
         <span className="updated-time">Last Updated: {formatUpdatedTime(lastUpdated)}</span>

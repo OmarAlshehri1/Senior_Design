@@ -58,7 +58,7 @@ test('integration reference does not claim unavailable services are operational'
 
   assert.doesNotMatch(integrationText, /"(Connected|Active|Running)"/i);
   assert.deepEqual(settings.integration, {
-    transactionSource: 'Frontend Preview Dataset',
+    transactionSource: 'Current Dataset',
     apiIntegration: 'Pending',
     realTimeConnection: 'Pending',
     persistence: 'Pending',

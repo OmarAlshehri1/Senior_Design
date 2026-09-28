@@ -26,7 +26,7 @@ export function getSettingsOverview() {
       status: 'Planned Integration',
     },
     integration: {
-      transactionSource: 'Frontend Preview Dataset',
+      transactionSource: 'Current Dataset',
       apiIntegration: 'Pending',
       realTimeConnection: 'Pending',
       persistence: 'Pending',

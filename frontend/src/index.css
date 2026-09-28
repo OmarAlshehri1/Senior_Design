@@ -191,18 +191,6 @@ select:focus-visible,
   border-left: 1px solid var(--border);
 }
 
-.demo-mode-chip,
-.demo-pill {
-  display: inline-block;
-  padding: 3px 9px;
-  border-radius: 999px;
-  background: var(--orange-light);
-  color: #b96708;
-  font-size: 11px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
 .topbar-right {
   display: flex;
   align-items: center;
@@ -867,20 +855,6 @@ table.data-table {
   gap: 6px;
 }
 
-.status-card.demo-status {
-  background: var(--orange-light);
-  border-color: #f3d6ad;
-}
-
-.demo-status .status-card-icon {
-  background: #f8dfbd;
-  color: var(--orange);
-}
-
-.status-card.demo-status .status-value {
-  color: #b96708;
-}
-
 .dot-pulse {
   width: 7px;
   height: 7px;
@@ -1124,13 +1098,6 @@ table.data-table {
 .action-buttons .btn {
   width: 100%;
   justify-content: center;
-}
-
-.demo-action-note {
-  margin: 0 0 12px;
-  color: var(--text-secondary);
-  font-size: 12.5px;
-  text-align: center;
 }
 
 /* ---------- Filters / toolbars ---------- */
@@ -1969,7 +1936,6 @@ table.data-table {
 
 @media (max-width: 420px) {
   .topbar-left > svg,
-  .demo-mode-chip,
   .topbar-right .topbar-icon-btn {
     display: none;
   }

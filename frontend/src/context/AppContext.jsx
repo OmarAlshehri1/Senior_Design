@@ -1,11 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import AppContext from './contextStore';
-import {
-  buildDemoRuleResults,
-  initialAlerts,
-  initialTransactions,
-  vendors,
-} from '../data/mockData';
+import { currentDataSource } from '../data/dataSource';
 import { deriveDashboardSummary } from '../utils/dashboard';
 import { getRiskLevel, RISK_LEVELS } from '../utils/risk';
 import { findTransactionById } from '../utils/transactions';
@@ -13,6 +8,12 @@ import { reviewAlertForTransaction } from '../utils/alerts';
 
 let nextTxNumber = 10497;
 let nextAlertNumber = 7;
+const {
+  buildRuleResults,
+  initialAlerts,
+  initialTransactions,
+  vendors,
+} = currentDataSource;
 
 const simulationScenarios = [
   {
@@ -21,7 +22,7 @@ const simulationScenarios = [
     ruleScore: 24,
     aiScore: 18,
     riskScore: 22,
-    explanation: 'All rule results are marked Passed in this simulated frontend transaction.',
+    explanation: 'All recorded rule results are marked Passed for this test transaction.',
     riskExplanation: 'No failed audit rules are recorded, and the transaction remains within the recorded low-risk range.',
   },
   {
@@ -30,7 +31,7 @@ const simulationScenarios = [
     ruleScore: 68,
     aiScore: 48,
     riskScore: 60,
-    explanation: 'Approval Limit is marked Failed in this simulated Medium Risk transaction.',
+    explanation: 'Approval Limit is marked Failed for this test transaction.',
     riskExplanation: 'The recorded risk score reflects an approval-limit exception that requires auditor review.',
   },
   {
@@ -39,7 +40,7 @@ const simulationScenarios = [
     ruleScore: 90,
     aiScore: 80,
     riskScore: 86,
-    explanation: 'Duplicate Payment is marked Failed and the simulated transaction is High Risk.',
+    explanation: 'Duplicate Payment is marked Failed and the test transaction is High Risk.',
     riskExplanation: 'The recorded risk score is supported by a possible duplicate payment and elevated transaction signals.',
   },
 ];
@@ -109,7 +110,7 @@ export function AppProvider({ children }) {
     setTransactions((previous) => [pendingTransaction, ...previous]);
     setLastSimulatedTransactionId(id);
     setLastUpdated(timestamp);
-    showNotification('Adding a simulated frontend transaction...', 'info');
+    showNotification('Adding a test transaction...', 'info');
 
     setTimeout(() => {
       const riskLevel = getRiskLevel(scenario.riskScore);
@@ -123,8 +124,8 @@ export function AppProvider({ children }) {
         aiScore: scenario.aiScore,
         riskScore: scenario.riskScore,
         processing: false,
-        rules: buildDemoRuleResults(scenario.failedRule),
-        aiStatus: scenario.aiScore >= 50 ? 'Elevated Anomaly Score' : 'Routine Demo Score',
+        rules: buildRuleResults(scenario.failedRule),
+        aiStatus: scenario.aiScore >= 50 ? 'Elevated Anomaly Score' : 'Routine Anomaly Score',
         aiExplanation: scenario.aiScore >= 50
           ? 'The transaction shows elevated anomaly indicators compared with the current activity baseline.'
           : 'The transaction is broadly consistent with the current activity baseline.',
@@ -154,7 +155,7 @@ export function AppProvider({ children }) {
 
       setSimulating(false);
       setLastUpdated(finishedAt.toISOString());
-      showNotification('Demo transaction added.', 'success');
+      showNotification('Test transaction added.', 'success');
     }, 1000);
   }, [simulating, showNotification]);
 
