@@ -1,4 +1,4 @@
-import { BellIcon, MenuIcon, ShieldIcon } from './icons';
+import { BellIcon, MenuIcon } from './icons';
 import useApp from '../context/useApp';
 
 function formatUpdatedTime(timestamp) {
@@ -25,22 +25,25 @@ export default function Topbar({ mobileNavOpen, onMenuToggle }) {
         >
           <MenuIcon width={19} height={19} />
         </button>
-        <ShieldIcon width={20} height={20} color="#2563eb" />
-        <span className="topbar-title">Continuous Auditing System</span>
-        <span className="topbar-organization">Retail Store Operations</span>
+        <div className="topbar-context">
+          <span className="topbar-title">Continuous Auditing</span>
+          <span className="topbar-organization">Retail Store Operations</span>
+        </div>
       </div>
       <div className="topbar-right">
-        <span className="updated-time">Last Updated: {formatUpdatedTime(lastUpdated)}</span>
+        <span className="updated-time">
+          <span>Data updated</span>
+          <strong>{formatUpdatedTime(lastUpdated)}</strong>
+        </span>
         <button
           type="button"
           className="topbar-icon-btn"
-          aria-label="Notifications unavailable until backend integration"
-          title="Available after backend integration"
+          aria-label="Notifications are not available yet"
+          title="Notifications are not available yet"
           disabled
         >
           <BellIcon width={17} height={17} />
         </button>
-        <span className="avatar" aria-label="Team M004">M4</span>
       </div>
     </header>
   );

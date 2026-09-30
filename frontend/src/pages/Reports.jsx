@@ -47,7 +47,7 @@ export default function Reports() {
 
       <section className="card report-preview-intro" aria-labelledby="report-information-heading">
         <div>
-          <span className="report-section-eyebrow">Current preview</span>
+          <span className="report-section-eyebrow">Report overview</span>
           <h2 id="report-information-heading">Report Information</h2>
           <dl className="report-information-list">
             <div><dt>Report Type</dt><dd>Daily Audit Summary</dd></div>
@@ -63,13 +63,13 @@ export default function Reports() {
             className="btn btn-primary"
             disabled
             aria-describedby="report-generation-help"
-            title="Report file generation will be available when report services are connected."
+            title="Report file generation is not available yet."
           >
             <DocIcon width={15} height={15} aria-hidden="true" />
             Generate Report
           </button>
           <p id="report-generation-help">
-            Report file generation will be available when report services are connected.
+            Report file generation is not available yet.
           </p>
         </div>
       </section>
@@ -77,7 +77,7 @@ export default function Reports() {
       <section className="report-section" aria-labelledby="daily-summary-heading">
         <div className="report-section-header">
           <div>
-            <span className="report-section-eyebrow">Current frontend state</span>
+            <span className="report-section-eyebrow">Daily activity</span>
             <h2 id="daily-summary-heading" tabIndex="-1">Daily Audit Summary</h2>
           </div>
         </div>

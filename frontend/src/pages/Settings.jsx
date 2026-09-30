@@ -27,117 +27,118 @@ export default function Settings() {
         <span className="settings-mode-badge">Read-only overview</span>
       </div>
 
-      <div className="settings-grid">
-        <section className="card settings-card" aria-labelledby="organization-settings-heading">
-          <div className="settings-card-header">
-            <div>
-              <span className="settings-section-eyebrow">Workspace</span>
-              <h2 id="organization-settings-heading">Organization</h2>
-            </div>
-          </div>
-          <SettingsList items={[
-            ['Organization Name', settings.organization.name],
-            ['Currency', settings.organization.currency],
-          ]} />
-        </section>
-
-        <section className="card settings-card" aria-labelledby="risk-settings-heading">
-          <div className="settings-card-header">
-            <div>
-              <span className="settings-section-eyebrow">Reference</span>
-              <h2 id="risk-settings-heading">Risk Classification</h2>
-            </div>
-          </div>
-          <div className="settings-risk-list">
-            {settings.riskClassification.map((risk) => (
-              <div key={risk.label}>
-                <span className={`risk-badge badge-${risk.label.split(' ')[0].toLowerCase()}`}>
-                  {risk.label}
-                </span>
-                <strong>{risk.range}</strong>
+      <div className="settings-groups">
+        <section className="settings-group" aria-labelledby="general-settings-heading">
+          <header className="settings-group-header">
+            <h2 id="general-settings-heading">General</h2>
+            <p>Organization details and risk classification reference.</p>
+          </header>
+          <div className="settings-group-grid">
+            <article className="settings-panel" aria-labelledby="organization-settings-heading">
+              <div className="settings-panel-header">
+                <h3 id="organization-settings-heading">Organization</h3>
               </div>
-            ))}
-          </div>
-          <p className="settings-note">
-            Risk thresholds are shown for reference and will be managed through system configuration when backend persistence is available.
-          </p>
-        </section>
+              <SettingsList items={[
+                ['Organization Name', settings.organization.name],
+                ['Currency', settings.organization.currency],
+              ]} />
+            </article>
 
-        <section className="card settings-card settings-card-wide" aria-labelledby="rules-settings-heading">
-          <div className="settings-card-header settings-card-header-with-link">
-            <div>
-              <span className="settings-section-eyebrow">Control definitions</span>
-              <h2 id="rules-settings-heading">Audit Rules</h2>
-            </div>
-            <Link className="card-header-link" to="/audit-rules">View Audit Rules</Link>
-          </div>
-          <div className="settings-rule-list">
-            {settings.auditRules.map((rule) => (
-              <div key={rule.id}>
-                <span className="settings-rule-id">{rule.id}</span>
-                <strong>{rule.name}</strong>
-                <span className="settings-status status-defined">{rule.status}</span>
+            <article className="settings-panel" aria-labelledby="risk-settings-heading">
+              <div className="settings-panel-header">
+                <h3 id="risk-settings-heading">Risk Classification</h3>
               </div>
-            ))}
+              <div className="settings-risk-list">
+                {settings.riskClassification.map((risk) => (
+                  <div key={risk.label}>
+                    <span className={`risk-badge badge-${risk.label.split(' ')[0].toLowerCase()}`}>
+                      {risk.label}
+                    </span>
+                    <strong>{risk.range}</strong>
+                  </div>
+                ))}
+              </div>
+              <p className="settings-note">Risk thresholds are shown for reference. Configuration editing is not available yet.</p>
+            </article>
           </div>
         </section>
 
-        <section className="card settings-card" aria-labelledby="report-settings-heading">
-          <div className="settings-card-header settings-card-header-with-link">
-            <div>
-              <span className="settings-section-eyebrow">Report requirement</span>
-              <h2 id="report-settings-heading">Reporting</h2>
-            </div>
-            <Link className="card-header-link" to="/reports">View Reports</Link>
+        <section className="settings-group" aria-labelledby="auditing-settings-heading">
+          <header className="settings-group-header">
+            <h2 id="auditing-settings-heading">Auditing</h2>
+            <p>Control definitions, reporting, and alert requirements.</p>
+          </header>
+          <div className="settings-group-grid">
+            <article className="settings-panel settings-panel-wide" aria-labelledby="rules-settings-heading">
+              <div className="settings-panel-header settings-panel-header-with-link">
+                <h3 id="rules-settings-heading">Audit Rules</h3>
+                <Link className="card-header-link" to="/audit-rules">View Audit Rules</Link>
+              </div>
+              <div className="settings-rule-list">
+                {settings.auditRules.map((rule) => (
+                  <div key={rule.id}>
+                    <span className="settings-rule-id">{rule.id}</span>
+                    <strong>{rule.name}</strong>
+                    <span className="settings-status status-defined">{rule.status}</span>
+                  </div>
+                ))}
+              </div>
+            </article>
+
+            <article className="settings-panel" aria-labelledby="report-settings-heading">
+              <div className="settings-panel-header settings-panel-header-with-link">
+                <h3 id="report-settings-heading">Reporting</h3>
+                <Link className="card-header-link" to="/reports">View Reports</Link>
+              </div>
+              <SettingsList items={[
+                ['Report Frequency', settings.reporting.frequency],
+                ['Report Type', settings.reporting.reportType],
+                ['Status', settings.reporting.status, 'defined'],
+              ]} />
+            </article>
+
+            <article className="settings-panel" aria-labelledby="alert-settings-heading">
+              <div className="settings-panel-header">
+                <h3 id="alert-settings-heading">Real-Time Alerts</h3>
+              </div>
+              <SettingsList items={[
+                ['Alert Threshold', settings.realTimeAlerts.threshold],
+                ['Delivery', settings.realTimeAlerts.delivery],
+                ['Target Alert Latency', settings.realTimeAlerts.targetLatency],
+                ['Status', settings.realTimeAlerts.status, 'planned'],
+              ]} />
+            </article>
           </div>
-          <SettingsList items={[
-            ['Report Frequency', settings.reporting.frequency],
-            ['Report Type', settings.reporting.reportType],
-            ['Status', settings.reporting.status, 'defined'],
-          ]} />
         </section>
 
-        <section className="card settings-card" aria-labelledby="alert-settings-heading">
-          <div className="settings-card-header">
-            <div>
-              <span className="settings-section-eyebrow">Project requirement</span>
-              <h2 id="alert-settings-heading">Real-Time Alerts</h2>
-            </div>
-          </div>
-          <SettingsList items={[
-            ['Alert Threshold', settings.realTimeAlerts.threshold],
-            ['Delivery', settings.realTimeAlerts.delivery],
-            ['Target Alert Latency', settings.realTimeAlerts.targetLatency],
-            ['Status', settings.realTimeAlerts.status, 'planned'],
-          ]} />
-        </section>
+        <section className="settings-group" aria-labelledby="system-group-heading">
+          <header className="settings-group-header">
+            <h2 id="system-group-heading">System</h2>
+            <p>Data connections and application information.</p>
+          </header>
+          <div className="settings-group-grid settings-system-grid">
+            <article className="settings-panel" aria-labelledby="integration-settings-heading">
+              <div className="settings-panel-header">
+                <h3 id="integration-settings-heading">Data &amp; Integration</h3>
+              </div>
+              <SettingsList items={[
+                ['Transaction Source', settings.integration.transactionSource],
+                ['API Integration', settings.integration.apiIntegration, 'pending'],
+                ['Real-Time Connection', settings.integration.realTimeConnection, 'pending'],
+                ['Persistence', settings.integration.persistence, 'pending'],
+              ]} />
+            </article>
 
-        <section className="card settings-card" aria-labelledby="integration-settings-heading">
-          <div className="settings-card-header">
-            <div>
-              <span className="settings-section-eyebrow">Current frontend state</span>
-              <h2 id="integration-settings-heading">Data &amp; Integration</h2>
-            </div>
+            <article className="settings-panel" aria-labelledby="system-settings-heading">
+              <div className="settings-panel-header">
+                <h3 id="system-settings-heading">System Information</h3>
+              </div>
+              <SettingsList items={[
+                ['Frontend', settings.system.frontend],
+                ['Interface Mode', settings.system.interfaceMode],
+              ]} />
+            </article>
           </div>
-          <SettingsList items={[
-            ['Transaction Source', settings.integration.transactionSource],
-            ['API Integration', settings.integration.apiIntegration, 'pending'],
-            ['Real-Time Connection', settings.integration.realTimeConnection, 'pending'],
-            ['Persistence', settings.integration.persistence, 'pending'],
-          ]} />
-        </section>
-
-        <section className="card settings-card" aria-labelledby="system-settings-heading">
-          <div className="settings-card-header">
-            <div>
-              <span className="settings-section-eyebrow">Application</span>
-              <h2 id="system-settings-heading">System Information</h2>
-            </div>
-          </div>
-          <SettingsList items={[
-            ['Frontend', settings.system.frontend],
-            ['Interface Mode', settings.system.interfaceMode],
-          ]} />
         </section>
       </div>
     </>

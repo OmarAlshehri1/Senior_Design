@@ -5,14 +5,12 @@ import { DASHBOARD_RISK_LINKS } from '../utils/dashboard';
 function SummaryCard({ label, value, context, valueClass, iconClass, icon: Icon, to }) {
   const content = (
     <>
-      <div className="summary-card-top">
+      <span className={`summary-card-icon ${iconClass}`} aria-hidden="true"><Icon /></span>
+      <span className="summary-card-copy">
         <span className="summary-card-label">{label}</span>
-        <span className={`summary-card-icon ${iconClass}`}>
-          <Icon />
-        </span>
-      </div>
-      <div className={`summary-card-value ${valueClass}`}>{value}</div>
-      <div className="summary-card-context">{context}</div>
+        <strong className={`summary-card-value ${valueClass}`}>{value}</strong>
+        <span className="summary-card-context">{context}</span>
+      </span>
     </>
   );
 
@@ -37,8 +35,13 @@ export default function SummaryCards({ summary, highRiskPercentage }) {
     : 0;
 
   return (
-    <div className="summary-grid">
-      <SummaryCard
+    <section className="system-overview" aria-labelledby="system-overview-heading">
+      <div className="system-overview-heading">
+        <h2 id="system-overview-heading">System Overview</h2>
+        <p>Current audit activity across the system.</p>
+      </div>
+      <div className="summary-grid">
+        <SummaryCard
         label="Total Transactions"
         value={summary.totalTransactions.toLocaleString('en-US')}
         valueClass="value-blue"
@@ -46,7 +49,7 @@ export default function SummaryCards({ summary, highRiskPercentage }) {
         icon={DocIcon}
         context="Current dataset"
       />
-      <SummaryCard
+        <SummaryCard
         label="Transactions Evaluated"
         value={summary.transactionsEvaluated.toLocaleString('en-US')}
         valueClass="value-green"
@@ -54,7 +57,7 @@ export default function SummaryCards({ summary, highRiskPercentage }) {
         icon={ClipboardCheckIcon}
         context={`${evaluatedPercentage}% evaluated`}
       />
-      <SummaryCard
+        <SummaryCard
         label="High-Risk Transactions"
         value={summary.highRiskTransactions}
         valueClass="value-red"
@@ -63,14 +66,15 @@ export default function SummaryCards({ summary, highRiskPercentage }) {
         context={`${highRiskPercentage}% of evaluated`}
         to={DASHBOARD_RISK_LINKS.high}
       />
-      <SummaryCard
+        <SummaryCard
         label="Average Risk Score"
         value={`${summary.averageRiskScore}/100`}
         valueClass="value-orange"
         iconClass="icon-orange"
         icon={GaugeIcon}
         context="Current dataset average"
-      />
-    </div>
+        />
+      </div>
+    </section>
   );
 }

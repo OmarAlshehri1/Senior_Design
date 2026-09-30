@@ -10,13 +10,28 @@ import {
   XIcon,
 } from './icons';
 
-const links = [
-  { to: '/', label: 'Dashboard', icon: GridIcon, end: true },
-  { to: '/transactions', label: 'Transactions', icon: ListIcon },
-  { to: '/alerts', label: 'Alerts', icon: AlertIcon },
-  { to: '/audit-rules', label: 'Audit Rules', icon: CheckShieldIcon },
-  { to: '/reports', label: 'Reports', icon: ReportIcon },
-  { to: '/settings', label: 'Settings', icon: SettingsIcon },
+const navigationGroups = [
+  {
+    label: 'Monitoring',
+    links: [
+      { to: '/', label: 'Dashboard', icon: GridIcon, end: true },
+      { to: '/transactions', label: 'Transactions', icon: ListIcon },
+      { to: '/alerts', label: 'Alerts', icon: AlertIcon },
+    ],
+  },
+  {
+    label: 'Auditing',
+    links: [
+      { to: '/audit-rules', label: 'Audit Rules', icon: CheckShieldIcon },
+      { to: '/reports', label: 'Reports', icon: ReportIcon },
+    ],
+  },
+  {
+    label: 'System',
+    links: [
+      { to: '/settings', label: 'Settings', icon: SettingsIcon },
+    ],
+  },
 ];
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -34,17 +49,22 @@ export default function Sidebar({ isOpen, onClose }) {
         </button>
       </div>
       <nav className="sidebar-nav" aria-label="Primary navigation">
-        {links.map(({ to, label, icon: Icon, end }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={end}
-            className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
-            onClick={onClose}
-          >
-            <Icon />
-            {label}
-          </NavLink>
+        {navigationGroups.map((group) => (
+          <div className="sidebar-nav-group" key={group.label}>
+            <span className="sidebar-nav-label">{group.label}</span>
+            {group.links.map(({ to, label, icon: Icon, end }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
+                onClick={onClose}
+              >
+                <Icon />
+                <span>{label}</span>
+              </NavLink>
+            ))}
+          </div>
         ))}
       </nav>
     </aside>

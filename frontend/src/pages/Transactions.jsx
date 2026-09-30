@@ -108,57 +108,59 @@ export default function Transactions() {
           </span>
         </label>
 
-        <fieldset className="filter-fieldset">
-          <legend className="control-label">Risk Level</legend>
-          <div className="filter-chip-group">
-            {riskFilters.map((filter) => (
-              <button
-                type="button"
-                key={filter}
-                className={`filter-chip${riskFilter === filter ? ' active' : ''}`}
-                aria-pressed={riskFilter === filter}
-                onClick={() => updateRiskFilter(filter)}
-              >
-                {filter}
-              </button>
-            ))}
-          </div>
-        </fieldset>
+        <div className="transactions-filter-group">
+          <fieldset className="filter-fieldset">
+            <legend className="control-label">Risk Level</legend>
+            <div className="filter-chip-group">
+              {riskFilters.map((filter) => (
+                <button
+                  type="button"
+                  key={filter}
+                  className={`filter-chip${riskFilter === filter ? ' active' : ''}`}
+                  aria-pressed={riskFilter === filter}
+                  onClick={() => updateRiskFilter(filter)}
+                >
+                  {filter}
+                </button>
+              ))}
+            </div>
+          </fieldset>
 
-        <label className="transactions-select-control">
-          <span className="control-label">Rule Status</span>
-          <select
-            className="select-input"
-            value={ruleFilter}
-            onChange={(event) => setRuleFilter(event.target.value)}
-          >
-            <option value="All">All Statuses</option>
-            <option value="Passed">Passed</option>
-            <option value="Review">Review</option>
-          </select>
-        </label>
+          <label className="transactions-select-control">
+            <span className="control-label">Rule Status</span>
+            <select
+              className="select-input"
+              value={ruleFilter}
+              onChange={(event) => setRuleFilter(event.target.value)}
+            >
+              <option value="All">All Statuses</option>
+              <option value="Passed">Passed</option>
+              <option value="Review">Review</option>
+            </select>
+          </label>
 
-        <label className="transactions-select-control">
-          <span className="control-label">Sort By</span>
-          <select
-            className="select-input"
-            value={sortBy}
-            onChange={(event) => setSortBy(event.target.value)}
-          >
-            <option value={TRANSACTION_SORT_OPTIONS.NEWEST}>Newest</option>
-            <option value={TRANSACTION_SORT_OPTIONS.OLDEST}>Oldest</option>
-            <option value={TRANSACTION_SORT_OPTIONS.HIGHEST_RISK}>Highest Risk</option>
-            <option value={TRANSACTION_SORT_OPTIONS.LOWEST_RISK}>Lowest Risk</option>
-            <option value={TRANSACTION_SORT_OPTIONS.HIGHEST_AMOUNT}>Highest Amount</option>
-            <option value={TRANSACTION_SORT_OPTIONS.LOWEST_AMOUNT}>Lowest Amount</option>
-          </select>
-        </label>
+          <label className="transactions-select-control">
+            <span className="control-label">Sort By</span>
+            <select
+              className="select-input"
+              value={sortBy}
+              onChange={(event) => setSortBy(event.target.value)}
+            >
+              <option value={TRANSACTION_SORT_OPTIONS.NEWEST}>Newest</option>
+              <option value={TRANSACTION_SORT_OPTIONS.OLDEST}>Oldest</option>
+              <option value={TRANSACTION_SORT_OPTIONS.HIGHEST_RISK}>Highest Risk</option>
+              <option value={TRANSACTION_SORT_OPTIONS.LOWEST_RISK}>Lowest Risk</option>
+              <option value={TRANSACTION_SORT_OPTIONS.HIGHEST_AMOUNT}>Highest Amount</option>
+              <option value={TRANSACTION_SORT_OPTIONS.LOWEST_AMOUNT}>Lowest Amount</option>
+            </select>
+          </label>
 
-        {filtersActive && (
-          <button type="button" className="btn btn-secondary clear-filters-btn" onClick={clearFilters}>
-            Clear Filters
-          </button>
-        )}
+          {filtersActive && (
+            <button type="button" className="btn btn-secondary clear-filters-btn" onClick={clearFilters}>
+              Clear Filters
+            </button>
+          )}
+        </div>
       </div>
 
       <section className="card transactions-card" aria-labelledby="transactions-results-heading">

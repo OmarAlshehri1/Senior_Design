@@ -41,8 +41,15 @@ export default function Dashboard() {
 
       <SummaryCards summary={summary} highRiskPercentage={riskOverview.high} />
 
+      <div className="dashboard-section-heading">
+        <div>
+          <h2>Risk and transaction activity</h2>
+          <p>Current risk distribution and the latest evaluated transactions.</p>
+        </div>
+      </div>
+
       <div className="dashboard-main-grid">
-        <section className="card risk-overview-card" aria-labelledby="risk-overview-heading">
+        <section className="card risk-overview-card dashboard-analysis-panel" aria-labelledby="risk-overview-heading">
           <div className="card-header">
             <h2 id="risk-overview-heading">Transaction Risk Overview</h2>
           </div>
@@ -53,7 +60,7 @@ export default function Dashboard() {
           />
         </section>
 
-        <section className="card recent-transactions-card" aria-labelledby="recent-transactions-heading">
+        <section className="card recent-transactions-card dashboard-analysis-panel" aria-labelledby="recent-transactions-heading">
           <div className="card-header">
             <h2 id="recent-transactions-heading">Recent Transactions</h2>
             <Link className="btn btn-secondary" to="/transactions">View All Transactions</Link>
@@ -71,6 +78,13 @@ export default function Dashboard() {
           <Link className="card-header-link" to="/alerts">View All Alerts</Link>
         </div>
         <AlertsList alerts={recentAlerts} variant="dashboard" />
+      </section>
+
+      <section className="workspace-foundation" aria-labelledby="workspace-heading">
+        <div>
+          <h2 id="workspace-heading">Your Workspace</h2>
+          <p>Personal work queues will appear when access is configured.</p>
+        </div>
       </section>
     </>
   );
