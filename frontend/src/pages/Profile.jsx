@@ -1,14 +1,16 @@
 import useAuthorization from '../auth/useAuthorization.js';
 import { AUTHORIZATION_MODES } from '../auth/AuthorizationProvider.jsx';
 import { createProfileModel } from '../auth/profileModel.js';
+import LoginHistory from '../components/LoginHistory.jsx';
+import { createSecurityActivity } from '../audit/loginHistory.js';
 
-const displayValue = (value) => value ?? 'Not available';
+const displayValue = (value, unavailableLabel) => value ?? unavailableLabel;
 
-function ProfileField({ label, value }) {
+function ProfileField({ label, value, unavailableLabel = 'Not available' }) {
   return (
     <div>
       <dt>{label}</dt>
-      <dd className={value === null ? 'profile-value-unavailable' : ''}>{displayValue(value)}</dd>
+      <dd className={value === null ? 'profile-value-unavailable' : ''}>{displayValue(value, unavailableLabel)}</dd>
     </div>
   );
 }
@@ -17,6 +19,7 @@ export default function Profile() {
   const { mode, effectiveRole, user } = useAuthorization();
   const previewRole = mode === AUTHORIZATION_MODES.ROLE_PREVIEW ? effectiveRole : null;
   const profile = createProfileModel(user, previewRole);
+  const securityActivity = createSecurityActivity();
 
   return (
     <div className="profile-page">
@@ -69,13 +72,17 @@ export default function Profile() {
 
         <section className="profile-section" aria-labelledby="security-access-heading">
           <header>
-            <h2 id="security-access-heading">Security &amp; Access</h2>
+            <h2 id="security-access-heading">Sign-In &amp; Security Activity</h2>
           </header>
           <dl className="profile-definition-list">
-            <ProfileField label="Account Status" value={profile.fields.accountStatus} />
-            <ProfileField label="Last Login" value={profile.fields.lastLoginAt} />
+            <ProfileField label="Last Login" value={securityActivity.lastLoginAt} unavailableLabel="—" />
+            <ProfileField label="Failed Sign-In Attempts" value={securityActivity.failedSignInAttempts} unavailableLabel="—" />
+            <ProfileField label="Account Status" value={securityActivity.accountStatus} unavailableLabel="—" />
           </dl>
-          <p className="profile-section-note">Security information will appear when identity services are connected.</p>
+          <div className="profile-login-history">
+            <h3>Recent Sign-In Activity</h3>
+            <LoginHistory records={securityActivity.recentSignIns} />
+          </div>
         </section>
       </div>
     </div>

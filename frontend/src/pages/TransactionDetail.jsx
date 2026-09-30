@@ -10,6 +10,8 @@ import {
 import { ArrowLeftIcon } from '../components/icons';
 import { getRiskLevel } from '../utils/risk';
 import { AUDIT_RULE_DEFINITIONS, getTransactionDataQuality } from '../utils/transactions';
+import ReviewHistory from '../components/ReviewHistory.jsx';
+import { createReviewAccountability } from '../audit/reviewRecords.js';
 
 function DetailField({ label, value }) {
   return (
@@ -58,6 +60,7 @@ export default function TransactionDetail() {
     : null;
   const dataQuality = getTransactionDataQuality(transaction);
   const reviewState = alert?.status === 'Reviewed' ? 'Reviewed' : 'Not Reviewed';
+  const accountability = createReviewAccountability();
   const timestamp = [transaction.date, transaction.time]
     .filter((value) => value !== null && value !== undefined && String(value).trim())
     .join(' · ');
@@ -216,36 +219,54 @@ export default function TransactionDetail() {
       <div className={`transaction-review-grid${alert ? '' : ' without-alert'}`}>
         <section className="card review-state-card" aria-labelledby="review-state-heading">
           <div className="card-header">
-            <h2 id="review-state-heading">Review State</h2>
+            <div>
+              <h2 id="review-state-heading">Review &amp; Accountability</h2>
+              <p>Session status and future authoritative review history.</p>
+            </div>
           </div>
-          <div className="review-state-body">
-            <div className="review-state-row">
-              <span>Current state</span>
-              <strong className={reviewState === 'Reviewed' ? 'reviewed-state' : 'not-reviewed-state'}>
-                {reviewState}
-              </strong>
-            </div>
-            <p>Review status is currently maintained for this session.</p>
-            <div className="review-actions">
-              {alert && (
-                <button
-                  className="btn btn-primary"
-                  type="button"
-                  onClick={handleMarkReviewed}
-                  disabled={reviewState === 'Reviewed'}
-                >
-                  {reviewState === 'Reviewed' ? 'Reviewed' : 'Mark as Reviewed'}
-                </button>
-              )}
-              {hasVendor && (
-                <Link
-                  className="btn btn-secondary"
-                  to={`/transactions?vendor=${encodeURIComponent(transaction.vendor)}`}
-                >
-                  View Related Transactions
-                </Link>
-              )}
-            </div>
+          <div className="review-accountability-body">
+            <section className="session-review-section" aria-labelledby="session-review-heading">
+              <span className="review-section-label">Review Status</span>
+              <h3 id="session-review-heading">Current Session Review Status</h3>
+              <div className="review-state-row">
+                <span>Current Status</span>
+                <strong className={reviewState === 'Reviewed' ? 'reviewed-state' : 'not-reviewed-state'}>{reviewState}</strong>
+              </div>
+              <p>Review status is currently maintained for this session and does not create an attributed history record.</p>
+              <div className="review-actions">
+                {alert && (
+                  <button className="btn btn-primary" type="button" onClick={handleMarkReviewed} disabled={reviewState === 'Reviewed'}>
+                    {reviewState === 'Reviewed' ? 'Reviewed' : 'Mark as Reviewed'}
+                  </button>
+                )}
+                {hasVendor && (
+                  <Link className="btn btn-secondary" to={`/transactions?vendor=${encodeURIComponent(transaction.vendor)}`}>
+                    View Related Transactions
+                  </Link>
+                )}
+              </div>
+            </section>
+
+            <section className="review-accountability-section" aria-labelledby="accountability-heading">
+              <h3 id="accountability-heading">Accountability</h3>
+              <dl>
+                <div><dt>Reviewed By</dt><dd>{accountability.reviewedBy ?? <span aria-label="Unavailable">—</span>}</dd></div>
+                <div><dt>Reviewed At</dt><dd>{accountability.reviewedAt ?? <span aria-label="Unavailable">—</span>}</dd></div>
+              </dl>
+            </section>
+
+            <section className="review-note-section" aria-labelledby="review-note-heading">
+              <div>
+                <h3 id="review-note-heading">Review Note</h3>
+                <p>{accountability.note ?? 'No review note available.'}</p>
+              </div>
+              <button className="btn btn-secondary" type="button" disabled title="Review notes are not available yet.">Add Review Note</button>
+            </section>
+
+            <section className="review-history-section" aria-labelledby="review-history-heading">
+              <h3 id="review-history-heading">Review History</h3>
+              <ReviewHistory records={accountability.history} />
+            </section>
           </div>
         </section>
 

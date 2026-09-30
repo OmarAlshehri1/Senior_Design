@@ -21,6 +21,7 @@ import RequirePermission from './auth/RequirePermission';
 import { APPLICATION_ROUTES, getRoutePermission } from './auth/routeAccess';
 import Forbidden from './pages/Forbidden';
 import Profile from './pages/Profile';
+import AuditLog from './pages/AuditLog';
 
 function protectedPage(path, page) {
   return (
@@ -42,6 +43,7 @@ function ApplicationRoutes() {
       <Route path={APPLICATION_ROUTES.REPORTS} element={protectedPage(APPLICATION_ROUTES.REPORTS, <Reports />)} />
       <Route path={APPLICATION_ROUTES.SETTINGS} element={protectedPage(APPLICATION_ROUTES.SETTINGS, <Settings />)} />
       <Route path={APPLICATION_ROUTES.PROFILE} element={protectedPage(APPLICATION_ROUTES.PROFILE, <Profile />)} />
+      <Route path={APPLICATION_ROUTES.AUDIT_LOG} element={protectedPage(APPLICATION_ROUTES.AUDIT_LOG, <AuditLog />)} />
       <Route path={APPLICATION_ROUTES.FORBIDDEN} element={<Forbidden />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

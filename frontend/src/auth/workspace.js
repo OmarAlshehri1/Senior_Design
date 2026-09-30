@@ -12,7 +12,7 @@ const WORKSPACE_DEFINITIONS = Object.freeze({
     ]),
     sections: Object.freeze([
       Object.freeze({ key: 'workQueue', title: 'My Work Queue', emptyMessage: 'Assignment data is not available yet.' }),
-      Object.freeze({ key: 'recentReviewActivity', title: 'Recent Review Activity', emptyMessage: 'Review activity is not available yet.' }),
+      Object.freeze({ key: 'recentReviewActivity', title: 'Recent Review Activity', source: 'REVIEW_HISTORY', emptyMessage: 'Review activity is not available yet.' }),
     ]),
   }),
   [ROLE_KEYS.SUPERVISOR]: Object.freeze({
@@ -26,7 +26,7 @@ const WORKSPACE_DEFINITIONS = Object.freeze({
     ]),
     sections: Object.freeze([
       Object.freeze({ key: 'teamWorkload', title: 'Team Workload', emptyMessage: 'Team workload is not available yet.' }),
-      Object.freeze({ key: 'recentTeamActivity', title: 'Recent Team Activity', emptyMessage: 'Team activity is not available yet.' }),
+      Object.freeze({ key: 'recentTeamActivity', title: 'Recent Team Activity', source: 'AUDIT_EVENTS', emptyMessage: 'Team activity is not available yet.' }),
     ]),
   }),
   [ROLE_KEYS.ADMIN]: Object.freeze({
@@ -39,8 +39,8 @@ const WORKSPACE_DEFINITIONS = Object.freeze({
       Object.freeze({ key: 'failedLoginsToday', label: 'Failed Logins Today', description: 'Sign-in activity is not available yet.' }),
     ]),
     sections: Object.freeze([
-      Object.freeze({ key: 'systemActivity', title: 'System Activity', emptyMessage: 'Security activity is not available yet.' }),
-      Object.freeze({ key: 'recentAuditLog', title: 'Recent Audit Log', emptyMessage: 'Audit log activity is not available yet.' }),
+      Object.freeze({ key: 'systemActivity', title: 'System Activity', source: 'AUDIT_EVENTS', emptyMessage: 'Security activity is not available yet.' }),
+      Object.freeze({ key: 'recentAuditLog', title: 'Recent Audit Log', source: 'AUDIT_EVENTS', emptyMessage: 'Audit log activity is not available yet.' }),
     ]),
   }),
 });

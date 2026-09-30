@@ -9,6 +9,7 @@ import {
   SettingsIcon,
   XIcon,
   LockIcon,
+  ClipboardCheckIcon,
 } from './icons';
 import RolePreviewControl from '../auth/RolePreviewControl.jsx';
 import { NAVIGATION_GROUPS, getNavigationState } from '../auth/navigationConfig.js';
@@ -22,6 +23,7 @@ const NAVIGATION_ICONS = Object.freeze({
   'audit-rules': CheckShieldIcon,
   reports: ReportIcon,
   settings: SettingsIcon,
+  'audit-log': ClipboardCheckIcon,
 });
 
 export default function Sidebar({ isOpen, onClose }) {

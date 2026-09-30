@@ -9,6 +9,7 @@ export const EMPTY_PROFILE_FIELDS = Object.freeze({
   reviewsCompleted: null,
   alertsAssigned: null,
   lastReviewAt: null,
+  failedSignInAttempts: null,
 });
 
 export function createProfileModel(user = null, previewRole = null) {
