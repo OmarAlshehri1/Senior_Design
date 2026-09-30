@@ -6,7 +6,7 @@ const WORKSPACE_DEFINITIONS = Object.freeze({
     roleLabel: ROLE_DEFINITIONS[ROLE_KEYS.AUDITOR].displayName,
     contextLabel: 'Auditor Workspace',
     metricDefinitions: Object.freeze([
-      Object.freeze({ key: 'assignedAlerts', label: 'My Assigned Alerts', description: 'Assignment data is not available yet.' }),
+      Object.freeze({ key: 'assignedAlerts', label: 'My Assigned Alerts', description: 'Assignment data is not available yet.', to: '/alerts' }),
       Object.freeze({ key: 'transactionsNeedingReview', label: 'Transactions Needing Review', description: 'Current transactions marked for review.' }),
       Object.freeze({ key: 'reviewsToday', label: 'My Reviews Today', description: 'Review attribution is not available yet.' }),
     ]),
@@ -20,13 +20,13 @@ const WORKSPACE_DEFINITIONS = Object.freeze({
     roleLabel: ROLE_DEFINITIONS[ROLE_KEYS.SUPERVISOR].displayName,
     contextLabel: 'Supervisor Workspace',
     metricDefinitions: Object.freeze([
-      Object.freeze({ key: 'activeTeamAlerts', label: 'Active Team Alerts', description: 'Team relationships are not available yet.' }),
-      Object.freeze({ key: 'unassignedAlerts', label: 'Unassigned Alerts', description: 'Assignment data is not available yet.' }),
+      Object.freeze({ key: 'activeTeamAlerts', label: 'Active Team Alerts', description: 'Team relationships are not available yet.', to: '/team-activity' }),
+      Object.freeze({ key: 'unassignedAlerts', label: 'Unassigned Alerts', description: 'Assignment data is not available yet.', to: '/team-activity' }),
       Object.freeze({ key: 'teamReviewsToday', label: 'Team Reviews Today', description: 'Team activity is not available yet.' }),
     ]),
     sections: Object.freeze([
-      Object.freeze({ key: 'teamWorkload', title: 'Team Workload', emptyMessage: 'Team workload is not available yet.' }),
-      Object.freeze({ key: 'recentTeamActivity', title: 'Recent Team Activity', source: 'AUDIT_EVENTS', emptyMessage: 'Team activity is not available yet.' }),
+      Object.freeze({ key: 'teamWorkload', title: 'Team Workload', to: '/team-activity', emptyMessage: 'Team workload is not available yet.' }),
+      Object.freeze({ key: 'recentTeamActivity', title: 'Recent Team Activity', to: '/team-activity', source: 'AUDIT_EVENTS', emptyMessage: 'Team activity is not available yet.' }),
     ]),
   }),
   [ROLE_KEYS.ADMIN]: Object.freeze({
@@ -34,13 +34,13 @@ const WORKSPACE_DEFINITIONS = Object.freeze({
     roleLabel: ROLE_DEFINITIONS[ROLE_KEYS.ADMIN].displayName,
     contextLabel: 'Administrator Workspace',
     metricDefinitions: Object.freeze([
-      Object.freeze({ key: 'activeUsers', label: 'Active Users', description: 'Identity metrics are not available yet.' }),
-      Object.freeze({ key: 'lockedAccounts', label: 'Locked Accounts', description: 'Account security data is not available yet.' }),
+      Object.freeze({ key: 'activeUsers', label: 'Active Users', description: 'Identity metrics are not available yet.', to: '/users' }),
+      Object.freeze({ key: 'lockedAccounts', label: 'Locked Accounts', description: 'Account security data is not available yet.', to: '/users' }),
       Object.freeze({ key: 'failedLoginsToday', label: 'Failed Logins Today', description: 'Sign-in activity is not available yet.' }),
     ]),
     sections: Object.freeze([
       Object.freeze({ key: 'systemActivity', title: 'System Activity', source: 'AUDIT_EVENTS', emptyMessage: 'Security activity is not available yet.' }),
-      Object.freeze({ key: 'recentAuditLog', title: 'Recent Audit Log', source: 'AUDIT_EVENTS', emptyMessage: 'Audit log activity is not available yet.' }),
+      Object.freeze({ key: 'recentAuditLog', title: 'Recent Audit Log', to: '/audit-log', source: 'AUDIT_EVENTS', emptyMessage: 'Audit log activity is not available yet.' }),
     ]),
   }),
 });
@@ -66,8 +66,8 @@ export function deriveWorkspaceData(role, { transactions = [] } = {}) {
     ? { transactionsNeedingReview: transactions.filter((item) => item?.ruleStatus === 'Review').length }
     : {};
 
-  const metrics = definition.metricDefinitions.map(({ key, label, description }) => (
-    Object.freeze({ key, label, value: values[key] ?? null, description })
+  const metrics = definition.metricDefinitions.map(({ key, label, description, to }) => (
+    Object.freeze({ key, label, value: values[key] ?? null, description, to: to ?? null })
   ));
   const sections = definition.sections.map((section) => Object.freeze({
     ...section,

@@ -1,0 +1,44 @@
+import { useState } from 'react';
+import { ROLE_DEFINITIONS, ROLE_KEYS } from '../auth/roles.js';
+import ConfirmationDialog from './ConfirmationDialog.jsx';
+
+const show = (value) => value ?? '—';
+
+export default function AccessRequestDetails({ request, onClose }) {
+  const [rejectOpen, setRejectOpen] = useState(false);
+  if (!request) return null;
+
+  return (
+    <aside className="request-detail-panel" aria-labelledby="request-detail-heading">
+      <header>
+        <div>
+          <p className="management-eyebrow">Access Request</p>
+          <h2 id="request-detail-heading">{show(request.fullName)}</h2>
+        </div>
+        <button type="button" className="btn btn-secondary" onClick={onClose}>Close</button>
+      </header>
+      <dl className="management-definition-grid">
+        <div><dt>Work Email</dt><dd>{show(request.email)}</dd></div>
+        <div><dt>Department</dt><dd>{show(request.department)}</dd></div>
+        <div><dt>Employee ID</dt><dd>{show(request.employeeId)}</dd></div>
+        <div><dt>Requested At</dt><dd>{show(request.requestedAt)}</dd></div>
+        <div><dt>Status</dt><dd>{show(request.status)}</dd></div>
+        <div className="definition-wide"><dt>Reason</dt><dd>{show(request.reason)}</dd></div>
+      </dl>
+      <div className="request-admin-grid">
+        <section aria-labelledby="approval-heading">
+          <h3 id="approval-heading">Approval</h3>
+          <label><span>Assigned Role</span><select disabled defaultValue=""><option value="">Select a role</option>{Object.values(ROLE_KEYS).map((role) => <option value={role} key={role}>{ROLE_DEFINITIONS[role].displayName}</option>)}</select></label>
+          <label><span>Optional Team</span><select disabled><option>No teams available</option></select></label>
+          <button type="button" className="btn btn-primary" disabled>Approve &amp; Activate</button>
+        </section>
+        <section aria-labelledby="rejection-heading">
+          <h3 id="rejection-heading">Rejection</h3>
+          <label><span>Reason (optional)</span><textarea disabled rows="3" placeholder="Add a reason for the decision" /></label>
+          <button type="button" className="btn btn-secondary" onClick={() => setRejectOpen(true)}>Reject Request</button>
+        </section>
+      </div>
+      <ConfirmationDialog open={rejectOpen} title="Reject Request?" description="The request will remain available as a historical access decision." confirmLabel="Confirm Rejection" onConfirm={() => {}} onClose={() => setRejectOpen(false)} />
+    </aside>
+  );
+}

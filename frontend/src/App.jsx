@@ -22,6 +22,9 @@ import { APPLICATION_ROUTES, getRoutePermission } from './auth/routeAccess';
 import Forbidden from './pages/Forbidden';
 import Profile from './pages/Profile';
 import AuditLog from './pages/AuditLog';
+import UserManagement from './pages/UserManagement';
+import UserDetail from './pages/UserDetail';
+import TeamActivity from './pages/TeamActivity';
 
 function protectedPage(path, page) {
   return (
@@ -44,6 +47,9 @@ function ApplicationRoutes() {
       <Route path={APPLICATION_ROUTES.SETTINGS} element={protectedPage(APPLICATION_ROUTES.SETTINGS, <Settings />)} />
       <Route path={APPLICATION_ROUTES.PROFILE} element={protectedPage(APPLICATION_ROUTES.PROFILE, <Profile />)} />
       <Route path={APPLICATION_ROUTES.AUDIT_LOG} element={protectedPage(APPLICATION_ROUTES.AUDIT_LOG, <AuditLog />)} />
+      <Route path={APPLICATION_ROUTES.TEAM_ACTIVITY} element={protectedPage(APPLICATION_ROUTES.TEAM_ACTIVITY, <TeamActivity />)} />
+      <Route path={APPLICATION_ROUTES.USERS} element={protectedPage(APPLICATION_ROUTES.USERS, <UserManagement />)} />
+      <Route path={APPLICATION_ROUTES.USER_DETAIL} element={protectedPage(APPLICATION_ROUTES.USER_DETAIL, <UserDetail />)} />
       <Route path={APPLICATION_ROUTES.FORBIDDEN} element={<Forbidden />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

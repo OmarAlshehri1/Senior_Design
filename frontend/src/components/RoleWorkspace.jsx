@@ -1,4 +1,5 @@
 import { deriveWorkspaceData } from '../auth/workspace.js';
+import { Link } from 'react-router-dom';
 
 function MetricValue({ value }) {
   if (value === null || value === undefined) return <span aria-label="Unavailable">—</span>;
@@ -35,6 +36,7 @@ export default function RoleWorkspace({ role, transactions }) {
             <p>{metric.label}</p>
             <strong><MetricValue value={metric.value} /></strong>
             <span>{metric.description}</span>
+            {metric.to && <Link to={metric.to}>Open</Link>}
           </article>
         ))}
       </div>
@@ -43,6 +45,7 @@ export default function RoleWorkspace({ role, transactions }) {
         {workspace.sections.map((section) => (
           <section className="workspace-activity" aria-labelledby={`workspace-${section.key}`} key={section.key}>
             <h3 id={`workspace-${section.key}`}>{section.title}</h3>
+            {section.to && <Link className="workspace-section-link" to={section.to}>View</Link>}
             <div className="workspace-unavailable">
               <span aria-hidden="true">—</span>
               <p>{section.emptyMessage}</p>

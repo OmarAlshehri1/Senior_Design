@@ -3030,13 +3030,14 @@ table.data-table {
 
 .alerts-table .alert-column-id { width: 7%; }
 .alerts-table .alert-column-transaction { width: 11%; }
-.alerts-table .alert-column-vendor { width: 15%; }
-.alerts-table .alert-column-type { width: 16%; }
+.alerts-table .alert-column-vendor { width: 13%; }
+.alerts-table .alert-column-type { width: 14%; }
 .alerts-table .alert-column-time { width: 6%; }
 .alerts-table .alert-column-score { width: 9%; }
-.alerts-table .alert-column-risk { width: 10%; }
-.alerts-table .alert-column-status { width: 11%; }
-.alerts-table .alert-column-actions { width: 15%; }
+.alerts-table .alert-column-risk { width: 9%; }
+.alerts-table .alert-column-status { width: 9%; }
+.alerts-table .alert-column-assignment { width: 9%; }
+.alerts-table .alert-column-actions { width: 13%; }
 
 .alerts-table th,
 .alerts-table td {
@@ -3244,7 +3245,7 @@ table.data-table {
   .alerts-table tbody td:nth-child(2),
   .alerts-table tbody td:nth-child(3),
   .alerts-table tbody td:nth-child(4),
-  .alerts-table tbody td:nth-child(9) {
+  .alerts-table tbody td:nth-child(10) {
     grid-column: 1 / -1;
   }
 
@@ -3362,6 +3363,7 @@ table.data-table {
   }
 
   .alert-review-button,
+  .alert-assign-button,
   .alert-view-transaction {
     justify-content: center;
     width: 100%;

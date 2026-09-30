@@ -10,6 +10,7 @@ import {
   XIcon,
   LockIcon,
   ClipboardCheckIcon,
+  UsersIcon,
 } from './icons';
 import RolePreviewControl from '../auth/RolePreviewControl.jsx';
 import { NAVIGATION_GROUPS, getNavigationState } from '../auth/navigationConfig.js';
@@ -24,6 +25,8 @@ const NAVIGATION_ICONS = Object.freeze({
   reports: ReportIcon,
   settings: SettingsIcon,
   'audit-log': ClipboardCheckIcon,
+  'team-activity': UsersIcon,
+  'user-management': ShieldIcon,
 });
 
 export default function Sidebar({ isOpen, onClose }) {

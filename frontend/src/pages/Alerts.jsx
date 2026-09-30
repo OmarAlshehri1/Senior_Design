@@ -8,6 +8,9 @@ import {
   deriveAlertSummary,
   filterAndSortAlerts,
 } from '../utils/alerts';
+import AssignmentDialog from '../components/AssignmentDialog.jsx';
+import useAuthorization from '../auth/useAuthorization.js';
+import { hasPermission, PERMISSIONS } from '../auth/roles.js';
 
 function EmptyAlertsState({
   alertCount,
@@ -43,6 +46,7 @@ function EmptyAlertsState({
 }
 
 export default function Alerts() {
+  const { effectiveRole } = useAuthorization();
   const {
     alerts,
     transactions,
@@ -54,6 +58,8 @@ export default function Alerts() {
   const [riskFilter, setRiskFilter] = useState('All');
   const [typeFilter, setTypeFilter] = useState('All');
   const [sortBy, setSortBy] = useState(ALERT_SORT_OPTIONS.NEWEST);
+  const [assignmentAlert, setAssignmentAlert] = useState(null);
+  const canAssignAlerts = hasPermission(effectiveRole, PERMISSIONS.ASSIGN_ALERTS);
 
   const summary = useMemo(() => deriveAlertSummary(alerts), [alerts]);
   const filteredAlerts = useMemo(
@@ -193,7 +199,7 @@ export default function Alerts() {
           <h2 id="alerts-results-heading">{resultLabel}</h2>
         </div>
         {filteredAlerts.length > 0 ? (
-          <AlertsTable alerts={filteredAlerts} onMarkReviewed={handleMarkReviewed} />
+          <AlertsTable alerts={filteredAlerts} onMarkReviewed={handleMarkReviewed} canAssign={canAssignAlerts} onAssign={setAssignmentAlert} />
         ) : (
           <EmptyAlertsState
             alertCount={alerts.length}
@@ -204,6 +210,7 @@ export default function Alerts() {
           />
         )}
       </section>
+      <AssignmentDialog alert={assignmentAlert} onClose={() => setAssignmentAlert(null)} />
     </>
   );
 }

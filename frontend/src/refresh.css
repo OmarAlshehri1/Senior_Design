@@ -25,6 +25,626 @@
   --shadow-card: 0 1px 2px rgba(23, 32, 43, 0.045);
 }
 
+/* Phase 8.8 management, team, and assignment foundations. */
+.management-page {
+  max-width: 1500px;
+  margin: 0 auto;
+}
+
+.management-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 18px;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.management-summary article {
+  display: grid;
+  gap: 8px;
+  min-height: 92px;
+  align-content: center;
+  padding: 17px 20px;
+  border-right: 1px solid var(--border);
+}
+
+.management-summary article:last-child {
+  border-right: 0;
+}
+
+.management-summary span {
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.management-summary strong {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.management-surface,
+.management-detail-card,
+.user-detail-unavailable,
+.request-detail-panel {
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.management-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 10px 0;
+  background: var(--surface-subtle);
+  border-bottom: 1px solid var(--border);
+}
+
+.management-tabs button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.management-tabs button[aria-selected='true'] {
+  border-bottom-color: var(--blue-dark);
+  color: var(--blue-dark);
+}
+
+.management-tabs button span {
+  min-width: 19px;
+  padding: 2px 6px;
+  background: #e9edf2;
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-size: 9px;
+}
+
+.management-tab-panel {
+  min-height: 380px;
+}
+
+.management-filters {
+  display: grid;
+  grid-template-columns: minmax(260px, 2fr) repeat(3, minmax(150px, 1fr));
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.management-filters label,
+.dialog-field,
+.request-admin-grid label {
+  display: grid;
+  gap: 5px;
+}
+
+.management-filters label > span,
+.dialog-field > span,
+.request-admin-grid label > span {
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.management-filters input,
+.management-filters select,
+.dialog-field input,
+.dialog-field select,
+.dialog-field textarea,
+.request-admin-grid select,
+.request-admin-grid textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  padding: 8px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 11.5px;
+}
+
+.management-table-wrap {
+  position: relative;
+}
+
+.management-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.management-table th {
+  padding: 11px 14px;
+  background: #f7f8fa;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 9px;
+  letter-spacing: 0.055em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.management-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11.5px;
+}
+
+.management-row-action {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--blue-dark);
+  font: inherit;
+  font-weight: 700;
+}
+
+.management-empty-state {
+  display: grid;
+  min-height: 240px;
+  place-items: center;
+  align-content: center;
+  padding: 30px;
+  text-align: center;
+}
+
+.management-empty-state > span {
+  color: var(--text-muted);
+  font-size: 22px;
+}
+
+.management-empty-state h3 {
+  margin: 8px 0 4px;
+  font-size: 14px;
+}
+
+.management-empty-state p,
+.card-description,
+.user-admin-actions > p,
+.integration-note {
+  max-width: 500px;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 14px;
+  color: var(--blue-dark);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.user-detail-unavailable {
+  margin-bottom: 16px;
+}
+
+.user-detail-unavailable .management-empty-state {
+  min-height: 150px;
+}
+
+.user-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.management-detail-card {
+  padding: 18px;
+}
+
+.management-detail-card > h2,
+.request-detail-panel h2 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.management-definition-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin: 14px 0 0;
+  background: var(--surface-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.management-definition-grid > div {
+  padding: 13px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.management-definition-grid dt,
+.assignment-current dt {
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.management-definition-grid dd,
+.assignment-current dd {
+  margin: 5px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.detail-empty-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 11.5px;
+}
+
+.user-admin-actions {
+  grid-column: 1 / -1;
+}
+
+.user-admin-actions > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.management-section-heading {
+  margin-bottom: 12px;
+}
+
+.management-section-heading h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.management-section-heading p {
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+  font-size: 11.5px;
+}
+
+.team-activity-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 16px;
+}
+
+.team-activity-grid .management-empty-state {
+  min-height: 250px;
+}
+
+.team-activity-grid .card-description {
+  margin-top: 5px;
+}
+
+.team-activity-grid .management-table-wrap {
+  margin: 16px -18px -18px;
+  border-top: 1px solid var(--border);
+}
+
+.team-activity-grid .management-table-wrap .management-empty-state {
+  min-height: 190px;
+}
+
+.team-activity-feed {
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.team-activity-feed li {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(130px, 1fr) minmax(120px, 1fr) auto;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  font-size: 11.5px;
+}
+
+.team-activity-feed li > div {
+  display: grid;
+  gap: 2px;
+}
+
+.team-activity-feed li p {
+  margin: 0;
+}
+
+.team-activity-feed li span,
+.team-activity-feed li time {
+  color: var(--text-secondary);
+}
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(12, 22, 34, 0.56);
+}
+
+.management-dialog {
+  width: min(100%, 520px);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  padding: 22px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 60px rgba(12, 22, 34, 0.24);
+}
+
+.management-dialog > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.management-dialog h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.management-dialog > p:not(.management-eyebrow) {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 18px;
+}
+
+.management-eyebrow {
+  margin: 0 0 5px;
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.assignment-current {
+  margin: 18px 0;
+  padding: 13px;
+  background: var(--surface-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.assignment-dialog .dialog-field + .dialog-field {
+  margin-top: 12px;
+}
+
+.assignment-dialog .integration-note {
+  margin-top: 10px;
+}
+
+.assignment-history-section {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.assignment-history-section h3 {
+  margin: 0 0 9px;
+  font-size: 12px;
+}
+
+.assignment-history-empty {
+  margin: 0;
+  padding: 12px;
+  background: var(--surface-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 11.5px;
+}
+
+.assignment-history-list {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.assignment-history-list li {
+  display: grid;
+  gap: 3px;
+  padding: 8px 0;
+}
+
+.request-detail-panel {
+  margin-top: 16px;
+  padding: 18px;
+}
+
+.request-detail-panel > header {
+  display: flex;
+  justify-content: space-between;
+}
+
+.request-admin-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.request-admin-grid section {
+  display: grid;
+  gap: 11px;
+  padding: 16px;
+  background: var(--surface-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.request-admin-grid h3 {
+  margin: 0;
+  font-size: 13px;
+}
+
+.workspace-metric > a,
+.workspace-section-link {
+  color: var(--blue-dark);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.workspace-activity {
+  position: relative;
+}
+
+.workspace-section-link {
+  position: absolute;
+  top: 17px;
+  right: 18px;
+}
+
+.alert-assign-button {
+  min-height: 30px;
+  padding: 5px 4px;
+  border: 0;
+  color: var(--blue-dark);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+.assignment-unavailable {
+  color: var(--text-muted);
+}
+
+@media (max-width: 900px) {
+  .management-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .management-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .management-table tbody,
+  .management-table tr,
+  .management-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .management-table tbody tr {
+    margin: 12px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+
+  .management-table td {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 0;
+    border: 0;
+  }
+
+  .management-table td::before {
+    color: var(--text-muted);
+    font-size: 9px;
+    content: attr(data-label);
+    text-transform: uppercase;
+  }
+
+  .team-activity-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .management-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .management-summary article:nth-child(2) {
+    border-right: 0;
+  }
+
+  .management-summary article:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .management-tabs {
+    overflow-x: auto;
+  }
+
+  .management-tabs button {
+    flex: 0 0 auto;
+    padding-inline: 10px;
+  }
+
+  .management-filters,
+  .user-detail-grid,
+  .management-definition-grid,
+  .request-admin-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .user-admin-actions {
+    grid-column: auto;
+  }
+
+  .user-admin-actions > div,
+  .dialog-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .user-admin-actions .btn,
+  .dialog-actions .btn {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .management-dialog {
+    max-height: calc(100vh - 24px);
+    padding: 18px;
+  }
+
+  .dialog-backdrop {
+    padding: 12px;
+  }
+
+  .team-activity-feed li {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+}
+
 body {
   background: var(--bg);
   font-size: 14px;

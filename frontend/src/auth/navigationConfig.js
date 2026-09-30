@@ -20,6 +20,8 @@ export const NAVIGATION_GROUPS = Object.freeze([
   Object.freeze({
     label: 'Management',
     links: Object.freeze([
+      Object.freeze({ to: APPLICATION_ROUTES.TEAM_ACTIVITY, label: 'Team Activity', icon: 'team-activity', permission: getRoutePermission(APPLICATION_ROUTES.TEAM_ACTIVITY) }),
+      Object.freeze({ to: APPLICATION_ROUTES.USERS, label: 'User Management', icon: 'user-management', permission: getRoutePermission(APPLICATION_ROUTES.USERS) }),
       Object.freeze({ to: APPLICATION_ROUTES.AUDIT_LOG, label: 'Audit Log', icon: 'audit-log', permission: getRoutePermission(APPLICATION_ROUTES.AUDIT_LOG) }),
     ]),
   }),

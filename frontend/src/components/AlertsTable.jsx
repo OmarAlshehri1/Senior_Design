@@ -7,7 +7,7 @@ import {
 } from './statusUtils';
 import { getRiskLevel } from '../utils/risk';
 
-export default function AlertsTable({ alerts, onMarkReviewed }) {
+export default function AlertsTable({ alerts, onMarkReviewed, canAssign = false, onAssign }) {
   const navigate = useNavigate();
 
   const openTransaction = (transactionId) => navigate(`/transactions/${transactionId}`);
@@ -32,6 +32,7 @@ export default function AlertsTable({ alerts, onMarkReviewed }) {
           <col className="alert-column-score" />
           <col className="alert-column-risk" />
           <col className="alert-column-status" />
+          <col className="alert-column-assignment" />
           <col className="alert-column-actions" />
         </colgroup>
         <thead>
@@ -44,6 +45,7 @@ export default function AlertsTable({ alerts, onMarkReviewed }) {
             <th>Risk Score</th>
             <th>Risk Level</th>
             <th>Review Status</th>
+            <th>Assigned To</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -93,8 +95,23 @@ export default function AlertsTable({ alerts, onMarkReviewed }) {
                     {isReviewed ? 'Reviewed' : 'Active'}
                   </span>
                 </td>
+                <td data-label="Assigned To"><span className="assignment-unavailable" aria-label="No assignment available">—</span></td>
                 <td className="alert-actions-cell" data-label="Actions">
                   <div className="alert-actions">
+                    {canAssign && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary alert-assign-button"
+                        aria-label={`Assign alert ${displayValue(alert?.id)}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onAssign?.(alert);
+                        }}
+                        onKeyDown={(event) => event.stopPropagation()}
+                      >
+                        Assign
+                      </button>
+                    )}
                     {!isReviewed && canOpenTransaction && (
                       <button
                         type="button"

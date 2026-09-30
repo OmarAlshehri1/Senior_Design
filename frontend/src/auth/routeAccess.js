@@ -12,6 +12,9 @@ export const APPLICATION_ROUTES = Object.freeze({
   SETTINGS: '/settings',
   PROFILE: '/profile',
   AUDIT_LOG: '/audit-log',
+  TEAM_ACTIVITY: '/team-activity',
+  USERS: '/users',
+  USER_DETAIL: '/users/:userId',
   FORBIDDEN: '/403',
 });
 
@@ -26,6 +29,9 @@ export const APPLICATION_ROUTE_ACCESS = Object.freeze([
   Object.freeze({ key: 'settings', path: APPLICATION_ROUTES.SETTINGS, permission: PERMISSIONS.VIEW_SETTINGS }),
   Object.freeze({ key: 'profile', path: APPLICATION_ROUTES.PROFILE, permission: PERMISSIONS.VIEW_OWN_PROFILE }),
   Object.freeze({ key: 'audit-log', path: APPLICATION_ROUTES.AUDIT_LOG, permission: PERMISSIONS.VIEW_AUDIT_LOG }),
+  Object.freeze({ key: 'team-activity', path: APPLICATION_ROUTES.TEAM_ACTIVITY, permission: PERMISSIONS.VIEW_TEAM_ACTIVITY }),
+  Object.freeze({ key: 'users', path: APPLICATION_ROUTES.USERS, permission: PERMISSIONS.MANAGE_USERS }),
+  Object.freeze({ key: 'user-detail', path: APPLICATION_ROUTES.USER_DETAIL, permission: PERMISSIONS.MANAGE_USERS }),
 ]);
 
 export const ROUTE_ACCESS_RESULTS = Object.freeze({
