@@ -238,12 +238,13 @@ Response `201 Created`:
   },
   "data_quality_status": "COMPLETE",
   "missing_fields": []
+  "persisted_rows": 1
 }
 ```
 
 A transaction with missing optional fields returns `data_quality_status` as `PARTIAL` and lists the unavailable fields in `missing_fields`. Unknown fields or invalid values return `422 Unprocessable Entity`.
 
-This initial implementation validates and returns the transaction in memory. Database persistence, rule evaluation, anomaly scoring, and alert generation will be added in later stages.
+The transaction is validated, assessed for missing fields, and persisted to Supabase PostgreSQL. Rule evaluation, anomaly scoring, and alert generation will be added in later stages.
 
 ### `POST /api/v1/transactions/import`
 
@@ -275,6 +276,7 @@ Response `200 OK` summary example:
   "complete_rows": 0,
   "partial_rows": 10000,
   "rejected_rows": 0,
+  "persisted_rows": 10000,
   "processing_time_seconds": 1.7353,
   "returned_rows": 10,
   "has_more": true,
@@ -296,8 +298,10 @@ Error responses:
 - `400 Bad Request`: unsupported file extension.
 - `413 Content Too Large`: file exceeds 20 MB.
 - `422 Unprocessable Content`: invalid workbook or unsupported column structure.
+- `502 Bad Gateway`: Supabase rejected or could not complete the storage request.
+- `503 Service Unavailable`: Supabase environment variables are not configured.
 
-The importer currently validates and returns transactions in memory. Database persistence, pagination, rule evaluation, and anomaly scoring will be added later.
+The importer validates all accepted rows and persists them to Supabase PostgreSQL using server-side credentials. Records are upserted by transaction ID in batches of 500. Database-backed pagination, rule evaluation, and anomaly scoring will be added later.
 
 ### `GET /api/v1/alerts`
 

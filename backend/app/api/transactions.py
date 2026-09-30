@@ -1,6 +1,11 @@
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from starlette.concurrency import run_in_threadpool
 
+from app.repositories.supabase_transactions import (
+    SupabaseConfigurationError,
+    SupabasePersistenceError,
+    persist_transactions,
+)
 from app.schemas.transaction import TransactionCreate
 from app.services.excel_import import (
     ExcelImportError,
@@ -52,14 +57,34 @@ async def import_transactions(
 
     transactions = result.get("transactions")
 
-    if not isinstance(transactions, list):
+    if not isinstance(transactions, list) or not all(
+        isinstance(transaction, dict)
+        for transaction in transactions
+    ):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Importer returned an invalid transaction list.",
         )
 
+    try:
+        persisted_rows = await run_in_threadpool(
+            persist_transactions,
+            transactions,
+        )
+    except SupabaseConfigurationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Transaction storage is not configured.",
+        ) from exc
+    except SupabasePersistenceError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Transactions could not be stored.",
+        ) from exc
+
     preview_limit = 10
 
+    result["persisted_rows"] = persisted_rows
     result["returned_rows"] = min(
         len(transactions),
         preview_limit,
@@ -70,6 +95,7 @@ async def import_transactions(
     return result
 
 
+@router.post("", status_code=status.HTTP_201_CREATED)
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_transaction(
     transaction: TransactionCreate,
@@ -88,8 +114,32 @@ async def create_transaction(
         else "PARTIAL"
     )
 
+    storage_transaction = {
+        **transaction_data,
+        "data_quality_status": data_quality_status,
+        "missing_fields": missing_fields,
+        "metadata": {},
+    }
+
+    try:
+        persisted_rows = await run_in_threadpool(
+            persist_transactions,
+            [storage_transaction],
+        )
+    except SupabaseConfigurationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Transaction storage is not configured.",
+        ) from exc
+    except SupabasePersistenceError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Transaction could not be stored.",
+        ) from exc
+
     return {
         "transaction": transaction_data,
         "data_quality_status": data_quality_status,
         "missing_fields": missing_fields,
+        "persisted_rows": persisted_rows,
     }

@@ -1,11 +1,11 @@
 from io import BytesIO
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 from openpyxl import Workbook
 
 from app.main import app
 
-from pathlib import Path
 
 client = TestClient(app)
 
@@ -114,6 +114,7 @@ def test_import_excel_transactions() -> None:
     assert body["complete_rows"] == 1
     assert body["partial_rows"] == 1
     assert body["rejected_rows"] == 1
+    assert body["persisted_rows"] == 2
 
     assert body["transactions"][0]["data_quality_status"] == "COMPLETE"
     assert body["transactions"][1]["data_quality_status"] == "PARTIAL"
@@ -133,6 +134,7 @@ def test_import_rejects_non_excel_file() -> None:
     )
 
     assert response.status_code == 400
+
 
 def test_imports_full_sme_retail_dataset() -> None:
     dataset_path = (
@@ -164,6 +166,7 @@ def test_imports_full_sme_retail_dataset() -> None:
     assert result["total_rows"] == 10_000
     assert result["accepted_rows"] == 10_000
     assert result["rejected_rows"] == 0
+    assert result["persisted_rows"] == 10_000
     assert result["returned_rows"] == 10
     assert result["has_more"] is True
     assert len(result["transactions"]) == 10
