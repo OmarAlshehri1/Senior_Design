@@ -1,27 +1,22 @@
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import AssignmentHistory from './AssignmentHistory.jsx';
 import { getSensitiveActionConfirmation, SENSITIVE_ACTIONS } from '../security/sensitiveActions.js';
+import useOverlayFocus from '../accessibility/useOverlayFocus.js';
 
 export default function AssignmentDialog({ alert, currentAssignment = null, eligibleUsers = [], history = [], onClose }) {
   const closeRef = useRef(null);
+  const dialogRef = useRef(null);
+  const backdropRef = useRef(null);
 
-  useEffect(() => {
-    if (!alert) return undefined;
-    closeRef.current?.focus();
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [alert, onClose]);
+  useOverlayFocus({ active: Boolean(alert), containerRef: dialogRef, initialFocusRef: closeRef, boundaryRef: backdropRef, onEscape: onClose });
 
   if (!alert) return null;
   const isReassignment = Boolean(currentAssignment);
   const confirmation = getSensitiveActionConfirmation(isReassignment ? SENSITIVE_ACTIONS.REASSIGN_ALERT : SENSITIVE_ACTIONS.ASSIGN_ALERT);
 
   return (
-    <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section className="management-dialog assignment-dialog" role="dialog" aria-modal="true" aria-labelledby="assignment-dialog-title">
+    <div ref={backdropRef} className="dialog-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+      <section ref={dialogRef} tabIndex="-1" className="management-dialog assignment-dialog" role="dialog" aria-modal="true" aria-labelledby="assignment-dialog-title">
         <header>
           <div>
             <p className="management-eyebrow">Alert {alert.id}</p>

@@ -29,18 +29,18 @@ const NAVIGATION_ICONS = Object.freeze({
   'user-management': ShieldIcon,
 });
 
-export default function Sidebar({ isOpen, onClose }) {
+export default function Sidebar({ containerRef, closeButtonRef, isOpen, onClose }) {
   const { effectiveRole } = useAuthorization();
   const navigationGroups = effectiveRole ? getNavigationState(effectiveRole) : NAVIGATION_GROUPS;
 
   return (
-    <aside id="primary-navigation" className={`sidebar${isOpen ? ' mobile-open' : ''}`}>
+    <aside ref={containerRef} tabIndex="-1" id="primary-navigation" className={`sidebar${isOpen ? ' mobile-open' : ''}`}>
       <div className="sidebar-brand">
         <div className="sidebar-brand-label">
           <span className="sidebar-brand-icon"><ShieldIcon width={16} height={16} /></span>
           <span>Audit System</span>
         </div>
-        <button type="button" className="sidebar-close-btn" aria-label="Close navigation" onClick={onClose}>
+        <button ref={closeButtonRef} type="button" className="sidebar-close-btn" aria-label="Close navigation" onClick={onClose}>
           <XIcon width={18} height={18} />
         </button>
       </div>

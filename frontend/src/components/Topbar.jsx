@@ -23,7 +23,7 @@ function formatUpdatedTime(timestamp) {
  * `identity` is reserved for the future authenticated profile contract:
  * { name, role, accountStatus, lastLoginAt }. It remains null until real auth exists.
  */
-export default function Topbar({ mobileNavOpen, onMenuToggle, identity = null }) {
+export default function Topbar({ mobileNavOpen, onMenuToggle, menuButtonRef, identity = null }) {
   const { lastUpdated } = useApp();
   const { mode, effectiveRole } = useAuthorization();
   const previewRole = mode === AUTHORIZATION_MODES.ROLE_PREVIEW
@@ -39,6 +39,7 @@ export default function Topbar({ mobileNavOpen, onMenuToggle, identity = null })
     <header className="topbar">
       <div className="topbar-left">
         <button
+          ref={menuButtonRef}
           type="button"
           className="topbar-icon-btn mobile-menu-btn"
           aria-label="Toggle navigation menu"

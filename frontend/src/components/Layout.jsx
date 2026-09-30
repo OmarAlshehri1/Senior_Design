@@ -1,35 +1,42 @@
-import { useEffect, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import Notification from './Notification';
+import useOverlayFocus from '../accessibility/useOverlayFocus.js';
 
 export default function Layout({ children, identity = null }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const sidebarRef = useRef(null);
+  const sidebarCloseRef = useRef(null);
+  const menuButtonRef = useRef(null);
+  const mainAreaRef = useRef(null);
+  const inertRefs = useMemo(() => [mainAreaRef], []);
 
-  useEffect(() => {
-    if (!mobileNavOpen) return undefined;
-
-    const closeOnEscape = (event) => {
-      if (event.key === 'Escape') setMobileNavOpen(false);
-    };
-    window.addEventListener('keydown', closeOnEscape);
-    return () => window.removeEventListener('keydown', closeOnEscape);
-  }, [mobileNavOpen]);
+  useOverlayFocus({
+    active: mobileNavOpen,
+    containerRef: sidebarRef,
+    initialFocusRef: sidebarCloseRef,
+    restoreFocusRef: menuButtonRef,
+    onEscape: () => setMobileNavOpen(false),
+    inertRefs,
+  });
 
   return (
     <div className="app-shell">
-      <Sidebar isOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
+      <Sidebar containerRef={sidebarRef} closeButtonRef={sidebarCloseRef} isOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
       {mobileNavOpen && (
         <button
           type="button"
           className="mobile-nav-overlay"
           aria-label="Close navigation menu"
+          tabIndex="-1"
           onClick={() => setMobileNavOpen(false)}
         />
       )}
-      <div className="main-area">
+      <div ref={mainAreaRef} className="main-area">
         <Topbar
           identity={identity}
+          menuButtonRef={menuButtonRef}
           mobileNavOpen={mobileNavOpen}
           onMenuToggle={() => setMobileNavOpen((open) => !open)}
         />
