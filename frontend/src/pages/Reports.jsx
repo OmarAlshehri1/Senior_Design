@@ -4,6 +4,7 @@ import { DocIcon } from '../components/icons';
 import { displayValue, formatSAR, formatScore, riskStatusPillClass } from '../components/statusUtils';
 import useApp from '../context/useApp';
 import { deriveReportPreview } from '../utils/reports';
+import AuditAnalytics from '../components/AuditAnalytics.jsx';
 
 function formatPreviewDate(timestamp) {
   if (!timestamp) return 'No transaction date available';
@@ -186,6 +187,7 @@ export default function Reports() {
           </div>
         )}
       </section>
+      <AuditAnalytics />
     </>
   );
 }

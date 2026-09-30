@@ -25,6 +25,10 @@ import AuditLog from './pages/AuditLog';
 import UserManagement from './pages/UserManagement';
 import UserDetail from './pages/UserDetail';
 import TeamActivity from './pages/TeamActivity';
+import Cases from './pages/Cases';
+import CaseDetail from './pages/CaseDetail';
+import Vendors from './pages/Vendors';
+import VendorProfile from './pages/VendorProfile';
 
 function protectedPage(path, page) {
   return (
@@ -50,6 +54,10 @@ function ApplicationRoutes() {
       <Route path={APPLICATION_ROUTES.TEAM_ACTIVITY} element={protectedPage(APPLICATION_ROUTES.TEAM_ACTIVITY, <TeamActivity />)} />
       <Route path={APPLICATION_ROUTES.USERS} element={protectedPage(APPLICATION_ROUTES.USERS, <UserManagement />)} />
       <Route path={APPLICATION_ROUTES.USER_DETAIL} element={protectedPage(APPLICATION_ROUTES.USER_DETAIL, <UserDetail />)} />
+      <Route path={APPLICATION_ROUTES.CASES} element={protectedPage(APPLICATION_ROUTES.CASES, <Cases />)} />
+      <Route path={APPLICATION_ROUTES.CASE_DETAIL} element={protectedPage(APPLICATION_ROUTES.CASE_DETAIL, <CaseDetail />)} />
+      <Route path={APPLICATION_ROUTES.VENDORS} element={protectedPage(APPLICATION_ROUTES.VENDORS, <Vendors />)} />
+      <Route path={APPLICATION_ROUTES.VENDOR_DETAIL} element={protectedPage(APPLICATION_ROUTES.VENDOR_DETAIL, <VendorProfile />)} />
       <Route path={APPLICATION_ROUTES.FORBIDDEN} element={<Forbidden />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

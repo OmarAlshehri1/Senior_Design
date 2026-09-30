@@ -32,9 +32,9 @@ test('Team Activity denies Auditor while allowing Supervisor and Admin', () => {
 test('Sidebar Management navigation is ordered and derived from permissions', () => {
   const roles = [ROLE_KEYS.AUDITOR, ROLE_KEYS.SUPERVISOR, ROLE_KEYS.ADMIN];
   const states = roles.map((role) => getNavigationState(role).find((group) => group.label === 'Management'));
-  assert.deepEqual(states[0].links.map((link) => link.label), ['Team Activity', 'User Management', 'Audit Log']);
+  assert.deepEqual(states[0].links.map((link) => link.label), ['Cases', 'Team Activity', 'User Management', 'Audit Log']);
   assert.deepEqual(states.map((state) => state.links.map((link) => link.restricted)), [
-    [true, true, true], [false, true, false], [false, false, false],
+    [false, true, true, true], [false, false, true, false], [false, false, false, false],
   ]);
 });
 
@@ -136,4 +136,3 @@ test('Administrative models do not mutate inputs and assignment history is immut
   assert.ok(Object.isFrozen(history));
   assert.ok(Object.isFrozen(history[0]));
 });
-

@@ -12,6 +12,8 @@ import { getRiskLevel } from '../utils/risk';
 import { AUDIT_RULE_DEFINITIONS, getTransactionDataQuality } from '../utils/transactions';
 import ReviewHistory from '../components/ReviewHistory.jsx';
 import { createReviewAccountability } from '../audit/reviewRecords.js';
+import { REVIEW_RESOLUTIONS } from '../cases/caseWorkflow.js';
+import VendorMonitoringIndicator from '../components/VendorMonitoringIndicator.jsx';
 
 function DetailField({ label, value }) {
   return (
@@ -88,7 +90,7 @@ export default function TransactionDetail() {
             <h1>{displayValue(transaction.id)}</h1>
             <span className={riskBadgeClass(riskLevel)}>{riskLevel}</span>
           </div>
-          <p className="transaction-detail-vendor">{displayValue(transaction.vendor)}</p>
+          <p className="transaction-detail-vendor">{hasVendorId ? <Link to={`/vendors/${transaction.vendorId}`}>{displayValue(transaction.vendor)}</Link> : displayValue(transaction.vendor)} <VendorMonitoringIndicator status={transaction.vendorMonitoringStatus} /></p>
         </div>
         {timestamp && <time className="transaction-detail-time">{timestamp}</time>}
       </header>
@@ -266,6 +268,12 @@ export default function TransactionDetail() {
             <section className="review-history-section" aria-labelledby="review-history-heading">
               <h3 id="review-history-heading">Review History</h3>
               <ReviewHistory records={accountability.history} />
+            </section>
+            <section className="review-resolution-section" aria-labelledby="review-resolution-heading">
+              <div><h3 id="review-resolution-heading">Review Resolution</h3><p>Record an authoritative outcome separately from the current session review status.</p></div>
+              <label><span>Outcome</span><select disabled defaultValue=""><option value="">Select an outcome</option>{Object.values(REVIEW_RESOLUTIONS).map((value) => <option key={value} value={value}>{value.replaceAll('_', ' ')}</option>)}</select></label>
+              <label><span>Resolution Note</span><textarea rows="3" disabled placeholder="Add supporting context" /></label>
+              <button type="button" className="btn btn-secondary" disabled title="Review resolution is not available until the service is connected.">Save Resolution</button>
             </section>
           </div>
         </section>

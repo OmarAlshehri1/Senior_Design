@@ -8,6 +8,7 @@ export const NAVIGATION_GROUPS = Object.freeze([
       Object.freeze({ to: APPLICATION_ROUTES.DASHBOARD, label: 'Dashboard', icon: 'dashboard', end: true, permission: getRoutePermission(APPLICATION_ROUTES.DASHBOARD) }),
       Object.freeze({ to: APPLICATION_ROUTES.TRANSACTIONS, label: 'Transactions', icon: 'transactions', permission: getRoutePermission(APPLICATION_ROUTES.TRANSACTIONS) }),
       Object.freeze({ to: APPLICATION_ROUTES.ALERTS, label: 'Alerts', icon: 'alerts', permission: getRoutePermission(APPLICATION_ROUTES.ALERTS) }),
+      Object.freeze({ to: APPLICATION_ROUTES.VENDORS, label: 'Vendors', icon: 'vendors', permission: getRoutePermission(APPLICATION_ROUTES.VENDORS) }),
     ]),
   }),
   Object.freeze({
@@ -20,6 +21,7 @@ export const NAVIGATION_GROUPS = Object.freeze([
   Object.freeze({
     label: 'Management',
     links: Object.freeze([
+      Object.freeze({ to: APPLICATION_ROUTES.CASES, label: 'Cases', icon: 'cases', permission: getRoutePermission(APPLICATION_ROUTES.CASES) }),
       Object.freeze({ to: APPLICATION_ROUTES.TEAM_ACTIVITY, label: 'Team Activity', icon: 'team-activity', permission: getRoutePermission(APPLICATION_ROUTES.TEAM_ACTIVITY) }),
       Object.freeze({ to: APPLICATION_ROUTES.USERS, label: 'User Management', icon: 'user-management', permission: getRoutePermission(APPLICATION_ROUTES.USERS) }),
       Object.freeze({ to: APPLICATION_ROUTES.AUDIT_LOG, label: 'Audit Log', icon: 'audit-log', permission: getRoutePermission(APPLICATION_ROUTES.AUDIT_LOG) }),

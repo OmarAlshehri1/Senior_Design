@@ -1,0 +1,13 @@
+import { useRef } from 'react';
+import useOverlayFocus from '../accessibility/useOverlayFocus.js';
+import { REVIEW_RESOLUTIONS } from '../cases/caseWorkflow.js';
+
+export default function CaseClosureDialog({ open, mode = 'request', caseRecord, onClose }) {
+  const dialogRef = useRef(null);
+  const backdropRef = useRef(null);
+  const cancelRef = useRef(null);
+  useOverlayFocus({ active: open, containerRef: dialogRef, boundaryRef: backdropRef, initialFocusRef: cancelRef, onEscape: onClose });
+  if (!open) return null;
+  const approving = mode === 'approve';
+  return <div ref={backdropRef} className="dialog-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}><section ref={dialogRef} tabIndex="-1" className="management-dialog case-closure-dialog" role="dialog" aria-modal="true" aria-labelledby="case-closure-title" aria-describedby="case-closure-description"><span className="page-eyebrow">Controlled case workflow</span><h2 id="case-closure-title">{approving ? 'Review Closure Request' : 'Request Closure'}</h2><p id="case-closure-description">{approving ? 'Review the submitted resolution and evidence before making a closure decision.' : 'Prepare a resolution for independent Supervisor or Administrator approval.'}</p>{approving ? <dl className="workflow-confirmation-details"><div><dt>Requested By</dt><dd>{caseRecord?.closureRequestedBy ?? '—'}</dd></div><div><dt>Requested At</dt><dd>{caseRecord?.closureRequestedAt ?? '—'}</dd></div><div><dt>Resolution</dt><dd>{caseRecord?.resolution ?? '—'}</dd></div><div><dt>Evidence</dt><dd>{caseRecord?.evidenceSummary ?? '—'}</dd></div><div><dt>Notes</dt><dd>{caseRecord?.resolutionNote ?? '—'}</dd></div></dl> : <div className="closure-form"><label><span>Resolution</span><select defaultValue=""><option value="" disabled>Select resolution</option>{Object.values(REVIEW_RESOLUTIONS).map((value) => <option key={value} value={value}>{value.replaceAll('_', ' ')}</option>)}</select></label><label><span>Resolution Note</span><textarea rows="4" /></label><label><span>Evidence Summary</span><textarea rows="3" /></label></div>}<p className="integration-note">This decision cannot be submitted until the authoritative case service is connected.</p><div className="dialog-actions"><button ref={cancelRef} type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>{approving && <button type="button" className="btn btn-secondary" disabled>Return for Investigation</button>}<button type="button" className="btn btn-primary" disabled>{approving ? 'Approve Closure' : 'Submit Closure Request'}</button></div></section></div>;
+}

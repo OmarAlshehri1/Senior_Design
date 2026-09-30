@@ -62,6 +62,7 @@ export function adaptTransaction(payload) {
     timestamp: payload.timestamp ?? null,
     vendorId: payload.vendor_id ?? null,
     vendor: payload.vendor_name ?? null,
+    vendorMonitoringStatus: payload.vendor_monitoring_status ?? null,
     category: payload.category ?? null,
     amount: nullableNumber(payload.amount),
     currency: payload.currency ?? null,

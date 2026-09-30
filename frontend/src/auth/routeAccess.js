@@ -15,6 +15,10 @@ export const APPLICATION_ROUTES = Object.freeze({
   TEAM_ACTIVITY: '/team-activity',
   USERS: '/users',
   USER_DETAIL: '/users/:userId',
+  CASES: '/cases',
+  CASE_DETAIL: '/cases/:caseId',
+  VENDORS: '/vendors',
+  VENDOR_DETAIL: '/vendors/:vendorId',
   FORBIDDEN: '/403',
 });
 
@@ -32,6 +36,10 @@ export const APPLICATION_ROUTE_ACCESS = Object.freeze([
   Object.freeze({ key: 'team-activity', path: APPLICATION_ROUTES.TEAM_ACTIVITY, permission: PERMISSIONS.VIEW_TEAM_ACTIVITY }),
   Object.freeze({ key: 'users', path: APPLICATION_ROUTES.USERS, permission: PERMISSIONS.MANAGE_USERS }),
   Object.freeze({ key: 'user-detail', path: APPLICATION_ROUTES.USER_DETAIL, permission: PERMISSIONS.MANAGE_USERS }),
+  Object.freeze({ key: 'cases', path: APPLICATION_ROUTES.CASES, permission: PERMISSIONS.VIEW_CASES }),
+  Object.freeze({ key: 'case-detail', path: APPLICATION_ROUTES.CASE_DETAIL, permission: PERMISSIONS.VIEW_CASES }),
+  Object.freeze({ key: 'vendors', path: APPLICATION_ROUTES.VENDORS, permission: PERMISSIONS.VIEW_VENDORS }),
+  Object.freeze({ key: 'vendor-detail', path: APPLICATION_ROUTES.VENDOR_DETAIL, permission: PERMISSIONS.VIEW_VENDORS }),
 ]);
 
 export const ROUTE_ACCESS_RESULTS = Object.freeze({

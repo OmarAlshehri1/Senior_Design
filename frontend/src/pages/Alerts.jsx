@@ -60,6 +60,7 @@ export default function Alerts() {
   const [sortBy, setSortBy] = useState(ALERT_SORT_OPTIONS.NEWEST);
   const [assignmentAlert, setAssignmentAlert] = useState(null);
   const canAssignAlerts = hasPermission(effectiveRole, PERMISSIONS.ASSIGN_ALERTS);
+  const canEscalateToCase = hasPermission(effectiveRole, PERMISSIONS.CREATE_CASE);
 
   const summary = useMemo(() => deriveAlertSummary(alerts), [alerts]);
   const filteredAlerts = useMemo(
@@ -199,7 +200,7 @@ export default function Alerts() {
           <h2 id="alerts-results-heading">{resultLabel}</h2>
         </div>
         {filteredAlerts.length > 0 ? (
-          <AlertsTable alerts={filteredAlerts} onMarkReviewed={handleMarkReviewed} canAssign={canAssignAlerts} onAssign={setAssignmentAlert} />
+          <AlertsTable alerts={filteredAlerts} onMarkReviewed={handleMarkReviewed} canAssign={canAssignAlerts} onAssign={setAssignmentAlert} canEscalateToCase={canEscalateToCase} />
         ) : (
           <EmptyAlertsState
             alertCount={alerts.length}

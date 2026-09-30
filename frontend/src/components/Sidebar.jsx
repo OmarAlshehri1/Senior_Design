@@ -27,6 +27,8 @@ const NAVIGATION_ICONS = Object.freeze({
   'audit-log': ClipboardCheckIcon,
   'team-activity': UsersIcon,
   'user-management': ShieldIcon,
+  cases: ClipboardCheckIcon,
+  vendors: UsersIcon,
 });
 
 export default function Sidebar({ containerRef, closeButtonRef, isOpen, onClose }) {

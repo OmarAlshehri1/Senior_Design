@@ -7,7 +7,7 @@ import {
 } from './statusUtils';
 import { getRiskLevel } from '../utils/risk';
 
-export default function AlertsTable({ alerts, onMarkReviewed, canAssign = false, onAssign }) {
+export default function AlertsTable({ alerts, onMarkReviewed, canAssign = false, onAssign, canEscalateToCase = false }) {
   const navigate = useNavigate();
 
   const openTransaction = (transactionId) => navigate(`/transactions/${transactionId}`);
@@ -77,13 +77,15 @@ export default function AlertsTable({ alerts, onMarkReviewed, canAssign = false,
                   {displayValue(alert?.vendor)}
                 </td>
                 <td className="alert-type-table-cell" data-label="Alert Type">
-                  <span className="alert-table-icon" style={{ background: bg, color }} aria-hidden="true">
-                    <Icon width={15} height={15} />
-                  </span>
-                  <span className="alert-type-copy">
-                    <strong>{displayValue(alert?.title)}</strong>
-                    <span>{displayValue(alert?.reasonText)}</span>
-                  </span>
+                  <div className="alert-type-cell-content">
+                    <span className="alert-table-icon" style={{ background: bg, color }} aria-hidden="true">
+                      <Icon width={15} height={15} />
+                    </span>
+                    <span className="alert-type-copy">
+                      <strong>{displayValue(alert?.title)}</strong>
+                      <span>{displayValue(alert?.reasonText)}</span>
+                    </span>
+                  </div>
                 </td>
                 <td data-label="Time">{displayValue(alert?.time)}</td>
                 <td data-label="Risk Score">{formatScore(alert?.riskScore)}</td>
@@ -98,6 +100,11 @@ export default function AlertsTable({ alerts, onMarkReviewed, canAssign = false,
                 <td data-label="Assigned To"><span className="assignment-unavailable" aria-label="No assignment available">—</span></td>
                 <td className="alert-actions-cell" data-label="Actions">
                   <div className="alert-actions">
+                    {canEscalateToCase && (
+                      <button type="button" className="btn btn-secondary alert-case-button" disabled title="Case creation is not available until the case service is connected." onClick={(event) => event.stopPropagation()}>
+                        Escalate to Case
+                      </button>
+                    )}
                     {canAssign && (
                       <button
                         type="button"

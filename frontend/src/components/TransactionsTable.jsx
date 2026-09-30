@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   displayValue,
   formatSAR,
@@ -7,6 +7,7 @@ import {
   riskStatusPillClass,
 } from './statusUtils';
 import { getRiskLevel } from '../utils/risk';
+import VendorMonitoringIndicator from './VendorMonitoringIndicator.jsx';
 
 export default function TransactionsTable({ transactions, highlightId }) {
   const navigate = useNavigate();
@@ -59,7 +60,7 @@ export default function TransactionsTable({ transactions, highlightId }) {
                 )}
               >
                 <td data-label="Transaction ID">{transactionId}</td>
-                <td className="vendor-cell" data-label="Vendor" title={vendor}>{vendor}</td>
+                <td className="vendor-cell" data-label="Vendor" title={vendor}><span className="vendor-cell-content">{transaction?.vendorId ? <Link to={`/vendors/${transaction.vendorId}`} onClick={(event) => event.stopPropagation()}>{vendor}</Link> : vendor}<VendorMonitoringIndicator status={transaction?.vendorMonitoringStatus} /></span></td>
                 <td data-label="Category">{displayValue(transaction?.category)}</td>
                 <td data-label="Amount">{formatSAR(transaction?.amount)}</td>
                 <td data-label="Time">{displayValue(transaction?.time)}</td>

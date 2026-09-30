@@ -28,7 +28,7 @@ export default function DonutChart({ counts, percentages, total }) {
         {['low', 'medium', 'high'].map((level) => (
           <Link
             key={level}
-            className="legend-row"
+            className={`legend-row legend-${level}`}
             to={DASHBOARD_RISK_LINKS[level]}
             aria-label={`View ${level} risk transactions: ${counts[level]}, ${percentages[level]} percent`}
           >
@@ -36,7 +36,16 @@ export default function DonutChart({ counts, percentages, total }) {
               <span className={`legend-dot dot-${level}`} />
               {`${level[0].toUpperCase()}${level.slice(1)} Risk`}
             </span>
-            <strong>{counts[level]} <span aria-hidden="true">·</span> {percentages[level]}%</strong>
+            <span className="legend-metrics">
+              <span className="legend-metric">
+                <strong>{counts[level]}</strong>
+                <span>transactions</span>
+              </span>
+              <span className="legend-metric">
+                <strong>{percentages[level]}%</strong>
+                <span>of evaluated</span>
+              </span>
+            </span>
           </Link>
         ))}
       </div>
