@@ -1,5 +1,10 @@
+import { Link } from 'react-router-dom';
 import { BellIcon, MenuIcon } from './icons';
 import useApp from '../context/useApp';
+import useAuthorization from '../auth/useAuthorization.js';
+import { AUTHORIZATION_MODES } from '../auth/AuthorizationProvider.jsx';
+import { getRoleDefinition } from '../auth/roles.js';
+import { APPLICATION_ROUTES } from '../auth/routeAccess.js';
 
 function formatUpdatedTime(timestamp) {
   return new Intl.DateTimeFormat('en-US', {
@@ -9,8 +14,17 @@ function formatUpdatedTime(timestamp) {
   }).format(new Date(timestamp));
 }
 
-export default function Topbar({ mobileNavOpen, onMenuToggle }) {
+/**
+ * `identity` is reserved for the future authenticated profile contract:
+ * { name, role, accountStatus, lastLoginAt }. It remains null until real auth exists.
+ */
+export default function Topbar({ mobileNavOpen, onMenuToggle, identity = null }) {
   const { lastUpdated } = useApp();
+  const { mode, effectiveRole } = useAuthorization();
+  const previewRole = mode === AUTHORIZATION_MODES.ROLE_PREVIEW
+    ? getRoleDefinition(effectiveRole)
+    : null;
+  void identity;
 
   return (
     <header className="topbar">
@@ -31,6 +45,20 @@ export default function Topbar({ mobileNavOpen, onMenuToggle }) {
         </div>
       </div>
       <div className="topbar-right">
+        {previewRole && (
+          <>
+            <span className={`topbar-access-state role-badge role-${previewRole.key.toLowerCase()}`}>
+              Role Preview: {previewRole.displayName}
+            </span>
+            <Link
+              className="topbar-profile-preview-link"
+              to={APPLICATION_ROUTES.PROFILE}
+              aria-label="Open profile preview (development only)"
+            >
+              Profile
+            </Link>
+          </>
+        )}
         <span className="updated-time">
           <span>Data updated</span>
           <strong>{formatUpdatedTime(lastUpdated)}</strong>

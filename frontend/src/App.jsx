@@ -9,22 +9,68 @@ import AuditRules from './pages/AuditRules';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
+import Login from './pages/Login';
+import RequestAccess from './pages/RequestAccess';
+import ForgotPassword from './pages/ForgotPassword';
+import { AccessPending, AccountLocked, AccountDisabled } from './pages/AccessStates';
+import Support from './pages/Support';
+import PrivacySecurity from './pages/PrivacySecurity';
+import { AUTH_ROUTES } from './auth/authRoutes';
+import AuthorizationProvider from './auth/AuthorizationProvider';
+import RequirePermission from './auth/RequirePermission';
+import { APPLICATION_ROUTES, getRoutePermission } from './auth/routeAccess';
+import Forbidden from './pages/Forbidden';
+import Profile from './pages/Profile';
+
+function protectedPage(path, page) {
+  return (
+    <RequirePermission permission={getRoutePermission(path)}>
+      {page}
+    </RequirePermission>
+  );
+}
+
+function ApplicationRoutes() {
+  return (
+    <Routes>
+      <Route path={APPLICATION_ROUTES.DASHBOARD} element={protectedPage(APPLICATION_ROUTES.DASHBOARD, <Dashboard />)} />
+      <Route path={APPLICATION_ROUTES.DASHBOARD_ALIAS} element={protectedPage(APPLICATION_ROUTES.DASHBOARD_ALIAS, <Dashboard />)} />
+      <Route path={APPLICATION_ROUTES.TRANSACTIONS} element={protectedPage(APPLICATION_ROUTES.TRANSACTIONS, <Transactions />)} />
+      <Route path={APPLICATION_ROUTES.TRANSACTION_DETAIL} element={protectedPage(APPLICATION_ROUTES.TRANSACTION_DETAIL, <TransactionDetail />)} />
+      <Route path={APPLICATION_ROUTES.ALERTS} element={protectedPage(APPLICATION_ROUTES.ALERTS, <Alerts />)} />
+      <Route path={APPLICATION_ROUTES.AUDIT_RULES} element={protectedPage(APPLICATION_ROUTES.AUDIT_RULES, <AuditRules />)} />
+      <Route path={APPLICATION_ROUTES.REPORTS} element={protectedPage(APPLICATION_ROUTES.REPORTS, <Reports />)} />
+      <Route path={APPLICATION_ROUTES.SETTINGS} element={protectedPage(APPLICATION_ROUTES.SETTINGS, <Settings />)} />
+      <Route path={APPLICATION_ROUTES.PROFILE} element={protectedPage(APPLICATION_ROUTES.PROFILE, <Profile />)} />
+      <Route path={APPLICATION_ROUTES.FORBIDDEN} element={<Forbidden />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+}
 
 export default function App() {
   return (
-    <AppProvider>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/transactions" element={<Transactions />} />
-          <Route path="/transactions/:id" element={<TransactionDetail />} />
-          <Route path="/alerts" element={<Alerts />} />
-          <Route path="/audit-rules" element={<AuditRules />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Layout>
-    </AppProvider>
+    <Routes>
+      <Route path={AUTH_ROUTES.LOGIN} element={<Login />} />
+      <Route path={AUTH_ROUTES.REQUEST_ACCESS} element={<RequestAccess />} />
+      <Route path={AUTH_ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
+      <Route path={AUTH_ROUTES.ACCESS_PENDING} element={<AccessPending />} />
+      <Route path={AUTH_ROUTES.ACCOUNT_LOCKED} element={<AccountLocked />} />
+      <Route path={AUTH_ROUTES.ACCOUNT_DISABLED} element={<AccountDisabled />} />
+      <Route path={AUTH_ROUTES.SUPPORT} element={<Support />} />
+      <Route path={AUTH_ROUTES.PRIVACY_SECURITY} element={<PrivacySecurity />} />
+      <Route
+        path="*"
+        element={(
+          <AuthorizationProvider previewEnabled={import.meta.env.DEV}>
+            <AppProvider>
+              <Layout>
+                <ApplicationRoutes />
+              </Layout>
+            </AppProvider>
+          </AuthorizationProvider>
+        )}
+      />
+    </Routes>
   );
 }

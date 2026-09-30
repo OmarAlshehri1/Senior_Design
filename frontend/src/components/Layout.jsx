@@ -3,7 +3,7 @@ import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import Notification from './Notification';
 
-export default function Layout({ children }) {
+export default function Layout({ children, identity = null }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
@@ -29,6 +29,7 @@ export default function Layout({ children }) {
       )}
       <div className="main-area">
         <Topbar
+          identity={identity}
           mobileNavOpen={mobileNavOpen}
           onMenuToggle={() => setMobileNavOpen((open) => !open)}
         />

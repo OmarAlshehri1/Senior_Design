@@ -6,8 +6,11 @@ import RecentTransactionsTable from '../components/RecentTransactionsTable';
 import AlertsList from '../components/AlertsList';
 import { getRecentTransactions } from '../utils/dashboard';
 import { sortNewestFirst } from '../utils/transactions';
+import RoleWorkspace from '../components/RoleWorkspace';
+import useAuthorization from '../auth/useAuthorization.js';
 
 export default function Dashboard() {
+  const { effectiveRole } = useAuthorization();
   const {
     transactions,
     alerts,
@@ -80,12 +83,7 @@ export default function Dashboard() {
         <AlertsList alerts={recentAlerts} variant="dashboard" />
       </section>
 
-      <section className="workspace-foundation" aria-labelledby="workspace-heading">
-        <div>
-          <h2 id="workspace-heading">Your Workspace</h2>
-          <p>Personal work queues will appear when access is configured.</p>
-        </div>
-      </section>
+      <RoleWorkspace role={effectiveRole} transactions={transactions} />
     </>
   );
 }
