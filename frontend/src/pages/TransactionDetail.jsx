@@ -212,7 +212,7 @@ export default function TransactionDetail() {
         <p>
           {dataQuality.missingFields.length > 0
             ? `Missing fields: ${dataQuality.missingFields.join(', ')}.`
-            : 'All fields required for this frontend review are available.'}
+            : 'All fields required for this review are available.'}
         </p>
       </section>
 

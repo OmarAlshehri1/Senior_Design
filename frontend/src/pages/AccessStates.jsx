@@ -26,3 +26,19 @@ export function AccountDisabled() {
     </AuthStatePage>
   );
 }
+
+export function SessionExpired() {
+  return (
+    <AuthStatePage eyebrow="Account session" title="Session Expired" signInLabel="Return to Sign In" primarySignIn>
+      <p>Your session has ended. Sign in again to continue.</p>
+    </AuthStatePage>
+  );
+}
+
+export function AuthenticationRequired() {
+  return (
+    <AuthStatePage eyebrow="Account access" title="Authentication Required" signInLabel="Return to Sign In" primarySignIn>
+      <p>No valid session is available. Sign in to continue.</p>
+    </AuthStatePage>
+  );
+}

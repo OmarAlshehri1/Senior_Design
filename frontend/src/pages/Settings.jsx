@@ -119,13 +119,13 @@ export default function Settings() {
           <div className="settings-group-grid settings-system-grid">
             <article className="settings-panel" aria-labelledby="integration-settings-heading">
               <div className="settings-panel-header">
-                <h3 id="integration-settings-heading">Data &amp; Integration</h3>
+                <h3 id="integration-settings-heading">Data Availability</h3>
               </div>
               <SettingsList items={[
                 ['Transaction Source', settings.integration.transactionSource],
-                ['API Integration', settings.integration.apiIntegration, 'pending'],
-                ['Real-Time Connection', settings.integration.realTimeConnection, 'pending'],
-                ['Persistence', settings.integration.persistence, 'pending'],
+                ['Transaction Service', settings.integration.apiIntegration, 'pending'],
+                ['Live Updates', settings.integration.realTimeConnection, 'pending'],
+                ['Saved Changes', settings.integration.persistence, 'pending'],
               ]} />
             </article>
 
@@ -134,7 +134,7 @@ export default function Settings() {
                 <h3 id="system-settings-heading">System Information</h3>
               </div>
               <SettingsList items={[
-                ['Frontend', settings.system.frontend],
+                ['Application', settings.system.frontend],
                 ['Interface Mode', settings.system.interfaceMode],
               ]} />
             </article>

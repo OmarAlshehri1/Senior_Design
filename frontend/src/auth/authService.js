@@ -10,7 +10,9 @@ export const authService = Object.freeze({
   signIn: unavailable,
   signOut: unavailable,
   getSession: unavailable,
+  restoreSession: unavailable,
   getCurrentUser: unavailable,
+  refreshCurrentUser: unavailable,
   requestAccess: () => unavailable(AUTH_ERROR_CODES.ACCESS_REQUESTS_UNAVAILABLE),
   requestPasswordReset: () => unavailable(AUTH_ERROR_CODES.PASSWORD_RESET_UNAVAILABLE),
 });

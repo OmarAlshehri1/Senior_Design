@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import AssignmentHistory from './AssignmentHistory.jsx';
+import { getSensitiveActionConfirmation, SENSITIVE_ACTIONS } from '../security/sensitiveActions.js';
 
 export default function AssignmentDialog({ alert, currentAssignment = null, eligibleUsers = [], history = [], onClose }) {
   const closeRef = useRef(null);
@@ -16,6 +17,7 @@ export default function AssignmentDialog({ alert, currentAssignment = null, elig
 
   if (!alert) return null;
   const isReassignment = Boolean(currentAssignment);
+  const confirmation = getSensitiveActionConfirmation(isReassignment ? SENSITIVE_ACTIONS.REASSIGN_ALERT : SENSITIVE_ACTIONS.ASSIGN_ALERT);
 
   return (
     <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
@@ -48,10 +50,9 @@ export default function AssignmentDialog({ alert, currentAssignment = null, elig
         </section>
         <div className="dialog-actions">
           <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button type="button" className="btn btn-primary" disabled>{isReassignment ? 'Reassign' : 'Assign'}</button>
+          <button type="button" className="btn btn-primary" disabled>{confirmation.confirmLabel}</button>
         </div>
       </section>
     </div>
   );
 }
-

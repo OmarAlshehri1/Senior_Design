@@ -21,18 +21,18 @@ export function getSettingsOverview() {
     },
     realTimeAlerts: {
       threshold: `${RISK_THRESHOLDS.HIGH.label} (${RISK_THRESHOLDS.HIGH.min}–${RISK_THRESHOLDS.HIGH.max})`,
-      delivery: 'WebSocket',
+      delivery: 'System notifications',
       targetLatency: '≤ 5 seconds',
-      status: 'Planned Integration',
+      status: 'Planned',
     },
     integration: {
       transactionSource: 'Current Dataset',
-      apiIntegration: 'Pending',
-      realTimeConnection: 'Pending',
-      persistence: 'Pending',
+      apiIntegration: 'Not available',
+      realTimeConnection: 'Not available',
+      persistence: 'Not available',
     },
     system: {
-      frontend: 'React + Vite',
+      frontend: 'Continuous Auditing System',
       interfaceMode: 'Audit Dashboard',
     },
   };

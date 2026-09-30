@@ -1,3 +1,4 @@
+import { useCallback, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BellIcon, MenuIcon } from './icons';
 import useApp from '../context/useApp';
@@ -5,6 +6,10 @@ import useAuthorization from '../auth/useAuthorization.js';
 import { AUTHORIZATION_MODES } from '../auth/AuthorizationProvider.jsx';
 import { getRoleDefinition } from '../auth/roles.js';
 import { APPLICATION_ROUTES } from '../auth/routeAccess.js';
+import NotificationCenter from './NotificationCenter.jsx';
+import { getUnreadNotificationCount } from '../notifications/notifications.js';
+
+const NOTIFICATIONS = Object.freeze([]);
 
 function formatUpdatedTime(timestamp) {
   return new Intl.DateTimeFormat('en-US', {
@@ -25,6 +30,10 @@ export default function Topbar({ mobileNavOpen, onMenuToggle, identity = null })
     ? getRoleDefinition(effectiveRole)
     : null;
   void identity;
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const notificationButtonRef = useRef(null);
+  const closeNotifications = useCallback(() => setNotificationsOpen(false), []);
+  const unreadCount = getUnreadNotificationCount(NOTIFICATIONS);
 
   return (
     <header className="topbar">
@@ -63,15 +72,13 @@ export default function Topbar({ mobileNavOpen, onMenuToggle, identity = null })
           <span>Data updated</span>
           <strong>{formatUpdatedTime(lastUpdated)}</strong>
         </span>
-        <button
-          type="button"
-          className="topbar-icon-btn"
-          aria-label="Notifications are not available yet"
-          title="Notifications are not available yet"
-          disabled
-        >
-          <BellIcon width={17} height={17} />
-        </button>
+        <div className="notification-center-anchor">
+          <button ref={notificationButtonRef} type="button" className="topbar-icon-btn notification-center-trigger" aria-label="Open notifications" aria-controls="notification-center" aria-expanded={notificationsOpen} onClick={() => setNotificationsOpen((open) => !open)}>
+            <BellIcon width={17} height={17} />
+            {unreadCount > 0 && <span className="notification-count">{unreadCount}</span>}
+          </button>
+          <NotificationCenter open={notificationsOpen} notifications={NOTIFICATIONS} onClose={closeNotifications} returnFocusRef={notificationButtonRef} />
+        </div>
       </div>
     </header>
   );

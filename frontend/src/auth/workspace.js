@@ -51,7 +51,7 @@ export const NEUTRAL_WORKSPACE = Object.freeze({
   contextLabel: null,
   metrics: Object.freeze([]),
   sections: Object.freeze([]),
-  message: 'Personal work queues will appear when identity and access integration is connected.',
+  message: 'Personal work queues will appear when identity and access information is available.',
 });
 
 export function getWorkspaceDefinition(role) {

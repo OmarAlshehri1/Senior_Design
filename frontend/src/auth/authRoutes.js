@@ -5,6 +5,7 @@ export const AUTH_ROUTES = Object.freeze({
   ACCESS_PENDING: '/access-pending',
   ACCOUNT_LOCKED: '/account-locked',
   ACCOUNT_DISABLED: '/account-disabled',
+  SESSION_EXPIRED: '/session-expired',
   SUPPORT: '/support',
   PRIVACY_SECURITY: '/privacy-security',
 });

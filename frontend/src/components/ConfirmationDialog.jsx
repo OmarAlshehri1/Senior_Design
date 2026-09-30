@@ -20,7 +20,7 @@ export default function ConfirmationDialog({ open, title, description, confirmLa
       <section className="management-dialog confirmation-dialog" role="alertdialog" aria-modal="true" aria-labelledby="confirmation-title" aria-describedby="confirmation-description">
         <h2 id="confirmation-title">{title}</h2>
         <p id="confirmation-description">{description}</p>
-        <p className="integration-note">This action will become available when account administration is connected.</p>
+        <p className="integration-note">This action will become available when account administration is available.</p>
         <div className="dialog-actions">
           <button ref={cancelRef} type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
           <button type="button" className="btn btn-primary" onClick={onConfirm} disabled>{confirmLabel}</button>
@@ -29,4 +29,3 @@ export default function ConfirmationDialog({ open, title, description, confirmLa
     </div>
   );
 }
-

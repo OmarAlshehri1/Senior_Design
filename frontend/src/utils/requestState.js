@@ -5,6 +5,19 @@ export const REQUEST_STATUS = Object.freeze({
   ERROR: 'error',
 });
 
+export const REQUEST_VIEW_STATES = Object.freeze({
+  LOADING: 'LOADING',
+  ERROR: 'ERROR',
+  EMPTY: 'EMPTY',
+  UNAVAILABLE: 'UNAVAILABLE',
+});
+
+export function invokeRetry(onRetry) {
+  if (typeof onRetry !== 'function') return false;
+  onRetry();
+  return true;
+}
+
 export function createRequestState(overrides = {}) {
   return {
     status: REQUEST_STATUS.IDLE,

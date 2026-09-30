@@ -12,7 +12,7 @@ import NotFound from './pages/NotFound';
 import Login from './pages/Login';
 import RequestAccess from './pages/RequestAccess';
 import ForgotPassword from './pages/ForgotPassword';
-import { AccessPending, AccountLocked, AccountDisabled } from './pages/AccessStates';
+import { AccessPending, AccountLocked, AccountDisabled, SessionExpired } from './pages/AccessStates';
 import Support from './pages/Support';
 import PrivacySecurity from './pages/PrivacySecurity';
 import { AUTH_ROUTES } from './auth/authRoutes';
@@ -65,6 +65,7 @@ export default function App() {
       <Route path={AUTH_ROUTES.ACCESS_PENDING} element={<AccessPending />} />
       <Route path={AUTH_ROUTES.ACCOUNT_LOCKED} element={<AccountLocked />} />
       <Route path={AUTH_ROUTES.ACCOUNT_DISABLED} element={<AccountDisabled />} />
+      <Route path={AUTH_ROUTES.SESSION_EXPIRED} element={<SessionExpired />} />
       <Route path={AUTH_ROUTES.SUPPORT} element={<Support />} />
       <Route path={AUTH_ROUTES.PRIVACY_SECURITY} element={<PrivacySecurity />} />
       <Route

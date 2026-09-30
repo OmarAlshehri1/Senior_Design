@@ -40,12 +40,12 @@ test('reporting configuration is an accurate read-only reference', () => {
   });
 });
 
-test('real-time alert configuration describes the planned integration', () => {
+test('real-time alert configuration describes the planned delivery state', () => {
   assert.deepEqual(getSettingsOverview().realTimeAlerts, {
     threshold: 'High Risk (75–100)',
-    delivery: 'WebSocket',
+    delivery: 'System notifications',
     targetLatency: '≤ 5 seconds',
-    status: 'Planned Integration',
+    status: 'Planned',
   });
 });
 
@@ -59,9 +59,9 @@ test('integration reference does not claim unavailable services are operational'
   assert.doesNotMatch(integrationText, /"(Connected|Active|Running)"/i);
   assert.deepEqual(settings.integration, {
     transactionSource: 'Current Dataset',
-    apiIntegration: 'Pending',
-    realTimeConnection: 'Pending',
-    persistence: 'Pending',
+    apiIntegration: 'Not available',
+    realTimeConnection: 'Not available',
+    persistence: 'Not available',
   });
 });
 

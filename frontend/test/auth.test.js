@@ -259,6 +259,7 @@ test('standalone auth route contract contains the complete auth experience', () 
     '/access-pending',
     '/account-locked',
     '/account-disabled',
+    '/session-expired',
     '/support',
     '/privacy-security',
   ]);
