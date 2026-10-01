@@ -67,6 +67,7 @@ Preliminary enums:
 {
   "rule_key": "duplicate_payment",
   "rule_name": "Duplicate Payment",
+  "rule_version": "1.0.0",
   "status": "FAILED",
   "score_contribution": 35,
   "detail": "Possible duplicate payment detected.",
@@ -76,7 +77,11 @@ Preliminary enums:
 
 `status` is one of `PASSED`, `FAILED`, or `NOT_EVALUATED`. The final contents of `evidence` will be rule-specific and must avoid unnecessary sensitive data.
 
-Before rule execution is implemented, all five rules are returned as `NOT_EVALUATED`. The `evidence` object includes `eligible`, `missing_fields`, and `missing_any_of`. An eligible rule has all required transaction fields and is ready for execution; an ineligible rule remains `NOT_EVALUATED` without blocking other eligible rules.
+Rule execution is being implemented incrementally. `segregation_of_duties` and `approval_limits` currently execute when their required fields are available. `duplicate_payment`, `invoice_splitting`, and `ghost_vendors` remain `NOT_EVALUATED` until their implementations are completed. Every result includes `rule_version`.
+
+The `evidence` object includes `eligible`, `missing_fields`, and `missing_any_of`. An ineligible rule remains `NOT_EVALUATED` without blocking other eligible rules. Rule-specific evidence must not expose unnecessary sensitive identifiers.
+
+The overall `rule_status` is `REVIEW` when any executed rule fails, `PASSED` when at least one rule passes and none fail, and `NOT_EVALUATED` when no rule can be executed.
 
 ### DashboardSummary
 

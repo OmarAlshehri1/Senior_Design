@@ -138,10 +138,29 @@ def test_create_complete_transaction() -> None:
     assert body["amount"] == 18750
     assert body["data_quality_status"] == "COMPLETE"
     assert body["missing_fields"] == []
-    assert body["rule_status"] == "NOT_EVALUATED"
+    assert body["rule_status"] == "PASSED"
     assert len(body["rule_results"]) == 5
+
+    rules = {
+        result["rule_key"]: result
+        for result in body["rule_results"]
+    }
+
+    assert (
+        rules["segregation_of_duties"]["status"]
+        == "PASSED"
+    )
+    assert rules["approval_limits"]["status"] == "PASSED"
+
+    for rule_key in (
+        "duplicate_payment",
+        "invoice_splitting",
+        "ghost_vendors",
+    ):
+        assert rules[rule_key]["status"] == "NOT_EVALUATED"
+
     assert all(
-        result["status"] == "NOT_EVALUATED"
+        result["rule_version"] == "1.0.0"
         for result in body["rule_results"]
     )
     assert all(
@@ -230,3 +249,37 @@ def test_excel_import_is_not_a_runtime_endpoint() -> None:
         "/api/v1/transactions/import"
         not in response.json()["paths"]
     )
+
+def test_create_transaction_requiring_review() -> None:
+    response = client.post(
+        "/api/v1/transactions",
+        json={
+            "id": "TX-TEST-REVIEW-001",
+            "timestamp": "2026-10-01T12:00:00Z",
+            "vendor_id": "VEN-001",
+            "vendor_name": "Test Vendor",
+            "invoice_number": "INV-REVIEW-001",
+            "category": "Inventory",
+            "amount": 500,
+            "currency": "SAR",
+            "created_by": "EMP-001",
+            "approved_by": "EMP-001",
+            "approver_role": "Manager",
+            "approval_limit": 1000,
+        },
+    )
+
+    assert response.status_code == 201
+
+    body = response.json()
+    rules = {
+        result["rule_key"]: result
+        for result in body["rule_results"]
+    }
+
+    assert body["rule_status"] == "REVIEW"
+    assert (
+        rules["segregation_of_duties"]["status"]
+        == "FAILED"
+    )
+    assert rules["approval_limits"]["status"] == "PASSED"
