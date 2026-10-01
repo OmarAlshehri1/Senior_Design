@@ -1,7 +1,4 @@
 fastapi
 uvicorn
 httpx
-pytest
-openpyxl
-python-multipart
 python-dotenv
