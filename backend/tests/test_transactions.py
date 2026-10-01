@@ -152,8 +152,9 @@ def test_create_complete_transaction() -> None:
     )
     assert rules["approval_limits"]["status"] == "PASSED"
 
+    assert rules["duplicate_payment"]["status"] == "PASSED"
+
     for rule_key in (
-        "duplicate_payment",
         "invoice_splitting",
         "ghost_vendors",
     ):
@@ -283,3 +284,50 @@ def test_create_transaction_requiring_review() -> None:
         == "FAILED"
     )
     assert rules["approval_limits"]["status"] == "PASSED"
+
+def test_create_duplicate_payment(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        (
+            "app.api.transactions."
+            "get_duplicate_payment_counts"
+        ),
+        lambda transaction_ids: {
+            transaction_ids[0]: 2,
+        },
+    )
+
+    response = client.post(
+        "/api/v1/transactions",
+        json={
+            "id": "TX-DUPLICATE-001",
+            "timestamp": "2026-10-01T13:00:00Z",
+            "vendor_id": "VEN-001",
+            "vendor_name": "Test Vendor",
+            "invoice_number": "INV-DUPLICATE-001",
+            "category": "Inventory",
+            "amount": 500,
+            "currency": "SAR",
+            "created_by": "EMP-001",
+            "approved_by": "MGR-001",
+            "approver_role": "Manager",
+            "approval_limit": 1000,
+        },
+    )
+
+    assert response.status_code == 201
+
+    body = response.json()
+    rules = {
+        result["rule_key"]: result
+        for result in body["rule_results"]
+    }
+
+    duplicate = rules["duplicate_payment"]
+
+    assert body["rule_status"] == "REVIEW"
+    assert duplicate["status"] == "FAILED"
+    assert duplicate["evidence"][
+        "matching_transaction_count"
+    ] == 2

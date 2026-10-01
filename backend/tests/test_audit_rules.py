@@ -159,3 +159,53 @@ def test_rule_status_is_not_evaluated_without_results() -> None:
         summarize_rule_status(results)
         == "NOT_EVALUATED"
     )
+
+def test_duplicate_payment_passes_without_matches() -> None:
+    results = evaluate_transaction_rules(
+        build_transaction(),
+        context={
+            "duplicate_payment_count": 0,
+        },
+    )
+    rules = {
+        result["rule_key"]: result
+        for result in results
+    }
+
+    duplicate = rules["duplicate_payment"]
+
+    assert duplicate["status"] == "PASSED"
+    assert duplicate["evidence"][
+        "matching_transaction_count"
+    ] == 0
+
+
+def test_duplicate_payment_fails_with_matches() -> None:
+    results = evaluate_transaction_rules(
+        build_transaction(),
+        context={
+            "duplicate_payment_count": 2,
+        },
+    )
+    rules = {
+        result["rule_key"]: result
+        for result in results
+    }
+
+    duplicate = rules["duplicate_payment"]
+
+    assert duplicate["status"] == "FAILED"
+    assert duplicate["evidence"][
+        "matching_transaction_count"
+    ] == 2
+
+
+def test_duplicate_payment_needs_history_context() -> None:
+    rules = results_by_key(build_transaction())
+
+    duplicate = rules["duplicate_payment"]
+
+    assert duplicate["status"] == "NOT_EVALUATED"
+    assert duplicate["evidence"][
+        "historical_context_available"
+    ] is False

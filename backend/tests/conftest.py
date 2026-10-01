@@ -12,7 +12,22 @@ def mock_transaction_persistence(
     ) -> int:
         return len(transactions)
 
+    def fake_get_duplicate_payment_counts(
+        transaction_ids: list[str],
+    ) -> dict[str, int]:
+        return {
+            transaction_id: 0
+            for transaction_id in transaction_ids
+        }
+
     monkeypatch.setattr(
         "app.api.transactions.persist_transactions",
         fake_persist_transactions,
+    )
+    monkeypatch.setattr(
+        (
+            "app.api.transactions."
+            "get_duplicate_payment_counts"
+        ),
+        fake_get_duplicate_payment_counts,
     )

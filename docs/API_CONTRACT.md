@@ -77,7 +77,9 @@ Preliminary enums:
 
 `status` is one of `PASSED`, `FAILED`, or `NOT_EVALUATED`. The final contents of `evidence` will be rule-specific and must avoid unnecessary sensitive data.
 
-Rule execution is being implemented incrementally. `segregation_of_duties` and `approval_limits` currently execute when their required fields are available. `duplicate_payment`, `invoice_splitting`, and `ghost_vendors` remain `NOT_EVALUATED` until their implementations are completed. Every result includes `rule_version`.
+Rule execution is being implemented incrementally. `segregation_of_duties`, `approval_limits`, and `duplicate_payment` currently execute when their required data and evaluation context are available. `invoice_splitting` and `ghost_vendors` remain `NOT_EVALUATED` until their implementations are completed. Every result includes `rule_version`.
+
+`duplicate_payment` fails when another stored transaction has the same vendor identity, invoice number, and amount. The current transaction ID is excluded from matching. Its public evidence reports only `historical_context_available` and `matching_transaction_count`; matching transaction identifiers and private `ground_truth` labels are not exposed.
 
 The `evidence` object includes `eligible`, `missing_fields`, and `missing_any_of`. An ineligible rule remains `NOT_EVALUATED` without blocking other eligible rules. Rule-specific evidence must not expose unnecessary sensitive identifiers.
 
