@@ -76,6 +76,8 @@ Preliminary enums:
 
 `status` is one of `PASSED`, `FAILED`, or `NOT_EVALUATED`. The final contents of `evidence` will be rule-specific and must avoid unnecessary sensitive data.
 
+Before rule execution is implemented, all five rules are returned as `NOT_EVALUATED`. The `evidence` object includes `eligible`, `missing_fields`, and `missing_any_of`. An eligible rule has all required transaction fields and is ready for execution; an ineligible rule remains `NOT_EVALUATED` without blocking other eligible rules.
+
 ### DashboardSummary
 
 ```json

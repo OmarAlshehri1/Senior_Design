@@ -9,6 +9,9 @@ from app.repositories.supabase_transactions import (
     persist_transactions,
 )
 from app.schemas.transaction import TransactionCreate
+from app.services.rule_eligibility import (
+    build_pending_rule_results,
+)
 
 
 router = APIRouter(
@@ -138,6 +141,8 @@ async def create_transaction(
         "ai_score": None,
         "risk_score": None,
         "risk_level": None,
-        "rule_results": [],
+        "rule_results": build_pending_rule_results(
+            transaction_data
+        ),
         "explanation": None,
     }

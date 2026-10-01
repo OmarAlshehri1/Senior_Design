@@ -167,7 +167,7 @@ Acceptance criteria:
 - [x] Replace endpoint tests with offline seed-tool tests.
 - [x] Update API documentation to state that runtime data comes from Supabase.
 
-- [ ] **CURRENT:** Commit, push, open PR, review, and merge.
+- [x] Commit, push, open PR, review, and merge (PR #7).
 
 Acceptance criteria:
 
@@ -176,12 +176,14 @@ Acceptance criteria:
 
 ## Phase 5 — C3 missing-field rule eligibility
 
-- [ ] Define required fields for each audit rule.
-- [ ] Implement a shared eligibility checker.
-- [ ] Mark unavailable rules as `NOT_EVALUATED`.
+- [x] Define required fields for each audit rule.
+- [x] Implement a shared eligibility checker.
+- [x] Mark unavailable rules as `NOT_EVALUATED`.
 - [ ] Evaluate available rules even when other fields are missing.
-- [ ] Return the missing required fields in each rule result.
-- [ ] Add tests for complete, partial, and insufficient transactions.
+- [x] Return the missing required fields in each rule result.
+- [x] Add tests for complete, partial, and insufficient transactions.
+
+- [ ] **CURRENT:** Commit and merge the rule-eligibility foundation; eligible rule execution continues in Phase 6.
 
 Planned eligibility matrix:
 
@@ -301,8 +303,8 @@ These are implementation estimates, not final evaluation grades.
 
 | Requirement | Current estimate | What is already proven | Main remaining work |
 | --- | ---: | --- | --- |
-| C1 | 90% | standardized schema, SME adapter, 10,000 rows mapped | offline seed refactor and final evidence |
-| C3 | 55% | missing fields detected and persisted | per-rule eligibility and `NOT_EVALUATED` behavior |
+| C1 | 95% | standardized schema, offline SME adapter, and 10,000 rows mapped into Supabase | package final mapping and test evidence |
+| C3 | 75% | missing fields persisted; per-rule eligibility and `NOT_EVALUATED` behavior tested | execute eligible rules independently in Phase 6 |
 | CS part of IS1 | 15% | ingestion and persistence foundation | rule engine and measured 95% coverage |
 | CS part of IS3 | 5% | contract and planned formula | rule score, Isolation Forest, combined scoring |
 
@@ -313,8 +315,9 @@ These are implementation estimates, not final evaluation grades.
 | 2026-09-28 | Added standardized transaction ingestion | PR #3 |
 | 2026-09-28 | Added SME dataset adapter and 10,000-row import | PR #4 |
 | 2026-09-30 | Added Supabase persistence | PR #5 |
-| 2026-10-01 | Started Supabase runtime transaction API | `feature/supabase-transaction-api` |
+| 2026-10-01 | Added Supabase runtime transaction read API | PR #6 |
+| 2026-10-01 | Moved Excel import out of runtime into an offline seed tool | PR #7 |
 
 ## Next action
 
-Replace `backend/app/repositories/supabase_transactions.py` with the reviewed version that adds paginated reads and lookup by transaction ID, then add mocked tests before changing the public router.
+Commit and open a PR for the C3 rule-eligibility foundation. After merge, begin Phase 6 by implementing eligible audit rules independently.

@@ -309,7 +309,15 @@ def test_get_transaction_by_id_and_not_found(
     assert transaction is not None
     assert transaction["id"] == "TX-READ-002"
     assert transaction["data_quality_status"] == "COMPLETE"
-    assert transaction["rule_results"] == []
+    assert len(transaction["rule_results"]) == 5
+    assert all(
+        result["status"] == "NOT_EVALUATED"
+        for result in transaction["rule_results"]
+    )
+    assert all(
+        result["evidence"]["eligible"] is True
+        for result in transaction["rule_results"]
+    )
     assert missing_transaction is None
 
     assert requested_ids == [
