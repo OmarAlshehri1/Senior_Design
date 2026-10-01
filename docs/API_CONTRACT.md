@@ -2,7 +2,7 @@
 
 This document is the preliminary contract between the React frontend and FastAPI backend. It defines planned field names and payload shapes so frontend and backend development can proceed independently.
 
-`GET /api/v1/health`, `POST /api/v1/transactions`, and `POST /api/v1/transactions/import` are implemented. The remaining endpoints in this document are contracts only and are not implemented yet. Shapes may be extended through team agreement, but existing names should not be changed without coordinating both branches.
+`GET /api/v1/health`, `GET /api/v1/transactions`, `GET /api/v1/transactions/{transaction_id}`, `POST /api/v1/transactions`, and the transitional `POST /api/v1/transactions/import` endpoint are implemented. The remaining endpoints in this document are contracts only and are not implemented yet. Shapes may be extended through team agreement, but existing names should not be changed without coordinating both branches.
 
 ## Conventions
 
@@ -176,7 +176,7 @@ Returns `DashboardSummary` for the current organization and reporting period.
 
 ### `GET /api/v1/transactions`
 
-Returns a paginated transaction collection.
+Returns a database-backed paginated transaction collection from Supabase. The default page size is 25 and the maximum page size is 100.
 
 Planned query parameters include `search`, `risk_level`, `rule_status`, `sort`, `page`, and `page_size`.
 
@@ -191,9 +191,11 @@ Planned query parameters include `search`, `risk_level`, `rule_status`, `sort`, 
 
 Each item has the `Transaction` shape.
 
+The query excludes the private `ground_truth` evaluation labels.
+
 ### `GET /api/v1/transactions/{transaction_id}`
 
-Returns one `Transaction`, including its `rule_results` and optional `explanation`. Returns `404` when the transaction does not exist or is not accessible to the caller.
+Returns one Supabase-backed `Transaction`, including its current `rule_results` and optional `explanation`. Returns `404` when the transaction does not exist or is not accessible to the caller. The response never includes `ground_truth`.
 
 ### `POST /api/v1/transactions`
 
@@ -222,23 +224,28 @@ Response `201 Created`:
 
 ```json
 {
-  "transaction": {
-    "id": "TX-TEST-001",
-    "timestamp": "2026-09-28T08:00:00Z",
-    "vendor_id": "VEN-001",
-    "vendor_name": "Riyadh Wholesale Trading",
-    "invoice_number": "INV-1001",
-    "category": "Inventory",
-    "amount": "18750",
-    "currency": "SAR",
-    "created_by": "EMP-101",
-    "approved_by": "MGR-201",
-    "approver_role": "Store Manager",
-    "approval_limit": "20000"
-  },
+  "id": "TX-TEST-001",
+  "timestamp": "2026-09-28T08:00:00Z",
+  "vendor_id": "VEN-001",
+  "vendor_name": "Riyadh Wholesale Trading",
+  "vendor_monitoring_status": null,
+  "invoice_number": "INV-1001",
+  "category": "Inventory",
+  "amount": 18750,
+  "currency": "SAR",
+  "created_by": "EMP-101",
+  "approved_by": "MGR-201",
+  "approver_role": "Store Manager",
+  "approval_limit": 20000,
   "data_quality_status": "COMPLETE",
-  "missing_fields": []
-  "persisted_rows": 1
+  "missing_fields": [],
+  "rule_status": "NOT_EVALUATED",
+  "rule_score": null,
+  "ai_score": null,
+  "risk_score": null,
+  "risk_level": null,
+  "rule_results": [],
+  "explanation": null
 }
 ```
 
