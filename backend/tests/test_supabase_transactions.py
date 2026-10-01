@@ -193,6 +193,14 @@ def test_list_transactions_maps_rows_and_total(
         "Client",
         FakeClient,
     )
+    monkeypatch.setattr(
+        repository,
+        "get_duplicate_payment_counts",
+        lambda transaction_ids: {
+            transaction_id: 0
+            for transaction_id in transaction_ids
+        },
+    )
 
     transactions, total = repository.list_transactions(
         page=2,
@@ -298,6 +306,14 @@ def test_get_transaction_by_id_and_not_found(
         "Client",
         FakeClient,
     )
+    monkeypatch.setattr(
+        repository,
+        "get_duplicate_payment_counts",
+        lambda transaction_ids: {
+            transaction_id: 0
+            for transaction_id in transaction_ids
+        },
+    )
 
     transaction = repository.get_transaction_by_id(
         "TX-READ-002",
@@ -322,8 +338,12 @@ def test_get_transaction_by_id_and_not_found(
     )
     assert rules["approval_limits"]["status"] == "PASSED"
 
+    assert (
+        rules["duplicate_payment"]["status"]
+        == "PASSED"
+    )
+
     for rule_key in (
-        "duplicate_payment",
         "invoice_splitting",
         "ghost_vendors",
     ):

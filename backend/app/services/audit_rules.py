@@ -15,7 +15,10 @@ RuleEvaluation = tuple[
 ]
 
 RuleEvaluator = Callable[
-    [dict[str, Any]],
+    [
+        dict[str, Any],
+        dict[str, Any],
+    ],
     RuleEvaluation,
 ]
 
@@ -35,6 +38,7 @@ def _normalize_actor(value: Any) -> str:
 
 def _evaluate_segregation_of_duties(
     transaction: dict[str, Any],
+    _context: dict[str, Any],
 ) -> RuleEvaluation:
     same_actor = (
         _normalize_actor(transaction["created_by"])
@@ -67,6 +71,7 @@ def _evaluate_segregation_of_duties(
 
 def _evaluate_approval_limits(
     transaction: dict[str, Any],
+    _context: dict[str, Any],
 ) -> RuleEvaluation:
     amount = Decimal(str(transaction["amount"]))
     approval_limit = Decimal(
@@ -99,18 +104,72 @@ def _evaluate_approval_limits(
     )
 
 
+def _evaluate_duplicate_payment(
+    _transaction: dict[str, Any],
+    context: dict[str, Any],
+) -> RuleEvaluation:
+    matching_count = context.get(
+        "duplicate_payment_count"
+    )
+
+    if (
+        isinstance(matching_count, bool)
+        or not isinstance(matching_count, int)
+        or matching_count < 0
+    ):
+        return (
+            "NOT_EVALUATED",
+            (
+                "Duplicate-payment history was not "
+                "available for evaluation."
+            ),
+            {
+                "historical_context_available": False,
+                "matching_transaction_count": None,
+            },
+        )
+
+    if matching_count > 0:
+        return (
+            "FAILED",
+            (
+                "One or more matching historical "
+                "transactions were found."
+            ),
+            {
+                "historical_context_available": True,
+                "matching_transaction_count": (
+                    matching_count
+                ),
+            },
+        )
+
+    return (
+        "PASSED",
+        "No matching historical transaction was found.",
+        {
+            "historical_context_available": True,
+            "matching_transaction_count": 0,
+        },
+    )
+
+
 RULE_EVALUATORS: dict[str, RuleEvaluator] = {
     "segregation_of_duties": (
         _evaluate_segregation_of_duties
     ),
+    "duplicate_payment": _evaluate_duplicate_payment,
     "approval_limits": _evaluate_approval_limits,
 }
 
 
 def evaluate_transaction_rules(
     transaction: dict[str, Any],
+    *,
+    context: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     rule_results: list[dict[str, Any]] = []
+    rule_context = context or {}
 
     for eligibility in evaluate_rule_eligibility(
         transaction
@@ -147,7 +206,10 @@ def evaluate_transaction_rules(
                 status,
                 detail,
                 evaluation_evidence,
-            ) = evaluator(transaction)
+                        ) = evaluator(
+                transaction,
+                rule_context,
+            )
 
             rule_evidence = {
                 **evidence,

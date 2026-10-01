@@ -102,6 +102,8 @@ def _to_database_row(transaction: dict[str, Any]) -> dict[str, Any]:
 
 def _from_database_row(
     row: dict[str, Any],
+    *,
+    duplicate_payment_count: int | None = None,
 ) -> dict[str, Any]:
     missing_fields = row.get("missing_fields")
 
@@ -135,8 +137,18 @@ def _from_database_row(
         "explanation": None,
     }
 
+    rule_context: dict[str, Any] = {}
+
+    if duplicate_payment_count is not None:
+        rule_context["duplicate_payment_count"] = (
+            duplicate_payment_count
+        )
+
     transaction["rule_results"] = (
-        evaluate_transaction_rules(transaction)
+                evaluate_transaction_rules(
+            transaction,
+            context=rule_context,
+        )
     )
 
     transaction["rule_status"] = (
@@ -161,6 +173,83 @@ def _parse_total(content_range: str | None, returned_rows: int) -> int:
         return int(total_value)
     except ValueError:
         return returned_rows
+
+
+def get_duplicate_payment_counts(
+    transaction_ids: list[str],
+) -> dict[str, int]:
+    unique_ids = list(
+        dict.fromkeys(
+            transaction_id
+            for transaction_id in transaction_ids
+            if transaction_id
+        )
+    )
+
+    if not unique_ids:
+        return {}
+
+    url, _ = _get_configuration()
+    endpoint = (
+        f"{url}/rest/v1/rpc/"
+        "get_duplicate_payment_counts"
+    )
+
+    try:
+        with httpx.Client(
+            timeout=REQUEST_TIMEOUT_SECONDS
+        ) as client:
+            response = client.post(
+                endpoint,
+                headers=_get_headers(),
+                json={
+                    "transaction_ids": unique_ids,
+                },
+            )
+            response.raise_for_status()
+            payload = response.json()
+    except (httpx.HTTPError, ValueError) as exc:
+        raise SupabasePersistenceError(
+            "Failed to read duplicate-payment counts "
+            "from Supabase."
+        ) from exc
+
+    if not isinstance(payload, list):
+        raise SupabasePersistenceError(
+            "Supabase returned invalid duplicate-payment "
+            "counts."
+        )
+
+    counts = {
+        transaction_id: 0
+        for transaction_id in unique_ids
+    }
+
+    for item in payload:
+        if not isinstance(item, dict):
+            raise SupabasePersistenceError(
+                "Supabase returned an invalid duplicate "
+                "count record."
+            )
+
+        transaction_id = item.get("transaction_id")
+        count = item.get("matching_transaction_count")
+
+        if (
+            not isinstance(transaction_id, str)
+            or isinstance(count, bool)
+            or not isinstance(count, int)
+            or count < 0
+        ):
+            raise SupabasePersistenceError(
+                "Supabase returned an invalid duplicate "
+                "count value."
+            )
+
+        if transaction_id in counts:
+            counts[transaction_id] = count
+
+    return counts
 
 
 def persist_transactions(transactions: list[dict[str, Any]]) -> int:
@@ -227,11 +316,40 @@ def list_transactions(
             "Supabase returned an invalid transaction collection."
         )
 
-    transactions = [
-        _from_database_row(row)
+    transaction_ids = [
+        row["id"]
         for row in payload
-        if isinstance(row, dict)
+        if (
+            isinstance(row, dict)
+            and isinstance(row.get("id"), str)
+        )
     ]
+
+    duplicate_counts = get_duplicate_payment_counts(
+        transaction_ids
+    )
+
+    transactions: list[dict[str, Any]] = []
+
+    for row in payload:
+        if not isinstance(row, dict):
+            continue
+
+        transaction_id = row.get("id")
+        duplicate_payment_count = (
+            duplicate_counts.get(transaction_id)
+            if isinstance(transaction_id, str)
+            else None
+        )
+
+        transactions.append(
+            _from_database_row(
+                row,
+                duplicate_payment_count=(
+                    duplicate_payment_count
+                ),
+            )
+        )
 
     total = _parse_total(
         response.headers.get("content-range"),
@@ -282,4 +400,13 @@ def get_transaction_by_id(
             "Supabase returned an invalid transaction record."
         )
 
-    return _from_database_row(first_row)
+    duplicate_counts = get_duplicate_payment_counts(
+        [transaction_id]
+    )
+
+    return _from_database_row(
+        first_row,
+        duplicate_payment_count=(
+            duplicate_counts.get(transaction_id)
+        ),
+    )

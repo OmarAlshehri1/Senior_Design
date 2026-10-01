@@ -7,6 +7,7 @@ from app.repositories.supabase_transactions import (
     get_transaction_by_id,
     list_transactions,
     persist_transactions,
+    get_duplicate_payment_counts,
 )
 from app.schemas.transaction import TransactionCreate
 from app.services.audit_rules import (
@@ -132,8 +133,26 @@ async def create_transaction(
             detail="Transaction could not be stored.",
         ) from exc
 
+    try:
+        duplicate_counts = await run_in_threadpool(
+            get_duplicate_payment_counts,
+            [transaction_data["id"]],
+        )
+    except (
+        SupabaseConfigurationError,
+        SupabasePersistenceError,
+    ):
+        duplicate_counts = {}
+
     rule_results = evaluate_transaction_rules(
-        transaction_data
+        transaction_data,
+        context={
+            "duplicate_payment_count": (
+                duplicate_counts.get(
+                    transaction_data["id"]
+                )
+            ),
+        },
     )
 
     return {
