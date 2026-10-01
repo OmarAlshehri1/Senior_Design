@@ -144,7 +144,7 @@ Branch: `feature/supabase-transaction-api`
 - [x] Perform a live read test against the 10,000 Supabase records.
 - [x] Update `docs/API_CONTRACT.md`.
 - [x] Run all backend tests.
-- [ ] **CURRENT:** Push, open PR, review, and merge.
+- [x] Push, open PR, review, and merge (PR #6).
 
 Acceptance criteria:
 
@@ -156,16 +156,18 @@ Acceptance criteria:
 
 ## Phase 4 — Move Excel out of runtime
 
-- [ ] Remove `POST /api/v1/transactions/import` from the public runtime API.
-- [ ] Remove `File`, `UploadFile`, and multipart handling from the transaction router.
-- [ ] Move the SME adapter and workbook parser under an offline seed-tool location.
-- [ ] Add a command such as `python -m scripts.seed_transactions` for reproducible seeding.
-- [ ] Require an explicit confirmation flag before modifying Supabase.
-- [ ] Keep the 10,000-row dataset only as seed/evaluation evidence.
-- [ ] Move `openpyxl` out of production runtime requirements.
-- [ ] Remove `python-multipart` if no runtime endpoint needs it.
-- [ ] Replace endpoint tests with offline seed-tool tests.
-- [ ] Update API documentation to state that runtime data comes from Supabase.
+- [x] Remove `POST /api/v1/transactions/import` from the public runtime API.
+- [x] Remove `File`, `UploadFile`, and multipart handling from the transaction router.
+- [x] Move the SME adapter and workbook parser under an offline seed-tool location.
+- [x] Add a command such as `python -m scripts.seed_transactions` for reproducible seeding.
+- [x] Require an explicit confirmation flag before modifying Supabase.
+- [x] Keep the 10,000-row dataset only as seed/evaluation evidence.
+- [x] Move `openpyxl` out of production runtime requirements.
+- [x] Remove `python-multipart` if no runtime endpoint needs it.
+- [x] Replace endpoint tests with offline seed-tool tests.
+- [x] Update API documentation to state that runtime data comes from Supabase.
+
+- [ ] **CURRENT:** Commit, push, open PR, review, and merge.
 
 Acceptance criteria:
 

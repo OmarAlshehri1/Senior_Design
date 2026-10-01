@@ -173,3 +173,13 @@ def test_reject_invalid_currency() -> None:
     )
 
     assert response.status_code == 422
+
+
+def test_excel_import_is_not_a_runtime_endpoint() -> None:
+    response = client.get("/openapi.json")
+
+    assert response.status_code == 200
+    assert (
+        "/api/v1/transactions/import"
+        not in response.json()["paths"]
+    )

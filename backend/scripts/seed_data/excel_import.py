@@ -5,7 +5,7 @@ from typing import Any
 from openpyxl import load_workbook
 from pydantic import ValidationError
 
-from app.adapters.sme_retail import (
+from scripts.seed_data.sme_retail import (
     adapt_sme_retail_row,
     is_sme_retail_schema,
 )

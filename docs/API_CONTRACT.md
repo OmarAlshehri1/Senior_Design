@@ -2,7 +2,7 @@
 
 This document is the preliminary contract between the React frontend and FastAPI backend. It defines planned field names and payload shapes so frontend and backend development can proceed independently.
 
-`GET /api/v1/health`, `GET /api/v1/transactions`, `GET /api/v1/transactions/{transaction_id}`, `POST /api/v1/transactions`, and the transitional `POST /api/v1/transactions/import` endpoint are implemented. The remaining endpoints in this document are contracts only and are not implemented yet. Shapes may be extended through team agreement, but existing names should not be changed without coordinating both branches.
+`GET /api/v1/health`, `GET /api/v1/transactions`, `GET /api/v1/transactions/{transaction_id}`, and `POST /api/v1/transactions` are implemented. The remaining endpoints in this document are contracts only and are not implemented yet. Shapes may be extended through team agreement, but existing names should not be changed without coordinating both branches.
 
 ## Conventions
 
@@ -253,62 +253,23 @@ A transaction with missing optional fields returns `data_quality_status` as `PAR
 
 The transaction is validated, assessed for missing fields, and persisted to Supabase PostgreSQL. Rule evaluation, anomaly scoring, and alert generation will be added in later stages.
 
-### `POST /api/v1/transactions/import`
+## Offline seed utility
 
-Accepts an Excel `.xlsx` file as `multipart/form-data` and imports transaction rows in batches. The maximum upload size is 20 MB and the maximum supported worksheet size is 50,000 transaction rows.
+Excel is not a runtime API or website data source. Runtime transaction reads come from Supabase through the REST endpoints documented above.
 
-Supported input schemas:
+The reproducible offline seed tool is run from the `backend` directory only when the database must be initialized or rebuilt:
 
-- The standardized transaction schema documented above.
-- The SME retail expenses schema used by `SME_Retail_Expenses_Purchases_10k_Dataset.xlsx`.
-
-The SME retail adapter applies the following mappings:
-
-| Source column | Standard field |
-| --- | --- |
-| `transaction_id` | `id` |
-| `expense_category` | `category` |
-| `amount_sar` | `amount` |
-| `approved_by_role` | `approver_role` |
-
-The adapter also assigns `SAR` as the currency. Source metadata such as branch, employee role, and payment method is retained separately. `violation_type` and `is_anomaly` are retained as ground-truth evaluation labels and are not used as model input features.
-
-Response `200 OK` summary example:
-
-```json
-{
-  "source_schema": "SME_RETAIL_EXPENSES",
-  "total_rows": 10000,
-  "accepted_rows": 10000,
-  "complete_rows": 0,
-  "partial_rows": 10000,
-  "rejected_rows": 0,
-  "persisted_rows": 10000,
-  "processing_time_seconds": 1.7353,
-  "returned_rows": 10,
-  "has_more": true,
-  "transactions": [
-    {
-      "id": "EXP-2026-006253",
-      "data_quality_status": "PARTIAL"
-    }
-  ],
-  "errors": []
-}
+```powershell
+python -m scripts.seed_transactions --confirm
 ```
-All rows are validated, but the response includes at most 10 preview transactions to prevent oversized HTTP responses. `has_more` indicates that additional accepted rows exist. Full dataset retrieval will use database-backed pagination in a later stage.
 
-The current SME retail dataset does not provide `approval_limit`, so its imported transactions are marked `PARTIAL`. The service does not invent missing approval limits.
+The command requires the development dependencies from `requirements-dev.txt` and refuses to modify Supabase unless `--confirm` is supplied. Upserts are idempotent by transaction ID.
 
-Error responses:
+The seed utility supports the standardized transaction schema and the SME retail workbook stored under `backend/data/samples`. The SME adapter maps source fields into the standardized schema, assigns `SAR` as the currency, and retains branch, employee-role, and payment-method values as source metadata.
 
-- `400 Bad Request`: unsupported file extension.
-- `413 Content Too Large`: file exceeds 20 MB.
-- `422 Unprocessable Content`: invalid workbook or unsupported column structure.
-- `502 Bad Gateway`: Supabase rejected or could not complete the storage request.
-- `503 Service Unavailable`: Supabase environment variables are not configured.
+`violation_type` and `is_anomaly` are stored separately as private `ground_truth` evaluation labels. They are excluded from public API queries and must never be used as Isolation Forest input features.
 
-The importer validates all accepted rows and persists them to Supabase PostgreSQL using server-side credentials. Records are upserted by transaction ID in batches of 500. Database-backed pagination, rule evaluation, and anomaly scoring will be added later.
+The current SME retail dataset does not provide `approval_limit`, so its seeded transactions remain `PARTIAL`. The seed tool does not invent missing approval limits.
 
 ### `GET /api/v1/alerts`
 
