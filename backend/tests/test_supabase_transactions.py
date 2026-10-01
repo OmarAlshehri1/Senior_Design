@@ -208,7 +208,7 @@ def test_list_transactions_maps_rows_and_total(
     assert transaction["timestamp"] == "2026-09-28T10:00:00+00:00"
     assert transaction["data_quality_status"] == "PARTIAL"
     assert transaction["missing_fields"] == ["approval_limit"]
-    assert transaction["rule_status"] == "NOT_EVALUATED"
+    assert transaction["rule_status"] == "PASSED"
     assert transaction["risk_score"] is None
     assert "ground_truth" not in transaction
 
@@ -310,8 +310,27 @@ def test_get_transaction_by_id_and_not_found(
     assert transaction["id"] == "TX-READ-002"
     assert transaction["data_quality_status"] == "COMPLETE"
     assert len(transaction["rule_results"]) == 5
+
+    rules = {
+        result["rule_key"]: result
+        for result in transaction["rule_results"]
+    }
+
+    assert (
+        rules["segregation_of_duties"]["status"]
+        == "PASSED"
+    )
+    assert rules["approval_limits"]["status"] == "PASSED"
+
+    for rule_key in (
+        "duplicate_payment",
+        "invoice_splitting",
+        "ghost_vendors",
+    ):
+        assert rules[rule_key]["status"] == "NOT_EVALUATED"
+
     assert all(
-        result["status"] == "NOT_EVALUATED"
+        result["rule_version"] == "1.0.0"
         for result in transaction["rule_results"]
     )
     assert all(

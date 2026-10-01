@@ -9,8 +9,9 @@ from app.repositories.supabase_transactions import (
     persist_transactions,
 )
 from app.schemas.transaction import TransactionCreate
-from app.services.rule_eligibility import (
-    build_pending_rule_results,
+from app.services.audit_rules import (
+    evaluate_transaction_rules,
+    summarize_rule_status,
 )
 
 
@@ -131,18 +132,22 @@ async def create_transaction(
             detail="Transaction could not be stored.",
         ) from exc
 
+    rule_results = evaluate_transaction_rules(
+        transaction_data
+    )
+
     return {
         **transaction_data,
         "vendor_monitoring_status": None,
         "data_quality_status": data_quality_status,
         "missing_fields": missing_fields,
-        "rule_status": "NOT_EVALUATED",
+        "rule_status": summarize_rule_status(
+            rule_results
+        ),
         "rule_score": None,
         "ai_score": None,
         "risk_score": None,
         "risk_level": None,
-        "rule_results": build_pending_rule_results(
-            transaction_data
-        ),
+        "rule_results": rule_results,
         "explanation": None,
     }

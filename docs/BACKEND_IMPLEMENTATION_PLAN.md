@@ -179,11 +179,10 @@ Acceptance criteria:
 - [x] Define required fields for each audit rule.
 - [x] Implement a shared eligibility checker.
 - [x] Mark unavailable rules as `NOT_EVALUATED`.
-- [ ] Evaluate available rules even when other fields are missing.
 - [x] Return the missing required fields in each rule result.
 - [x] Add tests for complete, partial, and insufficient transactions.
 
-- [ ] **CURRENT:** Commit and merge the rule-eligibility foundation; eligible rule execution continues in Phase 6.
+- [x] Commit and merge the rule-eligibility foundation (PR #8).
 
 Planned eligibility matrix:
 
@@ -199,13 +198,17 @@ The exact duplicate-payment and invoice-splitting definitions must be confirmed 
 
 ## Phase 6 — Five audit rules and rule score
 
-- [ ] Implement Segregation of Duties.
-- [ ] Implement Approval Limits.
+- [x] Build the versioned rule-engine foundation and execute eligible rules independently.
+
+- [x] Implement Segregation of Duties.
+- [x] Implement Approval Limits.
 - [ ] Implement Duplicate Payment.
 - [ ] Implement Invoice Splitting.
 - [ ] Implement Ghost Vendors.
-- [ ] Store a version for every rule definition.
-- [ ] Produce `PASSED`, `FAILED`, or `NOT_EVALUATED` per rule.
+- [x] Store a version for every rule definition.
+- [x] Produce `PASSED`, `FAILED`, or `NOT_EVALUATED` per rule.
+
+- [ ] **CURRENT:** Commit and merge the first Phase 6 rule-engine slice.
 - [ ] Calculate authoritative `rule_score` from eligible rules only.
 - [ ] Persist rule results and rule score.
 - [ ] Add unit tests and controlled labeled cases for all five rules.
@@ -304,8 +307,8 @@ These are implementation estimates, not final evaluation grades.
 | Requirement | Current estimate | What is already proven | Main remaining work |
 | --- | ---: | --- | --- |
 | C1 | 95% | standardized schema, offline SME adapter, and 10,000 rows mapped into Supabase | package final mapping and test evidence |
-| C3 | 75% | missing fields persisted; per-rule eligibility and `NOT_EVALUATED` behavior tested | execute eligible rules independently in Phase 6 |
-| CS part of IS1 | 15% | ingestion and persistence foundation | rule engine and measured 95% coverage |
+| C3 | 85% | per-rule eligibility tested; Segregation of Duties and Approval Limits execute independently | implement and verify the remaining three rules |
+| CS part of IS1 | 35% | automated evaluation foundation and two of five rules implemented | complete three rules and measure at least 95% coverage |
 | CS part of IS3 | 5% | contract and planned formula | rule score, Isolation Forest, combined scoring |
 
 ## Change log
@@ -317,7 +320,8 @@ These are implementation estimates, not final evaluation grades.
 | 2026-09-30 | Added Supabase persistence | PR #5 |
 | 2026-10-01 | Added Supabase runtime transaction read API | PR #6 |
 | 2026-10-01 | Moved Excel import out of runtime into an offline seed tool | PR #7 |
+| 2026-10-01 | Added per-rule missing-field eligibility checks | PR #8 |
 
 ## Next action
 
-Commit and open a PR for the C3 rule-eligibility foundation. After merge, begin Phase 6 by implementing eligible audit rules independently.
+Commit and merge the first Phase 6 rule-engine slice, then implement Duplicate Payment.

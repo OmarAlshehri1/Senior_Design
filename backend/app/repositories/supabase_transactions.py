@@ -7,8 +7,9 @@ import httpx
 from dotenv import load_dotenv
 from fastapi.encoders import jsonable_encoder
 
-from app.services.rule_eligibility import (
-    build_pending_rule_results,
+from app.services.audit_rules import (
+    evaluate_transaction_rules,
+    summarize_rule_status,
 )
 
 load_dotenv()
@@ -135,7 +136,13 @@ def _from_database_row(
     }
 
     transaction["rule_results"] = (
-        build_pending_rule_results(transaction)
+        evaluate_transaction_rules(transaction)
+    )
+
+    transaction["rule_status"] = (
+        summarize_rule_status(
+            transaction["rule_results"]
+        )
     )
 
     return transaction
