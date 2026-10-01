@@ -139,7 +139,15 @@ def test_create_complete_transaction() -> None:
     assert body["data_quality_status"] == "COMPLETE"
     assert body["missing_fields"] == []
     assert body["rule_status"] == "NOT_EVALUATED"
-    assert body["rule_results"] == []
+    assert len(body["rule_results"]) == 5
+    assert all(
+        result["status"] == "NOT_EVALUATED"
+        for result in body["rule_results"]
+    )
+    assert all(
+        result["evidence"]["eligible"] is True
+        for result in body["rule_results"]
+    )
     assert "transaction" not in body
     assert "persisted_rows" not in body
 
@@ -161,6 +169,45 @@ def test_create_partial_transaction() -> None:
     assert "vendor_id" in body["missing_fields"]
     assert "amount" in body["missing_fields"]
     assert body["risk_score"] is None
+
+    rules = {
+        result["rule_key"]: result
+        for result in body["rule_results"]
+    }
+
+    assert len(rules) == 5
+    assert all(
+        result["status"] == "NOT_EVALUATED"
+        for result in rules.values()
+    )
+
+    assert (
+        rules["approval_limits"]["evidence"][
+            "eligible"
+        ]
+        is False
+    )
+    assert rules["approval_limits"]["evidence"][
+        "missing_fields"
+    ] == [
+        "amount",
+        "approval_limit",
+    ]
+
+    assert (
+        rules["ghost_vendors"]["evidence"][
+            "eligible"
+        ]
+        is False
+    )
+    assert rules["ghost_vendors"]["evidence"][
+        "missing_any_of"
+    ] == [
+        [
+            "vendor_id",
+            "vendor_name",
+        ]
+    ]
 
 
 def test_reject_invalid_currency() -> None:

@@ -7,6 +7,10 @@ import httpx
 from dotenv import load_dotenv
 from fastapi.encoders import jsonable_encoder
 
+from app.services.rule_eligibility import (
+    build_pending_rule_results,
+)
+
 load_dotenv()
 
 BATCH_SIZE = 500
@@ -95,13 +99,15 @@ def _to_database_row(transaction: dict[str, Any]) -> dict[str, Any]:
     return jsonable_encoder(row)
 
 
-def _from_database_row(row: dict[str, Any]) -> dict[str, Any]:
+def _from_database_row(
+    row: dict[str, Any],
+) -> dict[str, Any]:
     missing_fields = row.get("missing_fields")
 
     if not isinstance(missing_fields, list):
         missing_fields = []
 
-    return {
+    transaction = {
         "id": row.get("id"),
         "timestamp": row.get("transaction_timestamp"),
         "vendor_id": row.get("vendor_id"),
@@ -115,7 +121,9 @@ def _from_database_row(row: dict[str, Any]) -> dict[str, Any]:
         "approved_by": row.get("approved_by"),
         "approver_role": row.get("approver_role"),
         "approval_limit": row.get("approval_limit"),
-        "data_quality_status": row.get("completeness_status"),
+        "data_quality_status": row.get(
+            "completeness_status"
+        ),
         "missing_fields": missing_fields,
         "rule_status": "NOT_EVALUATED",
         "rule_score": None,
@@ -125,6 +133,12 @@ def _from_database_row(row: dict[str, Any]) -> dict[str, Any]:
         "rule_results": [],
         "explanation": None,
     }
+
+    transaction["rule_results"] = (
+        build_pending_rule_results(transaction)
+    )
+
+    return transaction
 
 
 def _parse_total(content_range: str | None, returned_rows: int) -> int:
