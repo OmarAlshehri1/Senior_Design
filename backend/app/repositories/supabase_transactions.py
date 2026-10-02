@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from fastapi.encoders import jsonable_encoder
 
 from app.services.audit_rules import (
+    calculate_rule_score,
     evaluate_transaction_rules,
     summarize_rule_status,
 )
@@ -165,6 +166,10 @@ def _from_database_row(
             transaction,
             context=rule_context,
         )
+    )
+
+    transaction["rule_score"] = calculate_rule_score(
+        transaction["rule_results"]
     )
 
     transaction["rule_status"] = (

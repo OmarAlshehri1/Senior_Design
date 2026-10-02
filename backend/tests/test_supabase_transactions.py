@@ -244,6 +244,27 @@ def test_list_transactions_maps_rows_and_total(
     assert transaction["data_quality_status"] == "PARTIAL"
     assert transaction["missing_fields"] == ["approval_limit"]
     assert transaction["rule_status"] == "PASSED"
+    assert transaction["rule_score"] == 0.0
+
+    evaluated_results = [
+        result
+        for result in transaction["rule_results"]
+        if result["status"] != "NOT_EVALUATED"
+    ]
+    not_evaluated_results = [
+        result
+        for result in transaction["rule_results"]
+        if result["status"] == "NOT_EVALUATED"
+    ]
+
+    assert all(
+        result["score_contribution"] == 0.0
+        for result in evaluated_results
+    )
+    assert all(
+        result["score_contribution"] is None
+        for result in not_evaluated_results
+    )
     assert transaction["risk_score"] is None
     assert "ground_truth" not in transaction
 
