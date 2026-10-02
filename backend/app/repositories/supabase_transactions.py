@@ -104,6 +104,9 @@ def _from_database_row(
     row: dict[str, Any],
     *,
     duplicate_payment_count: int | None = None,
+    invoice_splitting_context: (
+        dict[str, int | float] | None
+    ) = None,
 ) -> dict[str, Any]:
     missing_fields = row.get("missing_fields")
 
@@ -142,6 +145,11 @@ def _from_database_row(
     if duplicate_payment_count is not None:
         rule_context["duplicate_payment_count"] = (
             duplicate_payment_count
+        )
+
+    if invoice_splitting_context is not None:
+        rule_context["invoice_splitting_context"] = (
+            invoice_splitting_context
         )
 
     transaction["rule_results"] = (
@@ -252,6 +260,98 @@ def get_duplicate_payment_counts(
     return counts
 
 
+def get_invoice_splitting_contexts(
+    transaction_ids: list[str],
+) -> dict[str, dict[str, int | float]]:
+    unique_ids = list(
+        dict.fromkeys(
+            transaction_id
+            for transaction_id in transaction_ids
+            if transaction_id
+        )
+    )
+
+    if not unique_ids:
+        return {}
+
+    url, _ = _get_configuration()
+    endpoint = (
+        f"{url}/rest/v1/rpc/"
+        "get_invoice_splitting_context"
+    )
+
+    try:
+        with httpx.Client(
+            timeout=REQUEST_TIMEOUT_SECONDS
+        ) as client:
+            response = client.post(
+                endpoint,
+                headers=_get_headers(),
+                json={
+                    "transaction_ids": unique_ids,
+                },
+            )
+            response.raise_for_status()
+            payload = response.json()
+    except (httpx.HTTPError, ValueError) as exc:
+        raise SupabasePersistenceError(
+            "Failed to read invoice-splitting context "
+            "from Supabase."
+        ) from exc
+
+    if not isinstance(payload, list):
+        raise SupabasePersistenceError(
+            "Supabase returned invalid invoice-splitting "
+            "context."
+        )
+
+    contexts: dict[
+        str,
+        dict[str, int | float],
+    ] = {}
+
+    for item in payload:
+        if not isinstance(item, dict):
+            raise SupabasePersistenceError(
+                "Supabase returned an invalid "
+                "invoice-splitting context record."
+            )
+
+        transaction_id = item.get("transaction_id")
+        historical_count = item.get(
+            "historical_transaction_count"
+        )
+        window_total = item.get(
+            "window_total_amount"
+        )
+
+        if (
+            not isinstance(transaction_id, str)
+            or isinstance(historical_count, bool)
+            or not isinstance(historical_count, int)
+            or historical_count < 0
+            or isinstance(window_total, bool)
+            or not isinstance(window_total, (int, float))
+            or window_total < 0
+        ):
+            raise SupabasePersistenceError(
+                "Supabase returned invalid "
+                "invoice-splitting context values."
+            )
+
+        if transaction_id in unique_ids:
+            contexts[transaction_id] = {
+                "historical_transaction_count": (
+                    historical_count
+                ),
+                "window_total_amount": float(
+                    window_total
+                ),
+            }
+
+    return contexts
+
+
 def persist_transactions(transactions: list[dict[str, Any]]) -> int:
     if not transactions:
         return 0
@@ -329,6 +429,12 @@ def list_transactions(
         transaction_ids
     )
 
+    invoice_splitting_contexts = (
+        get_invoice_splitting_contexts(
+            transaction_ids
+        )
+    )
+
     transactions: list[dict[str, Any]] = []
 
     for row in payload:
@@ -342,11 +448,22 @@ def list_transactions(
             else None
         )
 
+        invoice_splitting_context = (
+            invoice_splitting_contexts.get(
+                transaction_id
+            )
+            if isinstance(transaction_id, str)
+            else None
+        )
+
         transactions.append(
             _from_database_row(
                 row,
                 duplicate_payment_count=(
                     duplicate_payment_count
+                ),
+                invoice_splitting_context=(
+                    invoice_splitting_context
                 ),
             )
         )
@@ -404,9 +521,18 @@ def get_transaction_by_id(
         [transaction_id]
     )
 
+    invoice_splitting_contexts = (
+        get_invoice_splitting_contexts(
+            [transaction_id]
+        )
+    )
+
     return _from_database_row(
         first_row,
         duplicate_payment_count=(
             duplicate_counts.get(transaction_id)
+        ),
+        invoice_splitting_context=(
+            invoice_splitting_contexts.get(transaction_id)
         ),
     )

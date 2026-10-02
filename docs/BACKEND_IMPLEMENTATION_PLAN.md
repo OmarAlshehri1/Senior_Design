@@ -204,8 +204,10 @@ The exact duplicate-payment and invoice-splitting definitions must be confirmed 
 - [x] Implement Approval Limits.
 - [x] Implement Duplicate Payment against Supabase history.
 
-- [ ] **CURRENT:** Commit and merge the Duplicate Payment rule.
-- [ ] Implement Invoice Splitting.
+- [x] Commit and merge the Duplicate Payment rule (PR #10).
+- [x] Implement Invoice Splitting against Supabase history.
+
+- [ ] **CURRENT:** Commit and merge the Invoice Splitting rule.
 - [ ] Implement Ghost Vendors.
 - [x] Store a version for every rule definition.
 - [x] Produce `PASSED`, `FAILED`, or `NOT_EVALUATED` per rule.
@@ -309,8 +311,8 @@ These are implementation estimates, not final evaluation grades.
 | Requirement | Current estimate | What is already proven | Main remaining work |
 | --- | ---: | --- | --- |
 | C1 | 95% | standardized schema, offline SME adapter, and 10,000 rows mapped into Supabase | package final mapping and test evidence |
-| C3 | 90% | three rules execute independently and missing fields remain isolated per rule | implement and verify Invoice Splitting and Ghost Vendors |
-| CS part of IS1 | 50% | automated evaluation foundation and three of five rules implemented | complete two rules and measure at least 95% coverage |
+| C3 | 95% | four rules execute independently and missing fields remain isolated per rule | implement and verify Ghost Vendors |
+| CS part of IS1 | 65% | automated evaluation foundation and four of five rules implemented | complete Ghost Vendors and measure at least 95% coverage |
 | CS part of IS3 | 5% | contract and planned formula | rule score, Isolation Forest, combined scoring |
 
 ## Change log
@@ -324,7 +326,8 @@ These are implementation estimates, not final evaluation grades.
 | 2026-10-01 | Moved Excel import out of runtime into an offline seed tool | PR #7 |
 | 2026-10-01 | Added per-rule missing-field eligibility checks | PR #8 |
 | 2026-10-01 | Added versioned rule engine with Segregation of Duties and Approval Limits | PR #9 |
+| 2026-10-01 | Added Duplicate Payment detection against Supabase history | PR #10 |
 
 ## Next action
 
-Commit and merge Duplicate Payment, then implement Invoice Splitting.
+Commit and merge Invoice Splitting, then implement Ghost Vendors.
