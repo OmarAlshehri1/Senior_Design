@@ -8,6 +8,7 @@ from app.repositories.supabase_transactions import (
     get_transaction_by_id,
     list_transactions,
     persist_transactions,
+    persist_transaction_evaluation,
     get_duplicate_payment_counts,
     get_invoice_splitting_contexts,
     get_ghost_vendor_contexts,
@@ -16,6 +17,7 @@ from app.schemas.transaction import TransactionCreate
 
 from app.services.audit_rules import (
     calculate_rule_score,
+    RULE_SCORE_VERSION,
     evaluate_transaction_rules,
     summarize_rule_status,
 )
@@ -200,15 +202,32 @@ async def create_transaction(
     )
 
     rule_score = calculate_rule_score(rule_results)
+    rule_status = summarize_rule_status(rule_results)
+
+    try:
+        await run_in_threadpool(
+            persist_transaction_evaluation,
+            transaction_id=transaction_data["id"],
+            evaluation_version=RULE_SCORE_VERSION,
+            rule_status=rule_status,
+            rule_score=rule_score,
+            rule_results=rule_results,
+        )
+    except (
+        SupabaseConfigurationError,
+        SupabasePersistenceError,
+    ) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Transaction evaluation could not be stored.",
+        ) from exc
 
     return {
         **transaction_data,
         "vendor_monitoring_status": None,
         "data_quality_status": data_quality_status,
         "missing_fields": missing_fields,
-        "rule_status": summarize_rule_status(
-            rule_results
-        ),
+        "rule_status": rule_status,
         "rule_score": rule_score,
         "ai_score": None,
         "risk_score": None,

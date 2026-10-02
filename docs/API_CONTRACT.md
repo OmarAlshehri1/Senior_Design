@@ -93,6 +93,8 @@ The overall `rule_status` is `REVIEW` when any executed rule fails, `PASSED` whe
 
 The authoritative `rule_score` uses equal weighting across evaluated rules only: `failed evaluated rules / all evaluated rules * 100`. `NOT_EVALUATED` rules are excluded from both numerator and denominator. The score is rounded to two decimal places, is `0` when all evaluated rules pass, and is `null` when no rule can be evaluated. A failed rule receives its equal share in `score_contribution`, a passed rule receives `0`, and a non-evaluated rule receives `null`.
 
+Each completed evaluation is stored as a versioned snapshot in `transaction_evaluations`. Transaction reads return the latest persisted snapshot when available; transactions created before evaluation persistence continue to use safe runtime evaluation as a fallback. Evaluation storage and lookup use the service role, and persisted rule evidence never includes private `ground_truth` labels.
+
 ### DashboardSummary
 
 ```json
@@ -195,7 +197,7 @@ Returns `DashboardSummary` for the current organization and reporting period.
 
 Returns a database-backed paginated transaction collection from Supabase. The default page size is 25 and the maximum page size is 100.
 
-Implemented query parameters are `page`, `page_size`, `search`, and `sort_by`. `search` matches transaction ID, vendor name, or category across the full Supabase collection. `sort_by` accepts `newest`, `oldest`, `highest-amount`, or `lowest-amount`. Risk-score sorting and computed rule-status filtering are deferred until evaluation results are persisted.
+Implemented query parameters are `page`, `page_size`, `search`, and `sort_by`. `search` matches transaction ID, vendor name, or category across the full Supabase collection. `sort_by` accepts `newest`, `oldest`, `highest-amount`, or `lowest-amount`. Risk-score sorting and rule-status filtering are not currently implemented.
 
 ```json
 {
@@ -268,7 +270,7 @@ Response `201 Created`:
 
 A transaction with missing optional fields returns `data_quality_status` as `PARTIAL` and lists the unavailable fields in `missing_fields`. Unknown fields or invalid values return `422 Unprocessable Entity`.
 
-The transaction is validated, assessed for missing fields, evaluated by the eligible audit rules, assigned an authoritative rule score, and persisted to Supabase PostgreSQL. Anomaly scoring and alert generation will be added in later stages.
+The transaction is validated, assessed for missing fields, persisted to Supabase PostgreSQL, evaluated by the eligible audit rules, assigned an authoritative rule score, and stored with a versioned evaluation snapshot. Anomaly scoring and alert generation will be added in later stages.
 
 ## Offline seed utility
 

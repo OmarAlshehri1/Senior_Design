@@ -111,7 +111,199 @@ def test_persistence_uses_batches_and_secret_header(
         "/rest/v1/transactions?on_conflict=id"
     )
 
+def test_persist_transaction_evaluation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request: dict[str, Any] = {}
 
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+    class FakeClient:
+        def __init__(self, timeout: float) -> None:
+            self.timeout = timeout
+
+        def __enter__(self) -> "FakeClient":
+            return self
+
+        def __exit__(
+            self,
+            exc_type: object,
+            exc_value: object,
+            traceback: object,
+        ) -> None:
+            return None
+
+        def post(
+            self,
+            endpoint: str,
+            *,
+            headers: dict[str, str],
+            json: dict[str, Any],
+        ) -> FakeResponse:
+            request.update(
+                {
+                    "endpoint": endpoint,
+                    "headers": headers,
+                    "json": json,
+                }
+            )
+            return FakeResponse()
+
+    monkeypatch.setenv(
+        "SUPABASE_URL",
+        "https://example.supabase.co",
+    )
+    monkeypatch.setenv(
+        "SUPABASE_SECRET_KEY",
+        "sb_secret_test",
+    )
+    monkeypatch.setattr(
+        repository.httpx,
+        "Client",
+        FakeClient,
+    )
+
+    rule_results = [
+        {
+            "rule_key": "ghost_vendors",
+            "rule_name": "Ghost Vendors",
+            "rule_version": "1.0.0",
+            "status": "FAILED",
+            "score_contribution": 33.33,
+            "detail": "Manual review is required.",
+            "evidence": {
+                "eligible": True,
+                "manual_review_required": True,
+            },
+        }
+    ]
+
+    repository.persist_transaction_evaluation(
+        transaction_id="TX-EVAL-001",
+        evaluation_version="1.0.0",
+        rule_status="REVIEW",
+        rule_score=33.33,
+        rule_results=rule_results,
+    )
+
+    assert request["endpoint"].endswith(
+        "/rest/v1/transaction_evaluations"
+    )
+    assert request["headers"]["apikey"] == "sb_secret_test"
+    assert "Authorization" not in request["headers"]
+    assert request["headers"]["Prefer"] == "return=minimal"
+    assert request["json"] == {
+        "transaction_id": "TX-EVAL-001",
+        "evaluation_version": "1.0.0",
+        "rule_status": "REVIEW",
+        "rule_score": 33.33,
+        "rule_results": rule_results,
+    }
+    assert "ground_truth" not in request["json"]
+
+def test_get_latest_transaction_evaluations(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request: dict[str, Any] = {}
+
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> list[dict[str, Any]]:
+            return [
+                {
+                    "transaction_id": "TX-EVAL-001",
+                    "evaluation_version": "1.0.0",
+                    "rule_status": "REVIEW",
+                    "rule_score": 33.33,
+                    "rule_results": [
+                        {
+                            "rule_key": "ghost_vendors",
+                            "status": "FAILED",
+                        }
+                    ],
+                    "evaluated_at": "2026-10-02T15:00:00+00:00",
+                }
+            ]
+
+    class FakeClient:
+        def __init__(self, timeout: float) -> None:
+            self.timeout = timeout
+
+        def __enter__(self) -> "FakeClient":
+            return self
+
+        def __exit__(
+            self,
+            exc_type: object,
+            exc_value: object,
+            traceback: object,
+        ) -> None:
+            return None
+
+        def post(
+            self,
+            endpoint: str,
+            *,
+            headers: dict[str, str],
+            json: dict[str, Any],
+        ) -> FakeResponse:
+            request.update(
+                {
+                    "endpoint": endpoint,
+                    "headers": headers,
+                    "json": json,
+                }
+            )
+            return FakeResponse()
+
+    monkeypatch.setenv(
+        "SUPABASE_URL",
+        "https://example.supabase.co",
+    )
+    monkeypatch.setenv(
+        "SUPABASE_SECRET_KEY",
+        "sb_secret_test",
+    )
+    monkeypatch.setattr(
+        repository.httpx,
+        "Client",
+        FakeClient,
+    )
+
+    evaluations = (
+        repository.get_latest_transaction_evaluations(
+            [
+                "TX-EVAL-001",
+                "TX-EVAL-001",
+                "",
+            ]
+        )
+    )
+
+    assert evaluations == {
+        "TX-EVAL-001": {
+            "evaluation_version": "1.0.0",
+            "rule_status": "REVIEW",
+            "rule_score": 33.33,
+            "rule_results": [
+                {
+                    "rule_key": "ghost_vendors",
+                    "status": "FAILED",
+                }
+            ],
+            "evaluated_at": "2026-10-02T15:00:00+00:00",
+        }
+    }
+    assert request["endpoint"].endswith(
+        "/rest/v1/rpc/get_latest_transaction_evaluations"
+    )
+    assert request["json"] == {
+        "transaction_ids": ["TX-EVAL-001"]
+    }
 
 def test_list_transactions_maps_rows_and_total(
     monkeypatch: pytest.MonkeyPatch,
@@ -225,6 +417,12 @@ def test_list_transactions_maps_rows_and_total(
             }
             for transaction_id in transaction_ids
         },
+    )
+
+    monkeypatch.setattr(
+        repository,
+        "get_latest_transaction_evaluations",
+        lambda transaction_ids: {},
     )
 
     transactions, total = repository.list_transactions(
@@ -396,6 +594,12 @@ def test_get_transaction_by_id_and_not_found(
         },
     )
 
+    monkeypatch.setattr(
+        repository,
+        "get_latest_transaction_evaluations",
+        lambda transaction_ids: {},
+    )
+
     transaction = repository.get_transaction_by_id(
         "TX-READ-002",
     )
@@ -447,4 +651,38 @@ def test_get_transaction_by_id_and_not_found(
     assert requested_ids == [
         "eq.TX-READ-002",
         "eq.TX-DOES-NOT-EXIST",
+    ]
+
+def test_database_row_prefers_persisted_evaluation() -> None:
+    transaction = repository._from_database_row(
+        {
+            "id": "TX-EVAL-READ-001",
+            "transaction_timestamp": "2026-10-02T15:00:00+00:00",
+            "completeness_status": "COMPLETE",
+            "missing_fields": [],
+        },
+        duplicate_payment_count=0,
+        persisted_evaluation={
+            "evaluation_version": "1.0.0",
+            "rule_status": "REVIEW",
+            "rule_score": 33.33,
+            "rule_results": [
+                {
+                    "rule_key": "ghost_vendors",
+                    "status": "FAILED",
+                    "score_contribution": 33.33,
+                }
+            ],
+            "evaluated_at": "2026-10-02T15:01:00+00:00",
+        },
+    )
+
+    assert transaction["rule_status"] == "REVIEW"
+    assert transaction["rule_score"] == 33.33
+    assert transaction["rule_results"] == [
+        {
+            "rule_key": "ghost_vendors",
+            "status": "FAILED",
+            "score_contribution": 33.33,
+        }
     ]

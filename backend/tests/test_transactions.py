@@ -119,7 +119,23 @@ def test_get_transaction_and_not_found(
     assert missing_response.json()["detail"] == "Transaction not found."
 
 
-def test_create_complete_transaction() -> None:
+def test_create_complete_transaction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+
+    persisted_evaluation: dict[str, Any] = {}
+
+    def capture_evaluation(**evaluation: Any) -> None:
+        persisted_evaluation.update(evaluation)
+
+    monkeypatch.setattr(
+        (
+            "app.api.transactions."
+            "persist_transaction_evaluation"
+        ),
+        capture_evaluation,
+    )
+
     response = client.post(
         "/api/v1/transactions",
         json={
@@ -188,6 +204,15 @@ def test_create_complete_transaction() -> None:
     )
     assert "transaction" not in body
     assert "persisted_rows" not in body
+
+    assert persisted_evaluation["transaction_id"] == "TX-TEST-001"
+    assert persisted_evaluation["evaluation_version"] == "1.0.0"
+    assert persisted_evaluation["rule_status"] == "PASSED"
+    assert persisted_evaluation["rule_score"] == 0.0
+    assert (
+        persisted_evaluation["rule_results"]
+        == body["rule_results"]
+    )
 
 
 def test_create_partial_transaction() -> None:
