@@ -50,3 +50,23 @@ def mock_transaction_persistence(
         ),
         fake_get_invoice_splitting_contexts,
     )
+
+    def fake_get_ghost_vendor_contexts(
+        transaction_ids: list[str],
+    ) -> dict[str, dict[str, bool]]:
+        return {
+            transaction_id: {
+                "registry_authoritative": True,
+                "vendor_registered": True,
+                "vendor_active": True,
+            }
+            for transaction_id in transaction_ids
+        }
+
+    monkeypatch.setattr(
+        (
+            "app.api.transactions."
+            "get_ghost_vendor_contexts"
+        ),
+        fake_get_ghost_vendor_contexts,
+    )

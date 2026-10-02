@@ -158,9 +158,10 @@ def test_create_complete_transaction() -> None:
         rules["invoice_splitting"]["status"]
         == "PASSED"
     )
+
     assert (
         rules["ghost_vendors"]["status"]
-        == "NOT_EVALUATED"
+        == "PASSED"
     )
 
     assert all(
@@ -394,3 +395,64 @@ def test_create_invoice_splitting(
         "matching_transaction_ids"
         not in invoice_splitting["evidence"]
     )
+
+def test_create_unregistered_vendor_requires_review(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        (
+            "app.api.transactions."
+            "get_ghost_vendor_contexts"
+        ),
+        lambda transaction_ids: {
+            transaction_ids[0]: {
+                "registry_authoritative": True,
+                "vendor_registered": False,
+                "vendor_active": False,
+            },
+        },
+    )
+
+    response = client.post(
+        "/api/v1/transactions",
+        json={
+            "id": "TX-NEW-VENDOR-001",
+            "timestamp": "2026-10-02T11:00:00Z",
+            "vendor_id": "VND-NEW-001",
+            "vendor_name": "New Legitimate Supplier",
+            "invoice_number": "INV-NEW-001",
+            "category": "Inventory",
+            "amount": 500,
+            "currency": "SAR",
+            "created_by": "EMP-101",
+            "approved_by": "MGR-201",
+            "approver_role": "Store Manager",
+            "approval_limit": 1000,
+        },
+    )
+
+    assert response.status_code == 201
+
+    body = response.json()
+    rules = {
+        result["rule_key"]: result
+        for result in body["rule_results"]
+    }
+    ghost_vendor = rules["ghost_vendors"]
+
+    assert body["rule_status"] == "REVIEW"
+    assert ghost_vendor["status"] == "FAILED"
+    assert ghost_vendor["evidence"][
+        "vendor_registry_available"
+    ] is True
+    assert ghost_vendor["evidence"][
+        "vendor_registered"
+    ] is False
+    assert ghost_vendor["evidence"][
+        "vendor_active"
+    ] is None
+    assert ghost_vendor["evidence"][
+        "manual_review_required"
+    ] is True
+    assert "manual review" in ghost_vendor["detail"].lower()
+    assert "ghost" not in ghost_vendor["detail"].lower()

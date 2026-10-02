@@ -107,6 +107,9 @@ def _from_database_row(
     invoice_splitting_context: (
         dict[str, int | float] | None
     ) = None,
+    ghost_vendor_context: (
+        dict[str, bool] | None
+    ) = None,
 ) -> dict[str, Any]:
     missing_fields = row.get("missing_fields")
 
@@ -150,6 +153,11 @@ def _from_database_row(
     if invoice_splitting_context is not None:
         rule_context["invoice_splitting_context"] = (
             invoice_splitting_context
+        )
+
+    if ghost_vendor_context is not None:
+        rule_context["ghost_vendor_context"] = (
+            ghost_vendor_context
         )
 
     transaction["rule_results"] = (
@@ -352,6 +360,94 @@ def get_invoice_splitting_contexts(
     return contexts
 
 
+def get_ghost_vendor_contexts(
+    transaction_ids: list[str],
+) -> dict[str, dict[str, bool]]:
+    unique_ids = list(
+        dict.fromkeys(
+            transaction_id
+            for transaction_id in transaction_ids
+            if transaction_id
+        )
+    )
+
+    if not unique_ids:
+        return {}
+
+    url, _ = _get_configuration()
+    endpoint = (
+        f"{url}/rest/v1/rpc/"
+        "get_ghost_vendor_context"
+    )
+
+    try:
+        with httpx.Client(
+            timeout=REQUEST_TIMEOUT_SECONDS
+        ) as client:
+            response = client.post(
+                endpoint,
+                headers=_get_headers(),
+                json={
+                    "transaction_ids": unique_ids,
+                },
+            )
+            response.raise_for_status()
+            payload = response.json()
+    except (httpx.HTTPError, ValueError) as exc:
+        raise SupabasePersistenceError(
+            "Failed to read ghost-vendor context "
+            "from Supabase."
+        ) from exc
+
+    if not isinstance(payload, list):
+        raise SupabasePersistenceError(
+            "Supabase returned invalid ghost-vendor "
+            "context."
+        )
+
+    contexts: dict[str, dict[str, bool]] = {}
+
+    for item in payload:
+        if not isinstance(item, dict):
+            raise SupabasePersistenceError(
+                "Supabase returned an invalid "
+                "ghost-vendor context record."
+            )
+
+        transaction_id = item.get("transaction_id")
+        registry_authoritative = item.get(
+            "registry_authoritative"
+        )
+        vendor_registered = item.get(
+            "vendor_registered"
+        )
+        vendor_active = item.get(
+            "vendor_active"
+        )
+
+        if (
+            not isinstance(transaction_id, str)
+            or not isinstance(registry_authoritative, bool)
+            or not isinstance(vendor_registered, bool)
+            or not isinstance(vendor_active, bool)
+        ):
+            raise SupabasePersistenceError(
+                "Supabase returned invalid "
+                "ghost-vendor context values."
+            )
+
+        if transaction_id in unique_ids:
+            contexts[transaction_id] = {
+                "registry_authoritative": (
+                    registry_authoritative
+                ),
+                "vendor_registered": vendor_registered,
+                "vendor_active": vendor_active,
+            }
+
+    return contexts
+
+
 def persist_transactions(transactions: list[dict[str, Any]]) -> int:
     if not transactions:
         return 0
@@ -435,6 +531,10 @@ def list_transactions(
         )
     )
 
+    ghost_vendor_contexts = get_ghost_vendor_contexts(
+        transaction_ids
+    )
+
     transactions: list[dict[str, Any]] = []
 
     for row in payload:
@@ -456,6 +556,12 @@ def list_transactions(
             else None
         )
 
+        ghost_vendor_context = (
+            ghost_vendor_contexts.get(transaction_id)
+            if isinstance(transaction_id, str)
+            else None
+        )
+
         transactions.append(
             _from_database_row(
                 row,
@@ -464,6 +570,9 @@ def list_transactions(
                 ),
                 invoice_splitting_context=(
                     invoice_splitting_context
+                ),
+                ghost_vendor_context=(
+                    ghost_vendor_context
                 ),
             )
         )
@@ -527,6 +636,10 @@ def get_transaction_by_id(
         )
     )
 
+    ghost_vendor_contexts = get_ghost_vendor_contexts(
+        [transaction_id]
+    )
+
     return _from_database_row(
         first_row,
         duplicate_payment_count=(
@@ -534,5 +647,8 @@ def get_transaction_by_id(
         ),
         invoice_splitting_context=(
             invoice_splitting_contexts.get(transaction_id)
+        ),
+        ghost_vendor_context=(
+            ghost_vendor_contexts.get(transaction_id)
         ),
     )

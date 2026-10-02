@@ -9,6 +9,7 @@ from app.repositories.supabase_transactions import (
     persist_transactions,
     get_duplicate_payment_counts,
     get_invoice_splitting_contexts,
+    get_ghost_vendor_contexts,
 )
 from app.schemas.transaction import TransactionCreate
 from app.services.audit_rules import (
@@ -158,6 +159,17 @@ async def create_transaction(
     ):
         invoice_splitting_contexts = {}
 
+    try:
+        ghost_vendor_contexts = await run_in_threadpool(
+            get_ghost_vendor_contexts,
+            [transaction_data["id"]],
+        )
+    except (
+        SupabaseConfigurationError,
+        SupabasePersistenceError,
+    ):
+        ghost_vendor_contexts = {}
+
     rule_results = evaluate_transaction_rules(
         transaction_data,
         context={
@@ -168,6 +180,9 @@ async def create_transaction(
             ),
             "invoice_splitting_context": (
                 invoice_splitting_contexts.get(transaction_data["id"])
+            ),
+            "ghost_vendor_context": (
+                ghost_vendor_contexts.get(transaction_data["id"])
             ),
         },
     )

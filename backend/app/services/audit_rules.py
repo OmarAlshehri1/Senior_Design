@@ -246,6 +246,104 @@ def _evaluate_invoice_splitting(
     )
 
 
+def _evaluate_ghost_vendors(
+    _transaction: dict[str, Any],
+    context: dict[str, Any],
+) -> RuleEvaluation:
+    vendor_context = context.get(
+        "ghost_vendor_context"
+    )
+
+    if not isinstance(vendor_context, dict):
+        return (
+            "NOT_EVALUATED",
+            (
+                "The approved-vendor registry was not "
+                "available for evaluation."
+            ),
+            {
+                "vendor_registry_available": False,
+                "vendor_registered": None,
+                "vendor_active": None,
+                "manual_review_required": False,
+            },
+        )
+
+    registry_authoritative = vendor_context.get(
+        "registry_authoritative"
+    )
+    vendor_registered = vendor_context.get(
+        "vendor_registered"
+    )
+    vendor_active = vendor_context.get(
+        "vendor_active"
+    )
+
+    if (
+        not isinstance(registry_authoritative, bool)
+        or not isinstance(vendor_registered, bool)
+        or not isinstance(vendor_active, bool)
+        or not registry_authoritative
+    ):
+        return (
+            "NOT_EVALUATED",
+            (
+                "The approved-vendor registry was not "
+                "available for evaluation."
+            ),
+            {
+                "vendor_registry_available": False,
+                "vendor_registered": None,
+                "vendor_active": None,
+                "manual_review_required": False,
+            },
+        )
+
+    evidence = {
+        "vendor_registry_available": True,
+        "vendor_registered": vendor_registered,
+        "vendor_active": (
+            vendor_active
+            if vendor_registered
+            else None
+        ),
+        "manual_review_required": (
+            not vendor_registered
+            or not vendor_active
+        ),
+    }
+
+    if not vendor_registered:
+        return (
+            "FAILED",
+            (
+                "The vendor is not registered in the "
+                "approved-vendor registry; manual review "
+                "is required."
+            ),
+            evidence,
+        )
+
+    if not vendor_active:
+        return (
+            "FAILED",
+            (
+                "The vendor is registered but inactive; "
+                "manual review is required."
+            ),
+            evidence,
+        )
+
+    return (
+        "PASSED",
+        (
+            "The vendor is active in the approved-vendor "
+            "registry."
+        ),
+        evidence,
+    )
+
+
 RULE_EVALUATORS: dict[str, RuleEvaluator] = {
     "segregation_of_duties": (
         _evaluate_segregation_of_duties
@@ -253,6 +351,7 @@ RULE_EVALUATORS: dict[str, RuleEvaluator] = {
     "duplicate_payment": _evaluate_duplicate_payment,
     "approval_limits": _evaluate_approval_limits,
     "invoice_splitting": _evaluate_invoice_splitting,
+    "ghost_vendors": _evaluate_ghost_vendors,
 }
 
 
