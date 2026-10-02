@@ -97,6 +97,8 @@ Each completed evaluation is stored as a versioned snapshot in `transaction_eval
 
 Automated evaluation coverage is calculated as transactions whose latest snapshot contains at least one `PASSED` or `FAILED` rule divided by all stored transactions, multiplied by 100. Rules marked `NOT_EVALUATED` do not count as executed. The controlled 10,001-transaction database currently achieves 100% coverage after the idempotent evaluation backfill; no transactions remain unevaluated.
 
+Isolation Forest model `1.0.0` produces `ai_score` values from 0 to 100 using transaction attributes and rule-derived runtime context only. Identifiers, `violation_type`, `is_anomaly`, and `ground_truth` are excluded from model inputs. The reproducible stratified split contains 7,000 training, 1,500 validation, and 1,500 held-out test transactions. The selected threshold is `90.6`; held-out detection rate is `87.04%` and false-positive rate is `3.45%`. Versioned scores are stored in `transaction_anomaly_scores`; the initial backfill stored 10,001 scores and classified 945 transactions above the threshold. POST evaluates and persists new scores immediately, while GET collection and detail responses return the latest persisted `ai_score`.
+
 ### DashboardSummary
 
 ```json
@@ -216,7 +218,7 @@ The query excludes the private `ground_truth` evaluation labels.
 
 ### `GET /api/v1/transactions/{transaction_id}`
 
-Returns one Supabase-backed `Transaction`, including its current `rule_results` and optional `explanation`. Returns `404` when the transaction does not exist or is not accessible to the caller. The response never includes `ground_truth`.
+Returns one Supabase-backed `Transaction`, including its current `rule_results`, latest persisted `ai_score`, and optional `explanation`. Returns `404` when the transaction does not exist or is not accessible to the caller. The response never includes `ground_truth`.
 
 ### `POST /api/v1/transactions`
 
@@ -272,7 +274,7 @@ Response `201 Created`:
 
 A transaction with missing optional fields returns `data_quality_status` as `PARTIAL` and lists the unavailable fields in `missing_fields`. Unknown fields or invalid values return `422 Unprocessable Entity`.
 
-The transaction is validated, assessed for missing fields, persisted to Supabase PostgreSQL, evaluated by the eligible audit rules, assigned an authoritative rule score, and stored with a versioned evaluation snapshot. Anomaly scoring and alert generation will be added in later stages.
+The transaction is validated, assessed for missing fields, persisted to Supabase PostgreSQL, evaluated by the eligible audit rules, assigned an authoritative rule score, and stored with a versioned evaluation snapshot. Isolation Forest anomaly scoring is performed and persisted immediately. Combined risk scoring, alert generation, and explanations will be added in later stages.
 
 ## Offline seed utility
 

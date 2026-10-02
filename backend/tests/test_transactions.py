@@ -163,6 +163,7 @@ def test_create_complete_transaction(
     assert body["data_quality_status"] == "COMPLETE"
     assert body["missing_fields"] == []
     assert body["rule_status"] == "PASSED"
+    assert body["ai_score"] == 25.0
     assert body["rule_score"] == 0.0
     assert len(body["rule_results"]) == 5
 
@@ -529,3 +530,52 @@ def test_unknown_frontend_origin_is_not_allowed() -> None:
 
     assert response.status_code == 200
     assert "access-control-allow-origin" not in response.headers
+
+def test_create_transaction_persists_anomaly_score(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    persisted_scores: list[dict[str, Any]] = []
+
+    def capture_scores(
+        scores: list[dict[str, Any]],
+    ) -> int:
+        persisted_scores.extend(scores)
+        return len(scores)
+
+    monkeypatch.setattr(
+        (
+            "app.api.transactions."
+            "persist_transaction_anomaly_scores"
+        ),
+        capture_scores,
+    )
+
+    response = client.post(
+        "/api/v1/transactions",
+        json={
+            "id": "TX-AI-SCORE-001",
+            "timestamp": "2026-10-02T19:00:00Z",
+            "vendor_id": "VND-101",
+            "vendor_name": "Almarai Dairy Co.",
+            "invoice_number": "INV-AI-SCORE-001",
+            "category": "Inventory",
+            "amount": 500,
+            "currency": "SAR",
+            "created_by": "EMP-101",
+            "approved_by": "MGR-201",
+            "approver_role": "Manager",
+            "approval_limit": 1000,
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["ai_score"] == 25.0
+    assert persisted_scores == [
+        {
+            "transaction_id": "TX-AI-SCORE-001",
+            "model_version": "1.0.0",
+            "ai_score": 25.0,
+            "threshold": 90.6,
+            "is_anomalous": False,
+        }
+    ]

@@ -1,0 +1,13 @@
+{
+  "excluded_without_label": 1,
+  "model_version": "1.0.0",
+  "random_state": 42,
+  "test_count": 1500,
+  "test_detection_rate": 0.8704,
+  "test_false_positive_rate": 0.0345,
+  "threshold": 90.6,
+  "training_count": 7000,
+  "validation_count": 1500,
+  "validation_detection_rate": 0.9074,
+  "validation_false_positive_rate": 0.033
+}

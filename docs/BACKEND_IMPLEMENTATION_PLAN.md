@@ -230,7 +230,7 @@ The exact duplicate-payment and invoice-splitting definitions must be confirmed 
 - [x] Calculate automated evaluation coverage.
 - [x] Demonstrate 100% coverage across 10,001 stored transactions.
 - [x] Document which transactions could not be evaluated and why; the verified backfill left zero unevaluated transactions.
-- [ ] **CURRENT:** Commit and merge automated evaluation coverage.
+- [x] Commit and merge automated evaluation coverage (PR #16).
 
 Target:
 
@@ -240,16 +240,17 @@ automated evaluation coverage >= 95%
 
 ## Phase 8 — Isolation Forest anomaly scoring
 
-- [ ] Define allowed ML input features.
-- [ ] Exclude identifiers, target labels, and `ground_truth` from training features.
-- [ ] Clean and encode the Supabase training data reproducibly.
-- [ ] Split training and evaluation data without label leakage.
-- [ ] Train an Isolation Forest baseline.
-- [ ] Convert anomaly output into `ai_score` from 0 to 100.
-- [ ] Select and document the anomaly threshold.
-- [ ] Version and persist the model artifact or model configuration.
-- [ ] Measure detection rate and false-positive rate against held-out labels.
-- [ ] Persist `ai_score` for evaluated transactions.
+- [x] Define allowed ML input features.
+- [x] Exclude identifiers, target labels, and `ground_truth` from training features.
+- [x] Clean and encode the Supabase training data reproducibly.
+- [x] Split training and evaluation data without label leakage.
+- [x] Train an Isolation Forest baseline.
+- [x] Convert anomaly output into `ai_score` from 0 to 100.
+- [x] Select and document the anomaly threshold.
+- [x] Version and persist the model artifact or model configuration.
+- [x] Measure detection rate and false-positive rate against held-out labels.
+- [x] Persist `ai_score` for evaluated transactions.
+- [ ] **CURRENT:** Commit and merge Isolation Forest anomaly scoring.
 
 Targets:
 
@@ -319,8 +320,8 @@ These are implementation estimates, not final evaluation grades.
 | --- | ---: | --- | --- |
 | C1 | 95% | standardized schema, offline SME adapter, and 10,000 rows mapped into Supabase | package final mapping and test evidence |
 | C3 | 100% | all five versioned rules execute independently and missing fields remain isolated per rule | package final test and live-verification evidence |
-| CS part of IS1 | 70% | automated evaluation foundation and all five rules implemented | define the denominator and measure at least 95% automated coverage |
-| CS part of IS3 | 5% | contract and planned formula | rule score, Isolation Forest, combined scoring |
+| CS part of IS1 | 100% | all five rules and 100% automated evaluation coverage across the controlled dataset | package final test and live-verification evidence |
+| CS part of IS3 | 70% | authoritative rule score and versioned Isolation Forest scoring meet held-out targets | implement and persist combined risk scoring |
 
 ## Change log
 
@@ -339,7 +340,8 @@ These are implementation estimates, not final evaluation grades.
 | 2026-10-02 | Connected the frontend transaction view to live paginated Supabase data | PR #13 |
 | 2026-10-02 | Added authoritative rule-score calculation across eligible rules | PR #14 |
 | 2026-10-02 | Added versioned transaction-evaluation persistence | PR #15 |
+| 2026-10-02 | Measured 100% automated evaluation coverage | PR #16 |
 
 ## Next action
 
-Commit and merge automated evaluation coverage, then begin the Isolation Forest anomaly-scoring slice.
+Commit and merge Isolation Forest anomaly scoring, then implement the combined risk score.

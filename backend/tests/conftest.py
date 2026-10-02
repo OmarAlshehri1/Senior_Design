@@ -87,3 +87,39 @@ def mock_transaction_persistence(
         ),
         fake_get_ghost_vendor_contexts,
     )
+
+    def fake_persist_transaction_anomaly_scores(
+        scores: list[dict[str, Any]],
+    ) -> int:
+        return len(scores)
+
+    class FakeAnomalyModel:
+        version = "1.0.0"
+        threshold = 90.6
+
+        def score(
+            self,
+            feature_records: list[dict[str, Any]],
+        ) -> list[float]:
+            return [
+                25.0
+                for _ in feature_records
+            ]
+
+        def is_anomalous(
+            self,
+            ai_score: float,
+        ) -> bool:
+            return ai_score >= self.threshold
+
+    monkeypatch.setattr(
+        (
+            "app.api.transactions."
+            "persist_transaction_anomaly_scores"
+        ),
+        fake_persist_transaction_anomaly_scores,
+    )
+    monkeypatch.setattr(
+        "app.api.transactions._get_anomaly_model",
+        lambda: FakeAnomalyModel(),
+    )
