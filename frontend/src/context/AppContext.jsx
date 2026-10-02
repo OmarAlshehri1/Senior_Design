@@ -1,13 +1,15 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import AppContext from './contextStore';
 import { currentDataSource } from '../data/dataSource';
 import { deriveDashboardSummary } from '../utils/dashboard';
 import { getRiskLevel, RISK_LEVELS } from '../utils/risk';
 import { findTransactionById } from '../utils/transactions';
 import { reviewAlertForTransaction } from '../utils/alerts';
+import { transactionsService } from '../services/transactionsService';
 
 let nextTxNumber = 10497;
 let nextAlertNumber = 7;
+const TRANSACTIONS_PAGE_SIZE = 100;
 const {
   buildRuleResults,
   initialAlerts,
@@ -59,6 +61,12 @@ function formatTime(date) {
 
 export function AppProvider({ children }) {
   const [transactions, setTransactions] = useState(initialTransactions);
+  const [transactionsLoading, setTransactionsLoading] = useState(true);
+  const [transactionsError, setTransactionsError] = useState(null);
+  const [transactionsTotal, setTransactionsTotal] = useState(0);
+  const [transactionsPage, setTransactionsPage] = useState(1);
+  const [transactionsSearch, setTransactionsSearch] = useState('');
+  const [transactionsSortBy, setTransactionsSortBy] = useState('newest');
   const [alerts, setAlerts] = useState(initialAlerts);
   const [notification, setNotification] = useState(null);
   const [simulating, setSimulating] = useState(false);
@@ -72,6 +80,59 @@ export function AppProvider({ children }) {
       setNotification((current) => (current?.key === key ? null : current));
     }, 3500);
   }, []);
+
+    useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+
+    async function loadTransactions() {
+      setTransactionsLoading(true);
+      setTransactionsError(null);
+
+      try {
+        const result = await transactionsService.list({
+          query: {
+            page: transactionsPage,
+            page_size: TRANSACTIONS_PAGE_SIZE,
+            search: transactionsSearch || undefined,
+            sort_by: transactionsSortBy,
+          },
+          signal: controller.signal,
+        });
+
+        if (!active) return;
+
+        setTransactions(result.items);
+        setTransactionsTotal(result.total);
+        setLastUpdated(new Date().toISOString());
+      } catch (error) {
+        if (!active || controller.signal.aborted) return;
+
+        setTransactions([]);
+        setTransactionsTotal(0);
+        setTransactionsError(
+          error instanceof Error
+            ? error.message
+            : 'Transactions could not be loaded.'
+        );
+      } finally {
+        if (active) {
+          setTransactionsLoading(false);
+        }
+      }
+    }
+
+    loadTransactions();
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [
+    transactionsPage,
+    transactionsSearch,
+    transactionsSortBy,
+  ]);
 
   const markAlertReviewed = useCallback((transactionId) => {
     setAlerts((previous) => reviewAlertForTransaction(previous, transactionId));
@@ -177,6 +238,16 @@ export function AppProvider({ children }) {
   const value = useMemo(
     () => ({
       transactions,
+      transactionsLoading,
+      transactionsError,
+      transactionsTotal,
+      transactionsPage,
+      transactionsPageSize: TRANSACTIONS_PAGE_SIZE,
+      setTransactionsPage,
+      transactionsSearch,
+      setTransactionsSearch,
+      transactionsSortBy,
+      setTransactionsSortBy,
       alerts,
       summary,
       riskCounts,
@@ -193,6 +264,12 @@ export function AppProvider({ children }) {
     }),
     [
       transactions,
+      transactionsLoading,
+      transactionsError,
+      transactionsTotal,
+      transactionsPage,
+      transactionsSearch,
+      transactionsSortBy,
       alerts,
       summary,
       riskCounts,

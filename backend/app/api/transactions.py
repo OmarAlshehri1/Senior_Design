@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query, status
 from starlette.concurrency import run_in_threadpool
+from typing import Literal
 
 from app.repositories.supabase_transactions import (
     SupabaseConfigurationError,
@@ -28,12 +29,21 @@ router = APIRouter(
 async def get_transactions(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=25, ge=1, le=100),
+    search: str | None = Query(default=None, max_length=100),
+    sort_by: Literal[
+        "newest",
+        "oldest",
+        "highest-amount",
+        "lowest-amount",
+    ] = Query(default="newest"),
 ) -> dict[str, object]:
     try:
         transactions, total = await run_in_threadpool(
             list_transactions,
             page=page,
             page_size=page_size,
+            search=search,
+            sort_by=sort_by,
         )
     except SupabaseConfigurationError as exc:
         raise HTTPException(

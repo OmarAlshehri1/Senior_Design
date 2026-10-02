@@ -32,6 +32,8 @@ test('transaction adapter maps the documented backend shape', () => {
   const transaction = adaptTransaction(backendTransaction);
 
   assert.equal(transaction.id, 'TX-1');
+  assert.equal(transaction.date, 'September 20, 2026');
+  assert.equal(transaction.time, '14:42');
   assert.equal(transaction.vendorId, 'VEN-1');
   assert.equal(transaction.vendor, 'Example Supplier');
   assert.equal(transaction.ruleStatus, 'Review');

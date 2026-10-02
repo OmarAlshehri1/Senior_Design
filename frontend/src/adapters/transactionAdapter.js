@@ -34,6 +34,37 @@ function nullableNumber(value) {
   return Number.isFinite(value) ? value : null;
 }
 
+function getTimestampDisplay(value) {
+  if (typeof value !== 'string') {
+    return {
+      date: null,
+      time: null,
+    };
+  }
+
+  const parsed = new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return {
+      date: null,
+      time: null,
+    };
+  }
+
+  return {
+    date: new Intl.DateTimeFormat('en-US', {
+      dateStyle: 'long',
+      timeZone: 'UTC',
+    }).format(parsed),
+    time: new Intl.DateTimeFormat('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone: 'UTC',
+    }).format(parsed),
+  };
+}
+
 function mapRuleResults(ruleResults) {
   if (!Array.isArray(ruleResults)) return null;
 
@@ -57,9 +88,15 @@ function mapRuleResults(ruleResults) {
 export function adaptTransaction(payload) {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
 
+  const timestampDisplay = getTimestampDisplay(
+    payload.timestamp
+  );
+
   return {
     id: payload.id ?? null,
     timestamp: payload.timestamp ?? null,
+    date: timestampDisplay.date,
+    time: timestampDisplay.time,
     vendorId: payload.vendor_id ?? null,
     vendor: payload.vendor_name ?? null,
     vendorMonitoringStatus: payload.vendor_monitoring_status ?? null,

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import useApp from '../context/useApp';
 import TransactionsTable from '../components/TransactionsTable';
@@ -32,12 +32,49 @@ function EmptyTransactionsState({ hasTransactions, hasSearch }) {
 }
 
 export default function Transactions() {
-  const { transactions } = useApp();
+  const {
+    transactions,
+    transactionsLoading,
+    transactionsError,
+    transactionsTotal,
+    transactionsPage,
+    transactionsPageSize,
+    setTransactionsPage,
+    setTransactionsSearch,
+    transactionsSortBy,
+    setTransactionsSortBy,
+  } = useApp();
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get('vendor') || '');
   const [ruleFilter, setRuleFilter] = useState('All');
-  const [sortBy, setSortBy] = useState(TRANSACTION_SORT_OPTIONS.NEWEST);
   const riskFilter = getRiskFilterFromQuery(searchParams.get('risk'));
+  useEffect(() => {
+  const timer = window.setTimeout(() => {
+    setTransactionsSearch(search.trim());
+    setTransactionsPage(1);
+  }, 300);
+
+  return () => {
+    window.clearTimeout(timer);
+  };
+}, [
+  search,
+  setTransactionsPage,
+  setTransactionsSearch,
+]);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(transactionsTotal / transactionsPageSize)
+  );
+
+  const firstTransactionNumber = transactionsTotal === 0
+    ? 0
+    : ((transactionsPage - 1) * transactionsPageSize) + 1;
+
+  const lastTransactionNumber = Math.min(
+    transactionsPage * transactionsPageSize,
+    transactionsTotal
+  );
 
   const evaluatedTransactions = useMemo(
     () => transactions.filter((transaction) => !transaction?.processing),
@@ -46,20 +83,60 @@ export default function Transactions() {
 
   const filtered = useMemo(
     () => filterAndSortTransactions(transactions, {
-      search,
+      search: '',
       riskFilter,
       ruleFilter,
-      sortBy,
+      sortBy: transactionsSortBy,
     }),
-    [transactions, search, riskFilter, ruleFilter, sortBy]
+    [
+      transactions,
+      riskFilter,
+      ruleFilter,
+      transactionsSortBy,
+    ]
   );
 
-  const filtersActive = Boolean(search.trim())
-    || riskFilter !== 'All'
-    || ruleFilter !== 'All';
-  const resultLabel = filtersActive
-    ? `${filtered.length} of ${evaluatedTransactions.length} Transactions`
-    : `${evaluatedTransactions.length} Transactions`;
+  const clientFiltersActive = (
+  riskFilter !== 'All'
+  || ruleFilter !== 'All'
+);
+
+const filtersActive = (
+  Boolean(search.trim())
+  || clientFiltersActive
+);
+
+let resultLabel = transactionsLoading
+  ? 'Loading transactions...'
+  : (
+    `${firstTransactionNumber.toLocaleString('en-US')}–`
+    + `${lastTransactionNumber.toLocaleString('en-US')} of `
+    + `${transactionsTotal.toLocaleString('en-US')} Transactions`
+  );
+
+if (!transactionsLoading && clientFiltersActive) {
+    resultLabel = (
+    `${filtered.length} of ${loadedTransactionCount} Transactions `
+    + `on Page ${transactionsPage}`
+  );
+}
+
+const changePage = (nextPage) => {
+  if (
+    transactionsLoading
+    || nextPage < 1
+    || nextPage > totalPages
+    || nextPage === transactionsPage
+  ) {
+    return;
+  }
+
+  setTransactionsPage(nextPage);
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth',
+  });
+};
 
   const updateRiskFilter = (filter) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -69,14 +146,17 @@ export default function Transactions() {
   };
 
   const clearFilters = () => {
-    setSearch('');
-    setRuleFilter('All');
-    setSortBy(TRANSACTION_SORT_OPTIONS.NEWEST);
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.delete('risk');
-    nextParams.delete('vendor');
-    setSearchParams(nextParams);
-  };
+  setSearch('');
+  setTransactionsSearch('');
+  setTransactionsSortBy(TRANSACTION_SORT_OPTIONS.NEWEST);
+  setTransactionsPage(1);
+  setRuleFilter('All');
+
+  const nextParams = new URLSearchParams(searchParams);
+  nextParams.delete('risk');
+  nextParams.delete('vendor');
+  setSearchParams(nextParams);
+};
 
   return (
     <>
@@ -143,13 +223,16 @@ export default function Transactions() {
             <span className="control-label">Sort By</span>
             <select
               className="select-input"
-              value={sortBy}
-              onChange={(event) => setSortBy(event.target.value)}
+              value={transactionsSortBy}
+onChange={(event) => {
+  setTransactionsSortBy(event.target.value);
+  setTransactionsPage(1);
+}}
             >
               <option value={TRANSACTION_SORT_OPTIONS.NEWEST}>Newest</option>
               <option value={TRANSACTION_SORT_OPTIONS.OLDEST}>Oldest</option>
-              <option value={TRANSACTION_SORT_OPTIONS.HIGHEST_RISK}>Highest Risk</option>
-              <option value={TRANSACTION_SORT_OPTIONS.LOWEST_RISK}>Lowest Risk</option>
+              {/* <option value={TRANSACTION_SORT_OPTIONS.HIGHEST_RISK}>Highest Risk</option>
+              <option value={TRANSACTION_SORT_OPTIONS.LOWEST_RISK}>Lowest Risk</option> */}
               <option value={TRANSACTION_SORT_OPTIONS.HIGHEST_AMOUNT}>Highest Amount</option>
               <option value={TRANSACTION_SORT_OPTIONS.LOWEST_AMOUNT}>Lowest Amount</option>
             </select>
@@ -167,7 +250,17 @@ export default function Transactions() {
         <div className="card-header">
           <h2 id="transactions-results-heading">{resultLabel}</h2>
         </div>
-        {filtered.length > 0 ? (
+                {transactionsLoading ? (
+          <div className="transactions-empty-state" role="status">
+            <h3>Loading transactions...</h3>
+            <p>The latest transaction data is being retrieved.</p>
+          </div>
+        ) : transactionsError ? (
+          <div className="transactions-empty-state" role="alert">
+            <h3>Transactions are unavailable.</h3>
+            <p>{transactionsError}</p>
+          </div>
+        ) : filtered.length > 0 ? (
           <TransactionsTable transactions={filtered} />
         ) : (
           <EmptyTransactionsState
@@ -175,6 +268,34 @@ export default function Transactions() {
             hasSearch={Boolean(search.trim())}
           />
         )}
+        {!transactionsLoading && !transactionsError && totalPages > 1 && (
+  <nav
+    className="transactions-pagination"
+    aria-label="Transaction pages"
+  >
+    <button
+      type="button"
+      className="btn btn-secondary"
+      disabled={transactionsPage === 1}
+      onClick={() => changePage(transactionsPage - 1)}
+    >
+      Previous
+    </button>
+
+    <span aria-live="polite">
+      Page {transactionsPage} of {totalPages}
+    </span>
+
+    <button
+      type="button"
+      className="btn btn-secondary"
+      disabled={transactionsPage === totalPages}
+      onClick={() => changePage(transactionsPage + 1)}
+    >
+      Next
+    </button>
+  </nav>
+)}
       </section>
     </>
   );
