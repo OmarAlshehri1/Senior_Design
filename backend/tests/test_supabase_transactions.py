@@ -686,3 +686,164 @@ def test_database_row_prefers_persisted_evaluation() -> None:
             "score_contribution": 33.33,
         }
     ]
+
+def test_get_evaluation_coverage(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request: dict[str, Any] = {}
+
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> list[dict[str, Any]]:
+            return [
+                {
+                    "total_transaction_count": 10_001,
+                    "evaluated_transaction_count": 1,
+                    "unevaluated_transaction_count": 10_000,
+                    "coverage_percent": 0.01,
+                }
+            ]
+
+    class FakeClient:
+        def __init__(self, timeout: float) -> None:
+            self.timeout = timeout
+
+        def __enter__(self) -> "FakeClient":
+            return self
+
+        def __exit__(
+            self,
+            exc_type: object,
+            exc_value: object,
+            traceback: object,
+        ) -> None:
+            return None
+
+        def post(
+            self,
+            endpoint: str,
+            *,
+            headers: dict[str, str],
+            json: dict[str, Any],
+        ) -> FakeResponse:
+            request.update(
+                {
+                    "endpoint": endpoint,
+                    "headers": headers,
+                    "json": json,
+                }
+            )
+            return FakeResponse()
+
+    monkeypatch.setenv(
+        "SUPABASE_URL",
+        "https://example.supabase.co",
+    )
+    monkeypatch.setenv(
+        "SUPABASE_SECRET_KEY",
+        "sb_secret_test",
+    )
+    monkeypatch.setattr(
+        repository.httpx,
+        "Client",
+        FakeClient,
+    )
+
+    coverage = repository.get_evaluation_coverage()
+
+    assert coverage == {
+        "total_transaction_count": 10_001,
+        "evaluated_transaction_count": 1,
+        "unevaluated_transaction_count": 10_000,
+        "coverage_percent": 0.01,
+    }
+    assert request["endpoint"].endswith(
+        "/rest/v1/rpc/get_evaluation_coverage"
+    )
+    assert request["json"] == {}
+
+def test_persist_transaction_evaluations_batch(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request: dict[str, Any] = {}
+
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+    class FakeClient:
+        def __init__(self, timeout: float) -> None:
+            self.timeout = timeout
+
+        def __enter__(self) -> "FakeClient":
+            return self
+
+        def __exit__(
+            self,
+            exc_type: object,
+            exc_value: object,
+            traceback: object,
+        ) -> None:
+            return None
+
+        def post(
+            self,
+            endpoint: str,
+            *,
+            headers: dict[str, str],
+            json: list[dict[str, Any]],
+        ) -> FakeResponse:
+            request.update(
+                {
+                    "endpoint": endpoint,
+                    "headers": headers,
+                    "json": json,
+                }
+            )
+            return FakeResponse()
+
+    monkeypatch.setenv(
+        "SUPABASE_URL",
+        "https://example.supabase.co",
+    )
+    monkeypatch.setenv(
+        "SUPABASE_SECRET_KEY",
+        "sb_secret_test",
+    )
+    monkeypatch.setattr(
+        repository.httpx,
+        "Client",
+        FakeClient,
+    )
+
+    evaluations = [
+        {
+            "transaction_id": "TX-001",
+            "evaluation_version": "1.0.0",
+            "rule_status": "PASSED",
+            "rule_score": 0.0,
+            "rule_results": [],
+        },
+        {
+            "transaction_id": "TX-002",
+            "evaluation_version": "1.0.0",
+            "rule_status": "REVIEW",
+            "rule_score": 50.0,
+            "rule_results": [],
+        },
+    ]
+
+    persisted = (
+        repository.persist_transaction_evaluations(
+            evaluations
+        )
+    )
+
+    assert persisted == 2
+    assert request["json"] == evaluations
+    assert request["endpoint"].endswith(
+        "/rest/v1/transaction_evaluations"
+    )
+    assert request["headers"]["Prefer"] == "return=minimal"

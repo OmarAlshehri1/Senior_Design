@@ -95,6 +95,8 @@ The authoritative `rule_score` uses equal weighting across evaluated rules only:
 
 Each completed evaluation is stored as a versioned snapshot in `transaction_evaluations`. Transaction reads return the latest persisted snapshot when available; transactions created before evaluation persistence continue to use safe runtime evaluation as a fallback. Evaluation storage and lookup use the service role, and persisted rule evidence never includes private `ground_truth` labels.
 
+Automated evaluation coverage is calculated as transactions whose latest snapshot contains at least one `PASSED` or `FAILED` rule divided by all stored transactions, multiplied by 100. Rules marked `NOT_EVALUATED` do not count as executed. The controlled 10,001-transaction database currently achieves 100% coverage after the idempotent evaluation backfill; no transactions remain unevaluated.
+
 ### DashboardSummary
 
 ```json

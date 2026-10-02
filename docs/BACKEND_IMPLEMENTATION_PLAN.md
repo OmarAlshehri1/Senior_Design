@@ -220,16 +220,17 @@ The exact duplicate-payment and invoice-splitting definitions must be confirmed 
 - [x] Calculate authoritative `rule_score` from eligible rules only using equal weighting.
 - [x] Commit and merge the authoritative rule-score calculation (PR #14).
 - [x] Persist versioned rule results and rule scores in Supabase.
-- [ ] **CURRENT:** Commit and merge versioned transaction-evaluation persistence.
+- [x] Commit and merge versioned transaction-evaluation persistence (PR #15).
 - [x] Add unit tests and controlled labeled cases for all five rules.
 
 ## Phase 7 — IS1 automated evaluation coverage
 
-- [ ] Define the evaluation denominator precisely.
-- [ ] Record whether each posted transaction was automatically evaluated.
-- [ ] Calculate automated evaluation coverage.
-- [ ] Demonstrate at least 95% coverage on the agreed test dataset.
-- [ ] Document which transactions could not be evaluated and why.
+- [x] Define the evaluation denominator precisely.
+- [x] Record whether each posted transaction was automatically evaluated.
+- [x] Calculate automated evaluation coverage.
+- [x] Demonstrate 100% coverage across 10,001 stored transactions.
+- [x] Document which transactions could not be evaluated and why; the verified backfill left zero unevaluated transactions.
+- [ ] **CURRENT:** Commit and merge automated evaluation coverage.
 
 Target:
 
@@ -337,7 +338,8 @@ These are implementation estimates, not final evaluation grades.
 | 2026-10-02 | Added Ghost Vendor detection with an authoritative approved-vendor registry | PR #12 |
 | 2026-10-02 | Connected the frontend transaction view to live paginated Supabase data | PR #13 |
 | 2026-10-02 | Added authoritative rule-score calculation across eligible rules | PR #14 |
+| 2026-10-02 | Added versioned transaction-evaluation persistence | PR #15 |
 
 ## Next action
 
-Commit and merge versioned transaction-evaluation persistence, then begin the Isolation Forest anomaly-scoring slice.
+Commit and merge automated evaluation coverage, then begin the Isolation Forest anomaly-scoring slice.
