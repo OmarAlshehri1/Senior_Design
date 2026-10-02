@@ -425,12 +425,25 @@ def test_list_transactions_maps_rows_and_total(
         lambda transaction_ids: {},
     )
 
+    monkeypatch.setattr(
+        repository,
+        "get_latest_transaction_anomaly_scores",
+        lambda transaction_ids: {
+            "TX-READ-001": {
+                "ai_score": 87.5,
+                "threshold": 90.6,
+                "is_anomalous": False,
+                "model_version": "1.0.0",
+            }
+        },
+    )
+
     transactions, total = repository.list_transactions(
-    page=2,
-    page_size=25,
-    search="Test Vendor",
-    sort_by="highest-amount",
-)
+        page=2,
+        page_size=25,
+        search="Test Vendor",
+        sort_by="highest-amount",
+    )
 
     assert total == 10_000
     assert len(transactions) == 1
@@ -464,6 +477,7 @@ def test_list_transactions_maps_rows_and_total(
         for result in not_evaluated_results
     )
     assert transaction["risk_score"] is None
+    assert transaction["ai_score"] == 87.5
     assert "ground_truth" not in transaction
 
     assert request["params"]["offset"] == "25"
@@ -600,6 +614,19 @@ def test_get_transaction_by_id_and_not_found(
         lambda transaction_ids: {},
     )
 
+    monkeypatch.setattr(
+        repository,
+        "get_latest_transaction_anomaly_scores",
+        lambda transaction_ids: {
+            "TX-READ-002": {
+                "ai_score": 42.0,
+                "threshold": 90.6,
+                "is_anomalous": False,
+                "model_version": "1.0.0",
+            }
+        },
+    )
+
     transaction = repository.get_transaction_by_id(
         "TX-READ-002",
     )
@@ -609,6 +636,7 @@ def test_get_transaction_by_id_and_not_found(
 
     assert transaction is not None
     assert transaction["id"] == "TX-READ-002"
+    assert transaction["ai_score"] == 42.0
     assert transaction["data_quality_status"] == "COMPLETE"
     assert len(transaction["rule_results"]) == 5
 
@@ -847,3 +875,121 @@ def test_persist_transaction_evaluations_batch(
         "/rest/v1/transaction_evaluations"
     )
     assert request["headers"]["Prefer"] == "return=minimal"
+
+def test_persist_and_read_anomaly_scores(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    requests: list[dict[str, Any]] = []
+
+    class FakeResponse:
+        def __init__(
+            self,
+            payload: list[dict[str, Any]] | None = None,
+        ) -> None:
+            self.payload = payload or []
+
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> list[dict[str, Any]]:
+            return self.payload
+
+    class FakeClient:
+        def __init__(self, timeout: float) -> None:
+            self.timeout = timeout
+
+        def __enter__(self) -> "FakeClient":
+            return self
+
+        def __exit__(
+            self,
+            exc_type: object,
+            exc_value: object,
+            traceback: object,
+        ) -> None:
+            return None
+
+        def post(
+            self,
+            endpoint: str,
+            *,
+            headers: dict[str, str],
+            json: Any,
+        ) -> FakeResponse:
+            requests.append(
+                {
+                    "endpoint": endpoint,
+                    "headers": headers,
+                    "json": json,
+                }
+            )
+
+            if endpoint.endswith(
+                "/rpc/"
+                "get_latest_transaction_anomaly_scores"
+            ):
+                return FakeResponse(
+                    [
+                        {
+                            "transaction_id": "TX-AI-001",
+                            "model_version": "1.0.0",
+                            "ai_score": 93.25,
+                            "threshold": 90.6,
+                            "is_anomalous": True,
+                            "scored_at": (
+                                "2026-10-02T19:00:00+00:00"
+                            ),
+                        }
+                    ]
+                )
+
+            return FakeResponse()
+
+    monkeypatch.setenv(
+        "SUPABASE_URL",
+        "https://example.supabase.co",
+    )
+    monkeypatch.setenv(
+        "SUPABASE_SECRET_KEY",
+        "sb_secret_test",
+    )
+    monkeypatch.setattr(
+        repository.httpx,
+        "Client",
+        FakeClient,
+    )
+
+    rows = [
+        {
+            "transaction_id": "TX-AI-001",
+            "model_version": "1.0.0",
+            "ai_score": 93.25,
+            "threshold": 90.6,
+            "is_anomalous": True,
+        }
+    ]
+
+    assert (
+        repository.persist_transaction_anomaly_scores(
+            rows
+        )
+        == 1
+    )
+
+    scores = (
+        repository.get_latest_transaction_anomaly_scores(
+            ["TX-AI-001", "TX-AI-001", ""]
+        )
+    )
+
+    assert scores["TX-AI-001"] == {
+        "model_version": "1.0.0",
+        "ai_score": 93.25,
+        "threshold": 90.6,
+        "is_anomalous": True,
+        "scored_at": "2026-10-02T19:00:00+00:00",
+    }
+    assert requests[0]["json"] == rows
+    assert requests[1]["json"] == {
+        "transaction_ids": ["TX-AI-001"]
+    }

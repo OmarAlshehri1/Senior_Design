@@ -112,6 +112,7 @@ def _from_database_row(
         dict[str, bool] | None
     ) = None,
     persisted_evaluation: dict[str, Any] | None = None,
+    persisted_anomaly_score: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     missing_fields = row.get("missing_fields")
 
@@ -138,7 +139,11 @@ def _from_database_row(
         "missing_fields": missing_fields,
         "rule_status": "NOT_EVALUATED",
         "rule_score": None,
-        "ai_score": None,
+        "ai_score": (
+            persisted_anomaly_score.get("ai_score")
+            if persisted_anomaly_score is not None
+            else None
+        ),
         "risk_score": None,
         "risk_level": None,
         "rule_results": [],
@@ -634,6 +639,111 @@ def get_latest_transaction_evaluations(
 
     return evaluations
 
+def persist_transaction_anomaly_scores(
+    scores: list[dict[str, Any]],
+) -> int:
+    if not scores:
+        return 0
+
+    url, _ = _get_configuration()
+    endpoint = (
+        f"{url}/rest/v1/"
+        "transaction_anomaly_scores"
+    )
+
+    headers = _get_headers()
+    headers["Prefer"] = "return=minimal"
+
+    try:
+        with httpx.Client(
+            timeout=REQUEST_TIMEOUT_SECONDS
+        ) as client:
+            response = client.post(
+                endpoint,
+                headers=headers,
+                json=jsonable_encoder(scores),
+            )
+            response.raise_for_status()
+    except httpx.HTTPError as exc:
+        raise SupabasePersistenceError(
+            "Failed to persist anomaly scores."
+        ) from exc
+
+    return len(scores)
+
+
+def get_latest_transaction_anomaly_scores(
+    transaction_ids: list[str],
+) -> dict[str, dict[str, Any]]:
+    unique_ids = list(
+        dict.fromkeys(
+            transaction_id
+            for transaction_id in transaction_ids
+            if transaction_id
+        )
+    )
+
+    if not unique_ids:
+        return {}
+
+    url, _ = _get_configuration()
+    endpoint = (
+        f"{url}/rest/v1/rpc/"
+        "get_latest_transaction_anomaly_scores"
+    )
+
+    try:
+        with httpx.Client(
+            timeout=REQUEST_TIMEOUT_SECONDS
+        ) as client:
+            response = client.post(
+                endpoint,
+                headers=_get_headers(),
+                json={
+                    "transaction_ids": unique_ids,
+                },
+            )
+            response.raise_for_status()
+            payload = response.json()
+    except (httpx.HTTPError, ValueError) as exc:
+        raise SupabasePersistenceError(
+            "Failed to retrieve anomaly scores."
+        ) from exc
+
+    if not isinstance(payload, list):
+        raise SupabasePersistenceError(
+            "Supabase returned invalid anomaly scores."
+        )
+
+    scores: dict[str, dict[str, Any]] = {}
+
+    for row in payload:
+        if not isinstance(row, dict):
+            continue
+
+        transaction_id = row.get("transaction_id")
+        ai_score = row.get("ai_score")
+        threshold = row.get("threshold")
+
+        if (
+            not isinstance(transaction_id, str)
+            or not isinstance(ai_score, (int, float))
+            or not isinstance(threshold, (int, float))
+        ):
+            continue
+
+        scores[transaction_id] = {
+            "model_version": row.get("model_version"),
+            "ai_score": float(ai_score),
+            "threshold": float(threshold),
+            "is_anomalous": (
+                row.get("is_anomalous") is True
+            ),
+            "scored_at": row.get("scored_at"),
+        }
+
+    return scores
+
 def get_evaluation_coverage() -> dict[str, int | float]:
     url, _ = _get_configuration()
     endpoint = (
@@ -765,6 +875,12 @@ def list_transactions(
         )
     )
 
+    persisted_anomaly_scores = (
+        get_latest_transaction_anomaly_scores(
+            transaction_ids
+        )
+    )
+
     duplicate_counts = get_duplicate_payment_counts(
         transaction_ids
     )
@@ -816,6 +932,9 @@ def list_transactions(
                     persisted_evaluations.get(
                         transaction_id
                     )
+                ),
+                persisted_anomaly_score=(
+                    persisted_anomaly_scores.get(transaction_id)
                 ),
                 duplicate_payment_count=(
                     duplicate_payment_count
@@ -884,6 +1003,12 @@ def get_transaction_by_id(
         )
     )
 
+    persisted_anomaly_scores = (
+        get_latest_transaction_anomaly_scores(
+            [transaction_id]
+        )
+    )
+
     duplicate_counts = get_duplicate_payment_counts(
         [transaction_id]
     )
@@ -900,6 +1025,11 @@ def get_transaction_by_id(
 
     return _from_database_row(
         first_row,
+        persisted_anomaly_score=(
+            persisted_anomaly_scores.get(
+                transaction_id
+            )
+        ),
         persisted_evaluation=(
             persisted_evaluations.get(transaction_id)
         ),
