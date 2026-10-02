@@ -532,6 +532,39 @@ def persist_transaction_evaluation(
             "Failed to persist the transaction evaluation."
         ) from exc
 
+def persist_transaction_evaluations(
+    evaluations: list[dict[str, Any]],
+) -> int:
+    if not evaluations:
+        return 0
+
+    url, _ = _get_configuration()
+    endpoint = (
+        f"{url}/rest/v1/transaction_evaluations"
+    )
+
+    headers = _get_headers()
+    headers["Prefer"] = "return=minimal"
+
+    rows = jsonable_encoder(evaluations)
+
+    try:
+        with httpx.Client(
+            timeout=REQUEST_TIMEOUT_SECONDS
+        ) as client:
+            response = client.post(
+                endpoint,
+                headers=headers,
+                json=rows,
+            )
+            response.raise_for_status()
+    except httpx.HTTPError as exc:
+        raise SupabasePersistenceError(
+            "Failed to persist transaction evaluations."
+        ) from exc
+
+    return len(evaluations)
+
 def get_latest_transaction_evaluations(
     transaction_ids: list[str],
 ) -> dict[str, dict[str, Any]]:
@@ -600,6 +633,54 @@ def get_latest_transaction_evaluations(
         }
 
     return evaluations
+
+def get_evaluation_coverage() -> dict[str, int | float]:
+    url, _ = _get_configuration()
+    endpoint = (
+        f"{url}/rest/v1/rpc/get_evaluation_coverage"
+    )
+
+    try:
+        with httpx.Client(
+            timeout=REQUEST_TIMEOUT_SECONDS
+        ) as client:
+            response = client.post(
+                endpoint,
+                headers=_get_headers(),
+                json={},
+            )
+            response.raise_for_status()
+            payload = response.json()
+    except (httpx.HTTPError, ValueError) as exc:
+        raise SupabasePersistenceError(
+            "Failed to retrieve evaluation coverage."
+        ) from exc
+
+    if (
+        not isinstance(payload, list)
+        or not payload
+        or not isinstance(payload[0], dict)
+    ):
+        raise SupabasePersistenceError(
+            "Supabase returned invalid evaluation coverage."
+        )
+
+    row = payload[0]
+
+    return {
+        "total_transaction_count": int(
+            row.get("total_transaction_count", 0)
+        ),
+        "evaluated_transaction_count": int(
+            row.get("evaluated_transaction_count", 0)
+        ),
+        "unevaluated_transaction_count": int(
+            row.get("unevaluated_transaction_count", 0)
+        ),
+        "coverage_percent": float(
+            row.get("coverage_percent", 0)
+        ),
+    }
 
 TRANSACTION_SORT_ORDERS = {
     "newest": "transaction_timestamp.desc.nullslast,id.asc",
