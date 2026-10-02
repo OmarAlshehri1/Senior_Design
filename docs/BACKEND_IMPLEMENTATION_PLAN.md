@@ -218,8 +218,9 @@ The exact duplicate-payment and invoice-splitting definitions must be confirmed 
 
 - [x] Commit and merge the first Phase 6 rule-engine slice (PR #9).
 - [x] Calculate authoritative `rule_score` from eligible rules only using equal weighting.
-- [ ] **CURRENT:** Commit and merge the authoritative rule-score calculation.
-- [ ] Persist rule results and rule score.
+- [x] Commit and merge the authoritative rule-score calculation (PR #14).
+- [x] Persist versioned rule results and rule scores in Supabase.
+- [ ] **CURRENT:** Commit and merge versioned transaction-evaluation persistence.
 - [x] Add unit tests and controlled labeled cases for all five rules.
 
 ## Phase 7 — IS1 automated evaluation coverage
@@ -335,7 +336,8 @@ These are implementation estimates, not final evaluation grades.
 | 2026-10-02 | Added Invoice Splitting detection with a 24-hour Supabase window | PR #11 |
 | 2026-10-02 | Added Ghost Vendor detection with an authoritative approved-vendor registry | PR #12 |
 | 2026-10-02 | Connected the frontend transaction view to live paginated Supabase data | PR #13 |
+| 2026-10-02 | Added authoritative rule-score calculation across eligible rules | PR #14 |
 
 ## Next action
 
-Commit and merge the authoritative rule-score calculation, then persist rule results and rule scores.
+Commit and merge versioned transaction-evaluation persistence, then begin the Isolation Forest anomaly-scoring slice.

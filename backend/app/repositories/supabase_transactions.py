@@ -111,6 +111,7 @@ def _from_database_row(
     ghost_vendor_context: (
         dict[str, bool] | None
     ) = None,
+    persisted_evaluation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     missing_fields = row.get("missing_fields")
 
@@ -143,6 +144,18 @@ def _from_database_row(
         "rule_results": [],
         "explanation": None,
     }
+
+    if persisted_evaluation is not None:
+        transaction["rule_status"] = (
+            persisted_evaluation.get("rule_status")
+        )
+        transaction["rule_score"] = (
+            persisted_evaluation.get("rule_score")
+        )
+        transaction["rule_results"] = (
+            persisted_evaluation.get("rule_results", [])
+        )
+        return transaction
 
     rule_context: dict[str, Any] = {}
 
@@ -478,6 +491,116 @@ def persist_transactions(transactions: list[dict[str, Any]]) -> int:
 
     return len(rows)
 
+def persist_transaction_evaluation(
+    *,
+    transaction_id: str,
+    evaluation_version: str,
+    rule_status: str,
+    rule_score: float | None,
+    rule_results: list[dict[str, Any]],
+) -> None:
+    url, _ = _get_configuration()
+    endpoint = (
+        f"{url}/rest/v1/transaction_evaluations"
+    )
+
+    headers = _get_headers()
+    headers["Prefer"] = "return=minimal"
+
+    row = jsonable_encoder(
+        {
+            "transaction_id": transaction_id,
+            "evaluation_version": evaluation_version,
+            "rule_status": rule_status,
+            "rule_score": rule_score,
+            "rule_results": rule_results,
+        }
+    )
+
+    try:
+        with httpx.Client(
+            timeout=REQUEST_TIMEOUT_SECONDS
+        ) as client:
+            response = client.post(
+                endpoint,
+                headers=headers,
+                json=row,
+            )
+            response.raise_for_status()
+    except httpx.HTTPError as exc:
+        raise SupabasePersistenceError(
+            "Failed to persist the transaction evaluation."
+        ) from exc
+
+def get_latest_transaction_evaluations(
+    transaction_ids: list[str],
+) -> dict[str, dict[str, Any]]:
+    unique_ids = list(
+        dict.fromkeys(
+            transaction_id
+            for transaction_id in transaction_ids
+            if transaction_id
+        )
+    )
+
+    if not unique_ids:
+        return {}
+
+    url, _ = _get_configuration()
+    endpoint = (
+        f"{url}/rest/v1/rpc/"
+        "get_latest_transaction_evaluations"
+    )
+
+    try:
+        with httpx.Client(
+            timeout=REQUEST_TIMEOUT_SECONDS
+        ) as client:
+            response = client.post(
+                endpoint,
+                headers=_get_headers(),
+                json={
+                    "transaction_ids": unique_ids,
+                },
+            )
+            response.raise_for_status()
+    except httpx.HTTPError as exc:
+        raise SupabasePersistenceError(
+            "Failed to retrieve transaction evaluations."
+        ) from exc
+
+    payload = response.json()
+    evaluations: dict[str, dict[str, Any]] = {}
+
+    for row in payload:
+        transaction_id = row.get("transaction_id")
+
+        if not transaction_id:
+            continue
+
+        rule_results = row.get("rule_results")
+
+        if not isinstance(rule_results, list):
+            rule_results = []
+
+        rule_score = row.get("rule_score")
+
+        evaluations[transaction_id] = {
+            "evaluation_version": row.get(
+                "evaluation_version"
+            ),
+            "rule_status": row.get("rule_status"),
+            "rule_score": (
+                float(rule_score)
+                if isinstance(rule_score, (int, float))
+                else None
+            ),
+            "rule_results": rule_results,
+            "evaluated_at": row.get("evaluated_at"),
+        }
+
+    return evaluations
+
 TRANSACTION_SORT_ORDERS = {
     "newest": "transaction_timestamp.desc.nullslast,id.asc",
     "oldest": "transaction_timestamp.asc.nullslast,id.asc",
@@ -555,6 +678,12 @@ def list_transactions(
         )
     ]
 
+    persisted_evaluations = (
+        get_latest_transaction_evaluations(
+            transaction_ids
+        )
+    )
+
     duplicate_counts = get_duplicate_payment_counts(
         transaction_ids
     )
@@ -576,6 +705,9 @@ def list_transactions(
             continue
 
         transaction_id = row.get("id")
+
+        if not isinstance(transaction_id, str) or not transaction_id:
+            continue
         duplicate_payment_count = (
             duplicate_counts.get(transaction_id)
             if isinstance(transaction_id, str)
@@ -599,6 +731,11 @@ def list_transactions(
         transactions.append(
             _from_database_row(
                 row,
+                persisted_evaluation=(
+                    persisted_evaluations.get(
+                        transaction_id
+                    )
+                ),
                 duplicate_payment_count=(
                     duplicate_payment_count
                 ),
@@ -660,6 +797,12 @@ def get_transaction_by_id(
             "Supabase returned an invalid transaction record."
         )
 
+    persisted_evaluations = (
+        get_latest_transaction_evaluations(
+            [transaction_id]
+        )
+    )
+
     duplicate_counts = get_duplicate_payment_counts(
         [transaction_id]
     )
@@ -676,6 +819,9 @@ def get_transaction_by_id(
 
     return _from_database_row(
         first_row,
+        persisted_evaluation=(
+            persisted_evaluations.get(transaction_id)
+        ),
         duplicate_payment_count=(
             duplicate_counts.get(transaction_id)
         ),

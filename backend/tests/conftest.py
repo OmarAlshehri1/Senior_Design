@@ -12,6 +12,16 @@ def mock_transaction_persistence(
     ) -> int:
         return len(transactions)
 
+    def fake_persist_transaction_evaluation(
+        *,
+        transaction_id: str,
+        evaluation_version: str,
+        rule_status: str,
+        rule_score: float | None,
+        rule_results: list[dict[str, Any]],
+    ) -> None:
+        return None
+
     def fake_get_duplicate_payment_counts(
         transaction_ids: list[str],
     ) -> dict[str, int]:
@@ -30,6 +40,13 @@ def mock_transaction_persistence(
             "get_duplicate_payment_counts"
         ),
         fake_get_duplicate_payment_counts,
+    )
+    monkeypatch.setattr(
+        (
+            "app.api.transactions."
+            "persist_transaction_evaluation"
+        ),
+        fake_persist_transaction_evaluation,
     )
 
     def fake_get_invoice_splitting_contexts(

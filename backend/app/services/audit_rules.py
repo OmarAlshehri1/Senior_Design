@@ -31,6 +31,7 @@ RULE_VERSIONS = {
     "ghost_vendors": "1.0.0",
 }
 
+RULE_SCORE_VERSION = "1.0.0"
 
 def _normalize_actor(value: Any) -> str:
     return str(value).strip().casefold()
