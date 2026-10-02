@@ -154,12 +154,105 @@ def _evaluate_duplicate_payment(
     )
 
 
+def _evaluate_invoice_splitting(
+    transaction: dict[str, Any],
+    context: dict[str, Any],
+) -> RuleEvaluation:
+    splitting_context = context.get(
+        "invoice_splitting_context"
+    )
+    approval_limit = transaction.get(
+        "approval_limit"
+    )
+
+    if not isinstance(splitting_context, dict):
+        return (
+            "NOT_EVALUATED",
+            (
+                "Invoice-splitting history was not "
+                "available for evaluation."
+            ),
+            {
+                "historical_context_available": False,
+                "historical_transaction_count": None,
+                "window_total_amount": None,
+                "window_hours": 24,
+            },
+        )
+
+    historical_count = splitting_context.get(
+        "historical_transaction_count"
+    )
+    window_total = splitting_context.get(
+        "window_total_amount"
+    )
+
+    if (
+        isinstance(historical_count, bool)
+        or not isinstance(historical_count, int)
+        or historical_count < 0
+        or isinstance(window_total, bool)
+        or not isinstance(window_total, (int, float))
+        or window_total < 0
+        or isinstance(approval_limit, bool)
+        or not isinstance(approval_limit, (int, float))
+        or approval_limit <= 0
+    ):
+        return (
+            "NOT_EVALUATED",
+            (
+                "Invoice-splitting history was not "
+                "available for evaluation."
+            ),
+            {
+                "historical_context_available": False,
+                "historical_transaction_count": None,
+                "window_total_amount": None,
+                "window_hours": 24,
+            },
+        )
+
+    evidence = {
+        "historical_context_available": True,
+        "historical_transaction_count": (
+            historical_count
+        ),
+        "window_total_amount": float(
+            window_total
+        ),
+        "window_hours": 24,
+    }
+
+    if (
+        historical_count > 0
+        and window_total > approval_limit
+    ):
+        return (
+            "FAILED",
+            (
+                "Multiple transactions for the same vendor "
+                "exceeded the approval limit within 24 hours."
+            ),
+            evidence,
+        )
+
+    return (
+        "PASSED",
+        (
+            "No invoice-splitting pattern exceeded the "
+            "approval limit within 24 hours."
+        ),
+        evidence,
+    )
+
+
 RULE_EVALUATORS: dict[str, RuleEvaluator] = {
     "segregation_of_duties": (
         _evaluate_segregation_of_duties
     ),
     "duplicate_payment": _evaluate_duplicate_payment,
     "approval_limits": _evaluate_approval_limits,
+    "invoice_splitting": _evaluate_invoice_splitting,
 }
 
 

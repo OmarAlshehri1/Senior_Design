@@ -202,6 +202,18 @@ def test_list_transactions_maps_rows_and_total(
         },
     )
 
+    monkeypatch.setattr(
+        repository,
+        "get_invoice_splitting_contexts",
+        lambda transaction_ids: {
+            transaction_id: {
+                "historical_transaction_count": 0,
+                "window_total_amount": 250.0,
+            }
+            for transaction_id in transaction_ids
+        },
+    )
+
     transactions, total = repository.list_transactions(
         page=2,
         page_size=25,
@@ -315,6 +327,18 @@ def test_get_transaction_by_id_and_not_found(
         },
     )
 
+    monkeypatch.setattr(
+        repository,
+        "get_invoice_splitting_contexts",
+        lambda transaction_ids: {
+            transaction_id: {
+                "historical_transaction_count": 0,
+                "window_total_amount": 500.0,
+            }
+            for transaction_id in transaction_ids
+        },
+    )
+
     transaction = repository.get_transaction_by_id(
         "TX-READ-002",
     )
@@ -343,11 +367,14 @@ def test_get_transaction_by_id_and_not_found(
         == "PASSED"
     )
 
-    for rule_key in (
-        "invoice_splitting",
-        "ghost_vendors",
-    ):
-        assert rules[rule_key]["status"] == "NOT_EVALUATED"
+    assert (
+        rules["invoice_splitting"]["status"]
+        == "PASSED"
+    )
+    assert (
+        rules["ghost_vendors"]["status"]
+        == "NOT_EVALUATED"
+    )
 
     assert all(
         result["rule_version"] == "1.0.0"

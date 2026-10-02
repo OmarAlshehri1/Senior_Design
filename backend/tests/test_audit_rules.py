@@ -209,3 +209,74 @@ def test_duplicate_payment_needs_history_context() -> None:
     assert duplicate["evidence"][
         "historical_context_available"
     ] is False
+
+def test_invoice_splitting_fails_when_window_exceeds_limit() -> None:
+    transaction = build_transaction()
+    transaction["approval_limit"] = 1000.0
+
+    results = evaluate_transaction_rules(
+        transaction,
+        context={
+            "invoice_splitting_context": {
+                "historical_transaction_count": 2,
+                "window_total_amount": 1200.0,
+            },
+        },
+    )
+    rules = {
+        result["rule_key"]: result
+        for result in results
+    }
+
+    invoice_splitting = rules["invoice_splitting"]
+
+    assert invoice_splitting["status"] == "FAILED"
+    assert invoice_splitting["evidence"][
+        "historical_transaction_count"
+    ] == 2
+    assert invoice_splitting["evidence"][
+        "window_total_amount"
+    ] == 1200.0
+    assert invoice_splitting["evidence"][
+        "window_hours"
+    ] == 24
+
+
+def test_invoice_splitting_passes_below_limit() -> None:
+    transaction = build_transaction()
+    transaction["approval_limit"] = 1000.0
+
+    results = evaluate_transaction_rules(
+        transaction,
+        context={
+            "invoice_splitting_context": {
+                "historical_transaction_count": 1,
+                "window_total_amount": 900.0,
+            },
+        },
+    )
+    rules = {
+        result["rule_key"]: result
+        for result in results
+    }
+
+    invoice_splitting = rules["invoice_splitting"]
+
+    assert invoice_splitting["status"] == "PASSED"
+    assert invoice_splitting["evidence"][
+        "historical_context_available"
+    ] is True
+
+
+def test_invoice_splitting_needs_history_context() -> None:
+    transaction = build_transaction()
+    transaction["approval_limit"] = 1000.0
+
+    rules = results_by_key(transaction)
+
+    invoice_splitting = rules["invoice_splitting"]
+
+    assert invoice_splitting["status"] == "NOT_EVALUATED"
+    assert invoice_splitting["evidence"][
+        "historical_context_available"
+    ] is False

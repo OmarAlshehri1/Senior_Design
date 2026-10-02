@@ -154,11 +154,14 @@ def test_create_complete_transaction() -> None:
 
     assert rules["duplicate_payment"]["status"] == "PASSED"
 
-    for rule_key in (
-        "invoice_splitting",
-        "ghost_vendors",
-    ):
-        assert rules[rule_key]["status"] == "NOT_EVALUATED"
+    assert (
+        rules["invoice_splitting"]["status"]
+        == "PASSED"
+    )
+    assert (
+        rules["ghost_vendors"]["status"]
+        == "NOT_EVALUATED"
+    )
 
     assert all(
         result["rule_version"] == "1.0.0"
@@ -331,3 +334,63 @@ def test_create_duplicate_payment(
     assert duplicate["evidence"][
         "matching_transaction_count"
     ] == 2
+
+def test_create_invoice_splitting(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        (
+            "app.api.transactions."
+            "get_invoice_splitting_contexts"
+        ),
+        lambda transaction_ids: {
+            transaction_ids[0]: {
+                "historical_transaction_count": 2,
+                "window_total_amount": 1200.0,
+            },
+        },
+    )
+
+    response = client.post(
+        "/api/v1/transactions",
+        json={
+            "id": "TX-SPLIT-001",
+            "timestamp": "2026-10-02T08:00:00Z",
+            "vendor_id": "VEN-SPLIT-001",
+            "vendor_name": "Split Test Vendor",
+            "invoice_number": "INV-SPLIT-001",
+            "category": "Inventory",
+            "amount": 500,
+            "currency": "SAR",
+            "created_by": "EMP-001",
+            "approved_by": "MGR-001",
+            "approver_role": "Manager",
+            "approval_limit": 1000,
+        },
+    )
+
+    assert response.status_code == 201
+
+    body = response.json()
+    rules = {
+        result["rule_key"]: result
+        for result in body["rule_results"]
+    }
+
+    invoice_splitting = rules["invoice_splitting"]
+
+    assert body["rule_status"] == "REVIEW"
+    assert invoice_splitting["status"] == "FAILED"
+    assert invoice_splitting["evidence"][
+        "historical_transaction_count"
+    ] == 2
+    assert invoice_splitting["evidence"][
+        "window_total_amount"
+    ] == 1200.0
+    assert invoice_splitting["evidence"][
+        "window_hours"
+    ] == 24
+    assert (
+        "matching_transaction_ids"
+        not in invoice_splitting["evidence"]
+    )
