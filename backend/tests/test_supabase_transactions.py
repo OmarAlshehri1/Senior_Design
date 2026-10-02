@@ -214,6 +214,19 @@ def test_list_transactions_maps_rows_and_total(
         },
     )
 
+    monkeypatch.setattr(
+        repository,
+        "get_ghost_vendor_contexts",
+        lambda transaction_ids: {
+            transaction_id: {
+                "registry_authoritative": True,
+                "vendor_registered": True,
+                "vendor_active": True,
+            }
+            for transaction_id in transaction_ids
+        },
+    )
+
     transactions, total = repository.list_transactions(
         page=2,
         page_size=25,
@@ -339,6 +352,19 @@ def test_get_transaction_by_id_and_not_found(
         },
     )
 
+    monkeypatch.setattr(
+        repository,
+        "get_ghost_vendor_contexts",
+        lambda transaction_ids: {
+            transaction_id: {
+                "registry_authoritative": True,
+                "vendor_registered": True,
+                "vendor_active": True,
+            }
+            for transaction_id in transaction_ids
+        },
+    )
+
     transaction = repository.get_transaction_by_id(
         "TX-READ-002",
     )
@@ -371,9 +397,10 @@ def test_get_transaction_by_id_and_not_found(
         rules["invoice_splitting"]["status"]
         == "PASSED"
     )
+
     assert (
         rules["ghost_vendors"]["status"]
-        == "NOT_EVALUATED"
+        == "PASSED"
     )
 
     assert all(

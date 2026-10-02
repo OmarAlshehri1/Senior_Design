@@ -77,11 +77,15 @@ Preliminary enums:
 
 `status` is one of `PASSED`, `FAILED`, or `NOT_EVALUATED`. The final contents of `evidence` will be rule-specific and must avoid unnecessary sensitive data.
 
-Rule execution is being implemented incrementally. `segregation_of_duties`, `approval_limits`, `duplicate_payment`, and `invoice_splitting` currently execute when their required data and evaluation context are available. `ghost_vendors` remains `NOT_EVALUATED` until its implementation is completed. Every result includes `rule_version`.
+All five versioned audit rules currently execute when their required transaction fields and evaluation context are available: `segregation_of_duties`, `approval_limits`, `duplicate_payment`, `invoice_splitting`, and `ghost_vendors`. Every result includes `rule_version`.
 
 `duplicate_payment` fails when another stored transaction has the same vendor identity, invoice number, and amount. The current transaction ID is excluded from matching. Its public evidence reports only `historical_context_available` and `matching_transaction_count`; matching transaction identifiers and private `ground_truth` labels are not exposed.
 
 `invoice_splitting` fails when the current transaction and at least one earlier transaction for the same vendor and currency occur within the preceding 24 hours, each individual amount does not exceed the current transaction's `approval_limit`, and their combined amount exceeds that limit. A transaction without `approval_limit` remains `NOT_EVALUATED`; the backend does not invent missing approval limits. Public evidence reports only `historical_context_available`, `historical_transaction_count`, `window_total_amount`, and `window_hours`. Matching transaction identifiers and private `ground_truth` labels are not exposed.
+
+`ghost_vendors` checks the transaction vendor against the authoritative `approved_vendors` registry. An active registered vendor passes. An unregistered or inactive vendor fails the rule and requires manual review; failure means "unregistered or inactive" and does not confirm fraud. A reviewer may approve a legitimate new vendor by adding it to the registry. If the registry is unavailable or not authoritative, the rule remains `NOT_EVALUATED`. Public evidence reports only `vendor_registry_available`, `vendor_registered`, `vendor_active`, and `manual_review_required`.
+
+The initial approved-vendor registry is a project-controlled experimental reference prepared before runtime evaluation. Dataset labels were used only to construct and validate the experimental setup; the runtime rule and RPC never read `violation_type`, `is_anomaly`, or stored `ground_truth`.
 
 The `evidence` object includes `eligible`, `missing_fields`, and `missing_any_of`. An ineligible rule remains `NOT_EVALUATED` without blocking other eligible rules. Rule-specific evidence must not expose unnecessary sensitive identifiers.
 

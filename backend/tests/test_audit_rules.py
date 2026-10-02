@@ -106,7 +106,7 @@ def test_missing_field_does_not_block_other_rules() -> None:
     ] == ["approval_limit"]
 
 
-def test_pending_rules_remain_not_evaluated() -> None:
+def test_context_dependent_rules_remain_not_evaluated() -> None:
     rules = results_by_key(build_transaction())
 
     pending_rule_keys = {
@@ -279,4 +279,138 @@ def test_invoice_splitting_needs_history_context() -> None:
     assert invoice_splitting["status"] == "NOT_EVALUATED"
     assert invoice_splitting["evidence"][
         "historical_context_available"
+    ] is False
+
+def test_ghost_vendor_passes_for_active_registered_vendor() -> None:
+    results = evaluate_transaction_rules(
+        build_transaction(),
+        context={
+            "ghost_vendor_context": {
+                "registry_authoritative": True,
+                "vendor_registered": True,
+                "vendor_active": True,
+            },
+        },
+    )
+    rules = {
+        result["rule_key"]: result
+        for result in results
+    }
+
+    ghost_vendor = rules["ghost_vendors"]
+
+    assert ghost_vendor["status"] == "PASSED"
+    assert ghost_vendor["evidence"][
+        "vendor_registry_available"
+    ] is True
+    assert ghost_vendor["evidence"][
+        "vendor_registered"
+    ] is True
+    assert ghost_vendor["evidence"][
+        "vendor_active"
+    ] is True
+    assert ghost_vendor["evidence"][
+        "manual_review_required"
+    ] is False
+
+
+def test_ghost_vendor_flags_unregistered_vendor() -> None:
+    results = evaluate_transaction_rules(
+        build_transaction(),
+        context={
+            "ghost_vendor_context": {
+                "registry_authoritative": True,
+                "vendor_registered": False,
+                "vendor_active": False,
+            },
+        },
+    )
+    rules = {
+        result["rule_key"]: result
+        for result in results
+    }
+
+    ghost_vendor = rules["ghost_vendors"]
+
+    assert ghost_vendor["status"] == "FAILED"
+    assert ghost_vendor["evidence"][
+        "vendor_registered"
+    ] is False
+    assert ghost_vendor["evidence"][
+        "vendor_active"
+    ] is None
+    assert ghost_vendor["evidence"][
+        "manual_review_required"
+    ] is True
+    assert "manual review" in ghost_vendor["detail"].lower()
+
+
+def test_ghost_vendor_flags_inactive_vendor() -> None:
+    results = evaluate_transaction_rules(
+        build_transaction(),
+        context={
+            "ghost_vendor_context": {
+                "registry_authoritative": True,
+                "vendor_registered": True,
+                "vendor_active": False,
+            },
+        },
+    )
+    rules = {
+        result["rule_key"]: result
+        for result in results
+    }
+
+    ghost_vendor = rules["ghost_vendors"]
+
+    assert ghost_vendor["status"] == "FAILED"
+    assert ghost_vendor["evidence"][
+        "vendor_registered"
+    ] is True
+    assert ghost_vendor["evidence"][
+        "vendor_active"
+    ] is False
+    assert ghost_vendor["evidence"][
+        "manual_review_required"
+    ] is True
+
+
+def test_ghost_vendor_needs_authoritative_registry() -> None:
+    results = evaluate_transaction_rules(
+        build_transaction(),
+        context={
+            "ghost_vendor_context": {
+                "registry_authoritative": False,
+                "vendor_registered": False,
+                "vendor_active": False,
+            },
+        },
+    )
+    rules = {
+        result["rule_key"]: result
+        for result in results
+    }
+
+    ghost_vendor = rules["ghost_vendors"]
+
+    assert ghost_vendor["status"] == "NOT_EVALUATED"
+    assert ghost_vendor["evidence"][
+        "vendor_registry_available"
+    ] is False
+    assert ghost_vendor["evidence"][
+        "vendor_registered"
+    ] is None
+    assert ghost_vendor["evidence"][
+        "manual_review_required"
+    ] is False
+
+
+def test_ghost_vendor_needs_registry_context() -> None:
+    rules = results_by_key(build_transaction())
+
+    ghost_vendor = rules["ghost_vendors"]
+
+    assert ghost_vendor["status"] == "NOT_EVALUATED"
+    assert ghost_vendor["evidence"][
+        "vendor_registry_available"
     ] is False
