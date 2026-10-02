@@ -1,4 +1,5 @@
 from app.services.audit_rules import (
+    calculate_rule_score,
     evaluate_transaction_rules,
     summarize_rule_status,
 )
@@ -414,3 +415,85 @@ def test_ghost_vendor_needs_registry_context() -> None:
     assert ghost_vendor["evidence"][
         "vendor_registry_available"
     ] is False
+
+def test_rule_score_uses_evaluated_rules_only() -> None:
+    results = [
+        {
+            "status": "FAILED",
+            "score_contribution": None,
+        },
+        {
+            "status": "PASSED",
+            "score_contribution": None,
+        },
+        {
+            "status": "NOT_EVALUATED",
+            "score_contribution": None,
+        },
+    ]
+
+    score = calculate_rule_score(results)
+
+    assert score == 50.0
+    assert results[0]["score_contribution"] == 50.0
+    assert results[1]["score_contribution"] == 0.0
+    assert results[2]["score_contribution"] is None
+
+
+def test_rule_score_is_zero_when_all_evaluated_rules_pass() -> None:
+    results = [
+        {
+            "status": "PASSED",
+            "score_contribution": None,
+        },
+        {
+            "status": "PASSED",
+            "score_contribution": None,
+        },
+    ]
+
+    score = calculate_rule_score(results)
+
+    assert score == 0.0
+    assert all(
+        result["score_contribution"] == 0.0
+        for result in results
+    )
+
+
+def test_rule_score_is_null_without_evaluated_rules() -> None:
+    results = [
+        {
+            "status": "NOT_EVALUATED",
+            "score_contribution": None,
+        },
+    ]
+
+    score = calculate_rule_score(results)
+
+    assert score is None
+    assert results[0]["score_contribution"] is None
+
+
+def test_rule_score_counts_multiple_failures() -> None:
+    results = [
+        {
+            "status": "FAILED",
+            "score_contribution": None,
+        },
+        {
+            "status": "FAILED",
+            "score_contribution": None,
+        },
+        {
+            "status": "PASSED",
+            "score_contribution": None,
+        },
+    ]
+
+    score = calculate_rule_score(results)
+
+    assert score == 66.67
+    assert results[0]["score_contribution"] == 33.33
+    assert results[1]["score_contribution"] == 33.34
+    assert results[2]["score_contribution"] == 0.0

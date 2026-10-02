@@ -422,6 +422,68 @@ def evaluate_transaction_rules(
 
     return rule_results
 
+def calculate_rule_score(
+    rule_results: list[dict[str, Any]],
+) -> float | None:
+    evaluated_results = [
+        result
+        for result in rule_results
+        if result.get("status") in {
+            "PASSED",
+            "FAILED",
+        }
+    ]
+
+    for result in rule_results:
+        result["score_contribution"] = None
+
+    if not evaluated_results:
+        return None
+
+    failed_results = [
+        result
+        for result in evaluated_results
+        if result.get("status") == "FAILED"
+    ]
+
+    for result in evaluated_results:
+        result["score_contribution"] = 0.0
+
+    score = round(
+        len(failed_results)
+        / len(evaluated_results)
+        * 100,
+        2,
+    )
+
+    if not failed_results:
+        return score
+
+    equal_contribution = round(
+        100 / len(evaluated_results),
+        2,
+    )
+    assigned_contribution = 0.0
+
+    for index, result in enumerate(failed_results):
+        is_last_failure = (
+            index == len(failed_results) - 1
+        )
+
+        contribution = (
+            round(score - assigned_contribution, 2)
+            if is_last_failure
+            else equal_contribution
+        )
+
+        result["score_contribution"] = contribution
+        assigned_contribution = round(
+            assigned_contribution + contribution,
+            2,
+        )
+
+    return score
+
 def summarize_rule_status(
     rule_results: list[dict[str, Any]],
 ) -> str:

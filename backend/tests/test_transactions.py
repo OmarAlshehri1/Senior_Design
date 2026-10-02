@@ -147,12 +147,18 @@ def test_create_complete_transaction() -> None:
     assert body["data_quality_status"] == "COMPLETE"
     assert body["missing_fields"] == []
     assert body["rule_status"] == "PASSED"
+    assert body["rule_score"] == 0.0
     assert len(body["rule_results"]) == 5
 
     rules = {
         result["rule_key"]: result
         for result in body["rule_results"]
     }
+
+    assert all(
+        result["score_contribution"] == 0.0
+        for result in body["rule_results"]
+    )
 
     assert (
         rules["segregation_of_duties"]["status"]
@@ -449,6 +455,14 @@ def test_create_unregistered_vendor_requires_review(
     ghost_vendor = rules["ghost_vendors"]
 
     assert body["rule_status"] == "REVIEW"
+    assert body["rule_score"] == 20.0
+    assert ghost_vendor["score_contribution"] == 20.0
+
+    assert all(
+        result["score_contribution"] == 0.0
+        for result in body["rule_results"]
+        if result["status"] == "PASSED"
+    )
     assert ghost_vendor["status"] == "FAILED"
     assert ghost_vendor["evidence"][
         "vendor_registry_available"

@@ -69,7 +69,7 @@ Preliminary enums:
   "rule_name": "Duplicate Payment",
   "rule_version": "1.0.0",
   "status": "FAILED",
-  "score_contribution": 35,
+  "score_contribution": 20,
   "detail": "Possible duplicate payment detected.",
   "evidence": {}
 }
@@ -90,6 +90,8 @@ The initial approved-vendor registry is a project-controlled experimental refere
 The `evidence` object includes `eligible`, `missing_fields`, and `missing_any_of`. An ineligible rule remains `NOT_EVALUATED` without blocking other eligible rules. Rule-specific evidence must not expose unnecessary sensitive identifiers.
 
 The overall `rule_status` is `REVIEW` when any executed rule fails, `PASSED` when at least one rule passes and none fail, and `NOT_EVALUATED` when no rule can be executed.
+
+The authoritative `rule_score` uses equal weighting across evaluated rules only: `failed evaluated rules / all evaluated rules * 100`. `NOT_EVALUATED` rules are excluded from both numerator and denominator. The score is rounded to two decimal places, is `0` when all evaluated rules pass, and is `null` when no rule can be evaluated. A failed rule receives its equal share in `score_contribution`, a passed rule receives `0`, and a non-evaluated rule receives `null`.
 
 ### DashboardSummary
 
@@ -266,7 +268,7 @@ Response `201 Created`:
 
 A transaction with missing optional fields returns `data_quality_status` as `PARTIAL` and lists the unavailable fields in `missing_fields`. Unknown fields or invalid values return `422 Unprocessable Entity`.
 
-The transaction is validated, assessed for missing fields, and persisted to Supabase PostgreSQL. Rule evaluation, anomaly scoring, and alert generation will be added in later stages.
+The transaction is validated, assessed for missing fields, evaluated by the eligible audit rules, assigned an authoritative rule score, and persisted to Supabase PostgreSQL. Anomaly scoring and alert generation will be added in later stages.
 
 ## Offline seed utility
 

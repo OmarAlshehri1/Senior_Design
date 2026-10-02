@@ -13,7 +13,9 @@ from app.repositories.supabase_transactions import (
     get_ghost_vendor_contexts,
 )
 from app.schemas.transaction import TransactionCreate
+
 from app.services.audit_rules import (
+    calculate_rule_score,
     evaluate_transaction_rules,
     summarize_rule_status,
 )
@@ -197,6 +199,8 @@ async def create_transaction(
         },
     )
 
+    rule_score = calculate_rule_score(rule_results)
+
     return {
         **transaction_data,
         "vendor_monitoring_status": None,
@@ -205,7 +209,7 @@ async def create_transaction(
         "rule_status": summarize_rule_status(
             rule_results
         ),
-        "rule_score": None,
+        "rule_score": rule_score,
         "ai_score": None,
         "risk_score": None,
         "risk_level": None,

@@ -212,12 +212,13 @@ The exact duplicate-payment and invoice-splitting definitions must be confirmed 
 - [x] Commit and merge the Ghost Vendors rule (PR #12).
 - [x] Connect the transaction page to live FastAPI and Supabase data with 100-row pagination.
 - [x] Apply database-backed search and timestamp/amount sorting across the full transaction collection.
-- [ ] **CURRENT:** Commit and merge the live transaction-data integration.
+- [x] Commit and merge the live transaction-data integration (PR #13).
 - [x] Store a version for every rule definition.
 - [x] Produce `PASSED`, `FAILED`, or `NOT_EVALUATED` per rule.
 
 - [x] Commit and merge the first Phase 6 rule-engine slice (PR #9).
-- [ ] Calculate authoritative `rule_score` from eligible rules only.
+- [x] Calculate authoritative `rule_score` from eligible rules only using equal weighting.
+- [ ] **CURRENT:** Commit and merge the authoritative rule-score calculation.
 - [ ] Persist rule results and rule score.
 - [x] Add unit tests and controlled labeled cases for all five rules.
 
@@ -333,7 +334,8 @@ These are implementation estimates, not final evaluation grades.
 | 2026-10-01 | Added Duplicate Payment detection against Supabase history | PR #10 |
 | 2026-10-02 | Added Invoice Splitting detection with a 24-hour Supabase window | PR #11 |
 | 2026-10-02 | Added Ghost Vendor detection with an authoritative approved-vendor registry | PR #12 |
+| 2026-10-02 | Connected the frontend transaction view to live paginated Supabase data | PR #13 |
 
 ## Next action
 
-Commit and merge the live transaction-data integration, then calculate the authoritative rule score from eligible rules only.
+Commit and merge the authoritative rule-score calculation, then persist rule results and rule scores.
