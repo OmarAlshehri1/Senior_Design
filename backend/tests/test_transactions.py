@@ -41,15 +41,19 @@ def make_api_transaction(
 def test_list_transactions(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    received: dict[str, int] = {}
+    received: dict[str, object] = {}
 
     def fake_list_transactions(
         *,
         page: int,
         page_size: int,
+        search: str | None,
+        sort_by: str,
     ) -> tuple[list[dict[str, Any]], int]:
         received["page"] = page
         received["page_size"] = page_size
+        received["search"] = search
+        received["sort_by"] = sort_by
         return [make_api_transaction()], 10_000
 
     monkeypatch.setattr(
@@ -62,6 +66,8 @@ def test_list_transactions(
         params={
             "page": 2,
             "page_size": 25,
+            "search": "Almarai",
+            "sort_by": "highest-amount",
         },
     )
 
@@ -78,6 +84,8 @@ def test_list_transactions(
     assert received == {
         "page": 2,
         "page_size": 25,
+        "search": "Almarai",
+        "sort_by": "highest-amount",
     }
 
 
@@ -456,3 +464,29 @@ def test_create_unregistered_vendor_requires_review(
     ] is True
     assert "manual review" in ghost_vendor["detail"].lower()
     assert "ghost" not in ghost_vendor["detail"].lower()
+
+def test_local_frontend_origin_is_allowed() -> None:
+    response = client.get(
+        "/api/v1/health",
+        headers={
+            "Origin": "http://localhost:5173",
+        },
+    )
+
+    assert response.status_code == 200
+    assert (
+        response.headers["access-control-allow-origin"]
+        == "http://localhost:5173"
+    )
+
+
+def test_unknown_frontend_origin_is_not_allowed() -> None:
+    response = client.get(
+        "/api/v1/health",
+        headers={
+            "Origin": "https://untrusted.example",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "access-control-allow-origin" not in response.headers

@@ -193,7 +193,7 @@ Returns `DashboardSummary` for the current organization and reporting period.
 
 Returns a database-backed paginated transaction collection from Supabase. The default page size is 25 and the maximum page size is 100.
 
-Planned query parameters include `search`, `risk_level`, `rule_status`, `sort`, `page`, and `page_size`.
+Implemented query parameters are `page`, `page_size`, `search`, and `sort_by`. `search` matches transaction ID, vendor name, or category across the full Supabase collection. `sort_by` accepts `newest`, `oldest`, `highest-amount`, or `lowest-amount`. Risk-score sorting and computed rule-status filtering are deferred until evaluation results are persisted.
 
 ```json
 {

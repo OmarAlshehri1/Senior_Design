@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { createTransactionsService } from '../src/services/transactionsService.js';
 
 import { createRequestState, requestFailed, requestStarted, requestSucceeded } from '../src/utils/requestState.js';
 import { settingsService } from '../src/services/settingsService.js';
@@ -45,4 +46,51 @@ test('main user-facing source contains no prohibited early-stage terminology', a
     source,
     /Demo Mode|Demo Only|Frontend Demo|Demo transaction|demo session|Routine Demo Score/i
   );
+});
+
+test('transactions service loads and adapts a paginated backend collection', async () => {
+  const requests = [];
+  const client = {
+    get: async (path, options) => {
+      requests.push({ path, options });
+
+      return {
+        items: [{
+          id: 'EXP-2026-000001',
+          timestamp: '2026-10-02T10:30:00Z',
+          vendor_id: 'VND-101',
+          vendor_name: 'Almarai Dairy Co.',
+          category: 'Inventory',
+          amount: 500,
+          currency: 'SAR',
+          rule_status: 'PASSED',
+          data_quality_status: 'PARTIAL',
+          rule_results: [],
+        }],
+        total: 10000,
+        page: 1,
+        page_size: 100,
+      };
+    },
+  };
+  const service = createTransactionsService(client);
+  const options = {
+    query: {
+      page: 1,
+      page_size: 100,
+    },
+  };
+
+  const result = await service.list(options);
+
+  assert.deepEqual(requests, [{
+    path: '/transactions',
+    options,
+  }]);
+  assert.equal(result.items.length, 1);
+  assert.equal(result.items[0].id, 'EXP-2026-000001');
+  assert.equal(result.items[0].vendor, 'Almarai Dairy Co.');
+  assert.equal(result.items[0].time, '10:30');
+  assert.equal(result.total, 10000);
+  assert.equal(result.pageSize, 100);
 });

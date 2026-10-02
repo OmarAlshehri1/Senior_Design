@@ -209,7 +209,10 @@ The exact duplicate-payment and invoice-splitting definitions must be confirmed 
 
 - [x] Commit and merge the Invoice Splitting rule (PR #11).
 - [x] Implement Ghost Vendors using a project-controlled authoritative vendor registry and manual-review workflow.
-- [ ] **CURRENT:** Commit and merge the Ghost Vendors rule.
+- [x] Commit and merge the Ghost Vendors rule (PR #12).
+- [x] Connect the transaction page to live FastAPI and Supabase data with 100-row pagination.
+- [x] Apply database-backed search and timestamp/amount sorting across the full transaction collection.
+- [ ] **CURRENT:** Commit and merge the live transaction-data integration.
 - [x] Store a version for every rule definition.
 - [x] Produce `PASSED`, `FAILED`, or `NOT_EVALUATED` per rule.
 
@@ -329,7 +332,8 @@ These are implementation estimates, not final evaluation grades.
 | 2026-10-01 | Added versioned rule engine with Segregation of Duties and Approval Limits | PR #9 |
 | 2026-10-01 | Added Duplicate Payment detection against Supabase history | PR #10 |
 | 2026-10-02 | Added Invoice Splitting detection with a 24-hour Supabase window | PR #11 |
+| 2026-10-02 | Added Ghost Vendor detection with an authoritative approved-vendor registry | PR #12 |
 
 ## Next action
 
-Commit and merge Ghost Vendors, then calculate the authoritative rule score from eligible rules only.
+Commit and merge the live transaction-data integration, then calculate the authoritative rule score from eligible rules only.

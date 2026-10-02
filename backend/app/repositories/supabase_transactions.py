@@ -473,25 +473,54 @@ def persist_transactions(transactions: list[dict[str, Any]]) -> int:
 
     return len(rows)
 
+TRANSACTION_SORT_ORDERS = {
+    "newest": "transaction_timestamp.desc.nullslast,id.asc",
+    "oldest": "transaction_timestamp.asc.nullslast,id.asc",
+    "highest-amount": "amount.desc.nullslast,id.asc",
+    "lowest-amount": "amount.asc.nullslast,id.asc",
+}
 
 def list_transactions(
     *,
     page: int = 1,
     page_size: int = 25,
+    search: str | None = None,
+    sort_by: str = "newest",
 ) -> tuple[list[dict[str, Any]], int]:
     if page < 1 or page_size < 1:
         raise ValueError("Page and page size must be positive integers.")
+
+    if sort_by not in TRANSACTION_SORT_ORDERS:
+        raise ValueError("Unsupported transaction sort option.")
+
+    search_term = " ".join((search or "").split())
+
+    for reserved_character in ("*", "%", ",", "(", ")"):
+        search_term = search_term.replace(
+            reserved_character,
+            " ",
+        )
+
+    search_term = " ".join(search_term.split())
 
     url, _ = _get_configuration()
     offset = (page - 1) * page_size
 
     endpoint = f"{url}/rest/v1/transactions"
     params = {
-        "select": TRANSACTION_COLUMNS,
-        "order": "transaction_timestamp.desc.nullslast,id.asc",
-        "offset": str(offset),
-        "limit": str(page_size),
+    "select": TRANSACTION_COLUMNS,
+    "order": TRANSACTION_SORT_ORDERS[sort_by],
+    "offset": str(offset),
+    "limit": str(page_size),
     }
+
+    if search_term:
+        search_pattern = f"*{search_term}*"
+        params["or"] = (
+            f"(id.ilike.{search_pattern},"
+            f"vendor_name.ilike.{search_pattern},"
+            f"category.ilike.{search_pattern})"
+        )
 
     try:
         with httpx.Client(timeout=REQUEST_TIMEOUT_SECONDS) as client:

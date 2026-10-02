@@ -228,9 +228,11 @@ def test_list_transactions_maps_rows_and_total(
     )
 
     transactions, total = repository.list_transactions(
-        page=2,
-        page_size=25,
-    )
+    page=2,
+    page_size=25,
+    search="Test Vendor",
+    sort_by="highest-amount",
+)
 
     assert total == 10_000
     assert len(transactions) == 1
@@ -247,6 +249,14 @@ def test_list_transactions_maps_rows_and_total(
 
     assert request["params"]["offset"] == "25"
     assert request["params"]["limit"] == "25"
+    assert request["params"]["order"] == (
+    "amount.desc.nullslast,id.asc"
+    )
+    assert request["params"]["or"] == (
+        "(id.ilike.*Test Vendor*,"
+        "vendor_name.ilike.*Test Vendor*,"
+        "category.ilike.*Test Vendor*)"
+    )
     assert "ground_truth" not in request["params"]["select"]
     assert request["headers"]["Prefer"] == "count=exact"
     assert request["headers"]["apikey"] == "sb_secret_test"
