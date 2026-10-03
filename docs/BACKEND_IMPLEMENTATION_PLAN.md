@@ -34,7 +34,7 @@ Each phase (and each Phase 13 subphase) uses an independent branch and PR. Befor
 
 ## API implementation boundaries
 
-Implemented REST routes: health; authenticated transaction list/detail/create; authenticated alert list/review; authenticated report list/generation/CSV download; identity/session/access-request/user management; and Phase 15 review history/audit-event reads. `/ws/alerts` authenticates bearer tokens after connection. Review writes are transactionally recorded by migration 014. Migration 013 and 014 have local-only evidence and are not live-applied as of this plan update.
+Implemented REST routes: health; authenticated transaction list/detail/create; authenticated alert list/review; authenticated report list/generation/CSV download; identity/session/access-request/user management; and Phase 15 review history/audit-event reads. `/ws/alerts` authenticates bearer tokens after connection. Review writes are transactionally recorded by migration 014. The project owner confirmed migrations 013 and 014 applied successfully to Supabase; this is owner-reported evidence, not an independent live-schema inspection.
 
 - `GET /api/v1/dashboard/summary`: documented shape only; no router implementation. Implement the agreed summary scope in Phase 20.
 - `GET /api/v1/audit-rules`: documented shape only; no router implementation. Add authoritative read-only rule definitions in Phase 20; the five rule implementations already exist.
@@ -401,9 +401,9 @@ Acceptance criteria:
 - Three consecutive failed sign-ins lock an account; no direct Admin unlock is available without a provider-verified pending account-owner request, and only an active Admin may decide that request.
 - `POST /transactions` is allowed to active Supervisor/Admin users only. Every new Auth profile is disabled; initial Admin provisioning follows [IDENTITY_BOOTSTRAP.md](IDENTITY_BOOTSTRAP.md) and requires the Supabase database owner.
 
-Evidence: 179 backend tests passed (one existing Starlette/httpx deprecation warning), 16 isolated PGlite migration/recovery tests passed, 212 frontend tests passed, frontend lint passed, production build passed, `git diff --check` passed, and the changed-source secret scan found no matches. Migration 013 has not been applied to the live database. Main-branch verification follows the Phase 14 PR merge.
+Evidence: 179 backend tests passed (one existing Starlette/httpx deprecation warning), 16 isolated PGlite migration/recovery tests passed, 212 frontend tests passed, frontend lint passed, production build passed, `git diff --check` passed, and the changed-source secret scan found no matches. The project owner confirmed migration 013 applied successfully to Supabase; no independent live-schema inspection was performed.
 
-## Phase 15 — Reviews and immutable accountability (CURRENT)
+## Phase 15 — Reviews and immutable accountability
 
 Omar mapping: section 3, sections 11–13; dependency: Phase 14.
 
@@ -419,9 +419,9 @@ Acceptance criteria:
 - Tests verify query filters/pagination, unauthorized access, role scope, and preservation of history after state changes. Team scope is completed with Phase 16.
 - Admins can query all audit events; until Phase 16 provides team relationships, Supervisors are restricted to events they performed. Auditors cannot query the audit log.
 
-Local implementation is complete on `feature/reviews-audit-log`: backend `187 passed` (one known Starlette/httpx deprecation warning), 20 isolated PGlite migration tests passed, frontend `214 passed`, lint and production build passed, `git diff --check` passed, and the changed-file secret scan found no credential-pattern matches. Migration 014 is not live-applied. PR checks/main verification remain; Phase 15 is not recorded as merged until those pass. Supervisor team-wide visibility remains Phase 16.
+Phase 15 is complete on `main`: PR #27, merge `4d987ce`. Main verification on 2026-10-03 passed: backend `187 passed` (one known Starlette/httpx deprecation warning), 20 isolated PGlite migration tests, frontend `214 passed`, frontend lint, production build, and `git diff --check`. The project owner confirmed migrations 013 and 014 applied successfully to Supabase; no independent live-schema inspection was performed. Supervisor team-wide visibility remains Phase 16.
 
-## Phase 16 — Teams and assignments
+## Phase 16 — Teams and assignments (CURRENT)
 
 Omar mapping: section 4, sections 3 and 11–13; dependency: Phases 14–15.
 
@@ -598,7 +598,8 @@ These are historical implementation estimates retained from Phases 0–12, not c
 | 2026-10-03 | Connected live alerts, authoritative risk/explanations, and persisted reports in the frontend | PR #22; `a8e1b8a`, `eb38337`, merge `f9c7dd5` |
 | 2026-10-03 | Added approved handoff Phases 13–24, split 13A/13B, deferred deployment, and included reviewed handoff source | PR #23; `0aca9ed`, merge `3a07512` |
 | 2026-10-03 | Added Supabase Auth/JWT, account/access requests, backend RBAC, and authenticated frontend transport | PR #26; `8e3bcf2`, merge `acb1996` |
+| 2026-10-03 | Added attributable reopenable reviews and immutable audit history | PR #27; `2e4fefc`, merge `4d987ce`; owner confirmed migration 014 applied |
 
 ## Next action
 
-Phase 13A/13B and Phase 14 are merged and verified on `main`; Phase 14 main verification: backend 179 passed (one known Starlette warning), 16 isolated migration/recovery tests, frontend 212 passed, lint/build/diff-check passed. Migration 013 remains local; do not claim it exists in the live database. PR #26 triggered a successful Vercel Production deployment automatically; this does not complete Phase 24 deployment validation, and no deploy settings were changed. Phase 15 implementation is locally verified on `feature/reviews-audit-log`; its PR and main verification remain. The project owner approved reopenable reviews with full history and approved the normal PR cycle despite automatic Vercel deployments. Migration 014 remains isolated/local until explicit live-database approval. The `requirements.txt` user change and backup stash remain preserved and excluded from phase commits.
+Phases 13A/13B, 14, and 15 are merged and verified on `main`. Phase 15 main verification: backend 187 passed (one known Starlette warning), 20 isolated migration tests, frontend 214 passed, lint/build/diff-check passed. The project owner confirmed live migrations 013 and 014 succeeded; no independent schema query was performed. PR #26 triggered a successful Vercel Production deployment automatically; this does not complete Phase 24 deployment validation, and no deploy settings were changed. The project owner approved reopenable reviews with full history and the normal PR cycle despite automatic Vercel deployments. Phase 16 is current. The `requirements.txt` user change and backup stash remain preserved and excluded from phase commits.
