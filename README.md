@@ -2,13 +2,17 @@
 
 Senior Design project for team **M004**.
 
-This repository is a monorepo containing the React frontend, the FastAPI backend foundation, and the shared API contract. The system is intended to monitor retail transactions, evaluate audit rules and anomalous behavior, produce a unified risk assessment, and notify auditors of high-risk activity.
+This repository is a monorepo containing the React frontend, FastAPI backend, and shared API contract. The system monitors standardized retail transactions, evaluates audit rules and anomalous behavior, produces a unified risk assessment, and delivers high-risk alerts.
 
-The current repository is only the shared development foundation. The existing frontend uses simulated/mock data until backend integration is completed. The audit rules, Isolation Forest model, unified risk calculation, database integration, WebSocket alerts, Gemini explanations, authentication, and report generation are not implemented yet.
+At `f9c7dd5` (PR #22), the core implements Supabase transaction persistence, five versioned audit rules, evaluation-coverage calculation, Isolation Forest, authoritative 60/40 combined risk, durable alerts/WebSocket delivery, advisory Gemini explanations, and daily report generation/CSV download. The frontend connects transaction list/detail, alerts/review/realtime, and reports through existing services and adapters; API mode has no automatic mock transaction/alert fallback.
+
+Authentication/JWT/RBAC, user/access-request persistence, full reviews/audit history, teams/assignments, notifications, cases, vendor workflows, analytics endpoints, settings persistence, automatic report scheduling, performance evidence, and final three-role E2E remain pending. Prepared frontend UX/services are not functioning backend integrations. Runtime transaction creation currently uses upsert and separate persistence steps; safe creation and durable recovery are the next phases.
+
+See [the backend plan](docs/BACKEND_IMPLEMENTATION_PLAN.md) and [frontend evidence](docs/FRONTEND_IMPLEMENTATION_PLAN.md). Omar's [handoff requests](docs/Backend_Final_Handoff_Tasks.docx) define the approved remaining scope; no official rubric was found in the repository. PDF is conditional on a confirmed requirement. Render/Vercel deployment is deferred, and the Render free/paid plan is undecided.
 
 ## Architecture
 
-The planned data flow is:
+The target data flow is (ERP/POS integration is not established by the offline seed tool):
 
 ```text
 ERP/POS
@@ -20,7 +24,7 @@ ERP/POS
   -> React dashboard
 ```
 
-The frontend displays backend results but is never the authoritative source for audit decisions. The backend will own validation, rule evaluation, anomaly scoring, risk classification, alert creation, and persistence.
+The frontend displays backend results but is never the authoritative source for audit decisions. The backend owns validation, rule evaluation, anomaly scoring, risk classification, alert creation, and persistence. Excel is an offline seed/evaluation source, not a runtime website data source.
 
 ## Repository structure
 
@@ -33,7 +37,7 @@ The frontend displays backend results but is never the authoritative source for 
 │   ├── package.json
 │   ├── package-lock.json
 │   └── vite.config.js
-├── backend/                  FastAPI foundation
+├── backend/                  FastAPI API, persistence, rules, and scoring
 │   ├── app/
 │   │   ├── api/
 │   │   ├── models/
@@ -41,10 +45,15 @@ The frontend displays backend results but is never the authoritative source for 
 │   │   ├── services/
 │   │   └── main.py
 │   ├── tests/
+│   ├── migrations/           SQL migrations 001–011; live application unverified
+│   ├── scripts/              Offline seed, training, and backfill tools
+│   ├── models/               Versioned Isolation Forest artifact and metrics
 │   ├── .env.example
 │   └── requirements.txt
 ├── docs/
-│   └── API_CONTRACT.md       Planned shared REST/WebSocket contract
+│   ├── API_CONTRACT.md       Implemented and planned REST/WebSocket contracts
+│   ├── BACKEND_IMPLEMENTATION_PLAN.md
+│   └── FRONTEND_IMPLEMENTATION_PLAN.md
 ├── .gitignore
 └── README.md
 ```
@@ -53,10 +62,10 @@ The frontend displays backend results but is never the authoritative source for 
 
 Requirements: Node.js and npm.
 
-```bash
+```powershell
 cd frontend
 npm install
-cp .env.example .env
+if (-not (Test-Path -LiteralPath .env)) { Copy-Item .env.example .env }
 npm run dev
 ```
 
@@ -66,39 +75,46 @@ Create a production build with:
 npm run build
 ```
 
-The current frontend behavior and data are simulated. Its risk values and audit outcomes must not be treated as authoritative.
+Connected domains display backend results. Other domain services retain unavailable/preview states until deliberately activated; development role preview is not authentication or backend authorization.
 
 ## Backend setup
 
-Requirements: Python 3.11 or later.
+Tested Python version: 3.12.10. Compatibility with other Python versions has not been verified against the pinned dependencies. Install development dependencies to run tests/offline workbook tooling.
 
-```bash
+```powershell
 cd backend
 python -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-cp .env.example .env
-uvicorn app.main:app --reload
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+if (-not (Test-Path -LiteralPath .env)) { Copy-Item .env.example .env }
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload
 ```
 
-Verify the initial service at:
+Verify service health at:
 
 ```text
 GET http://localhost:8000/api/v1/health
 ```
 
-Only the health endpoint is currently implemented. See `docs/API_CONTRACT.md` for the planned shared contract.
+Implemented routes include health, transaction list/detail/create, alert list/review, report list/generation/CSV download, and `/ws/alerts`. `GET /api/v1/dashboard/summary` and `GET /api/v1/audit-rules` are documented but not implemented. See [API_CONTRACT.md](docs/API_CONTRACT.md) for explicit boundaries. These APIs currently lack authoritative Auth/RBAC enforcement.
+
+## Verification baseline
+
+Local inspection on 2026-10-03 at `f9c7dd5`: backend `129 passed` with the known Starlette TestClient warning; frontend `204 passed`; frontend lint and `git diff --check` passed. Tests use mocked external services and do not prove live database state or deployed role workflows. Production build was not run in that inspection; previous build successes in the frontend plan are historical results, not a fresh build verification.
+
+Subsequent documentation pre-commit checks on 2026-10-03: backend `129 passed`, frontend `204 passed`, lint passed, and an actual `npm run build` production build passed (138 modules). `git diff --check` and the documentation/handoff-source secret scan passed. The tested environment uses the existing local dependency pins; their uncommitted `requirements.txt` change is excluded from the documentation commit. Phase 13A starts on a separate branch only after the documentation PR is merged and verified on `main`.
+
+Migrations 001–011 are present; no live migration application was checked. Stored model metrics report held-out detection 87.04% and false positives 3.45%; training was not rerun. Historical coverage/latency measurements are retained in the backend plan. A 10,000-row dataset does not prove throughput, and manual report generation does not prove automatic daily scheduling.
 
 ## Technology stack
 
 - Frontend: React, Vite, React Router
 - Backend: Python, FastAPI, Uvicorn
-- Planned database: PostgreSQL through Supabase
-- Planned anomaly detection: Isolation Forest with scikit-learn
-- Planned real-time delivery: FastAPI WebSocket
-- Planned risk explanations: Gemini API
-- Planned testing: frontend tests, pytest, and Locust
-- Planned hosting: Vercel for the frontend and Render for the backend
+- Database: PostgreSQL through Supabase
+- Anomaly detection: Isolation Forest with scikit-learn
+- Real-time delivery: FastAPI WebSocket; current connection manager is process-local
+- Risk explanations: Gemini API, advisory and optional after scoring
+- Tests: Node test runner and pytest; performance/load testing remains pending
+- Selected hosting, not deployed in this verification: Vercel frontend and Render backend
 
 ## Responsibility boundary
 

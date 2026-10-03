@@ -1,6 +1,6 @@
 # Backend Implementation Plan — Team M004
 
-Last updated: 2026-10-01  
+Last updated: 2026-10-03
 Owner scope: CS — C1, C3, and the CS portions of IS1 and IS3
 
 ## How to use this file
@@ -11,6 +11,37 @@ Owner scope: CS — C1, C3, and the CS portions of IS1 and IS3
 - Do not mark an item complete until its tests pass.
 - Add the commit and pull-request number after each merged phase.
 - Before starting new work: switch to `main`, pull with `--ff-only`, verify a clean status, then create a feature branch.
+
+Preserve existing uncommitted work when preparing a branch; never reset, clean, or replace the worktree to satisfy the clean-status rule. The documentation PR uses `feature/backend-handoff-plan` and includes the reviewed handoff source document. The existing `backend/requirements.txt` change remains intact and is excluded from the documentation commit.
+
+## Scope provenance and evidence baseline
+
+Phases 0–12 retain their historical implementation records and evidence. Their live database counts, coverage, latency, and local E2E observations describe the recorded verification run, not a fresh inspection of the live database. Migrations 001–011 exist in the repository; their presence does not prove application to any live database.
+
+Phases 13–24 implement the approved order for Omar's requests in [Backend_Final_Handoff_Tasks.docx](Backend_Final_Handoff_Tasks.docx). References below use its numbered sections. These requests define agreed project work; they do not establish formal rubric wording. No official rubric is present in the inspected repository. C1, C3, IS1, IS3, and numerical targets are recorded project references awaiting comparison with the official rubric in Phase 23. PDF remains conditional on a confirmed requirement.
+
+Local inspection baseline on 2026-10-03 at `f9c7dd5`:
+
+- Backend: Python 3.12.10, `129 passed`, one known Starlette TestClient deprecation warning; external services mocked in tests.
+- Frontend: `204 passed`; `npm run lint` passed.
+- `git diff --check` passed during inspection.
+- Production build was not run during this inspection. Earlier build successes remain historical evidence; run build before any documentation or implementation commit and record the actual result.
+- No new live database verification, model training, throughput benchmark, or deployment was performed.
+
+Documentation pre-commit verification on 2026-10-03 (same application source at `f9c7dd5`): backend `129 passed` with the known Starlette TestClient warning; frontend `204 passed`; frontend lint and production build passed. The build was actually run with `npm run build` (Vite 8.2.2, 138 modules). `git diff --check` and the documentation/source secret scan passed. The handoff DOCX text, XML metadata, relationships, and archive contents were reviewed: no detected credentials or private contact/path data; metadata identifies a generic document generator, with no tracked revisions, external relationships, or embedded attachments. These checks supersede the build-not-run status of the earlier inspection, without changing its historical record. Tests used the existing local pinned-dependency environment; the `requirements.txt` change is excluded from this documentation commit.
+
+Each phase (and each Phase 13 subphase) uses an independent branch and PR. Before commit: appropriate tests, frontend lint/build, `git diff --check`, secret scan, and review of the exact staged files; exclude `.env`, `dist`, and unrelated changes. Then commit, push, PR, merge, and verify on `main`. Record evidence and commit/PR identifiers only after they exist. Explain and obtain user approval before live database changes, deployment, or creation of external services.
+
+## API implementation boundaries
+
+Implemented REST routes: health; transaction list/detail/create; alert list/review; report list/generation/CSV download. `/ws/alerts` is implemented for live delivery. These routes currently have no authoritative Auth/RBAC enforcement.
+
+- `GET /api/v1/dashboard/summary`: documented shape only; no router implementation. Implement the agreed summary scope in Phase 20.
+- `GET /api/v1/audit-rules`: documented shape only; no router implementation. Add authoritative read-only rule definitions in Phase 20; the five rule implementations already exist.
+- Evaluation coverage: migration 006 and repository calculation exist, but no public analytics endpoint or activated frontend analytics service. Complete in Phase 20.
+- Auth, Users, Access Requests, full Reviews/Audit Log, Teams, Assignments, Notifications, Cases, Vendor workflows, and Settings need backend contracts and implementations. Prepared frontend services do not prove backend availability.
+- CORS currently permits local origins and does not allow the `Authorization` header. Phase 14 adds and tests authenticated transport; Phase 24 configures the approved production origin.
+- Alerts load the first REST page (100 items) at mount. Reconnection does not currently trigger catch-up retrieval. Phase 17 implements paginated reconciliation and deduplication after reconnect; Phase 24 verifies it on the chosen hosting topology.
 
 ## Target runtime architecture
 
@@ -306,8 +337,202 @@ Targets:
 - [ ] Store secrets only in backend host environment variables.
 - [x] Run a local end-to-end test: frontend -> FastAPI -> Supabase -> frontend. Live verification loaded persisted alerts, changed an alert from `ACTIVE` to `REVIEWED`, received a newly generated high-risk alert through WebSocket without refreshing, generated `RPT-2026-10-03`, and downloaded its CSV.
 - [x] Commit and merge live frontend API integration (PR #22).
-- [ ] **CURRENT:** Configure deployed frontend and backend environments, approved CORS origins, and production secrets.
+- [ ] Configure deployed frontend and backend environments, approved CORS origins, and production secrets (deferred to Phase 24).
+
+Deployment items above remain incomplete. Render backend and Vercel frontend are selected; the Render free/paid plan is undecided. Complete Phase 12 deployment work in Phase 24 after approval. The recorded local E2E covers the core integration, not the final three-role workflow.
+
+## Phase 13 — Transaction integrity
+
+### Phase 13A — Safe transaction creation — CURRENT
+
+Omar mapping: section 2 (overwrite protection/create-safe semantics), section 13 (overwrite tests); preserve section 11 transaction integration.
+
+- [ ] Introduce runtime create semantics separate from offline seed upsert.
+- [ ] Return `409 Conflict` for an existing transaction ID without changing any existing transaction or derived record.
+- [ ] Enforce uniqueness at the persistence boundary, including concurrent requests; a pre-read check alone is insufficient.
+- [ ] Preserve explicitly confirmed, idempotent seed upsert and existing API/adapters.
+
+Acceptance criteria:
+
+- A new valid ID returns `201` and retains the existing response contract.
+- Repeated and concurrent submissions for the same ID produce exactly one creation; losing submissions return `409`, with no overwrite or duplicate downstream effects.
+- Repository/API tests exercise duplicate conflict mapping and concurrent creation at the persistence boundary; validation and storage errors remain distinguishable.
+- Seed tests still prove confirmation is required and repeated seeding uses the separate upsert path.
+
+### Phase 13B — Atomicity or durable recovery
+
+Omar mapping: section 2 (creation/evaluation/scoring/alert integrity), section 13 (partial failures/rollback); dependency: Phase 13A.
+
+- [ ] Document and implement the selected database atomicity and/or durable recovery design for transaction, evaluation, anomaly score, combined score, and alert persistence.
+- [ ] Define response semantics, durable processing state, retry ownership, idempotency, and recovery after process restart.
+- [ ] Publish alerts only after durable alert persistence; preserve advisory Gemini failure isolation.
+
+Acceptance criteria:
+
+- Inject failures at each persistence boundary and verify either rollback or a durably recorded, recoverable state; errors cannot silently strand accepted work.
+- Retry/restart tests prove eventual completion without duplicate evaluations, scores, or alerts for the same processing attempt, and without overwriting the source transaction.
+- Temporary rule-context lookup failures have an explicit recovery policy that prevents unavailable context from becoming permanently accepted final results.
+- The design explains concurrent historical-rule evaluation, commit/publication failure windows, and the actual delivery guarantee; manual backfill alone is insufficient recovery.
+
+## Phase 14 — Authentication, users, and RBAC
+
+Omar mapping: sections 1, 2, 11–13; dependency: Phase 13.
+
+- [ ] Integrate Supabase Auth, JWT validation, current profile/session, and AUDITOR/SUPERVISOR/ADMIN roles.
+- [ ] Persist ACTIVE/LOCKED/DISABLED status, login/security history, failed-login tracking, lockout policy, admin lifecycle actions, and password reset.
+- [ ] Persist access requests through pending, approve/reject, role assignment, and activation.
+- [ ] Enforce endpoint/action and object-level authorization, including WebSocket and authenticated report download; activate prepared frontend auth/user services.
+- [ ] Support `Authorization` in local CORS preflight and API transport; define token refresh/expiry and WebSocket authentication without leaking credentials.
+
+Acceptance criteria:
+
+- Missing/invalid/expired JWTs, locked/disabled accounts, prohibited roles, and unauthorized object access are rejected by the backend, including direct URLs and sockets.
+- Tests verify role changes, access-request decisions, account transitions, login history/lockout, and reset/session behavior; UI visibility is not authorization evidence.
+- Allowed local-origin preflight accepts authenticated requests; unknown origins remain disallowed. Supabase privileged keys remain backend-only.
+- CSV download retains its UI behavior while using authenticated transport. Document contracts and local migration evidence without assuming live application.
+
+## Phase 15 — Reviews and immutable accountability
+
+Omar mapping: section 3, sections 11–13; dependency: Phase 14.
+
+- [ ] Persist transaction and full alert reviews with actor, role, notes, timestamps, and history; decide whether reopen is supported.
+- [ ] Record audit events with actor/role/action/resource/resource_id/time/outcome/details, with searchable, filtered, paginated reads.
+- [ ] Activate prepared review/audit/login-history services and enforce authorized scope.
+
+Acceptance criteria:
+
+- Review updates retain prior history and attributed notes; repeated/concurrent requests follow documented semantics.
+- Important mutations record attributable outcomes; application callers cannot rewrite/delete accountability history.
+- Tests verify query filters/pagination, unauthorized access, role scope, and preservation of history after state changes. Team scope is completed with Phase 16.
+
+## Phase 16 — Teams and assignments
+
+Omar mapping: section 4, sections 3 and 11–13; dependency: Phases 14–15.
+
+- [ ] Persist teams/membership and supervisor relationships; expose activity and workload.
+- [ ] Implement assign/reassign/unassign and assignment history; activate team/assignment services.
+
+Acceptance criteria:
+
+- Auditors access permitted assignments, supervisors manage their teams, and administrators operate within the defined authorized scope.
+- Concurrent reassignment has deterministic results, preserves history, and records the actor in the audit log.
+- Tests cover cross-team denial, membership changes, unassignment, activity/workload accuracy, and review/audit team scope.
+
+## Phase 17 — Notifications and alert catch-up
+
+Omar mapping: sections 5, 2 (WebSocket), 11 and 13; dependency: Phases 14–16.
+
+- [ ] Persist user/role-scoped notifications with list/read/unread/mark-one/mark-all operations.
+- [ ] Connect alert, assignment, access-request, and account/security events; extend to case/SLA/closure events in Phase 18.
+- [ ] Reconcile durable alerts after WebSocket reconnect with pagination and persisted-ID deduplication.
+
+Acceptance criteria:
+
+- Notifications survive restart and are inaccessible to other users; repeated event handling does not duplicate them.
+- Tests verify read-state operations, event recipients, and audit/security linkage.
+- Disconnect/create/reconnect tests recover missed alerts across more than one page without duplicate entries; review states reconcile from REST rather than stale socket state.
+
+## Phase 18 — Cases, evidence, closure, and SLA
+
+Omar mapping: section 6, sections 11–13; dependency: Phases 14–17.
+
+- [ ] Create/escalate cases from explicit alert/review actions; implement OPEN, INVESTIGATING, ESCALATED, RESOLUTION_REQUESTED, RESOLVED, CLOSED and priority/reference/department where configured.
+- [ ] Persist assignments, discussions, activity, resolution, and evidence metadata; validate authorized uploads/storage and scanning before enabling attachments.
+- [ ] Implement auditor closure requests and policy-controlled supervisor/admin approval/rejection.
+- [ ] Persist SLA deadlines and implement server-side overdue escalation with audit events and notifications.
+
+Acceptance criteria:
+
+- Alerts do not automatically become cases; transition/closure tests reject unauthorized or invalid actions and retain resolution/history.
+- Evidence tests verify type/size validation, access restrictions, unsafe-upload handling, and metadata/storage consistency.
+- SLA escalation works with no browser open, survives restart, and does not duplicate events on retry. Case notifications and audit events have verified recipients/actors.
+
+## Phase 19 — Vendor monitoring workflows
+
+Omar mapping: section 7, sections 11–13; dependency: Phases 14–18.
+
+- [ ] Extend the approved-vendor registry with list/profile, transaction/alert/case/risk history, and monitoring state.
+- [ ] Implement auditor watchlist request and supervisor decision; supervisor block request and admin decision/block/unblock; watchlist removal and history.
+
+Acceptance criteria:
+
+- Role and object-scope tests cover each decision and denied action; state changes preserve accountable history and integrate audit/notifications.
+- Ghost Vendor behavior remains compatible with registry authority and unavailable states.
+- Backend contracts and UI wording describe blocking in audit monitoring; no ERP payment prevention is claimed without a separate real integration.
+
+## Phase 20 — Authoritative analytics and read endpoints
+
+Omar mapping: section 8, sections 11–13; dependency: Phases 14–19.
+
+- [ ] Expose overall evaluation coverage, per-rule coverage, and reasons for NOT_EVALUATED/insufficient data.
+- [ ] Implement risk/violation trends and agreed dashboard summaries from authoritative data.
+- [ ] Implement the documented dashboard summary and read-only audit-rule-definition endpoints; activate analytics services and preserve adapters.
+
+Acceptance criteria:
+
+- Tests verify denominators, latest-snapshot selection, period boundaries, empty datasets, per-rule missing/context reasons, and authorized scope.
+- Overall coverage counts transactions with at least one executed rule; it does not imply all five rules executed for every transaction.
+- Trends/summaries use defined time windows and full scoped data, not the current frontend page or fake records. Published endpoint contracts match implemented responses.
+
+## Phase 21 — Settings persistence
+
+Omar mapping: section 10, sections 11–13; dependency: Phase 14 and relevant domain implementations.
+
+- [ ] Agree which existing frontend settings require persistence; implement authorized read/update and activate the settings service.
+
+Acceptance criteria:
+
+- Validation, unauthorized update, persistence/reload, and audit-history tests pass for each editable setting.
+- The 60/40 policy, score boundaries, and model/rule methodology remain fixed unless a separate explicit project decision approves a versioned change.
+- Unsupported settings retain truthful unavailable/read-only states.
+
+## Phase 22 — Automatic daily reports
+
+Omar mapping: section 9, sections 11–14; dependency: Phases 13B–14 and completed report integration.
+
+- [ ] Add server-side daily scheduling, execution history, retry/catch-up, and duplicate-run handling while preserving stored authoritative summaries and CSV.
+- [ ] Add PDF only if the official rubric or an explicit project decision confirms it is required.
+- [ ] Preserve Gemini after authoritative scoring and its optional-failure behavior.
+
+Acceptance criteria:
+
+- With no browser open, a scheduled run generates the intended half-open UTC daily period and records success/failure.
+- Tests cover restart, missed runs, repeated/concurrent runs, and partial failure without losing prior report history; document report regeneration/version semantics.
+- Authorized list/generation/download still work; CSV stays available. PDF has separate acceptance evidence only if required.
+- Scheduling infrastructure that creates an external service is explained and approved before creation; deployed scheduling is verified in Phase 24.
+
+## Phase 23 — Performance and requirements evidence
+
+Omar mapping: sections 13–14; dependency: Phases 13–22.
+
+- [ ] Obtain the official rubric and map each applicable specification/integrated specification/constraint to wording, owner, test, artifact, and unresolved gaps.
+- [ ] Package rule/schema/eligibility/coverage/model/combined-score evidence with versions, dates, dataset scope, and reproducible commands.
+- [ ] Run actual throughput and alert-latency benchmarks; distinguish accepted, fully processed, and failed transactions.
+
+Acceptance criteria:
+
+- Report evidence for all five rules, coverage >= 95%, detection >= 85%, false positives <= 10%, combined 60/40 scoring, latency <= 5 seconds, throughput >= 10,000 transactions/day, and automatic daily reports as recorded project targets; confirm grading interpretation against the rubric.
+- Benchmarks record environment, concurrency, duration, error rate, latency distribution, and Gemini-enabled/disabled behavior. Dataset row count is not throughput evidence, and one historical latency observation is not a load guarantee.
+- Each claim distinguishes historical evidence from a current rerun. Missing rubric wording or failing targets remain unresolved, not marked complete.
+
+## Phase 24 — Approved deployment and final three-role E2E
+
+Omar mapping: sections 2, 11–15; dependency: Phases 13–23 and explicit deployment approval.
+
+- [ ] Complete the unfinished Phase 12 hosting/env/CORS items on Render and Vercel after selecting and approving the Render plan.
+- [ ] Explain and obtain approval for live migrations, deployment, and external services; configure approved origins and backend-only secrets without committing `.env` or `dist`.
+- [ ] Document the chosen worker/instance topology and WebSocket delivery/recovery design; an in-process manager does not broadcast across workers/instances.
+- [ ] Run deployed E2E for Auditor, Supervisor, and Admin, including direct URLs and denied backend actions.
+
+Acceptance criteria:
+
+- Verify login/role -> dashboard/transactions -> rules/AI/risk -> alerts/review/assignment -> case/evidence/discussion/closure -> vendor workflow -> audit log/notifications -> reports/analytics for each permitted role.
+- Production Authorization/CORS, authenticated CSV/WebSocket, reconnect catch-up, restart behavior, deployed scheduling, and relevant performance targets pass on the selected hosting topology.
+- Verify approved migrations and actual environment configuration; do not infer them from local files. Final handoff lists endpoints, migrations, env names without secrets, results/evidence, and remaining gaps.
+
 ## Specification verification checklist
+
+The following entries are retained project targets, not independently verified official rubric wording. Final rubric mapping and evidence packaging belong to Phase 23; deployment evidence belongs to Phase 24.
 
 - [ ] C1 evidence: source adapter, standardized mapping, tests, and seed tool.
 - [ ] C3 evidence: missing-field eligibility matrix, source code, and tests.
@@ -322,7 +547,7 @@ Targets:
 
 ## Estimated attainment of the assigned CS scope
 
-These are implementation estimates, not final evaluation grades.
+These are historical implementation estimates retained from Phases 0–12, not current completion percentages or final evaluation grades. They exclude Omar's newly planned operational domains and require rubric/evidence reconciliation in Phase 23.
 
 | Requirement | Current estimate | What is already proven | Main remaining work |
 | --- | ---: | --- | --- |
@@ -353,7 +578,10 @@ These are implementation estimates, not final evaluation grades.
 | 2026-10-03 | Added persisted 60/40 combined risk scoring | PR #18 |
 | 2026-10-03 | Added persisted real-time high-risk alerts | PR #19 |
 | 2026-10-03 | Added persisted daily audit reports | PR #20 |
+| 2026-10-03 | Added versioned advisory Gemini explanations after authoritative scoring | PR #21; `0d7c85a`, merge `3ad0831` |
+| 2026-10-03 | Connected live alerts, authoritative risk/explanations, and persisted reports in the frontend | PR #22; `a8e1b8a`, `eb38337`, merge `f9c7dd5` |
+| 2026-10-03 | Added approved handoff Phases 13–24, split 13A/13B, deferred deployment, and included reviewed handoff source | Documentation PR; merge pending |
 
 ## Next action
 
-Configure the deployed frontend and backend environments, approved Vercel CORS origin, production secrets, and complete deployed end-to-end verification.
+Merge the documentation PR and verify its contents and checks on `main` before starting Phase 13A on its own branch: safe runtime transaction creation, `409` conflicts, concurrent-ID tests, and preservation of the separate seed upsert. Do not begin Phase 13A on the documentation branch. Phase 13B follows; deployment remains deferred to Phase 24.
