@@ -343,14 +343,14 @@ Deployment items above remain incomplete. Render backend and Vercel frontend are
 
 ## Phase 13 — Transaction integrity
 
-### Phase 13A — Safe transaction creation — CURRENT
+### Phase 13A — Safe transaction creation
 
 Omar mapping: section 2 (overwrite protection/create-safe semantics), section 13 (overwrite tests); preserve section 11 transaction integration.
 
-- [ ] Introduce runtime create semantics separate from offline seed upsert.
-- [ ] Return `409 Conflict` for an existing transaction ID without changing any existing transaction or derived record.
-- [ ] Enforce uniqueness at the persistence boundary, including concurrent requests; a pre-read check alone is insufficient.
-- [ ] Preserve explicitly confirmed, idempotent seed upsert and existing API/adapters.
+- [x] Introduce runtime create semantics separate from offline seed upsert.
+- [x] Return `409 Conflict` for an existing transaction ID without changing any existing transaction or derived record.
+- [x] Enforce uniqueness at the persistence boundary, including concurrent requests; a pre-read check alone is insufficient.
+- [x] Preserve explicitly confirmed, idempotent seed upsert and existing API/adapters.
 
 Acceptance criteria:
 
@@ -359,7 +359,9 @@ Acceptance criteria:
 - Repository/API tests exercise duplicate conflict mapping and concurrent creation at the persistence boundary; validation and storage errors remain distinguishable.
 - Seed tests still prove confirmation is required and repeated seeding uses the separate upsert path.
 
-### Phase 13B — Atomicity or durable recovery
+Evidence: branch `feature/safe-transaction-create`; backend `140 passed` (one known Starlette warning). `test_transaction_creation.py` drives sequential/concurrent API calls through the real insert repository with a constraint-backed SQLite HTTP transport; duplicate/error classification and no processing after insert failure are covered. Existing seed tests prove repeated confirmed calls use upsert. No PostgreSQL server/docker was available locally; the concurrency harness is not live PostgreSQL verification. Migration 001 already defines the primary key, so no new migration is required. PR/merge evidence is recorded after publication.
+
+### Phase 13B — Atomicity or durable recovery — CURRENT
 
 Omar mapping: section 2 (creation/evaluation/scoring/alert integrity), section 13 (partial failures/rollback); dependency: Phase 13A.
 
@@ -580,8 +582,8 @@ These are historical implementation estimates retained from Phases 0–12, not c
 | 2026-10-03 | Added persisted daily audit reports | PR #20 |
 | 2026-10-03 | Added versioned advisory Gemini explanations after authoritative scoring | PR #21; `0d7c85a`, merge `3ad0831` |
 | 2026-10-03 | Connected live alerts, authoritative risk/explanations, and persisted reports in the frontend | PR #22; `a8e1b8a`, `eb38337`, merge `f9c7dd5` |
-| 2026-10-03 | Added approved handoff Phases 13–24, split 13A/13B, deferred deployment, and included reviewed handoff source | Documentation PR; merge pending |
+| 2026-10-03 | Added approved handoff Phases 13–24, split 13A/13B, deferred deployment, and included reviewed handoff source | PR #23; `0aca9ed`, merge `3a07512` |
 
 ## Next action
 
-Merge the documentation PR and verify its contents and checks on `main` before starting Phase 13A on its own branch: safe runtime transaction creation, `409` conflicts, concurrent-ID tests, and preservation of the separate seed upsert. Do not begin Phase 13A on the documentation branch. Phase 13B follows; deployment remains deferred to Phase 24.
+Finish Phase 13A PR review/merge and verification on `main`, then begin Phase 13B on a separate branch. Runtime overwrite protection is locally tested; atomicity/durable recovery remains incomplete. Preserve the user dependency modification and backup stash. Deployment stays deferred to Phase 24.

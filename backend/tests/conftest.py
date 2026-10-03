@@ -7,10 +7,10 @@ import pytest
 def mock_transaction_persistence(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    def fake_persist_transactions(
-        transactions: list[dict[str, Any]],
-    ) -> int:
-        return len(transactions)
+    def fake_insert_transaction(
+        transaction: dict[str, Any],
+    ) -> None:
+        return None
 
     def fake_persist_transaction_evaluation(
         *,
@@ -31,8 +31,8 @@ def mock_transaction_persistence(
         }
 
     monkeypatch.setattr(
-        "app.api.transactions.persist_transactions",
-        fake_persist_transactions,
+        "app.api.transactions.insert_transaction",
+        fake_insert_transaction,
     )
     monkeypatch.setattr(
         (

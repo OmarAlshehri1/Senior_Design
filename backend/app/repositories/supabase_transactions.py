@@ -51,6 +51,10 @@ class SupabasePersistenceError(RuntimeError):
     """Raised when transactions cannot be accessed in Supabase."""
 
 
+class TransactionAlreadyExistsError(SupabasePersistenceError):
+    """An insert collided with the database transaction primary key."""
+
+
 def _get_configuration() -> tuple[str, str]:
     url = os.getenv("SUPABASE_URL", "").rstrip("/")
     secret_key = os.getenv("SUPABASE_SECRET_KEY", "")
@@ -499,7 +503,47 @@ def get_ghost_vendor_contexts(
     return contexts
 
 
+def insert_transaction(transaction: dict[str, Any]) -> None:
+    """Create only; the database primary key arbitrates concurrent IDs.
+
+    Never use upsert or a read-before-write check on the runtime path.
+    The separate persist_transactions function remains for confirmed seeding.
+    """
+    url, _ = _get_configuration()
+    headers = _get_headers()
+    headers["Prefer"] = "return=minimal"
+    try:
+        with httpx.Client(timeout=REQUEST_TIMEOUT_SECONDS) as client:
+            response = client.post(
+                f"{url}/rest/v1/transactions",
+                headers=headers,
+                json=_to_database_row(transaction),
+            )
+            response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        try:
+            error = exc.response.json()
+        except ValueError:
+            error = None
+        if (
+            exc.response.status_code == 409
+            and isinstance(error, dict)
+            and error.get("code") == "23505"
+        ):
+            raise TransactionAlreadyExistsError(
+                "Transaction ID already exists."
+            ) from exc
+        raise SupabasePersistenceError(
+            "Failed to create transaction in Supabase."
+        ) from exc
+    except httpx.HTTPError as exc:
+        raise SupabasePersistenceError(
+            "Failed to create transaction in Supabase."
+        ) from exc
+
+
 def persist_transactions(transactions: list[dict[str, Any]]) -> int:
+    """Upsert batches for the explicitly confirmed offline seed tool only."""
     if not transactions:
         return 0
 

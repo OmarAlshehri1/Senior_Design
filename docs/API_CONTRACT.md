@@ -4,7 +4,7 @@ This document is the preliminary contract between the React frontend and FastAPI
 
 The documented health, transaction, alert, report, CSV-download, and alert WebSocket endpoints are implemented. `GET /api/v1/dashboard/summary` and `GET /api/v1/audit-rules` are planned contracts only; no router currently implements them. Shapes may be extended through team agreement, but existing names should not be changed without coordinating both branches.
 
-Implementation status at `f9c7dd5`: existing endpoints have no authoritative Auth/JWT/RBAC enforcement. Backend-plan Phase 13A replaces runtime transaction upsert with safe creation and `409` conflicts; Phase 13B adds atomicity or durable recovery. Phase 14 adds authenticated API/WebSocket/CSV transport and CORS support for `Authorization`; Phase 17 adds alert catch-up after reconnect. Approved production origins and the worker/instance delivery topology are completed in Phase 24. These are pending changes, not current guarantees. Live measurements below are historical observations, not newly verified database state.
+Implementation status after Phase 13A: existing endpoints have no authoritative Auth/JWT/RBAC enforcement. Runtime transaction creation uses insert-only semantics and returns `409` for an existing ID without overwriting it; offline seed upsert remains separate. Phase 13B still needs to add atomicity or durable recovery. Phase 14 adds authenticated API/WebSocket/CSV transport and CORS support for `Authorization`; Phase 17 adds alert catch-up after reconnect. Approved production origins and the worker/instance delivery topology are completed in Phase 24. These are pending changes, not current guarantees. Live measurements below are historical observations, not newly verified database state.
 
 ## Conventions
 
@@ -270,6 +270,8 @@ Response `201 Created`:
 ```
 
 A transaction with missing optional fields returns `data_quality_status` as `PARTIAL` and lists the unavailable fields in `missing_fields`. Unknown fields or invalid values return `422 Unprocessable Entity`.
+
+Duplicate transaction IDs return `409 Conflict` with `detail: "Transaction ID already exists."`. The existing primary key arbitrates concurrent inserts; losing requests do not start evaluation/scoring/alert processing. Runtime insert never uses `on_conflict` or a read-before-write existence check. Storage/configuration errors retain `502`/`503`; unknown fields or invalid values retain `422`.
 
 The transaction is validated, assessed for missing fields, persisted to Supabase PostgreSQL, evaluated by the eligible audit rules, assigned an authoritative rule score, and stored with a versioned evaluation snapshot. Isolation Forest anomaly scoring is performed and persisted immediately. Combined risk scoring is performed and persisted immediately. Qualifying `HIGH` transactions generate a durable active alert and a WebSocket event. Live verification measured 3,556.213 ms from request receipt to persisted alert creation and 4,660.189 ms from request start to WebSocket receipt, satisfying the five-second target. Gemini 3.8 Flash generates and persists a sanitized advisory explanation after authoritative scoring. If explanation generation is unavailable or incomplete, the transaction and audit results remain stored and `explanation` is `null`.
 

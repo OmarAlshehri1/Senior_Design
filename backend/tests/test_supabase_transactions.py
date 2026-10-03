@@ -107,6 +107,7 @@ def test_persistence_uses_batches_and_secret_header(
     assert len(requests[1]["json"]) == 1
     assert requests[0]["headers"]["apikey"] == "sb_secret_test"
     assert "Authorization" not in requests[0]["headers"]
+    assert requests[0]["headers"]["Prefer"] == "resolution=merge-duplicates,return=minimal"
     assert requests[0]["endpoint"].endswith(
         "/rest/v1/transactions?on_conflict=id"
     )

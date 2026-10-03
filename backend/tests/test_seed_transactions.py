@@ -173,3 +173,11 @@ def test_confirmed_seed_persists_parsed_rows(
     assert summary["persisted_rows"] == 2
     assert len(persisted) == 2
     assert persisted[0]["id"] == "TX-001"
+
+    # Repeat the confirmed tool invocation: it still routes to offline upsert,
+    # not the runtime create-only operation.
+    repeated = seed_transactions.seed_transactions_from_workbook(
+        workbook_path, confirm=True,
+    )
+    assert repeated["persisted_rows"] == 2
+    assert [row["id"] for row in persisted] == ["TX-001", "TX-002"] * 2
