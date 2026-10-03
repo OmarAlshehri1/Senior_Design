@@ -278,12 +278,13 @@ Targets:
 - [x] Implement the planned WebSocket alert stream.
 - [x] Measure posting-to-alert latency.
 - [x] Demonstrate alert latency `<= 5 seconds`; measured 3,556.213 ms to persistence and 4,660.189 ms end-to-end through WebSocket.
-- [ ] **CURRENT:** Commit and merge risk alerts and live WebSocket delivery.
+- [x] Commit and merge risk alerts and live WebSocket delivery (PR #19).
 
 ## Phase 11 — Reports and Gemini explanations
 
-- [ ] Generate daily audit summaries from stored evaluation results.
-- [ ] Implement report list, generation, and download endpoints.
+- [x] Generate daily audit summaries from stored evaluation results.
+- [x] Implement report list, generation, and download endpoints.
+- [ ] **CURRENT:** Commit and merge daily audit reports.
 - [ ] Generate explanations only after authoritative scoring.
 - [ ] Ensure Gemini explanations never modify scores or rule outcomes.
 - [ ] Handle unavailable Gemini service without losing audit results.
@@ -345,7 +346,8 @@ These are implementation estimates, not final evaluation grades.
 | 2026-10-02 | Measured 100% automated evaluation coverage | PR #16 |
 | 2026-10-02 | Added versioned Isolation Forest anomaly scoring | PR #17 |
 | 2026-10-03 | Added persisted 60/40 combined risk scoring | PR #18 |
+| 2026-10-03 | Added persisted real-time high-risk alerts | PR #19 |
 
 ## Next action
 
-Commit and merge risk alerts and WebSocket delivery, then implement reports and Gemini explanations.
+Commit and merge daily audit reports, then implement Gemini explanations without allowing them to modify authoritative scores or rule outcomes.
