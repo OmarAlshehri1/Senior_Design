@@ -41,6 +41,7 @@ Owner scope: ICS — SWE
 | Phase 8.11 | 2026-09-30–2026-10-03 | Final responsive/UI quality work | `1bc6a50`, `4dc7b5a` | [x] Completed |
 | Phase 8.12 | 2026-10-03 | Final functional QA | No distinct commit | [x] Inspection completed |
 | Phase 8.12B | 2026-10-03 | Final frontend freeze fixes | `dc368a4` | [x] Completed and verified |
+| Integration milestone | 2026-10-03 | Live alerts, authoritative risk/explanations, and persisted reports | `a8e1b8a`, `eb38337` (PR #22) | [x] Connected |
 
 ### Numbering provenance and explained gaps
 
@@ -683,7 +684,7 @@ Implemented:
 
 Validation:
 
-- Final local validation: 199 tests passed; build, lint, and `git diff --check` passed.
+- Historical Phase 8.12B validation: 199 tests passed; build, lint, and `git diff --check` passed. This is the pre-PR #22 baseline.
 
 Evidence:
 
@@ -714,7 +715,7 @@ Implemented:
 
 Validation:
 
-- 204 frontend tests passed after adapter and service integration; lint and production build passed.
+- Historical PR #22 validation: 204 frontend tests passed after adapter and service integration; lint and production build were reported passed in that milestone. The 2026-10-03 repository inspection independently reran tests/lint, not the production build.
 - Live alert verification loaded two persisted alerts, reviewed the active alert through the UI, and confirmed the stored `REVIEWED` state through REST.
 - Live WebSocket verification added `TX-LIVE-HIGH-*` without refreshing the page and updated the page to three alerts: one active and two reviewed.
 - Live report verification generated `RPT-2026-10-03` with 9 evaluated transactions, average risk score 45.69, 6 LOW and 3 HIGH transactions, and 3 HIGH alerts split between 1 active and 2 reviewed.
@@ -763,6 +764,7 @@ Backend dependency: Local integration is verified against the implemented FastAP
 | 2026-10-03 | Phase 8.11 final responsive fixes | `4dc7b5a` | Layout, transactions, CSS | [x] |
 | 2026-10-03 | Phase 8.12 final functional QA | No distinct commit | Inspection resulting in Phase 8.12B fixes | [x] inspection |
 | 2026-10-03 | Phase 8.12B freeze fixes | `dc368a4` | Final functional fixes and 199 tests | [x] verified |
+| 2026-10-03 | Live alerts/risk/explanations/reports integration | `a8e1b8a`, `eb38337` (PR #22) | Services, adapters, AppContext, reports, 204 tests | [x] connected |
 
 No frontend PR number is recorded here unless Git establishes it. The frontend milestone commits above were inspected directly rather than assigned invented PR references.
 
@@ -856,7 +858,7 @@ These workflows intentionally show unavailable, empty, or disabled states until 
 
 ## Current real backend integration
 
-The only active backend domain integration in the current frontend is Transactions.
+Active backend domain integrations are Transactions, Alerts, and Reports. Transaction integration includes:
 
 - `currentDataSource.kind` is `DATA_SOURCE_KIND.API`.
 - AppContext calls `transactionsService.list` with `page`, `page_size`, `search`, and `sort_by`.
@@ -868,6 +870,10 @@ The only active backend domain integration in the current frontend is Transactio
 - Risk and rule-status filters remain current-page frontend filters; UI wording does not claim global coverage.
 
 Auth, Users, Audit Log, Reviews, Teams, Assignments, Notifications, Cases, Vendors, Analytics, and Settings are not activated as real backend integrations in the current frontend.
+
+Alerts and Reports are connected after PR #22; earlier phase descriptions retain their historical preview status. Alert review currently persists status/time only. Alert loading currently retrieves the first 100 records at mount; reconnect catch-up is pending in backend Phase 17. Authenticated REST/WebSocket and CSV download, token lifecycle, and CORS `Authorization` support belong to Phase 14; approved production origins and deployed topology verification belong to Phase 24.
+
+`GET /api/v1/dashboard/summary` and `GET /api/v1/audit-rules` are documented but not implemented. Dashboard derivations are scoped to available frontend data, and Audit Rules uses local definitions. Authoritative summaries/rule-definition reads and connected coverage/trend analytics belong to backend Phase 20.
 
 ## Frontend service boundaries
 
@@ -899,12 +905,23 @@ npm test       -> node --test
 npm run preview -> vite preview
 ```
 
-Current final baseline before documentation:
+Historical Phase 8.12B baseline (before PR #22):
 
 - [x] `npm test`: 199 tests passed, 0 failed.
 - [x] `npm run build`: production build passed.
 - [x] `npm run lint`: passed.
-- [x] `git diff --check`: passed for the Phase 8.12B implementation and the current documentation correction.
+- [x] `git diff --check`: passed for the Phase 8.12B implementation and its documentation correction.
+
+Current independently rerun baseline, 2026-10-03 repository inspection at `f9c7dd5`:
+
+- `npm test`: 204 passed, 0 failed.
+- `npm run lint`: passed.
+- Backend: 129 passed with one known Starlette TestClient warning.
+- `git diff --check`: passed during inspection.
+- Production build: not run during that inspection. Historical build successes above were not rerun at that point; see the subsequent pre-commit verification below.
+- Live Supabase verification, deployed E2E, model retraining, and performance benchmarks: not run during inspection.
+
+Subsequent documentation pre-commit verification on 2026-10-03: frontend tests `204 passed`, lint passed, and `npm run build` production build passed (Vite 8.2.2, 138 modules). Backend tests again returned `129 passed` with the known Starlette TestClient warning. `git diff --check` and the documentation/handoff-source secret scan passed. This run verifies the local build; it does not establish deployed E2E or live database state. Generated `dist` files are excluded from the commit.
 
 Tests cover domain models, contracts, adapters, risk/report derivations, API-client behavior, route authorization, service boundaries, request states, accessibility helpers, real-time lifecycle contracts, and transaction detail loading. They do not replace live backend end-to-end, browser, security, or persistence testing.
 
@@ -928,9 +945,9 @@ No frontend claim is made for the five audit-rule implementations, Isolation For
 | Dashboard | Enterprise overview, risk distribution, recent activity, role workspace | `/` or `/dashboard` |
 | Transactions | Connected pagination/search/sort, loading/error states, responsive results | `/transactions` |
 | Transaction Detail | Direct lookup, rule/risk/data-quality presentation, not-found/error separation | `/transactions/:id` |
-| Alerts | Filtering, sorting, review/assignment presentation; data is not backend-connected | `/alerts` |
+| Alerts | Connected persisted listing, status/time review, and live WebSocket delivery; assignment/full review history remain pending | `/alerts` |
 | Audit Rules | Five named rule definitions and accessible disclosures; execution is backend-owned | `/audit-rules` |
-| Reports | Derived frontend preview and responsive high-risk cards; report API not activated | `/reports` |
+| Reports | Connected persisted listing/generation, authoritative summaries, and CSV download; automatic scheduling remains pending | `/reports` |
 | Role Preview | Development-only Auditor/Supervisor/Admin presentation | Application shell in development |
 | Login UX | Validation and account-state routes; no real authentication | `/login` and auth routes |
 | User Management | Permission-aware administrative UX and empty states; no persistence | `/users` |
@@ -952,7 +969,7 @@ No frontend claim is made for the five audit-rule implementations, Isolation For
 - [x] Live transaction-list integration plus direct Transaction Detail retrieval.
 - [x] Backend-authoritative `missing_fields` mapping and data-quality precedence.
 - [x] Production removal of development-only transaction simulation control.
-- [x] Final baseline of 199 passing frontend tests.
+- [x] Current rerun baseline of 204 passing frontend tests; 199 remains the historical Phase 8.12B result.
 
 ## Backend / Integration Dependencies
 
@@ -964,7 +981,8 @@ No frontend claim is made for the five audit-rule implementations, Isolation For
 - [ ] Vendor profiles, watchlists, blocked-vendor workflows, and monitoring persistence.
 - [ ] Audit-coverage and risk-trend analytics integration.
 - [ ] Settings persistence.
-- [ ] Coordinated activation and end-to-end verification of Alerts and Reports APIs.
+- [x] Core Alerts and Reports integration activated in PR #22; historical local live verification recorded above.
+- [ ] Authenticated Alerts/Reports/CSV integration, reconnect catch-up, and final deployed three-role E2E (backend Phases 14, 17, and 24).
 - [ ] Deployment configuration, CORS, identity/security review, and full frontend-to-FastAPI-to-Supabase end-to-end testing.
 
 ## Current frontend status
@@ -1009,7 +1027,8 @@ No frontend claim is made for the five audit-rule implementations, Isolation For
 | 2026-10-03 | Phase 8.11 | Completed final responsive/UI quality fixes | `4dc7b5a` |
 | 2026-10-03 | Phase 8.12 | Completed final functional QA inspection | No distinct commit |
 | 2026-10-03 | Phase 8.12B | Completed final frontend freeze fixes | `dc368a4` |
+| 2026-10-03 | Integration milestone | Connected live alerts, authoritative risk/explanations, and persisted reports | `a8e1b8a`, `eb38337` (PR #22) |
 
 ## Next action
 
-Independent frontend implementation is frozen after Phase 8.12B and this evidence document. Remaining operational functionality requires backend completion, deliberate integration activation, deployment coordination, and end-to-end verification; the document does not assert that the complete system is operational.
+The frontend design remains frozen; preserve existing services and adapters. After the documentation PR is merged and verified on `main`, follow the approved backend Phases 13–24 on independent branches, starting with Phase 13A safe transaction creation, then Phase 13B integrity/recovery, Auth/RBAC, and dependent domains. Activate each prepared domain only with its tested backend contract. Deployment and final three-role E2E remain deferred to Phase 24; this document does not assert that the complete system is operational.

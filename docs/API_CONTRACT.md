@@ -2,7 +2,9 @@
 
 This document is the preliminary contract between the React frontend and FastAPI backend. It defines planned field names and payload shapes so frontend and backend development can proceed independently.
 
-The documented health, transaction, alert, report, CSV-download, and alert WebSocket endpoints are implemented. Endpoints explicitly described as planned remain contracts only. Shapes may be extended through team agreement, but existing names should not be changed without coordinating both branches.
+The documented health, transaction, alert, report, CSV-download, and alert WebSocket endpoints are implemented. `GET /api/v1/dashboard/summary` and `GET /api/v1/audit-rules` are planned contracts only; no router currently implements them. Shapes may be extended through team agreement, but existing names should not be changed without coordinating both branches.
+
+Implementation status at `f9c7dd5`: existing endpoints have no authoritative Auth/JWT/RBAC enforcement. Backend-plan Phase 13A replaces runtime transaction upsert with safe creation and `409` conflicts; Phase 13B adds atomicity or durable recovery. Phase 14 adds authenticated API/WebSocket/CSV transport and CORS support for `Authorization`; Phase 17 adds alert catch-up after reconnect. Approved production origins and the worker/instance delivery topology are completed in Phase 24. These are pending changes, not current guarantees. Live measurements below are historical observations, not newly verified database state.
 
 ## Conventions
 
@@ -190,7 +192,7 @@ Response `200 OK`:
 
 ### `GET /api/v1/dashboard/summary`
 
-Returns `DashboardSummary` for the current organization and reporting period.
+Planned; not implemented. The intended response is `DashboardSummary` for the authorized scope and reporting period. Backend-plan Phase 20 defines and implements the authoritative summary.
 
 ### `GET /api/v1/transactions`
 
@@ -304,7 +306,7 @@ Returns a paginated collection of `Alert` objects. The optional `status` query p
 
 ### `PATCH /api/v1/alerts/{alert_id}/review`
 
-Marks an alert as `REVIEWED`, records `reviewed_at`, and returns the updated `Alert`.
+Marks an alert as `REVIEWED`, records `reviewed_at`, and returns the updated `Alert`. This is not a full review record: actor identity, notes, review history, and immutable accountability remain pending in backend-plan Phase 15, after Phase 14 authentication.
 
 Request:
 
@@ -316,7 +318,7 @@ Request:
 
 ### `GET /api/v1/audit-rules`
 
-Returns the available `AuditRule` definitions.
+Planned; not implemented. The intended response contains the available read-only `AuditRule` definitions; backend-plan Phase 20 adds the endpoint. The five backend rule implementations already exist, and the frontend currently uses prepared local definitions.
 
 ```json
 {
@@ -378,7 +380,7 @@ Preliminary event envelope:
 }
 ```
 
-The client implements bounded reconnection attempts. Durable alert reconciliation is performed through `GET /api/v1/alerts`; the WebSocket stream provides live delivery while connected and does not replace persisted alert storage.
+The client implements bounded reconnection attempts and loads persisted alerts through `GET /api/v1/alerts` at mount (currently the first page, up to 100 items). Reconnect does not currently trigger catch-up retrieval. Backend-plan Phase 17 adds paginated reconciliation and persisted-ID deduplication to recover missed events. The WebSocket stream provides live delivery while connected and does not replace persisted alert storage. Its current manager is process-local and has no authentication; Phases 14 and 24 address access control and the approved hosting topology respectively.
 
 ## Responsibility boundary
 
