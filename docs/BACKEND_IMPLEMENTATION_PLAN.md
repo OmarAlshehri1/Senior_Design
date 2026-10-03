@@ -250,7 +250,7 @@ automated evaluation coverage >= 95%
 - [x] Version and persist the model artifact or model configuration.
 - [x] Measure detection rate and false-positive rate against held-out labels.
 - [x] Persist `ai_score` for evaluated transactions.
-- [ ] **CURRENT:** Commit and merge Isolation Forest anomaly scoring.
+- [x] Commit and merge Isolation Forest anomaly scoring (PR #17).
 
 Targets:
 
@@ -259,15 +259,16 @@ Targets:
 
 ## Phase 9 — IS3 combined risk score
 
-- [ ] Confirm score rounding and missing-score policy with the team.
-- [ ] Calculate `risk_score = 0.60 * rule_score + 0.40 * ai_score`.
-- [ ] Keep the final score within 0–100.
-- [ ] Classify `LOW` as 0–49.
-- [ ] Classify `MEDIUM` as 50–74.
-- [ ] Classify `HIGH` as 75–100.
-- [ ] Persist the combined score and scoring version.
-- [ ] Return rule results, anomaly score, combined score, and explanation inputs.
-- [ ] Add unit and integration tests.
+- [x] Confirm score rounding and missing-score policy with the team.
+- [x] Calculate `risk_score = 0.60 * rule_score + 0.40 * ai_score`.
+- [x] Keep the final score within 0–100.
+- [x] Classify `LOW` as 0–49.
+- [x] Classify `MEDIUM` as 50–74.
+- [x] Classify `HIGH` as 75–100.
+- [x] Persist the combined score and scoring version.
+- [x] Return rule results, anomaly score, combined score, and explanation inputs.
+- [x] Add unit and integration tests.
+- [ ] **CURRENT:** Commit and merge combined risk scoring.
 
 ## Phase 10 — Alerts and five-second latency
 
@@ -321,7 +322,7 @@ These are implementation estimates, not final evaluation grades.
 | C1 | 95% | standardized schema, offline SME adapter, and 10,000 rows mapped into Supabase | package final mapping and test evidence |
 | C3 | 100% | all five versioned rules execute independently and missing fields remain isolated per rule | package final test and live-verification evidence |
 | CS part of IS1 | 100% | all five rules and 100% automated evaluation coverage across the controlled dataset | package final test and live-verification evidence |
-| CS part of IS3 | 70% | authoritative rule score and versioned Isolation Forest scoring meet held-out targets | implement and persist combined risk scoring |
+| CS part of IS3 | 100% | authoritative rule score, versioned Isolation Forest score, and persisted 60/40 combined risk score are implemented | package final test and live-verification evidence |
 
 ## Change log
 
@@ -341,7 +342,8 @@ These are implementation estimates, not final evaluation grades.
 | 2026-10-02 | Added authoritative rule-score calculation across eligible rules | PR #14 |
 | 2026-10-02 | Added versioned transaction-evaluation persistence | PR #15 |
 | 2026-10-02 | Measured 100% automated evaluation coverage | PR #16 |
+| 2026-10-02 | Added versioned Isolation Forest anomaly scoring | PR #17 |
 
 ## Next action
 
-Commit and merge Isolation Forest anomaly scoring, then implement the combined risk score.
+Commit and merge combined risk scoring, then implement alerts and verify the five-second latency target.

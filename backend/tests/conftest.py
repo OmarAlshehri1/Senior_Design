@@ -123,3 +123,16 @@ def mock_transaction_persistence(
         "app.api.transactions._get_anomaly_model",
         lambda: FakeAnomalyModel(),
     )
+
+    def fake_persist_transaction_risk_scores(
+        scores: list[dict[str, Any]],
+    ) -> int:
+        return len(scores)
+
+    monkeypatch.setattr(
+        (
+            "app.api.transactions."
+            "persist_transaction_risk_scores"
+        ),
+        fake_persist_transaction_risk_scores,
+    )

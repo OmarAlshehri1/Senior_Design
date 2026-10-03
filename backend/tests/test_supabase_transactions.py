@@ -438,6 +438,17 @@ def test_list_transactions_maps_rows_and_total(
         },
     )
 
+    monkeypatch.setattr(
+        repository,
+        "get_latest_transaction_risk_scores",
+        lambda transaction_ids: {
+            "TX-READ-001": {
+                "risk_score": 58.0,
+                "risk_level": "MEDIUM",
+            }
+        },
+    )
+
     transactions, total = repository.list_transactions(
         page=2,
         page_size=25,
@@ -476,7 +487,8 @@ def test_list_transactions_maps_rows_and_total(
         result["score_contribution"] is None
         for result in not_evaluated_results
     )
-    assert transaction["risk_score"] is None
+    assert transaction["risk_score"] == 58.0
+    assert transaction["risk_level"] == "MEDIUM"
     assert transaction["ai_score"] == 87.5
     assert "ground_truth" not in transaction
 
@@ -627,6 +639,17 @@ def test_get_transaction_by_id_and_not_found(
         },
     )
 
+    monkeypatch.setattr(
+        repository,
+        "get_latest_transaction_risk_scores",
+        lambda transaction_ids: {
+            "TX-READ-002": {
+                "risk_score": 42.0,
+                "risk_level": "LOW",
+            }
+        },
+    )
+
     transaction = repository.get_transaction_by_id(
         "TX-READ-002",
     )
@@ -637,6 +660,8 @@ def test_get_transaction_by_id_and_not_found(
     assert transaction is not None
     assert transaction["id"] == "TX-READ-002"
     assert transaction["ai_score"] == 42.0
+    assert transaction["risk_score"] == 42.0
+    assert transaction["risk_level"] == "LOW"
     assert transaction["data_quality_status"] == "COMPLETE"
     assert len(transaction["rule_results"]) == 5
 
@@ -992,4 +1017,137 @@ def test_persist_and_read_anomaly_scores(
     assert requests[0]["json"] == rows
     assert requests[1]["json"] == {
         "transaction_ids": ["TX-AI-001"]
+    }
+
+def test_persist_and_read_combined_risk_scores(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    requests: list[dict[str, Any]] = []
+
+    class FakeResponse:
+        def __init__(
+            self,
+            payload: list[dict[str, Any]],
+        ) -> None:
+            self.payload = payload
+
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> list[dict[str, Any]]:
+            return self.payload
+
+    class FakeClient:
+        def __init__(self, timeout: float) -> None:
+            self.timeout = timeout
+
+        def __enter__(self) -> "FakeClient":
+            return self
+
+        def __exit__(
+            self,
+            exc_type: object,
+            exc_value: object,
+            traceback: object,
+        ) -> None:
+            return None
+
+        def post(
+            self,
+            endpoint: str,
+            *,
+            headers: dict[str, str],
+            json: Any,
+        ) -> FakeResponse:
+            requests.append(
+                {
+                    "endpoint": endpoint,
+                    "headers": headers,
+                    "json": json,
+                }
+            )
+
+            if endpoint.endswith(
+                "/rpc/get_latest_transaction_risk_scores"
+            ):
+                return FakeResponse(
+                    [
+                        {
+                            "transaction_id": "TX-RISK-001",
+                            "scoring_version": "1.0.0",
+                            "rule_evaluation_version": "1.0.0",
+                            "anomaly_model_version": "1.0.0",
+                            "rule_score": 33.33,
+                            "ai_score": 95.0,
+                            "risk_score": 58.0,
+                            "risk_level": "MEDIUM",
+                            "calculated_at": (
+                                "2026-10-03T02:00:00+00:00"
+                            ),
+                        }
+                    ]
+                )
+
+            return FakeResponse([])
+
+    monkeypatch.setenv(
+        "SUPABASE_URL",
+        "https://example.supabase.co",
+    )
+    monkeypatch.setenv(
+        "SUPABASE_SECRET_KEY",
+        "sb_secret_test",
+    )
+    monkeypatch.setattr(
+        repository.httpx,
+        "Client",
+        FakeClient,
+    )
+
+    persisted = repository.persist_transaction_risk_scores(
+        [
+            {
+                "transaction_id": "TX-RISK-001",
+                "scoring_version": "1.0.0",
+                "rule_evaluation_version": "1.0.0",
+                "anomaly_model_version": "1.0.0",
+                "rule_score": 33.33,
+                "ai_score": 95.0,
+                "risk_score": 58.0,
+                "risk_level": "MEDIUM",
+            }
+        ]
+    )
+
+    scores = repository.get_latest_transaction_risk_scores(
+        [
+            "TX-RISK-001",
+            "TX-RISK-001",
+            "",
+        ]
+    )
+
+    assert persisted == 1
+    assert scores["TX-RISK-001"] == {
+        "scoring_version": "1.0.0",
+        "rule_evaluation_version": "1.0.0",
+        "anomaly_model_version": "1.0.0",
+        "rule_score": 33.33,
+        "ai_score": 95.0,
+        "risk_score": 58.0,
+        "risk_level": "MEDIUM",
+        "calculated_at": "2026-10-03T02:00:00+00:00",
+    }
+
+    assert requests[0]["endpoint"].endswith(
+        "/transaction_risk_scores"
+    )
+    assert requests[0]["headers"]["Prefer"] == (
+        "return=minimal"
+    )
+    assert requests[1]["endpoint"].endswith(
+        "/rpc/get_latest_transaction_risk_scores"
+    )
+    assert requests[1]["json"] == {
+        "transaction_ids": ["TX-RISK-001"],
     }
