@@ -11,6 +11,8 @@ from fastapi import (
     status,
 )
 from pydantic import BaseModel
+from fastapi import Depends
+from app.services.identity import require_roles
 from starlette.concurrency import run_in_threadpool
 
 from app.repositories.supabase_reports import (
@@ -30,6 +32,7 @@ from app.services.audit_reports import (
 router = APIRouter(
     prefix="/reports",
     tags=["reports"],
+    dependencies=[Depends(require_roles("SUPERVISOR", "ADMIN"))],
 )
 
 

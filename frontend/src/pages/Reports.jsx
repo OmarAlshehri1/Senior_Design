@@ -134,10 +134,28 @@ export default function Reports() {
     };
   }, [reloadKey]);
 
+  const report = selectedReport;
   const downloadUrl = useMemo(
     () => reportsService.getDownloadUrl(selectedReport?.id),
     [selectedReport?.id]
   );
+
+  const downloadReport = async () => {
+    if (!report?.id) return;
+    try {
+      const content = await reportsService.download(report.id);
+      const url = URL.createObjectURL(content);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `${report.id}.csv`;
+      anchor.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (downloadError) {
+      const message = downloadError instanceof Error ? downloadError.message : 'The report could not be downloaded.';
+      setError(message);
+      showNotification(message, 'error');
+    }
+  };
 
   const generateReport = async () => {
     if (generating) return;
@@ -179,7 +197,6 @@ export default function Reports() {
     }
   };
 
-  const report = selectedReport;
   const summaryItems = report
     ? [
       [
@@ -361,13 +378,9 @@ export default function Reports() {
               </button>
 
               {downloadUrl && report.status === 'COMPLETED' && (
-                <a
-                  className="btn btn-secondary"
-                  href={downloadUrl}
-                  download={`${report.id}.csv`}
-                >
+                <button type="button" className="btn btn-secondary" onClick={downloadReport}>
                   Download CSV
-                </a>
+                </button>
               )}
 
               {error && (

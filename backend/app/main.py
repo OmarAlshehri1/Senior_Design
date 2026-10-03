@@ -11,6 +11,7 @@ from app.api.alerts import (
 )
 from app.api.reports import router as reports_router
 from app.api.transactions import router as transactions_router
+from app.api.identity import router as identity_router
 
 
 LOCAL_FRONTEND_ORIGINS = (
@@ -67,6 +68,7 @@ app.add_middleware(
     allow_headers=[
         "Accept",
         "Content-Type",
+        "Authorization",
     ],
 )
 
@@ -83,6 +85,7 @@ app.include_router(
     prefix="/api/v1",
 )
 app.include_router(alerts_websocket_router)
+app.include_router(identity_router, prefix="/api/v1")
 
 
 @app.get("/api/v1/health")

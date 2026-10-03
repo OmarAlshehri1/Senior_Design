@@ -9,6 +9,9 @@ import {
 
 class FakeSocket {
   closeCalls = 0;
+  sent = [];
+
+  send(message) { this.sent.push(message); }
 
   close() {
     this.closeCalls += 1;
@@ -20,6 +23,7 @@ test('real-time client supports connect and intentional disconnect lifecycle', (
   const states = [];
   const client = createRealtimeClient({
     url: 'ws://localhost:8000/ws/alerts',
+    getToken: () => 'test-access-token',
     webSocketFactory: () => {
       const socket = new FakeSocket();
       sockets.push(socket);
@@ -31,6 +35,8 @@ test('real-time client supports connect and intentional disconnect lifecycle', (
   assert.equal(client.connect(), true);
   assert.equal(client.getState(), REALTIME_STATES.CONNECTING);
   sockets[0].onopen();
+  assert.deepEqual(JSON.parse(sockets[0].sent[0]), { type: 'auth', access_token: 'test-access-token' });
+  sockets[0].onmessage({ data: JSON.stringify({ type: 'auth.ready' }) });
   assert.equal(client.getState(), REALTIME_STATES.CONNECTED);
   client.disconnect();
   assert.equal(client.getState(), REALTIME_STATES.DISCONNECTED);
@@ -50,6 +56,27 @@ test('real-time message parser accepts only the documented alert event', () => {
   });
 });
 
+test('real-time client does not connect without credentials or accept events before auth', () => {
+  let socketCount = 0;
+  const noTokenClient = createRealtimeClient({ url: 'ws://localhost/ws/alerts', getToken: () => null,
+    webSocketFactory: () => { socketCount += 1; return new FakeSocket(); } });
+  assert.equal(noTokenClient.connect(), false);
+  assert.equal(socketCount, 0);
+
+  const socket = new FakeSocket();
+  const client = createRealtimeClient({ url: 'ws://localhost/ws/alerts', getToken: () => 'token', webSocketFactory: () => socket });
+  const messages = [];
+  client.onMessage((message) => messages.push(message));
+  client.connect();
+  socket.onopen();
+  socket.onmessage({ data: JSON.stringify({ type: 'alert.created', data: { id: 'before-auth' } }) });
+  assert.deepEqual(messages, []);
+  socket.onmessage({ data: JSON.stringify({ type: 'auth.ready' }) });
+  socket.onmessage({ data: JSON.stringify({ type: 'alert.created', data: { id: 'after-auth' } }) });
+  assert.equal(messages[0].data.id, 'after-auth');
+  client.disconnect();
+});
+
 test('malformed and unknown real-time messages fail safely', () => {
   assert.equal(parseRealtimeMessage('{bad json'), null);
   assert.equal(parseRealtimeMessage(JSON.stringify({ type: 'unknown', data: {} })), null);
@@ -61,6 +88,7 @@ test('unexpected closure uses bounded reconnect state and backoff scheduling', (
   const scheduled = [];
   const client = createRealtimeClient({
     url: 'ws://localhost:8000/ws/alerts',
+    getToken: () => 'test-access-token',
     maxReconnectAttempts: 1,
     reconnectDelayMs: 250,
     webSocketFactory: () => {
@@ -91,6 +119,7 @@ test('cleanup prevents stale socket callbacks and removes message listeners', ()
   const received = [];
   const client = createRealtimeClient({
     url: 'ws://localhost:8000/ws/alerts',
+    getToken: () => 'test-access-token',
     webSocketFactory: () => socket,
   });
   const unsubscribe = client.onMessage((message) => received.push(message));

@@ -146,6 +146,10 @@ test('reports service adapts list and generation responses', async () => {
       });
       return payload;
     },
+    async getFile(path, options) {
+      requests.push({ method: 'FILE', path, options });
+      return new Blob(['report']);
+    },
   };
 
   const service = createReportsService(
@@ -160,14 +164,17 @@ test('reports service adapts list and generation responses', async () => {
     period_start: payload.period_start,
     period_end: payload.period_end,
   });
+  const downloaded = await service.download(payload.id);
 
   assert.equal(listed.items[0].id, payload.id);
   assert.equal(generated.id, payload.id);
+  assert.equal(await downloaded.text(), 'report');
   assert.deepEqual(
     requests.map(({ method, path }) => ({ method, path })),
     [
       { method: 'GET', path: '/reports' },
       { method: 'POST', path: '/reports' },
+      { method: 'FILE', path: '/reports/RPT-2026-10-03/download' },
     ]
   );
   assert.equal(

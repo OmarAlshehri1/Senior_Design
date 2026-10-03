@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import asyncio
+import json
+import os
+
 from typing import Literal
 
 from fastapi import (
@@ -11,6 +15,9 @@ from fastapi import (
     status,
 )
 from pydantic import BaseModel
+from fastapi import Depends
+from app.services.identity import get_current_user, authenticate_token
+from app.repositories.identity import IdentityError
 from starlette.concurrency import run_in_threadpool
 
 from app.repositories.supabase_alerts import (
@@ -27,6 +34,7 @@ from app.services.alert_stream import alert_manager
 router = APIRouter(
     prefix="/alerts",
     tags=["alerts"],
+    dependencies=[Depends(get_current_user)],
 )
 websocket_router = APIRouter(
     prefix="/ws",
@@ -105,10 +113,48 @@ async def review_alert(
 
 @websocket_router.websocket("/alerts")
 async def alert_stream(websocket: WebSocket) -> None:
-    await alert_manager.connect(websocket)
-
+    origin = websocket.headers.get("origin")
+    configured = os.getenv("FRONTEND_ORIGINS") or os.getenv("FRONTEND_ORIGIN", "")
+    allowed = [x.strip().rstrip("/") for x in configured.split(",") if x.strip()] if configured.strip() else ["http://localhost:5173", "http://127.0.0.1:5173"]
+    if origin is not None and origin not in allowed:
+        await websocket.close(code=1008)
+        return
+    await websocket.accept()
+    connection = None
     try:
+        raw = await asyncio.wait_for(websocket.receive_text(), timeout=10)
+        message = json.loads(raw) if len(raw)<=9000 else None
+        if not isinstance(message, dict) or message.get("type") != "auth" or not isinstance(message.get("access_token"), str):
+            raise IdentityError("SESSION_EXPIRED", 401)
+        token = message["access_token"]
+        await run_in_threadpool(authenticate_token, token)
+
+        class AuthenticatedConnection:
+            async def accept(self):
+                pass  # Handshake accepted; subscription only follows authentication.
+
+            async def send_json(self, event):
+                try:
+                    # Check again before delivery: revocation/account changes cannot leak a later event.
+                    await run_in_threadpool(authenticate_token, token)
+                except (IdentityError, SupabaseConfigurationError):
+                    await websocket.close(code=1008)
+                    raise
+                await websocket.send_json(event)
+
+        connection = AuthenticatedConnection()
+        await alert_manager.connect(connection)
+        await websocket.send_json({"type": "auth.ready"})
         while True:
-            await websocket.receive_text()
+            try:
+                await asyncio.wait_for(websocket.receive_text(), timeout=30)
+            except asyncio.TimeoutError:
+                pass
+            await run_in_threadpool(authenticate_token, token)
     except WebSocketDisconnect:
-        alert_manager.disconnect(websocket)
+        pass
+    except (IdentityError, SupabaseConfigurationError, ValueError, asyncio.TimeoutError):
+        await websocket.close(code=1008)
+    finally:
+        if connection is not None:
+            alert_manager.disconnect(connection)

@@ -4,6 +4,17 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
+def domain_test_identity():
+    # Existing domain tests isolate persistence/scoring; identity tests remove this override.
+    from app.main import app
+    from app.services.identity import get_current_user
+    app.dependency_overrides[get_current_user] = lambda: {
+        "id": "00000000-0000-0000-0000-000000000001", "role": "ADMIN", "account_status": "ACTIVE"}
+    yield
+    app.dependency_overrides.pop(get_current_user, None)
+
+
+@pytest.fixture(autouse=True)
 def mock_transaction_persistence(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

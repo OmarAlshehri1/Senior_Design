@@ -29,6 +29,7 @@ import Cases from './pages/Cases';
 import CaseDetail from './pages/CaseDetail';
 import Vendors from './pages/Vendors';
 import VendorProfile from './pages/VendorProfile';
+import PasswordRecovery from './pages/PasswordRecovery.jsx';
 
 function protectedPage(path, page) {
   return (
@@ -66,10 +67,12 @@ function ApplicationRoutes() {
 
 export default function App() {
   return (
-    <Routes>
+    <AuthorizationProvider previewEnabled={import.meta.env.DEV}>
+      <Routes>
       <Route path={AUTH_ROUTES.LOGIN} element={<Login />} />
       <Route path={AUTH_ROUTES.REQUEST_ACCESS} element={<RequestAccess />} />
       <Route path={AUTH_ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
+      <Route path={AUTH_ROUTES.PASSWORD_RECOVERY} element={<PasswordRecovery />} />
       <Route path={AUTH_ROUTES.ACCESS_PENDING} element={<AccessPending />} />
       <Route path={AUTH_ROUTES.ACCOUNT_LOCKED} element={<AccountLocked />} />
       <Route path={AUTH_ROUTES.ACCOUNT_DISABLED} element={<AccountDisabled />} />
@@ -79,15 +82,14 @@ export default function App() {
       <Route
         path="*"
         element={(
-          <AuthorizationProvider previewEnabled={import.meta.env.DEV}>
-            <AppProvider>
-              <Layout>
-                <ApplicationRoutes />
-              </Layout>
-            </AppProvider>
-          </AuthorizationProvider>
+          <AppProvider>
+            <Layout>
+              <ApplicationRoutes />
+            </Layout>
+          </AppProvider>
         )}
       />
-    </Routes>
+      </Routes>
+    </AuthorizationProvider>
   );
 }
