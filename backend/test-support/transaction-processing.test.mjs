@@ -15,7 +15,11 @@ await db.exec('create role anon; create role authenticated; create role service_
 // Isolated Auth schema fixture; never connect to Supabase's live auth.users.
 await db.exec("create schema auth; create table auth.users(id uuid primary key, email text, raw_user_meta_data jsonb default '{}'::jsonb);");
 for (const file of (await readdir(migrationDir)).filter(x => x.endsWith('.sql')).sort()) {
-  await db.exec(await readFile(`${migrationDir}/${file}`, 'utf8'));
+  try {
+    await db.exec(await readFile(`${migrationDir}/${file}`, 'utf8'));
+  } catch (error) {
+    throw new Error(`Migration ${file} failed: ${error.message?.split('\n')[0] ?? 'unknown SQL error'} (${error.code ?? 'no code'})`);
+  }
 }
 const input = id => ({ id, data_quality_status: 'PARTIAL', missing_fields: ['approval_limit'], amount: 10 });
 const bundle = id => ({
@@ -536,6 +540,76 @@ test('vendor watchlist/block workflows enforce role and team scope with immutabl
     has_function_privilege('service_role','public.request_vendor_monitoring(uuid,text,text,text)','execute') as service_call,
     has_table_privilege('authenticated','public.vendor_monitoring_history','select') as auth_read`)).rows[0];
   assert.deepEqual(privileges, { anon_call: false, service_call: true, auth_read: false });
+});
+
+test('authoritative analytics use latest evaluation snapshots, explicit denominators, UTC periods, and role-scoped alerts', async () => {
+  await prepareTeams();
+  const before = Number((await db.query('select count(*) as n from public.transactions')).rows[0].n);
+  const transactionId = 'ANALYTICS-PHASE20';
+  await create(transactionId);
+  const superseded = ['segregation_of_duties', 'approval_limits', 'duplicate_payment', 'invoice_splitting', 'ghost_vendors']
+    .map(rule_key => ({ rule_key, status: rule_key === 'ghost_vendors' ? 'FAILED' : 'PASSED', evidence: {} }));
+  await db.query("insert into public.transaction_evaluations(transaction_id,evaluation_version,rule_status,rule_score,rule_results,evaluated_at) values($1,'0.9.0','REVIEW',20,$2::jsonb,now()-interval '2 days')", [transactionId, JSON.stringify(superseded)]);
+  const results = [
+    { rule_key: 'segregation_of_duties', rule_name: 'Segregation of Duties', status: 'FAILED', evidence: {} },
+    { rule_key: 'approval_limits', rule_name: 'Approval Limits', status: 'PASSED', evidence: {} },
+    { rule_key: 'duplicate_payment', rule_name: 'Duplicate Payments', status: 'NOT_EVALUATED', evidence: { missing_fields: ['invoice_number'] } },
+    { rule_key: 'invoice_splitting', rule_name: 'Invoice Splitting', status: 'NOT_EVALUATED', evidence: { historical_context_available: false } },
+    { rule_key: 'ghost_vendors', rule_name: 'Ghost Vendors', status: 'NOT_EVALUATED', evidence: { vendor_registry_available: false } },
+  ];
+  await db.query("insert into public.transaction_evaluations(transaction_id,evaluation_version,rule_status,rule_score,rule_results) values($1,'1.0.0','REVIEW',50,$2::jsonb)", [transactionId, JSON.stringify(results)]);
+  await db.query("insert into public.transaction_risk_scores(transaction_id,scoring_version,rule_evaluation_version,anomaly_model_version,rule_score,ai_score,risk_score,risk_level) values($1,'1.0.0','1.0.0','1.0.0',80,70,76,'HIGH')", [transactionId]);
+  await db.query("insert into public.alerts(transaction_id,severity,title,description,reason,risk_score,risk_scoring_version,request_received_at) values($1,'HIGH','Analytics alert','Fixture','High risk',76,'1.0.0',now())", [transactionId]);
+  const alertId = (await db.query('select id from public.alerts where transaction_id=$1', [transactionId])).rows[0].id;
+  await db.query("select public.record_alert_assignment($1,$2,'ASSIGNED',$3,null)", [teamUsers.supervisorA, alertId, teamUsers.auditorA]);
+
+  const dashboard = (await db.query('select public.get_dashboard_summary($1) as value', [teamUsers.auditorA])).rows[0].value;
+  assert.equal(dashboard.total_transactions, before + 1);
+  assert.equal(dashboard.transactions_evaluated, dashboard.high_risk_transactions + dashboard.medium_risk_transactions + dashboard.low_risk_transactions);
+  assert.ok(dashboard.transactions_evaluated >= 1);
+  const scopedAlertCount = Number((await db.query("select count(*) as n from public.alerts a where a.status='ACTIVE' and public.can_access_team_alert($1,a.id)", [teamUsers.auditorA])).rows[0].n);
+  assert.equal(dashboard.active_alerts, scopedAlertCount);
+  const adminDashboard = (await db.query('select public.get_dashboard_summary($1) as value', [teamUsers.admin])).rows[0].value;
+  const allActiveAlerts = Number((await db.query("select count(*) as n from public.alerts where status='ACTIVE'")).rows[0].n);
+  assert.equal(adminDashboard.active_alerts, allActiveAlerts);
+  const analytics = (await db.query('select public.get_authoritative_analytics($1,7) as value', [teamUsers.auditorA])).rows[0].value;
+  assert.equal(analytics.coverage.total_transactions, before + 1);
+  assert.equal(analytics.coverage.fully_evaluated + analytics.coverage.partially_evaluated + analytics.coverage.not_evaluated, before + 1);
+  assert.equal(analytics.coverage.coverage_percent, Math.round(analytics.coverage.evaluated_transactions / (before + 1) * 10000) / 100);
+  assert.equal(analytics.coverage.by_rule.length, 5);
+  assert.ok(analytics.coverage.exclusions.some(item => item.reason === 'MISSING_REQUIRED_FIELDS'));
+  assert.ok(analytics.coverage.exclusions.some(item => item.reason === 'RULE_CONTEXT_UNAVAILABLE'));
+  assert.equal(analytics.risk_trends.length, 7);
+  assert.equal(analytics.risk_trends[0].date, analytics.period_start);
+  assert.equal(analytics.risk_trends[6].date, new Date(Date.parse(analytics.period_end) - 86400000).toISOString().slice(0, 10));
+  assert.equal(analytics.rule_violation_trends.length, 35);
+  assert.ok(analytics.risk_trends.some(item => item.high_risk_transactions >= 1), JSON.stringify(analytics.risk_trends));
+  assert.ok(analytics.rule_violation_trends.some(item => item.rule_key === 'segregation_of_duties' && item.violations === 1));
+  assert.ok(analytics.rule_violation_trends.filter(item => item.rule_key === 'ghost_vendors').every(item => item.violations === 0), 'superseded evaluation results must not appear in coverage or trends');
+  for (const period of [30, 90]) {
+    const extended = (await db.query('select public.get_authoritative_analytics($1,$2) as value', [teamUsers.auditorA, period])).rows[0].value;
+    assert.equal(extended.risk_trends.length, period);
+    assert.equal(extended.rule_violation_trends.length, period * 5);
+  }
+  await assert.rejects(db.query('select public.get_authoritative_analytics($1,14)', [teamUsers.auditorA]), /Unsupported analytics period/);
+  await assert.rejects(db.query('select public.get_dashboard_summary($1)', ['00000000-0000-4000-8000-000000000099']), /Active account required/);
+});
+
+test('authoritative dashboard and analytics remain zero-safe with no transactions', async () => {
+  await db.exec('truncate table public.transactions cascade');
+  const dashboard = (await db.query('select public.get_dashboard_summary($1) as value', [teamUsers.admin])).rows[0].value;
+  assert.equal(dashboard.total_transactions, 0);
+  assert.equal(dashboard.transactions_evaluated, 0);
+  assert.equal(dashboard.average_risk_score, 0);
+  assert.equal(dashboard.active_alerts, 0);
+  const analytics = (await db.query('select public.get_authoritative_analytics($1,7) as value', [teamUsers.admin])).rows[0].value;
+  assert.equal(analytics.coverage.total_transactions, 0);
+  assert.equal(analytics.coverage.coverage_percent, 0);
+  assert.equal(analytics.coverage.fully_evaluated + analytics.coverage.partially_evaluated + analytics.coverage.not_evaluated, 0);
+  assert.equal(analytics.risk_trends.length, 7);
+  assert.ok(analytics.risk_trends.every(day => day.average_risk_score === null && day.high_risk_transactions === 0));
+  assert.equal(analytics.rule_violation_trends.length, 35);
+  assert.ok(analytics.rule_violation_trends.every(day => day.violations === 0));
 });
 
 test.after(async () => { await db.close(); });

@@ -9,7 +9,6 @@ import { AUDIT_COVERAGE_RULES, ANALYTICS_PERIODS, createAuditCoverage, createTre
 import { casesService, createCasesService } from '../src/services/casesService.js';
 import { adaptCase, adaptCaseBundle } from '../src/adapters/caseAdapter.js';
 import { createVendorsService } from '../src/services/vendorsService.js';
-import { analyticsService } from '../src/services/analyticsService.js';
 import { APPLICATION_ROUTES, ROUTE_ACCESS_RESULTS, resolvePreviewRouteAccess } from '../src/auth/routeAccess.js';
 import { PERMISSIONS, ROLE_KEYS, hasPermission } from '../src/auth/roles.js';
 import { getNavigationState } from '../src/auth/navigationConfig.js';
@@ -156,7 +155,7 @@ test('audit coverage and trend models stay empty without authoritative analytics
 });
 
 test('new service boundaries reject every operation without fabricating success', async () => {
-  const operations = [...Object.values(casesService), ...Object.values(analyticsService)];
+  const operations = Object.values(casesService);
   const results = await Promise.allSettled(operations.map((operation) => operation()));
   assert.ok(results.every((result) => result.status === 'rejected'));
 });

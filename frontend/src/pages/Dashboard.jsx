@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import useApp from '../context/useApp';
 import SummaryCards from '../components/SummaryCards';
@@ -8,19 +9,28 @@ import { getRecentTransactions } from '../utils/dashboard';
 import { sortNewestFirst } from '../utils/transactions';
 import RoleWorkspace from '../components/RoleWorkspace';
 import useAuthorization from '../auth/useAuthorization.js';
+import { dashboardService } from '../services/dashboardService.js';
+import AuditAnalytics from '../components/AuditAnalytics.jsx';
 
 export default function Dashboard() {
   const { effectiveRole } = useAuthorization();
+  const [authoritative, setAuthoritative] = useState(null);
+  const [summaryError, setSummaryError] = useState(null);
+  useEffect(() => {
+    dashboardService.getSummary().then(setAuthoritative).catch((reason) => {
+      setSummaryError(reason instanceof Error ? reason.message : 'Dashboard summary is unavailable.');
+    });
+  }, []);
   const {
     transactions,
     alerts,
-    summary,
-    riskCounts,
-    riskOverview,
     simulateNewTransaction,
     simulating,
     lastSimulatedTransactionId,
   } = useApp();
+  const currentSummary = authoritative?.summary;
+  const currentCounts = authoritative?.riskCounts;
+  const currentOverview = authoritative?.riskOverview;
 
   const recentTransactions = getRecentTransactions(transactions);
   const recentAlerts = sortNewestFirst(alerts).slice(0, 3);
@@ -44,7 +54,8 @@ export default function Dashboard() {
         )}
       </div>
 
-      <SummaryCards summary={summary} highRiskPercentage={riskOverview.high} />
+      {currentSummary && <><SummaryCards summary={currentSummary} highRiskPercentage={currentOverview.high} /><p className="dashboard-active-alerts">{currentSummary.activeAlerts} active alerts in your authorized scope.</p></>}
+      {summaryError && <div className="request-state request-state-error" role="alert">{summaryError}</div>}
 
       <div className="dashboard-section-heading">
         <div>
@@ -58,11 +69,7 @@ export default function Dashboard() {
           <div className="card-header">
             <h2 id="risk-overview-heading">Transaction Risk Overview</h2>
           </div>
-          <DonutChart
-            counts={riskCounts}
-            percentages={riskOverview}
-            total={summary.transactionsEvaluated}
-          />
+          {currentCounts && <DonutChart counts={currentCounts} percentages={currentOverview} total={currentCounts.low + currentCounts.medium + currentCounts.high} />}
         </section>
 
         <section className="card recent-transactions-card dashboard-analysis-panel" aria-labelledby="recent-transactions-heading">
@@ -84,6 +91,8 @@ export default function Dashboard() {
         </div>
         <AlertsList alerts={recentAlerts} variant="dashboard" />
       </section>
+
+      <AuditAnalytics />
 
       <RoleWorkspace role={effectiveRole} transactions={transactions} />
     </>
