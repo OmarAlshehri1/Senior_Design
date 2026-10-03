@@ -305,7 +305,8 @@ Targets:
 - [ ] Deploy FastAPI to the selected backend host.
 - [ ] Store secrets only in backend host environment variables.
 - [x] Run a local end-to-end test: frontend -> FastAPI -> Supabase -> frontend. Live verification loaded persisted alerts, changed an alert from `ACTIVE` to `REVIEWED`, received a newly generated high-risk alert through WebSocket without refreshing, generated `RPT-2026-10-03`, and downloaded its CSV.
-- [ ] **CURRENT:** Commit and merge live frontend API integration.
+- [x] Commit and merge live frontend API integration (PR #22).
+- [ ] **CURRENT:** Configure deployed frontend and backend environments, approved CORS origins, and production secrets.
 ## Specification verification checklist
 
 - [ ] C1 evidence: source adapter, standardized mapping, tests, and seed tool.
@@ -355,4 +356,4 @@ These are implementation estimates, not final evaluation grades.
 
 ## Next action
 
-Commit and merge versioned Gemini explanations, then continue frontend integration and deployment coordination.
+Configure the deployed frontend and backend environments, approved Vercel CORS origin, production secrets, and complete deployed end-to-end verification.

@@ -694,11 +694,11 @@ Backend dependency: Direct detail requires the existing `GET /api/v1/transaction
 ## Live alerts, authoritative risk, and reports integration
 
 Date: 2026-10-03
-Commit(s): Pending on `feature/frontend-integration`
+Commit(s): `a8e1b8a` (PR #22)
 
 Status:
 [x] Implementation and local live verification completed
-[ ] Commit and merge pending
+[x] Commit and merge completed (PR #22)
 
 Purpose: Replace remaining automatic transaction-domain preview behavior with authoritative FastAPI alert, risk, explanation, and report data.
 
@@ -867,15 +867,15 @@ The only active backend domain integration in the current frontend is Transactio
 - Backend `missing_fields` maps to `dataQuality.missingFields` and is authoritative whenever an array is supplied.
 - Risk and rule-status filters remain current-page frontend filters; UI wording does not claim global coverage.
 
-Alerts, Reports, Auth, Users, Audit Log, Reviews, Teams, Assignments, Notifications, Cases, Vendors, Analytics, and Settings are not activated as real backend integrations in the current frontend, even where `docs/API_CONTRACT.md` describes backend endpoints.
+Auth, Users, Audit Log, Reviews, Teams, Assignments, Notifications, Cases, Vendors, Analytics, and Settings are not activated as real backend integrations in the current frontend.
 
 ## Frontend service boundaries
 
 | Domain | Frontend UI | Service/Contract Prepared | Real Backend Connected | Current State |
 | --- | --- | --- | --- | --- |
 | Transactions | Yes | Yes | Yes | Connected: list and detail |
-| Alerts | Yes | Yes | No | Preview / awaiting coordinated activation |
-| Reports | Yes | Yes | No | Preview / awaiting coordinated activation |
+| Alerts | Yes | Yes | Yes | Connected: REST listing/review and live WebSocket delivery |
+| Reports | Yes | Yes | Yes | Connected: persisted generation, listing, and CSV download |
 | Auth | Yes | Yes | No | Prepared / awaiting backend |
 | Users | Yes | Yes | No | Prepared / awaiting backend |
 | Audit Log | Yes | Yes | No | Prepared / awaiting backend |
@@ -975,14 +975,14 @@ No frontend claim is made for the five audit-rule implementations, Isolation For
 | Dashboard | Completed presentation | Connected transactions; other summaries remain frontend/preview scoped | Yes, with scope explanation |
 | Transactions | Connected | FastAPI/Supabase transaction API | Yes |
 | Transaction Detail | Connected | FastAPI detail endpoint | Yes |
-| Alerts | Completed frontend | API activation and persistence | Frontend-only |
+| Alerts | Connected | FastAPI/Supabase alert REST and WebSocket APIs | Yes |
 | Audit Rules | Completed presentation | Rule execution is backend-owned | Yes, presentation |
-| Reports | Completed frontend | API activation/download | Frontend-only |
+| Reports | Connected | FastAPI/Supabase report and CSV endpoints | Yes |
 | Auth and roles | Completed UX/contracts | Authentication and RBAC | Frontend-only |
 | Accountability/management | Completed architecture | Identity and persistence | Frontend-only |
 | Cases/vendors/analytics | Completed architecture | Domain services and persistence | Unavailable-state demo |
 | Accessibility | Implemented and tested helpers | Live assistive-technology review remains advisable | Yes |
-| Test baseline | 199 passing | Live E2E remains required | Yes |
+| Test baseline | 204 passing | Deployed E2E remains required | Yes |
 
 ## Change Log
 
