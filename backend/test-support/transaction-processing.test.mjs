@@ -218,11 +218,13 @@ test('transaction reviews can reopen and append notes while audit history stays 
   await record('NOTE_ADDED', 'Checked supporting invoice.');
   await record('REOPENED');
   assert.equal(Number((await db.query("select count(*) as n from public.review_records where transaction_id='REVIEW-TX'")).rows[0].n), 3);
-  assert.equal(Number((await db.query("select count(*) as n from public.transaction_review_states where transaction_id='REVIEW-TX'")).rows[0].n), 0);
+  const reviewState = (await db.query("select status from public.transaction_review_states where transaction_id='REVIEW-TX'")).rows[0];
+  assert.equal(reviewState.status, 'ACTIVE');
   assert.deepEqual((await db.query("select action from public.audit_events where resource_id='REVIEW-TX' order by id")).rows.map(x => x.action),
     ['TRANSACTION_REVIEWED', 'REVIEW_NOTE_ADDED', 'TRANSACTION_REOPENED']);
   await assert.rejects(db.query("update public.review_records set note='changed' where transaction_id='REVIEW-TX'"), /append-only/);
   await assert.rejects(db.query("delete from public.audit_events where resource_id='REVIEW-TX'"), /append-only/);
+  await assert.rejects(db.query("delete from public.transactions where id='REVIEW-TX'"), /foreign key|violates/);
 });
 
 test('concurrent review transitions allow one winner and serialize alert reopen state', async () => {
@@ -243,6 +245,7 @@ test('concurrent review transitions allow one winner and serialize alert reopen 
   assert.equal(alert.status, 'ACTIVE');
   assert.equal(alert.reviewed_at, null);
   assert.equal(Number((await db.query("select count(*) as n from public.review_records where alert_id=$1", [alertId])).rows[0].n), 2);
+  await assert.rejects(db.query("delete from public.alerts where id=$1", [alertId]), /foreign key|violates/);
 });
 
 test('login history writes append attributable security activity', async () => {

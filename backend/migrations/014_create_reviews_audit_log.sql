@@ -1,6 +1,6 @@
 create table public.transaction_review_states (
-    transaction_id text primary key references public.transactions(id) on delete cascade,
-    status text not null check (status in ('REVIEWED')),
+    transaction_id text primary key references public.transactions(id) on delete restrict,
+    status text not null check (status in ('ACTIVE','REVIEWED')),
     updated_by uuid not null references public.user_profiles(id),
     updated_at timestamptz not null default clock_timestamp()
 );
@@ -9,8 +9,8 @@ create table public.review_records (
     id bigint generated always as identity primary key,
     resource_type text not null check (resource_type in ('TRANSACTION','ALERT')),
     resource_id text not null,
-    transaction_id text not null references public.transactions(id) on delete cascade,
-    alert_id text references public.alerts(id) on delete cascade,
+    transaction_id text not null references public.transactions(id) on delete restrict,
+    alert_id text references public.alerts(id) on delete restrict,
     actor_id uuid not null references public.user_profiles(id),
     actor_name text not null,
     actor_role text not null check (actor_role in ('AUDITOR','SUPERVISOR','ADMIN')),
@@ -123,7 +123,9 @@ begin
             on conflict(transaction_id) do update set status='REVIEWED',updated_by=excluded.updated_by,updated_at=excluded.updated_at;
         elsif p_action='REOPENED' then
             if current_status is distinct from 'REVIEWED' then raise exception 'Review is not complete' using errcode='23505'; end if;
-            delete from public.transaction_review_states where transaction_id=p_resource_id;
+            update public.transaction_review_states
+            set status='ACTIVE',updated_by=p_actor,updated_at=clock_timestamp()
+            where transaction_id=p_resource_id;
         end if;
         insert into public.review_records(resource_type,resource_id,transaction_id,actor_id,actor_name,actor_role,action,note)
         values('TRANSACTION',p_resource_id,p_resource_id,p_actor,u.name,u.role,p_action,nullif(btrim(p_note),'')) returning * into record_row;
