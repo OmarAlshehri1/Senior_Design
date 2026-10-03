@@ -26,9 +26,11 @@ class AlertConnectionManager:
         alert: dict[str, Any],
     ) -> None:
         event = {
-            "type": "alert.created",
+            # The stream is an invalidation signal. Alert rows are always loaded
+            # through the actor-scoped REST endpoint so a socket cannot bypass
+            # team and assignment visibility rules.
+            "type": "alerts.changed",
             "occurred_at": alert.get("created_at"),
-            "data": alert,
         }
 
         connections = list(self._connections)

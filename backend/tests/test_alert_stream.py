@@ -39,9 +39,8 @@ def test_publish_created_alert_event() -> None:
     assert websocket.accepted is True
     assert websocket.messages == [
         {
-            "type": "alert.created",
+            "type": "alerts.changed",
             "occurred_at": alert["created_at"],
-            "data": alert,
         }
     ]
 

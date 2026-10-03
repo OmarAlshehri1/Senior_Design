@@ -7,11 +7,8 @@ import { AUTHORIZATION_MODES } from '../auth/AuthorizationProvider.jsx';
 import { getRoleDefinition } from '../auth/roles.js';
 import { APPLICATION_ROUTES } from '../auth/routeAccess.js';
 import NotificationCenter from './NotificationCenter.jsx';
-import { getUnreadNotificationCount } from '../notifications/notifications.js';
 import { authService } from '../auth/authService.js';
 import { AUTH_ROUTES } from '../auth/authRoutes.js';
-
-const NOTIFICATIONS = Object.freeze([]);
 
 function formatUpdatedTime(timestamp) {
   return new Intl.DateTimeFormat('en-US', {
@@ -26,7 +23,8 @@ function formatUpdatedTime(timestamp) {
  * { name, role, accountStatus, lastLoginAt }. It remains null until real auth exists.
  */
 export default function Topbar({ mobileNavOpen, onMenuToggle, menuButtonRef, identity = null }) {
-  const { lastUpdated } = useApp();
+  const { lastUpdated, notifications, unreadNotificationCount, notificationsLoading,
+    notificationsError, refreshNotifications, markNotificationRead, markAllNotificationsRead } = useApp();
   const { mode, effectiveRole, user } = useAuthorization();
   const navigate = useNavigate();
   const previewRole = mode === AUTHORIZATION_MODES.ROLE_PREVIEW
@@ -36,7 +34,12 @@ export default function Topbar({ mobileNavOpen, onMenuToggle, menuButtonRef, ide
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const notificationButtonRef = useRef(null);
   const closeNotifications = useCallback(() => setNotificationsOpen(false), []);
-  const unreadCount = getUnreadNotificationCount(NOTIFICATIONS);
+  const unreadCount = unreadNotificationCount;
+  const toggleNotifications = () => {
+    const opening = !notificationsOpen;
+    setNotificationsOpen(opening);
+    if (opening) refreshNotifications();
+  };
 
   const handleSignOut = async () => {
     try { await authService.signOut(); } catch { /* Local credentials are cleared by the service. */ }
@@ -83,11 +86,14 @@ export default function Topbar({ mobileNavOpen, onMenuToggle, menuButtonRef, ide
           <strong>{formatUpdatedTime(lastUpdated)}</strong>
         </span>
         <div className="notification-center-anchor">
-          <button ref={notificationButtonRef} type="button" className="topbar-icon-btn notification-center-trigger" aria-label="Open notifications" aria-controls="notification-center" aria-expanded={notificationsOpen} onClick={() => setNotificationsOpen((open) => !open)}>
+          <button ref={notificationButtonRef} type="button" className="topbar-icon-btn notification-center-trigger" aria-label="Open notifications" aria-controls="notification-center" aria-expanded={notificationsOpen} onClick={toggleNotifications}>
             <BellIcon width={17} height={17} />
             {unreadCount > 0 && <span className="notification-count">{unreadCount}</span>}
           </button>
-          <NotificationCenter open={notificationsOpen} notifications={NOTIFICATIONS} onClose={closeNotifications} returnFocusRef={notificationButtonRef} />
+          <NotificationCenter open={notificationsOpen} notifications={notifications} loading={notificationsLoading}
+            error={notificationsError} unreadCount={unreadNotificationCount}
+            onMarkRead={markNotificationRead} onMarkAllRead={markAllNotificationsRead}
+            onClose={closeNotifications} returnFocusRef={notificationButtonRef} />
         </div>
       </div>
     </header>

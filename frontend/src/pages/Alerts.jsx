@@ -56,6 +56,7 @@ export default function Alerts() {
     markAlertReviewed,
     showNotification,
     setAlertAssignment,
+    refreshNotifications,
   } = useApp();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -91,6 +92,7 @@ export default function Alerts() {
         ? await assignmentService.reassignAlert(assignmentAlert.id, assigneeId, note || null)
         : await assignmentService.assignAlert(assignmentAlert.id, assigneeId, note || null);
       setAlertAssignment(assignmentAlert.id, result.assignment);
+      refreshNotifications();
       setAssignmentData((previous) => ({ ...previous, alertId: assignmentAlert.id, assignment: result.assignment }));
       showNotification('Alert assignment saved.', 'success');
       setAssignmentAlert(null);
@@ -105,6 +107,7 @@ export default function Alerts() {
     try {
       const result = await assignmentService.unassignAlert(assignmentAlert.id);
       setAlertAssignment(assignmentAlert.id, result.assignment);
+      refreshNotifications();
       setAssignmentData((previous) => ({ ...previous, alertId: assignmentAlert.id, assignment: result.assignment }));
       showNotification('Alert returned to the team queue.', 'success');
       setAssignmentAlert(null);

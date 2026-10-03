@@ -39,9 +39,9 @@ Implemented REST routes: health; authenticated transaction list/detail/create; a
 - `GET /api/v1/dashboard/summary`: documented shape only; no router implementation. Implement the agreed summary scope in Phase 20.
 - `GET /api/v1/audit-rules`: documented shape only; no router implementation. Add authoritative read-only rule definitions in Phase 20; the five rule implementations already exist.
 - Evaluation coverage: migration 006 and repository calculation exist, but no public analytics endpoint or activated frontend analytics service. Complete in Phase 20.
-- Auth, Users, and Access Requests are implemented in Phase 14. Review history/audit events and login activity are integrated in Phase 15; Supervisor visibility is temporarily restricted to the Supervisor's own events until Phase 16 can enforce team scope. Teams, Assignments, Notifications, Cases, Vendor workflows, and Settings remain future phases; prepared frontend services do not prove backend availability.
+- Auth, Users, Access Requests, Reviews, Audit Log, Teams, Assignments, and scoped activity are implemented on `main` in Phases 14-16. The owner confirmed migrations 013-015 were applied in Supabase; there was no independent live-schema query. Notifications and reconnect catch-up are the current Phase 17 work.
 - Local CORS preflight permits `Authorization`; Phase 24 configures and verifies the approved production origin.
-- Alerts load the first REST page (100 items) at mount. Reconnection does not currently trigger catch-up retrieval. Phase 17 implements paginated reconciliation and deduplication after reconnect; Phase 24 verifies it on the chosen hosting topology.
+- On `main`, alert loading currently retrieves the first 100 records and reconnect does not catch up. Phase 17 on `feature/notifications-catchup` implements paginated actor-scoped reconciliation and a data-free WebSocket invalidation; it remains unmerged and migration 016 is not live-applied.
 
 ## Target runtime architecture
 
@@ -419,15 +419,15 @@ Acceptance criteria:
 - Tests verify query filters/pagination, unauthorized access, role scope, and preservation of history after state changes. Team scope is completed with Phase 16.
 - Admins can query all audit events; until Phase 16 provides team relationships, Supervisors are restricted to events they performed. Auditors cannot query the audit log.
 
-Phase 15 is complete on `main`: PR #27, merge `4d987ce`. Main verification on 2026-10-03 passed: backend `187 passed` (one known Starlette/httpx deprecation warning), 20 isolated PGlite migration tests, frontend `214 passed`, frontend lint, production build, and `git diff --check`. The project owner confirmed migrations 013 and 014 applied successfully to Supabase; no independent live-schema inspection was performed. Supervisor team-wide visibility remains Phase 16.
+Phase 15 is complete on `main`: PR #27, merge `4d987ce`. Main verification on 2026-10-03 passed: backend `187 passed` (one known Starlette/httpx deprecation warning), 20 isolated PGlite migration tests, frontend `214 passed`, frontend lint, production build, and `git diff --check`. The project owner confirmed migrations 013 and 014 applied successfully to Supabase. Phase 16 later added team-scoped Supervisor audit visibility.
 
-## Phase 16 — Teams and assignments (CURRENT)
+## Phase 16 — Teams and assignments (complete on main)
 
 Omar mapping: section 4, sections 3 and 11–13; dependency: Phases 14–15.
 
-- [ ] Persist teams/membership and supervisor relationships; expose activity and workload through scoped API and frontend services.
-- [ ] Implement assign/reassign/unassign and immutable assignment history; activate the assignment dialog and team activity view.
-- [ ] Apply team scope to alert listing, review history, and audit events; preserve the documented API response shapes.
+- [x] Persist teams/membership and supervisor relationships; expose activity and workload through scoped API and frontend services.
+- [x] Implement assign/reassign/unassign and immutable assignment history; activate the assignment dialog and team activity view.
+- [x] Apply team scope to alert listing, review history, and audit events; preserve the documented API response shapes.
 
 Acceptance criteria:
 
@@ -436,8 +436,9 @@ Acceptance criteria:
 - Admin creates/updates/deactivates teams, manages global membership, and may transfer Auditors between teams. A Supervisor may add/remove active Auditors only in the Supervisor's own team; members with assigned alerts must be reassigned or unassigned first.
 - Team workload/activity counts are based on current assignments and team-attributed review events, without double counting reassignment history.
 - Tests cover cross-team denial, concurrent assignment, membership changes and restrictions, unassignment, activity/workload accuracy, review/audit team scope, API role gates, and CORS preflight for team-management DELETE requests.
+Phase 16 is complete on `main`: PR #29, implementation `a65e5b7`, merge `3630bd9`. Main verification passed backend `195 passed` (one known Starlette/httpx warning), 23 isolated PGlite migration tests, frontend `214 passed`, frontend lint, production build, and `git diff --check`. The project owner confirmed Migration 015 applied successfully to Supabase; no independent live-schema inspection was performed.
 
-## Phase 17 — Notifications and alert catch-up
+## Phase 17 — Notifications and alert catch-up (CURRENT)
 
 Omar mapping: sections 5, 2 (WebSocket), 11 and 13; dependency: Phases 14–16.
 
@@ -445,6 +446,8 @@ Omar mapping: sections 5, 2 (WebSocket), 11 and 13; dependency: Phases 14–16.
 - [ ] Connect alert, assignment, access-request, and account/security events; extend to case/SLA/closure events in Phase 18.
 - [ ] Reconcile durable alerts after WebSocket reconnect with pagination and persisted-ID deduplication.
 
+- Owner-approved notification recipients: high-risk alerts go to active Admins and active Supervisors; assignment/reassignment goes to the target assignee and that team Supervisor; new access/unlock requests go to active Admins; approved access requests may notify the activated request owner. Rejected access requests stay in the Admin request/audit records and send no in-app notification until a safe delivery channel is selected; lock/unlock events go to the account owner and active Admins.
+- An Auditor receives alert notification content only while that alert is within the Auditor current assignment scope. WebSocket messages carry no alert row or ID; REST reconciliation enforces the current server-side scope.
 Acceptance criteria:
 
 - Notifications survive restart and are inaccessible to other users; repeated event handling does not duplicate them.
@@ -602,7 +605,8 @@ These are historical implementation estimates retained from Phases 0–12, not c
 | 2026-10-03 | Added approved handoff Phases 13–24, split 13A/13B, deferred deployment, and included reviewed handoff source | PR #23; `0aca9ed`, merge `3a07512` |
 | 2026-10-03 | Added Supabase Auth/JWT, account/access requests, backend RBAC, and authenticated frontend transport | PR #26; `8e3bcf2`, merge `acb1996` |
 | 2026-10-03 | Added attributable reopenable reviews and immutable audit history | PR #27; `2e4fefc`, merge `4d987ce`; owner confirmed migration 014 applied |
+| 2026-10-03 | Added team-scoped assignments and activity | PR #29; `a65e5b7`, merge `3630bd9`; owner confirmed migration 015 applied |
 
 ## Next action
 
-Phases 13A/13B, 14, and 15 are merged and verified on `main`. Phase 15 main verification: backend 187 passed (one known Starlette warning), 20 isolated migration tests, frontend 214 passed, lint/build/diff-check passed. The project owner confirmed live migrations 013 and 014 succeeded; no independent schema query was performed. PR #26 triggered a successful Vercel Production deployment automatically; this does not complete Phase 24 deployment validation, and no deploy settings were changed. The project owner approved reopenable reviews with full history and the normal PR cycle despite automatic Vercel deployments. Phase 16 is current. The `requirements.txt` user change and backup stash remain preserved and excluded from phase commits.
+Phases 13A/13B, 14, 15, and 16 are merged and verified on `main`. PR #29 (`a65e5b7`, merge `3630bd9`) completed Teams and Assignments. Main verification on 2026-10-03 passed: backend 195 passed (one known Starlette warning), 23 isolated PGlite migration tests, frontend 214 passed, lint/build, and `git diff --check`. The project owner confirmed migrations 013, 014, and 015 applied successfully; this is owner-reported and was not independently queried. Phase 17 is current on `feature/notifications-catchup`; migration 016 is not applied. The user requirements change in `backend/requirements.txt` and backup stash remain preserved and excluded from phase commits.

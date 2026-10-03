@@ -44,16 +44,15 @@ test('real-time client supports connect and intentional disconnect lifecycle', (
   assert.deepEqual(states, ['connecting', 'connected', 'disconnected']);
 });
 
-test('real-time message parser accepts only the documented alert event', () => {
+test('real-time parser accepts only the documented alert invalidation event', () => {
   assert.deepEqual(parseRealtimeMessage(JSON.stringify({
-    type: 'alert.created',
+    type: 'alerts.changed',
     occurred_at: '2026-09-20T14:42:03Z',
-    data: { id: 'AL-1' },
   })), {
-    type: 'alert.created',
+    type: 'alerts.changed',
     occurredAt: '2026-09-20T14:42:03Z',
-    data: { id: 'AL-1' },
   });
+  assert.equal(parseRealtimeMessage({ type: 'alerts.changed', data: { id: 'secret' } }).data, undefined);
 });
 
 test('real-time client does not connect without credentials or accept events before auth', () => {
@@ -69,18 +68,23 @@ test('real-time client does not connect without credentials or accept events bef
   client.onMessage((message) => messages.push(message));
   client.connect();
   socket.onopen();
-  socket.onmessage({ data: JSON.stringify({ type: 'alert.created', data: { id: 'before-auth' } }) });
+  socket.onmessage({ data: JSON.stringify({ type: 'alerts.changed' }) });
   assert.deepEqual(messages, []);
   socket.onmessage({ data: JSON.stringify({ type: 'auth.ready' }) });
-  socket.onmessage({ data: JSON.stringify({ type: 'alert.created', data: { id: 'after-auth' } }) });
-  assert.equal(messages[0].data.id, 'after-auth');
+  socket.onmessage({ data: JSON.stringify({ type: 'alerts.changed' }) });
+  assert.deepEqual(messages, [
+    { type: 'alerts.catch_up', occurredAt: null },
+    { type: 'alerts.changed', occurredAt: null },
+  ]);
   client.disconnect();
 });
 
-test('malformed and unknown real-time messages fail safely', () => {
+test('malformed and unknown real-time messages fail safely; legacy events become invalidations', () => {
   assert.equal(parseRealtimeMessage('{bad json'), null);
   assert.equal(parseRealtimeMessage(JSON.stringify({ type: 'unknown', data: {} })), null);
-  assert.equal(parseRealtimeMessage(JSON.stringify({ type: 'alert.created' })), null);
+  assert.deepEqual(parseRealtimeMessage(JSON.stringify({ type: 'alert.created', data: { id: 'AL-1' } })), {
+    type: 'alerts.changed', occurredAt: null,
+  });
 });
 
 test('unexpected closure uses bounded reconnect state and backoff scheduling', () => {
@@ -114,6 +118,29 @@ test('unexpected closure uses bounded reconnect state and backoff scheduling', (
   assert.equal(client.getState(), REALTIME_STATES.DISCONNECTED);
 });
 
+test('every authenticated reconnection requests an alert catch-up', () => {
+  const sockets = [];
+  const scheduled = [];
+  const caughtUp = [];
+  const client = createRealtimeClient({
+    url: 'ws://localhost:8000/ws/alerts', getToken: () => 'token', maxReconnectAttempts: 2,
+    webSocketFactory: () => { const socket = new FakeSocket(); sockets.push(socket); return socket; },
+    schedule: (callback) => { scheduled.push(callback); return scheduled.length; },
+  });
+  client.onMessage((event) => { if (event.type === 'alerts.catch_up') caughtUp.push(event); });
+
+  client.connect();
+  sockets[0].onopen();
+  sockets[0].onmessage({ data: JSON.stringify({ type: 'auth.ready' }) });
+  sockets[0].onclose();
+  scheduled[0]();
+  sockets[1].onopen();
+  sockets[1].onmessage({ data: JSON.stringify({ type: 'auth.ready' }) });
+
+  assert.equal(caughtUp.length, 2);
+  client.disconnect();
+});
+
 test('cleanup prevents stale socket callbacks and removes message listeners', () => {
   const socket = new FakeSocket();
   const received = [];
@@ -128,7 +155,7 @@ test('cleanup prevents stale socket callbacks and removes message listeners', ()
   const staleMessageHandler = socket.onmessage;
   unsubscribe();
   client.disconnect();
-  staleMessageHandler({ data: JSON.stringify({ type: 'alert.created', data: { id: 'AL-1' } }) });
+  staleMessageHandler({ data: JSON.stringify({ type: 'alerts.changed' }) });
 
   assert.deepEqual(received, []);
   assert.equal(client.getState(), REALTIME_STATES.DISCONNECTED);

@@ -13,13 +13,12 @@ export const REALTIME_STATES = Object.freeze({
 export function parseRealtimeMessage(rawMessage) {
   try {
     const event = typeof rawMessage === 'string' ? JSON.parse(rawMessage) : rawMessage;
-    if (!event || event.type !== 'alert.created' || !event.data || typeof event.data !== 'object') {
+    if (!event || !['alerts.changed', 'alert.created'].includes(event.type)) {
       return null;
     }
     return {
-      type: event.type,
+      type: 'alerts.changed',
       occurredAt: event.occurred_at ?? null,
-      data: event.data,
     };
   } catch {
     return null;
@@ -98,6 +97,7 @@ export function createRealtimeClient(options = {}) {
         authenticated = true;
         reconnectAttempts = 0;
         setState(REALTIME_STATES.CONNECTED);
+        messageListeners.forEach((listener) => listener({ type: 'alerts.catch_up', occurredAt: null }));
         return;
       }
       if (!authenticated) return;

@@ -366,4 +366,80 @@ test('team activity and scoped audit/review history are bounded and least privil
   assert.deepEqual(grants, { anon_write: false, service_list: true, auth_list: false });
 });
 
+test('notifications persist once per recipient, follow approved scopes, and enforce private read state', async () => {
+  await prepareTeams();
+  const alertNotifications = async userId => (await db.query(
+    "select type,resource_id from public.user_notifications where recipient_id=$1 and resource_type='ALERT' and resource_id=$2 order by type",
+    [userId, teamAlertA])).rows;
+
+  assert.deepEqual(await alertNotifications(teamUsers.admin), [{ type: 'HIGH_RISK_ALERT', resource_id: teamAlertA }]);
+  assert.deepEqual(await alertNotifications(teamUsers.supervisorA), [
+    { type: 'ALERT_ASSIGNED', resource_id: teamAlertA },
+    { type: 'HIGH_RISK_ALERT', resource_id: teamAlertA },
+  ]);
+  assert.deepEqual(await alertNotifications(teamUsers.auditorA), [
+    { type: 'ALERT_ASSIGNED', resource_id: teamAlertA },
+  ]);
+  assert.deepEqual(await alertNotifications(teamUsers.auditorB), []);
+
+  const adminId = teamUsers.admin;
+  const applicantId = '00000000-0000-4000-8000-000000000021';
+  await db.query('insert into auth.users(id,email) values($1,\'phase17-applicant@example.test\')', [applicantId]);
+  const accessRequestId = (await db.query(`insert into public.access_requests(email,full_name,department,reason)
+    values('phase17-applicant@example.test','Phase 17 Applicant','Audit','Needs access') returning id`)).rows[0].id;
+  assert.equal(Number((await db.query(`select count(*) as n from public.user_notifications
+    where recipient_id=$1 and type='ACCESS_REQUEST_SUBMITTED' and resource_id=$2`, [adminId, accessRequestId])).rows[0].n), 1);
+  assert.equal(Number((await db.query(`select count(*) as n from public.audit_events
+    where action='ACCESS_REQUEST_SUBMITTED' and resource_id=$1`, [accessRequestId])).rows[0].n), 1);
+  await db.query("select public.decide_access_request($1,$2,true,$3,'AUDITOR','Approved')", [adminId, accessRequestId, applicantId]);
+  assert.equal(Number((await db.query(`select count(*) as n from public.user_notifications
+    where recipient_id=$1 and type='ACCESS_REQUEST_APPROVED' and resource_id=$2`, [applicantId, accessRequestId])).rows[0].n), 1);
+  assert.ok(Number((await db.query(`select count(*) as n from public.audit_events
+    where action='ACCESS_REQUEST_APPROVED' and resource_id=$1`, [applicantId])).rows[0].n) >= 1);
+
+  const rejectedRequestId = (await db.query(`insert into public.access_requests(email,full_name,department,reason)
+    values('phase17-rejected@example.test','Rejected Applicant','Audit','Needs access') returning id`)).rows[0].id;
+  await db.query("select public.decide_access_request($1,$2,false,null,null,'Request rejected by Admin')", [adminId, rejectedRequestId]);
+  const rejectedRequest = (await db.query('select status,decision_reason from public.access_requests where id=$1', [rejectedRequestId])).rows[0];
+  assert.deepEqual(rejectedRequest, { status: 'REJECTED', decision_reason: 'Request rejected by Admin' });
+  assert.equal(Number((await db.query(`select count(*) as n from public.user_notifications
+    where type='ACCESS_REQUEST_REJECTED' and resource_id=$1`, [rejectedRequestId])).rows[0].n), 0);
+  assert.equal(Number((await db.query(`select count(*) as n from public.audit_events e
+    join public.login_history h on h.id=e.source_login_history_id
+    where h.actor_id=$1 and h.action='ACCESS_REQUEST' and h.outcome='REJECTED'
+      and e.action='ACCESS_REQUEST_REJECTED' and e.resource_type='ACCESS_REQUEST'`, [adminId])).rows[0].n), 1);
+
+  const lockedId = '00000000-0000-4000-8000-000000000022';
+  await db.query('insert into auth.users(id,email) values($1,\'phase17-locked@example.test\')', [lockedId]);
+  await db.query("update public.user_profiles set account_status='ACTIVE' where id=$1", [lockedId]);
+  for (let attempt = 0; attempt < 3; attempt += 1) await db.query("select public.record_login('phase17-locked@example.test',false)");
+  const lockNotice = (await db.query(`select id,type,read_at from public.user_notifications
+    where recipient_id=$1 and type='ACCOUNT_LOCKED' order by created_at desc limit 1`, [lockedId])).rows[0];
+  assert.ok(lockNotice);
+  assert.equal(lockNotice.read_at, null);
+  await db.query("select public.request_account_unlock('phase17-locked@example.test')");
+  const unlockRequestId = (await db.query("select id from public.account_unlock_requests where user_id=$1 and status='PENDING'", [lockedId])).rows[0].id;
+  await db.query("select public.decide_account_unlock($1,$2,true,'Identity verified')", [adminId, unlockRequestId]);
+  assert.equal((await db.query('select account_status from public.user_profiles where id=$1', [lockedId])).rows[0].account_status, 'ACTIVE');
+  await db.query('select public.mark_user_notification_read($1,$2)', [lockedId, lockNotice.id]);
+  const readAt = (await db.query('select read_at from public.user_notifications where id=$1', [lockNotice.id])).rows[0].read_at;
+  await db.query('select public.mark_user_notification_read($1,$2)', [lockedId, lockNotice.id]);
+  assert.equal((await db.query('select read_at from public.user_notifications where id=$1', [lockNotice.id])).rows[0].read_at.toISOString(), readAt.toISOString());
+  await assert.rejects(db.query('select public.mark_user_notification_read($1,$2)', [teamUsers.auditorA, lockNotice.id]), /Notification not found/);
+  const auditorNotifications = (await db.query('select public.list_user_notifications($1,1,100,false) as value', [teamUsers.auditorA])).rows[0].value;
+  assert.ok(auditorNotifications.items.every(item => item.resourceId !== lockedId));
+
+  const grants = (await db.query(`select
+    has_table_privilege('anon','public.user_notifications','select') as anon_read,
+    has_table_privilege('authenticated','public.user_notifications','select') as auth_read,
+    has_table_privilege('service_role','public.user_notifications','update') as service_write,
+    has_function_privilege('anon','public.list_user_notifications(uuid,integer,integer,boolean)','execute') as anon_list,
+    has_function_privilege('service_role','public.list_user_notifications(uuid,integer,integer,boolean)','execute') as service_list`)).rows[0];
+  assert.deepEqual(grants, { anon_read: false, auth_read: false, service_write: false, anon_list: false, service_list: true });
+  const restored = new PGlite({ loadDataDir: await db.dumpDataDir(), extensions: { pgcrypto } });
+  try {
+    assert.equal(Number((await restored.query('select count(*) as n from public.user_notifications where id=$1', [lockNotice.id])).rows[0].n), 1);
+  } finally { await restored.close(); }
+});
+
 test.after(async () => { await db.close(); });
