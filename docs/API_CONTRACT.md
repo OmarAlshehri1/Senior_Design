@@ -466,9 +466,7 @@ The Phase 17 notification API contract is `GET /api/v1/notifications?page=1&page
 
 The frontend must never become the authoritative source for audit decisions.
 
-## Case routes (Phase 18 implementation branch)
-
-These routes are being implemented with Migration 017 and are not yet available on `main`:
+## Case routes (Phase 18)
 
 - `GET /api/v1/cases?page=1&page_size=25&status=&priority=&search=` and `GET /api/v1/cases/{case_id}` return only cases in the authenticated actor's scope (Auditor: assigned cases; Supervisor: own team; Admin: global).
 - `POST /api/v1/cases` creates from an explicit `ALERT` or `TRANSACTION` source; payload fields are `source_type`, `source_id`, `title`, `description`, `priority`, optional `department`, and optional `assigned_to_id`.
@@ -476,3 +474,13 @@ These routes are being implemented with Migration 017 and are not yet available 
 - An assigned Auditor submits `POST /api/v1/cases/{case_id}/closure-request`; an active same-team Supervisor or global Admin decides with `POST /api/v1/cases/{case_id}/closure-decision`. The requester cannot decide their own request. Rejection reopens investigation and resets the SLA deadline.
 - Evidence uses raw PDF/PNG/JPEG request bytes at `POST /api/v1/cases/{case_id}/evidence?category=...`, with `X-File-Name`; maximum size is 10 MiB. The API fails closed unless a private bucket and antivirus executable are configured. Downloads are authorized and streamed through the API; storage keys never leave the server.
 - SLA targets are LOW 72h, MEDIUM 48h, HIGH 24h, CRITICAL 8h. When enabled, the API server worker runs the idempotent `escalate_overdue_cases` RPC every minute; overdue cases become ESCALATED and notify the assignee, team Supervisor, and active Admins. `CASE_SLA_ESCALATION_ENABLED` must be enabled in the deployed runtime and verified in Phase 24.
+
+## Vendor monitoring routes (Phase 19 branch)
+
+These routes are under review and require Migration 018 before the backend can use live storage:
+
+- `GET /api/v1/vendors?page=1&page_size=25&status=NORMAL|WATCHLISTED|BLOCKED` returns the approved-vendor registry with risk and actor-scoped alert/case summaries; `GET /api/v1/vendors/{vendor_id}` returns the vendor profile, related records, requests, and monitoring history. Request details are visible to the requester, their active team Supervisor, and Admin; Auditor alert and case details retain their existing assignment scopes.
+- An Auditor submits `POST /api/v1/vendors/{vendor_id}/watchlist-requests`; only the active Supervisor of the requester's team may decide `POST /api/v1/vendors/requests/{request_id}/decision`.
+- A Supervisor submits `POST /api/v1/vendors/{vendor_id}/block-requests`; only an active Admin may decide. Supervisors may remove a watchlist entry within their team scope; only Admin may unblock a vendor.
+- Each request, decision, removal, and unblock retains actor, role, reason, status transition, and timestamp. Approved requests notify the requester; new watchlist requests notify the owning Supervisor and block requests notify active Admins.
+- `BLOCKED` means audit-monitoring status only. It does not prevent or reject an ERP payment. `approved_vendors.is_active` remains the independent approved-vendor registry state used by Ghost Vendor evaluation.

@@ -8,7 +8,7 @@ import { VENDOR_STATUSES, VENDOR_STATUS_META, WATCHLIST_REQUEST_STATUSES, normal
 import { AUDIT_COVERAGE_RULES, ANALYTICS_PERIODS, createAuditCoverage, createTrendModel } from '../src/analytics/analyticsModels.js';
 import { casesService, createCasesService } from '../src/services/casesService.js';
 import { adaptCase, adaptCaseBundle } from '../src/adapters/caseAdapter.js';
-import { vendorsService } from '../src/services/vendorsService.js';
+import { createVendorsService } from '../src/services/vendorsService.js';
 import { analyticsService } from '../src/services/analyticsService.js';
 import { APPLICATION_ROUTES, ROUTE_ACCESS_RESULTS, resolvePreviewRouteAccess } from '../src/auth/routeAccess.js';
 import { PERMISSIONS, ROLE_KEYS, hasPermission } from '../src/auth/roles.js';
@@ -127,6 +127,25 @@ test('vendor models use monitoring-safe vocabulary and null-safe profiles', () =
   assert.equal(normalizeVendorRequest({ status: WATCHLIST_REQUEST_STATUSES.PENDING }).reviewedAt, null);
 });
 
+test('vendor service uses authenticated API paths and normalizes authoritative records', async () => {
+  const calls = [];
+  const service = createVendorsService({
+    get: async (path, options) => { calls.push(['GET', path, options]); return path === '/vendors'
+      ? { items: [{ id: 'V-1', monitoringStatus: 'NORMAL', transactionCount: 3 }], total: 1 }
+      : { vendor: { id: 'V-1', monitoringStatus: 'NORMAL' }, transactions: [], history: [], requests: [] }; },
+    post: async (path, body) => { calls.push(['POST', path, body]); return { ok: true }; },
+  });
+  const page = await service.listVendors({ query: { page: 1 } });
+  assert.equal(page.items[0].transactionCount, 3);
+  assert.equal((await service.getVendor('V-1')).vendor.id, 'V-1');
+  await service.requestVendorWatchlist('V-1', 'Review needed');
+  await service.reviewVendorWatchlistRequest('request-1', true);
+  assert.deepEqual(calls.map(([method, path]) => [method, path]), [
+    ['GET', '/vendors'], ['GET', '/vendors/V-1'],
+    ['POST', '/vendors/V-1/watchlist-requests'], ['POST', '/vendors/requests/request-1/decision'],
+  ]);
+});
+
 test('audit coverage and trend models stay empty without authoritative analytics', () => {
   assert.equal(AUDIT_COVERAGE_RULES.length, 5);
   assert.deepEqual(ANALYTICS_PERIODS, ['7_DAYS', '30_DAYS', '90_DAYS']);
@@ -137,7 +156,7 @@ test('audit coverage and trend models stay empty without authoritative analytics
 });
 
 test('new service boundaries reject every operation without fabricating success', async () => {
-  const operations = [...Object.values(casesService), ...Object.values(vendorsService), ...Object.values(analyticsService)];
+  const operations = [...Object.values(casesService), ...Object.values(analyticsService)];
   const results = await Promise.allSettled(operations.map((operation) => operation()));
   assert.ok(results.every((result) => result.status === 'rejected'));
 });

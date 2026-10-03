@@ -71,11 +71,19 @@ test('unknown roles receive no permissions or role definition', () => {
 });
 
 test('Admin can decide closures but cannot submit closure requests', () => {
+  const adminOnlyPermissions = Object.values(PERMISSIONS).filter((permission) => ![
+    PERMISSIONS.REQUEST_CASE_CLOSURE,
+    PERMISSIONS.REQUEST_VENDOR_WATCHLIST,
+    PERMISSIONS.REVIEW_VENDOR_WATCHLIST_REQUEST,
+    PERMISSIONS.REQUEST_VENDOR_BLOCK,
+  ].includes(permission));
   assert.deepEqual(
     new Set(getPermissionsForRole(ROLE_KEYS.ADMIN)),
-    new Set(Object.values(PERMISSIONS).filter((permission) => permission !== PERMISSIONS.REQUEST_CASE_CLOSURE))
+    new Set(adminOnlyPermissions)
   );
   assert.equal(hasPermission(ROLE_KEYS.ADMIN, PERMISSIONS.REQUEST_CASE_CLOSURE), false);
+  assert.equal(hasPermission(ROLE_KEYS.ADMIN, PERMISSIONS.REVIEW_VENDOR_WATCHLIST_REQUEST), false);
+  assert.equal(hasPermission(ROLE_KEYS.ADMIN, PERMISSIONS.REQUEST_VENDOR_BLOCK), false);
 });
 
 test('Supervisor receives Auditor permissions plus approved supervisor permissions', () => {
@@ -91,6 +99,7 @@ test('Supervisor receives Auditor permissions plus approved supervisor permissio
     PERMISSIONS.VIEW_AUDIT_LOG,
     PERMISSIONS.APPROVE_CASE_CLOSURE,
     PERMISSIONS.REVIEW_VENDOR_WATCHLIST_REQUEST,
+    PERMISSIONS.REMOVE_VENDOR_WATCHLIST,
     PERMISSIONS.REQUEST_VENDOR_BLOCK,
   ]);
 });
