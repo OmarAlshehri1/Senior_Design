@@ -10,6 +10,8 @@ export const AUDIT_ACTIONS = Object.freeze({
   TRANSACTION_REOPENED: 'TRANSACTION_REOPENED',
   REVIEW_NOTE_ADDED: 'REVIEW_NOTE_ADDED',
   ALERT_REVIEWED: 'ALERT_REVIEWED',
+  ALERT_REOPENED: 'ALERT_REOPENED',
+  ACCOUNT_UNLOCK_REJECTED: 'ACCOUNT_UNLOCK_REJECTED',
   ALERT_ASSIGNED: 'ALERT_ASSIGNED',
   ALERT_REASSIGNED: 'ALERT_REASSIGNED',
   ACCESS_REQUEST_APPROVED: 'ACCESS_REQUEST_APPROVED',
@@ -54,10 +56,14 @@ export function normalizeAuditEvent(event) {
   if (!event || typeof event !== 'object') return null;
   if (!Object.values(AUDIT_ACTIONS).includes(event.action)) return null;
   if (!Object.values(AUDIT_OUTCOMES).includes(event.outcome)) return null;
-  if (!Object.values(AUDIT_RESOURCE_TYPES).includes(event.resourceType)) return null;
+  if (!Object.values(AUDIT_RESOURCE_TYPES).includes(event.resourceType ?? event.resource_type)) return null;
 
   const normalized = Object.fromEntries(
-    AUDIT_EVENT_FIELDS.map((field) => [field, event[field] ?? null])
+    AUDIT_EVENT_FIELDS.map((field) => [field, event[field] ?? ({
+      actorId: event.actor_id, actorName: event.actor_name, actorRole: event.actor_role,
+      resourceType: event.resource_type, resourceId: event.resource_id,
+      timestamp: event.created_at,
+    })[field] ?? null])
   );
   if (normalized.details && typeof normalized.details === 'object') {
     normalized.details = Object.freeze({ ...normalized.details });

@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.repositories.identity import IdentityError
 
 
 client = TestClient(app)
@@ -79,12 +80,8 @@ def test_review_alert(
     }
 
     monkeypatch.setattr(
-        "app.api.alerts.mark_alert_reviewed",
-        lambda alert_id: (
-            reviewed_alert
-            if alert_id == "AL-001"
-            else None
-        ),
+        "app.api.alerts.accountability.record_review",
+        lambda **kwargs: {"alert": reviewed_alert, "record": {"id": 1}},
     )
 
     response = client.patch(
@@ -101,8 +98,8 @@ def test_review_missing_alert(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        "app.api.alerts.mark_alert_reviewed",
-        lambda alert_id: None,
+        "app.api.alerts.accountability.record_review",
+        lambda **kwargs: (_ for _ in ()).throw(IdentityError("NOT_FOUND", 404)),
     )
 
     response = client.patch(
@@ -111,13 +108,28 @@ def test_review_missing_alert(
     )
 
     assert response.status_code == 404
-    assert response.json()["detail"] == "Alert not found."
+    assert response.json()["detail"] == "NOT_FOUND"
+
+
+def test_reopening_alert_preserves_alert_response_contract(monkeypatch: pytest.MonkeyPatch) -> None:
+    active_alert = {**build_alert(), "status": "ACTIVE", "reviewed_at": None}
+    received = {}
+    def record(**kwargs):
+        received.update(kwargs)
+        return {"alert": active_alert, "record": {"id": 2}}
+    monkeypatch.setattr("app.api.alerts.accountability.record_review", record)
+    response = client.patch("/api/v1/alerts/AL-001/review", json={"status": "ACTIVE", "note": "Needs evidence"})
+    assert response.status_code == 200
+    assert response.json()["id"] == "AL-001"
+    assert response.json()["status"] == "ACTIVE"
+    assert received["action"] == "REOPENED"
+    assert received["note"] == "Needs evidence"
 
 
 def test_review_rejects_invalid_status() -> None:
     response = client.patch(
         "/api/v1/alerts/AL-001/review",
-        json={"status": "ACTIVE"},
+        json={"status": "PENDING"},
     )
 
     assert response.status_code == 422

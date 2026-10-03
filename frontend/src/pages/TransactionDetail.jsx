@@ -13,6 +13,9 @@ import { getRiskLevel, getTransactionRiskLevel } from '../utils/risk';
 import { AUDIT_RULE_DEFINITIONS, getTransactionDataQuality } from '../utils/transactions';
 import ReviewHistory from '../components/ReviewHistory.jsx';
 import { createReviewAccountability } from '../audit/reviewRecords.js';
+import { auditService } from '../audit/auditService.js';
+import useAuthorization from '../auth/useAuthorization.js';
+import { hasPermission, PERMISSIONS } from '../auth/roles.js';
 import { REVIEW_RESOLUTIONS } from '../cases/caseWorkflow.js';
 import VendorMonitoringIndicator from '../components/VendorMonitoringIndicator.jsx';
 import {
@@ -69,6 +72,7 @@ function DetailError() {
 export default function TransactionDetail() {
   const { id } = useParams();
   const { getTransaction, getAlertForTransaction, markAlertReviewed, showNotification } = useApp();
+  const { effectiveRole } = useAuthorization();
   const currentTransaction = getTransaction(id);
   const [detailState, setDetailState] = useState(() => ({
     id,
@@ -77,6 +81,33 @@ export default function TransactionDetail() {
     error: null,
   }));
   const alert = getAlertForTransaction(id);
+  const [reviewHistory, setReviewHistory] = useState([]);
+  const [alertReviewHistory, setAlertReviewHistory] = useState([]);
+  const [reviewNote, setReviewNote] = useState('');
+  const [reviewBusy, setReviewBusy] = useState(false);
+  const [reviewError, setReviewError] = useState('');
+  const canReview = hasPermission(effectiveRole, PERMISSIONS.REVIEW_TRANSACTIONS);
+
+  useEffect(() => {
+    let active = true;
+    auditService.getReviewHistory('TRANSACTION', id).then((result) => {
+      if (active) setReviewHistory(result.items ?? []);
+    }).catch((error) => {
+      if (active) setReviewError(error?.message || 'Review history is unavailable.');
+    });
+    return () => { active = false; };
+  }, [id]);
+
+  useEffect(() => {
+    let active = true;
+    if (!alert?.id) { setAlertReviewHistory([]); return () => { active = false; }; }
+    auditService.getReviewHistory('ALERT', alert.id).then((result) => {
+      if (active) setAlertReviewHistory(result.items ?? []);
+    }).catch((error) => {
+      if (active) setReviewError(error?.message || 'Alert review history is unavailable.');
+    });
+    return () => { active = false; };
+  }, [alert?.id]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -135,8 +166,11 @@ export default function TransactionDetail() {
     ? getRiskLevel(alert.riskScore) ?? 'Not available'
     : null;
   const dataQuality = getTransactionDataQuality(transaction);
-  const reviewState = alert?.status === 'Reviewed' ? 'Reviewed' : 'Not Reviewed';
-  const accountability = createReviewAccountability();
+  const accountability = createReviewAccountability(reviewHistory);
+  const reviewRecords = [...reviewHistory, ...alertReviewHistory]
+    .sort((left, right) => Date.parse(right.timestamp) - Date.parse(left.timestamp));
+  const reviewState = accountability.reviewedAt ? 'Reviewed' : 'Not Reviewed';
+  const alertReviewState = alert?.status === 'Reviewed' ? 'Reviewed' : 'Not Reviewed';
   const timestamp = [transaction.date, transaction.time]
     .filter((value) => value !== null && value !== undefined && String(value).trim())
     .join(' · ');
@@ -145,9 +179,61 @@ export default function TransactionDetail() {
     && transaction.vendorId !== undefined
     && String(transaction.vendorId).trim();
 
-  const handleMarkReviewed = () => {
-    markAlertReviewed(transaction.id);
-    showNotification('Transaction marked as reviewed for this session.', 'success');
+  const refreshReviewHistory = async () => {
+    const result = await auditService.getReviewHistory('TRANSACTION', transaction.id);
+    setReviewHistory(result.items ?? []);
+  };
+
+  const refreshAlertReviewHistory = async () => {
+    if (!alert?.id) return;
+    const result = await auditService.getReviewHistory('ALERT', alert.id);
+    setAlertReviewHistory(result.items ?? []);
+  };
+
+  const handleTransactionReview = async () => {
+    setReviewBusy(true);
+    setReviewError('');
+    try {
+      const latestState = reviewHistory.find((record) => ['REVIEWED', 'REOPENED'].includes(record.action));
+      const action = latestState?.action === 'REVIEWED' ? 'REOPENED' : 'REVIEWED';
+      await auditService.recordReview('TRANSACTION', transaction.id, action);
+      await refreshReviewHistory();
+      showNotification(action === 'REOPENED' ? 'Transaction review reopened.' : 'Transaction marked as reviewed.', 'success');
+    } catch (error) {
+      setReviewError(error?.message || 'Transaction review could not be saved.');
+    } finally {
+      setReviewBusy(false);
+    }
+  };
+
+  const handleAlertReview = async () => {
+    setReviewBusy(true);
+    setReviewError('');
+    try {
+      const nextStatus = alertReviewState === 'Reviewed' ? 'ACTIVE' : 'REVIEWED';
+      await markAlertReviewed(transaction.id, nextStatus);
+      await refreshAlertReviewHistory();
+      showNotification(nextStatus === 'ACTIVE' ? 'Alert review reopened.' : 'Alert marked as reviewed.', 'success');
+    } catch (error) {
+      setReviewError(error?.message || 'Alert review could not be saved.');
+    } finally {
+      setReviewBusy(false);
+    }
+  };
+
+  const handleAddReviewNote = async () => {
+    setReviewBusy(true);
+    setReviewError('');
+    try {
+      await auditService.addReviewNote('TRANSACTION', transaction.id, reviewNote);
+      setReviewNote('');
+      await refreshReviewHistory();
+      showNotification('Review note added.', 'success');
+    } catch (error) {
+      setReviewError(error?.message || 'Review note could not be saved.');
+    } finally {
+      setReviewBusy(false);
+    }
   };
 
   return (
@@ -297,22 +383,27 @@ export default function TransactionDetail() {
           <div className="card-header">
             <div>
               <h2 id="review-state-heading">Review &amp; Accountability</h2>
-              <p>Session status and future authoritative review history.</p>
+              <p>Review status and attributable history from the audit service.</p>
             </div>
           </div>
           <div className="review-accountability-body">
             <section className="session-review-section" aria-labelledby="session-review-heading">
               <span className="review-section-label">Review Status</span>
-              <h3 id="session-review-heading">Current Session Review Status</h3>
+              <h3 id="session-review-heading">Transaction Review Status</h3>
               <div className="review-state-row">
                 <span>Current Status</span>
                 <strong className={reviewState === 'Reviewed' ? 'reviewed-state' : 'not-reviewed-state'}>{reviewState}</strong>
               </div>
-              <p>Review status is currently maintained for this session and does not create an attributed history record.</p>
+              <p>Every review, reopening, and note is saved with the acting user and timestamp.</p>
               <div className="review-actions">
-                {alert && (
-                  <button className="btn btn-primary" type="button" onClick={handleMarkReviewed} disabled={reviewState === 'Reviewed'}>
-                    {reviewState === 'Reviewed' ? 'Reviewed' : 'Mark as Reviewed'}
+                {canReview && (
+                  <button className="btn btn-primary" type="button" onClick={handleTransactionReview} disabled={reviewBusy}>
+                    {reviewState === 'Reviewed' ? 'Reopen Transaction Review' : 'Mark Transaction Reviewed'}
+                  </button>
+                )}
+                {alert && canReview && (
+                  <button className="btn btn-secondary" type="button" onClick={handleAlertReview} disabled={reviewBusy}>
+                    {alertReviewState === 'Reviewed' ? 'Reopen Alert Review' : 'Mark Alert Reviewed'}
                   </button>
                 )}
                 {hasVendor && (
@@ -336,12 +427,15 @@ export default function TransactionDetail() {
                 <h3 id="review-note-heading">Review Note</h3>
                 <p>{accountability.note ?? 'No review note available.'}</p>
               </div>
-              <button className="btn btn-secondary" type="button" disabled title="Review notes are not available yet.">Add Review Note</button>
+              <label><span className="sr-only">Review note</span><textarea rows="2" maxLength="2000" value={reviewNote} onChange={(event) => setReviewNote(event.target.value)} placeholder="Add an attributed review note" /></label>
+              <button className="btn btn-secondary" type="button" disabled={!canReview || reviewBusy || !reviewNote.trim()} onClick={handleAddReviewNote}>Add Review Note</button>
             </section>
+
+            {reviewError && <p className="integration-error" role="alert">{reviewError}</p>}
 
             <section className="review-history-section" aria-labelledby="review-history-heading">
               <h3 id="review-history-heading">Review History</h3>
-              <ReviewHistory records={accountability.history} />
+              <ReviewHistory records={reviewRecords} />
             </section>
             <section className="review-resolution-section" aria-labelledby="review-resolution-heading">
               <div><h3 id="review-resolution-heading">Review Resolution</h3><p>Record an authoritative outcome separately from the current session review status.</p></div>
@@ -361,7 +455,7 @@ export default function TransactionDetail() {
               <DetailField label="Alert Type" value={alert.title} />
               <DetailField label="Risk Level" value={alertRiskLevel} />
               <DetailField label="Time" value={alert.time} />
-              <DetailField label="Review State" value={reviewState} />
+              <DetailField label="Review State" value={alertReviewState} />
             </dl>
           </section>
         )}

@@ -216,7 +216,7 @@ export function AppProvider({ children }) {
       realtimeService.disconnect();
     };
   }, []);
-  const markAlertReviewed = useCallback(async (transactionId) => {
+  const markAlertReviewed = useCallback(async (transactionId, status = 'REVIEWED', note = null) => {
     const alert = alerts.find(
       (item) => item.transactionId === transactionId
     );
@@ -225,7 +225,9 @@ export function AppProvider({ children }) {
       throw new Error('The alert could not be found.');
     }
 
-    const reviewedAlert = await alertsService.markReviewed(alert.id);
+    const reviewedAlert = status === 'REVIEWED'
+      ? await alertsService.markReviewed(alert.id)
+      : await alertsService.updateReview(alert.id, status, note);
 
     if (!reviewedAlert?.id) {
       throw new Error('The alert could not be reviewed.');

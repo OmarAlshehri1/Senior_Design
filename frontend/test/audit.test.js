@@ -22,7 +22,7 @@ import {
   normalizeReviewHistory,
   normalizeReviewRecord,
 } from '../src/audit/reviewRecords.js';
-import { auditService, AuditServiceUnavailableError } from '../src/audit/auditService.js';
+import { createAuditService } from '../src/audit/auditService.js';
 import { deriveWorkspaceData } from '../src/auth/workspace.js';
 import { APPLICATION_ROUTES, ROUTE_ACCESS_RESULTS, getRoutePermission, resolvePreviewRouteAccess } from '../src/auth/routeAccess.js';
 import { PERMISSIONS, ROLE_KEYS } from '../src/auth/roles.js';
@@ -36,7 +36,7 @@ test('audit action definitions contain the stable accountability actions', () =>
   assert.deepEqual(Object.values(AUDIT_ACTIONS), [
     'LOGIN_SUCCESS', 'LOGIN_FAILED', 'LOGOUT', 'ACCOUNT_LOCKED', 'ACCOUNT_UNLOCKED',
     'ACCOUNT_DISABLED', 'ACCOUNT_ENABLED', 'TRANSACTION_REVIEWED', 'TRANSACTION_REOPENED',
-    'REVIEW_NOTE_ADDED', 'ALERT_REVIEWED', 'ALERT_ASSIGNED', 'ALERT_REASSIGNED',
+    'REVIEW_NOTE_ADDED', 'ALERT_REVIEWED', 'ALERT_REOPENED', 'ACCOUNT_UNLOCK_REJECTED', 'ALERT_ASSIGNED', 'ALERT_REASSIGNED',
     'ACCESS_REQUEST_APPROVED', 'ACCESS_REQUEST_REJECTED', 'USER_ROLE_CHANGED',
     'CASE_CREATED', 'CASE_ASSIGNED', 'CASE_ESCALATED', 'CASE_CLOSURE_REQUESTED',
     'CASE_CLOSED', 'EVIDENCE_ADDED', 'CASE_COMMENT_ADDED', 'VENDOR_WATCHLIST_REQUESTED',
@@ -118,6 +118,17 @@ test('session review state never generates fake review attribution', () => {
   assert.deepEqual(accountability, { reviewedBy: null, reviewedAt: null, note: null, history: [] });
 });
 
+test('review accountability derives latest status and note from immutable records', () => {
+  const accountability = createReviewAccountability([
+    { id: 3, action: 'REOPENED', reviewerName: 'Reviewer', timestamp: '2026-01-03' },
+    { id: 2, action: 'NOTE_ADDED', note: 'Recheck requested', timestamp: '2026-01-02' },
+    { id: 1, action: 'REVIEWED', reviewerName: 'Reviewer', timestamp: '2026-01-01' },
+  ]);
+  assert.equal(accountability.reviewedAt, null);
+  assert.equal(accountability.note, 'Recheck requested');
+  assert.equal(accountability.history.length, 3);
+});
+
 test('Profile security activity accepts unavailable values', () => {
   assert.deepEqual(createSecurityActivity(), {
     lastLoginAt: null,
@@ -140,8 +151,33 @@ test('audit filtering and sorting do not mutate input', () => {
   assert.deepEqual(events, snapshot);
 });
 
-test('dormant audit services reject without fabricating records', async () => {
-  await assert.rejects(auditService.getAuditEvents(), AuditServiceUnavailableError);
-  await assert.rejects(auditService.getReviewHistory('TX-1'), AuditServiceUnavailableError);
-  await assert.rejects(auditService.addReviewNote('TX-1', 'not persisted'), AuditServiceUnavailableError);
+test('AuditService uses authenticated routes for filtered activity and review actions', async () => {
+  const calls = [];
+  const service = createAuditService({
+    get: async (...args) => (calls.push(['GET', ...args]), { items: [], total: 0 }),
+    post: async (...args) => (calls.push(['POST', ...args]), { id: 'saved' }),
+  });
+  await service.getAuditEvents({ page: 2, action: 'LOGIN_SUCCESS' });
+  await service.getReviewHistory('TRANSACTION', 'TX-1', { page: 1 });
+  await service.addReviewNote('TRANSACTION', 'TX-1', 'Verified receipt');
+  await service.recordReview('ALERT', 'AL-1', 'REOPENED');
+  assert.deepEqual(calls.map(([method, path]) => [method, path]), [
+    ['GET', '/audit-events'], ['GET', '/reviews/TRANSACTION/TX-1'],
+    ['POST', '/reviews/TRANSACTION/TX-1'], ['POST', '/reviews/ALERT/AL-1'],
+  ]);
+});
+
+test('audit adapters translate API snake_case rows into existing UI contracts', async () => {
+  const service = createAuditService({
+    get: async (path) => path === '/audit-events'
+      ? { items: [{ id: 4, actor_id: 'u4', actor_name: 'Reviewer', actor_role: 'AUDITOR', action: 'ALERT_REOPENED', resource_type: 'ALERT', resource_id: 'AL-4', created_at: '2026-10-03T00:00:00Z', outcome: 'SUCCESS', details: {} }], total: 1 }
+      : { items: [{ id: 3, transaction_id: 'TX-3', actor_id: 'u3', actor_name: 'A', actor_role: 'AUDITOR', action: 'REVIEWED', created_at: '2026-10-02T00:00:00Z' }], total: 1 },
+    post: async () => ({ record: { id: 5, transaction_id: 'TX-3', actor_id: 'u3', actor_name: 'A', actor_role: 'AUDITOR', action: 'NOTE_ADDED', created_at: '2026-10-03T00:00:00Z' } }),
+  });
+  const audit = await service.getAuditEvents();
+  const reviews = await service.getReviewHistory('TRANSACTION', 'TX-3');
+  const note = await service.addReviewNote('TRANSACTION', 'TX-3', 'Evidence attached');
+  assert.equal(audit.items[0].actorName, 'Reviewer');
+  assert.equal(reviews.items[0].reviewerName, 'A');
+  assert.equal(note.record.action, 'NOTE_ADDED');
 });

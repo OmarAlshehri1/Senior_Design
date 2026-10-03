@@ -4,12 +4,15 @@ import { adaptAlert, adaptAlertCollection } from '../adapters/alertAdapter.js';
 export function createAlertsService(client = apiClient) {
   return Object.freeze({
     list: async (options = {}) => adaptAlertCollection(await client.get('/alerts', options)),
-    markReviewed: async (alertId, options = {}) => adaptAlert(
+    updateReview: async (alertId, status = 'REVIEWED', note = null, options = {}) => adaptAlert(
       await client.patch(
         `/alerts/${encodeURIComponent(alertId)}/review`,
-        { status: 'REVIEWED' },
+        { status, note },
         options
       )
+    ),
+    markReviewed: async (alertId, options = {}) => adaptAlert(
+      await client.patch(`/alerts/${encodeURIComponent(alertId)}/review`, { status: 'REVIEWED' }, options)
     ),
   });
 }

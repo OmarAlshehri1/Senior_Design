@@ -203,4 +203,73 @@ test('locked accounts require their own request and an administrator decision to
   assert.equal(profile.failed_sign_in_attempts, 0);
 });
 
+const reviewerId = '00000000-0000-4000-8000-000000000015';
+const prepareReviewer = async () => {
+  await db.query('insert into auth.users(id,email) values($1,$2) on conflict do nothing', [reviewerId, 'reviewer@example.test']);
+  await db.query("update public.user_profiles set name='Reviewer One',role='AUDITOR',account_status='ACTIVE' where id=$1", [reviewerId]);
+};
+
+test('transaction reviews can reopen and append notes while audit history stays immutable', async () => {
+  await prepareReviewer();
+  await db.query("insert into public.transactions(id,completeness_status) values('REVIEW-TX','COMPLETE')");
+  const record = (action, note = null) => db.query(
+    "select public.record_review_action($1,'TRANSACTION','REVIEW-TX',$2,$3)", [reviewerId, action, note]);
+  await record('REVIEWED');
+  await record('NOTE_ADDED', 'Checked supporting invoice.');
+  await record('REOPENED');
+  assert.equal(Number((await db.query("select count(*) as n from public.review_records where transaction_id='REVIEW-TX'")).rows[0].n), 3);
+  const reviewState = (await db.query("select status from public.transaction_review_states where transaction_id='REVIEW-TX'")).rows[0];
+  assert.equal(reviewState.status, 'ACTIVE');
+  assert.deepEqual((await db.query("select action from public.audit_events where resource_id='REVIEW-TX' order by id")).rows.map(x => x.action),
+    ['TRANSACTION_REVIEWED', 'REVIEW_NOTE_ADDED', 'TRANSACTION_REOPENED']);
+  await assert.rejects(db.query("update public.review_records set note='changed' where transaction_id='REVIEW-TX'"), /append-only/);
+  await assert.rejects(db.query("delete from public.audit_events where resource_id='REVIEW-TX'"), /append-only/);
+  await assert.rejects(db.query("delete from public.transactions where id='REVIEW-TX'"), /foreign key|violates/);
+});
+
+test('concurrent review transitions allow one winner and serialize alert reopen state', async () => {
+  await prepareReviewer();
+  await db.query("insert into public.transactions(id,completeness_status) values('REVIEW-RACE','COMPLETE')");
+  const call = () => db.query("select public.record_review_action($1,'TRANSACTION','REVIEW-RACE','REVIEWED',null)", [reviewerId]);
+  const outcomes = await Promise.allSettled([call(), call()]);
+  assert.equal(outcomes.filter(x => x.status === 'fulfilled').length, 1);
+  assert.equal(outcomes.filter(x => x.status === 'rejected').length, 1);
+  assert.equal(Number((await db.query("select count(*) as n from public.review_records where transaction_id='REVIEW-RACE'")).rows[0].n), 1);
+
+  await db.query("insert into public.transactions(id,completeness_status) values('REVIEW-ALERT-TX','COMPLETE')");
+  await db.query("insert into public.alerts(transaction_id,severity,title,description,reason,risk_score,risk_scoring_version,request_received_at) values('REVIEW-ALERT-TX','HIGH','Alert','Description','Reason',90,'1.0.0',now())");
+  const alertId = (await db.query("select id from public.alerts where transaction_id='REVIEW-ALERT-TX'")).rows[0].id;
+  await db.query("select public.record_review_action($1,'ALERT',$2,'REVIEWED',null)", [reviewerId, alertId]);
+  await db.query("select public.record_review_action($1,'ALERT',$2,'REOPENED',null)", [reviewerId, alertId]);
+  const alert = (await db.query("select status,reviewed_at from public.alerts where id=$1", [alertId])).rows[0];
+  assert.equal(alert.status, 'ACTIVE');
+  assert.equal(alert.reviewed_at, null);
+  assert.equal(Number((await db.query("select count(*) as n from public.review_records where alert_id=$1", [alertId])).rows[0].n), 2);
+  await assert.rejects(db.query("delete from public.alerts where id=$1", [alertId]), /foreign key|violates/);
+});
+
+test('login history writes append attributable security activity', async () => {
+  await prepareReviewer();
+  await db.query("insert into public.login_history(user_id,action,outcome) values($1,'SIGN_IN','SUCCESS')", [reviewerId]);
+  const event = (await db.query("select actor_name,actor_role,action,resource_type,outcome from public.audit_events where action='LOGIN_SUCCESS'")).rows[0];
+  assert.deepEqual(event, { actor_name: 'Reviewer One', actor_role: 'AUDITOR', action: 'LOGIN_SUCCESS', resource_type: 'ACCOUNT', outcome: 'SUCCESS' });
+  await db.query("insert into public.login_history(user_id,action,outcome) values($1,'SIGN_IN','DENIED')", [reviewerId]);
+  const failed = (await db.query("select actor_name,action,outcome from public.audit_events where action='LOGIN_FAILED'")).rows[0];
+  assert.deepEqual(failed, { actor_name: 'Reviewer One', action: 'LOGIN_FAILED', outcome: 'FAILED' });
+});
+
+test('accountability RPC and history tables expose append-only least privilege', async () => {
+  const privileges = (await db.query(`select
+    has_function_privilege('anon','public.record_review_action(uuid,text,text,text,text)','execute') as anon_execute,
+    has_function_privilege('authenticated','public.record_review_action(uuid,text,text,text,text)','execute') as auth_execute,
+    has_function_privilege('service_role','public.record_review_action(uuid,text,text,text,text)','execute') as service_execute,
+    has_table_privilege('service_role','public.review_records','insert') as review_insert,
+    has_table_privilege('service_role','public.review_records','update') as review_update,
+    has_table_privilege('service_role','public.audit_events','delete') as event_delete`)).rows[0];
+  assert.deepEqual(privileges, {
+    anon_execute: false, auth_execute: false, service_execute: true,
+    review_insert: false, review_update: false, event_delete: false,
+  });
+});
+
 test.after(async () => { await db.close(); });

@@ -14,16 +14,14 @@ from fastapi import (
     WebSocketDisconnect,
     status,
 )
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 from fastapi import Depends
 from app.services.identity import get_current_user, authenticate_token
 from app.repositories.identity import IdentityError
 from starlette.concurrency import run_in_threadpool
 
-from app.repositories.supabase_alerts import (
-    list_alerts as repository_list_alerts,
-    mark_alert_reviewed,
-)
+from app.repositories.supabase_alerts import list_alerts as repository_list_alerts
+from app.repositories import accountability, identity
 from app.repositories.supabase_transactions import (
     SupabaseConfigurationError,
     SupabasePersistenceError,
@@ -43,7 +41,9 @@ websocket_router = APIRouter(
 
 
 class AlertReviewRequest(BaseModel):
-    status: Literal["REVIEWED"]
+    model_config = ConfigDict(extra="forbid")
+    status: Literal["REVIEWED", "ACTIVE"]
+    note: str | None = Field(default=None, max_length=2000)
 
 
 @router.get("")
@@ -85,30 +85,22 @@ async def get_alerts(
 async def review_alert(
     alert_id: str,
     request: AlertReviewRequest,
+    user: dict = Depends(get_current_user),
 ) -> dict[str, object]:
     try:
-        alert = await run_in_threadpool(
-            mark_alert_reviewed,
-            alert_id,
+        result = await run_in_threadpool(
+            accountability.record_review,
+            actor_id=user["id"], resource_type="ALERT", resource_id=alert_id,
+            action="REVIEWED" if request.status == "REVIEWED" else "REOPENED",
+            note=request.note,
         )
+    except identity.IdentityError as exc:
+        raise HTTPException(status_code=exc.status, detail=exc.code) from exc
     except SupabaseConfigurationError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Alert storage is not configured.",
-        ) from exc
-    except SupabasePersistenceError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="Alert could not be reviewed.",
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                            detail="Alert storage is not configured.") from exc
 
-    if alert is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Alert not found.",
-        )
-
-    return alert
+    return result["alert"]
 
 
 @websocket_router.websocket("/alerts")
