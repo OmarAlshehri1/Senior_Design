@@ -164,6 +164,8 @@ def test_create_complete_transaction(
     assert body["missing_fields"] == []
     assert body["rule_status"] == "PASSED"
     assert body["ai_score"] == 25.0
+    assert body["risk_score"] == 10.0
+    assert body["risk_level"] == "LOW"
     assert body["rule_score"] == 0.0
     assert len(body["rule_results"]) == 5
 
@@ -577,5 +579,59 @@ def test_create_transaction_persists_anomaly_score(
             "ai_score": 25.0,
             "threshold": 90.6,
             "is_anomalous": False,
+        }
+    ]
+
+def test_create_transaction_persists_risk_score(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    persisted_scores: list[dict[str, Any]] = []
+
+    def capture_scores(
+        scores: list[dict[str, Any]],
+    ) -> int:
+        persisted_scores.extend(scores)
+        return len(scores)
+
+    monkeypatch.setattr(
+        (
+            "app.api.transactions."
+            "persist_transaction_risk_scores"
+        ),
+        capture_scores,
+    )
+
+    response = client.post(
+        "/api/v1/transactions",
+        json={
+            "id": "TX-RISK-SCORE-001",
+            "timestamp": "2026-10-03T02:00:00Z",
+            "vendor_id": "VND-101",
+            "vendor_name": "Almarai Dairy Co.",
+            "invoice_number": "INV-RISK-SCORE-001",
+            "category": "Inventory",
+            "amount": 500,
+            "currency": "SAR",
+            "created_by": "EMP-101",
+            "approved_by": "MGR-201",
+            "approver_role": "Manager",
+            "approval_limit": 1000,
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["risk_score"] == 10.0
+    assert response.json()["risk_level"] == "LOW"
+
+    assert persisted_scores == [
+        {
+            "transaction_id": "TX-RISK-SCORE-001",
+            "scoring_version": "1.0.0",
+            "rule_evaluation_version": "1.0.0",
+            "anomaly_model_version": "1.0.0",
+            "rule_score": 0.0,
+            "ai_score": 25.0,
+            "risk_score": 10.0,
+            "risk_level": "LOW",
         }
     ]

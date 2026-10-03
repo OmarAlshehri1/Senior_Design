@@ -16,6 +16,7 @@ from app.repositories.supabase_transactions import (
     get_invoice_splitting_contexts,
     get_ghost_vendor_contexts,
     persist_transaction_anomaly_scores,
+    persist_transaction_risk_scores,
 )
 from app.schemas.transaction import TransactionCreate
 
@@ -32,6 +33,12 @@ from app.services.anomaly_features import (
 from app.services.anomaly_model import (
     AnomalyScoringModel,
     load_anomaly_model,
+)
+
+from app.services.risk_scoring import (
+    RISK_SCORING_VERSION,
+    calculate_risk_score,
+    classify_risk_level,
 )
 
 ANOMALY_MODEL_PATH = (
@@ -263,6 +270,14 @@ async def create_transaction(
             detail="Anomaly scoring model is unavailable.",
         ) from exc
 
+    risk_score = calculate_risk_score(
+        rule_score,
+        ai_score,
+    )
+    risk_level = classify_risk_level(
+        risk_score
+    )
+
     try:
         await run_in_threadpool(
             persist_transaction_evaluation,
@@ -305,6 +320,48 @@ async def create_transaction(
             detail="Transaction anomaly score could not be stored.",
         ) from exc
 
+    if (
+    risk_score is not None
+    and risk_level is not None
+):
+        try:
+            await run_in_threadpool(
+                persist_transaction_risk_scores,
+                [
+                    {
+                        "transaction_id": (
+                            transaction_data["id"]
+                        ),
+                        "scoring_version": (
+                            RISK_SCORING_VERSION
+                        ),
+                        "rule_evaluation_version": (
+                            RULE_SCORE_VERSION
+                        ),
+                        "anomaly_model_version": (
+                            anomaly_model.version
+                        ),
+                        "rule_score": rule_score,
+                        "ai_score": ai_score,
+                        "risk_score": risk_score,
+                        "risk_level": risk_level,
+                    }
+                ],
+            )
+        except (
+            SupabaseConfigurationError,
+            SupabasePersistenceError,
+        ) as exc:
+            raise HTTPException(
+                status_code=(
+                    status.HTTP_502_BAD_GATEWAY
+                ),
+                detail=(
+                    "Transaction risk score "
+                    "could not be stored."
+                ),
+            ) from exc
+
     return {
         **transaction_data,
         "vendor_monitoring_status": None,
@@ -313,8 +370,8 @@ async def create_transaction(
         "rule_status": rule_status,
         "rule_score": rule_score,
         "ai_score": ai_score,
-        "risk_score": None,
-        "risk_level": None,
+        "risk_score": risk_score,
+        "risk_level": risk_level,
         "rule_results": rule_results,
         "explanation": None,
     }

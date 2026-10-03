@@ -29,7 +29,7 @@ The backend will eventually calculate:
 risk_score = (0.60 * rule_score) + (0.40 * ai_score)
 ```
 
-This calculation is not implemented yet. Rounding, incomplete-data behavior, and score-version metadata must be confirmed before implementation.
+This calculation is implemented as scoring version `1.0.0`. Both component scores must be available and valid; otherwise `risk_score` and `risk_level` remain `null` rather than assuming a missing score is zero or changing the agreed weights. Results are constrained to 0–100 and rounded to two decimal places. Risk levels are `LOW` for scores below 50, `MEDIUM` for scores from 50 to below 75, and `HIGH` for scores from 75 to 100.
 
 ## Core resource shapes
 
@@ -95,9 +95,11 @@ The authoritative `rule_score` uses equal weighting across evaluated rules only:
 
 Each completed evaluation is stored as a versioned snapshot in `transaction_evaluations`. Transaction reads return the latest persisted snapshot when available; transactions created before evaluation persistence continue to use safe runtime evaluation as a fallback. Evaluation storage and lookup use the service role, and persisted rule evidence never includes private `ground_truth` labels.
 
-Automated evaluation coverage is calculated as transactions whose latest snapshot contains at least one `PASSED` or `FAILED` rule divided by all stored transactions, multiplied by 100. Rules marked `NOT_EVALUATED` do not count as executed. The controlled 10,001-transaction database currently achieves 100% coverage after the idempotent evaluation backfill; no transactions remain unevaluated.
+Automated evaluation coverage is calculated as transactions whose latest snapshot contains at least one `PASSED` or `FAILED` rule divided by all stored transactions, multiplied by 100. Rules marked `NOT_EVALUATED` do not count as executed. The controlled 10,002-transaction database currently achieves 100% coverage after the idempotent evaluation backfill; no transactions remain unevaluated.
 
-Isolation Forest model `1.0.0` produces `ai_score` values from 0 to 100 using transaction attributes and rule-derived runtime context only. Identifiers, `violation_type`, `is_anomaly`, and `ground_truth` are excluded from model inputs. The reproducible stratified split contains 7,000 training, 1,500 validation, and 1,500 held-out test transactions. The selected threshold is `90.6`; held-out detection rate is `87.04%` and false-positive rate is `3.45%`. Versioned scores are stored in `transaction_anomaly_scores`; the initial backfill stored 10,001 scores and classified 945 transactions above the threshold. POST evaluates and persists new scores immediately, while GET collection and detail responses return the latest persisted `ai_score`.
+The final Isolation Forest model `1.0.0` uses 400 isolation trees, increased from the initial 150-tree design configuration after prototype tuning, and produces `ai_score` values from 0 to 100 using transaction attributes and rule-derived runtime context only. Identifiers, `violation_type`, `is_anomaly`, and `ground_truth` are excluded from model inputs. The reproducible stratified split contains 7,000 training, 1,500 validation, and 1,500 held-out test transactions. The selected threshold is `90.6`; held-out detection rate is `87.04%` and false-positive rate is `3.45%`. Versioned scores are stored in `transaction_anomaly_scores`; the initial backfill stored 10,001 scores and classified 945 transactions above the threshold. POST evaluates and persists new scores immediately, while GET collection and detail responses return the latest persisted `ai_score`.
+
+Combined risk scoring version `1.0.0` calculates `risk_score = (0.60 * rule_score) + (0.40 * ai_score)`. Versioned component scores, the combined score, and `risk_level` are stored in `transaction_risk_scores`; reads prefer the latest persisted snapshot and use the same deterministic formula as a safe fallback. The verified backfill stored 10,002 scores: 9,362 LOW, 640 MEDIUM, and 0 HIGH, with an observed range of 0.00–60.00. The absence of HIGH transactions reflects the controlled dataset rather than an adjustment to the agreed 75-point threshold.
 
 ### DashboardSummary
 
@@ -218,7 +220,7 @@ The query excludes the private `ground_truth` evaluation labels.
 
 ### `GET /api/v1/transactions/{transaction_id}`
 
-Returns one Supabase-backed `Transaction`, including its current `rule_results`, latest persisted `ai_score`, and optional `explanation`. Returns `404` when the transaction does not exist or is not accessible to the caller. The response never includes `ground_truth`.
+Returns one Supabase-backed `Transaction`, including its current `rule_results`, latest persisted `ai_score`, latest persisted `risk_score` and `risk_level`, and optional `explanation`. Returns `404` when the transaction does not exist or is not accessible to the caller. The response never includes `ground_truth`.
 
 ### `POST /api/v1/transactions`
 
@@ -274,7 +276,7 @@ Response `201 Created`:
 
 A transaction with missing optional fields returns `data_quality_status` as `PARTIAL` and lists the unavailable fields in `missing_fields`. Unknown fields or invalid values return `422 Unprocessable Entity`.
 
-The transaction is validated, assessed for missing fields, persisted to Supabase PostgreSQL, evaluated by the eligible audit rules, assigned an authoritative rule score, and stored with a versioned evaluation snapshot. Isolation Forest anomaly scoring is performed and persisted immediately. Combined risk scoring, alert generation, and explanations will be added in later stages.
+The transaction is validated, assessed for missing fields, persisted to Supabase PostgreSQL, evaluated by the eligible audit rules, assigned an authoritative rule score, and stored with a versioned evaluation snapshot. Isolation Forest anomaly scoring is performed and persisted immediately. Combined risk scoring is performed and persisted immediately. Alert generation and explanations will be added in later stages.
 
 ## Offline seed utility
 

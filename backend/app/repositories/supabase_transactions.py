@@ -13,6 +13,11 @@ from app.services.audit_rules import (
     summarize_rule_status,
 )
 
+from app.services.risk_scoring import (
+    calculate_risk_score,
+    classify_risk_level,
+)
+
 load_dotenv()
 
 BATCH_SIZE = 500
@@ -113,6 +118,7 @@ def _from_database_row(
     ) = None,
     persisted_evaluation: dict[str, Any] | None = None,
     persisted_anomaly_score: dict[str, Any] | None = None,
+    persisted_risk_score: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     missing_fields = row.get("missing_fields")
 
@@ -160,41 +166,58 @@ def _from_database_row(
         transaction["rule_results"] = (
             persisted_evaluation.get("rule_results", [])
         )
-        return transaction
+    else:
+        rule_context: dict[str, Any] = {}
 
-    rule_context: dict[str, Any] = {}
+        if duplicate_payment_count is not None:
+            rule_context["duplicate_payment_count"] = (
+                duplicate_payment_count
+            )
 
-    if duplicate_payment_count is not None:
-        rule_context["duplicate_payment_count"] = (
-            duplicate_payment_count
+        if invoice_splitting_context is not None:
+            rule_context["invoice_splitting_context"] = (
+                invoice_splitting_context
+            )
+
+        if ghost_vendor_context is not None:
+            rule_context["ghost_vendor_context"] = (
+                ghost_vendor_context
+            )
+
+        transaction["rule_results"] = (
+            evaluate_transaction_rules(
+                transaction,
+                context=rule_context,
+            )
         )
 
-    if invoice_splitting_context is not None:
-        rule_context["invoice_splitting_context"] = (
-            invoice_splitting_context
+        transaction["rule_score"] = (
+            calculate_rule_score(
+                transaction["rule_results"]
+            )
         )
 
-    if ghost_vendor_context is not None:
-        rule_context["ghost_vendor_context"] = (
-            ghost_vendor_context
+        transaction["rule_status"] = (
+            summarize_rule_status(
+                transaction["rule_results"]
+            )
         )
 
-    transaction["rule_results"] = (
-                evaluate_transaction_rules(
-            transaction,
-            context=rule_context,
+    if persisted_risk_score is not None:
+        transaction["risk_score"] = (
+            persisted_risk_score.get("risk_score")
         )
-    )
-
-    transaction["rule_score"] = calculate_rule_score(
-        transaction["rule_results"]
-    )
-
-    transaction["rule_status"] = (
-        summarize_rule_status(
-            transaction["rule_results"]
+        transaction["risk_level"] = (
+            persisted_risk_score.get("risk_level")
         )
-    )
+    else:
+        transaction["risk_score"] = calculate_risk_score(
+            transaction.get("rule_score"),
+            transaction.get("ai_score"),
+        )
+        transaction["risk_level"] = classify_risk_level(
+            transaction["risk_score"]
+        )
 
     return transaction
 
@@ -744,6 +767,126 @@ def get_latest_transaction_anomaly_scores(
 
     return scores
 
+def persist_transaction_risk_scores(
+    scores: list[dict[str, Any]],
+) -> int:
+    if not scores:
+        return 0
+
+    url, _ = _get_configuration()
+    endpoint = (
+        f"{url}/rest/v1/"
+        "transaction_risk_scores"
+    )
+
+    headers = _get_headers()
+    headers["Prefer"] = "return=minimal"
+
+    try:
+        with httpx.Client(
+            timeout=REQUEST_TIMEOUT_SECONDS
+        ) as client:
+            response = client.post(
+                endpoint,
+                headers=headers,
+                json=jsonable_encoder(scores),
+            )
+            response.raise_for_status()
+    except httpx.HTTPError as exc:
+        raise SupabasePersistenceError(
+            "Failed to persist combined risk scores."
+        ) from exc
+
+    return len(scores)
+
+
+def get_latest_transaction_risk_scores(
+    transaction_ids: list[str],
+) -> dict[str, dict[str, Any]]:
+    unique_ids = list(
+        dict.fromkeys(
+            transaction_id
+            for transaction_id in transaction_ids
+            if transaction_id
+        )
+    )
+
+    if not unique_ids:
+        return {}
+
+    url, _ = _get_configuration()
+    endpoint = (
+        f"{url}/rest/v1/rpc/"
+        "get_latest_transaction_risk_scores"
+    )
+
+    try:
+        with httpx.Client(
+            timeout=REQUEST_TIMEOUT_SECONDS
+        ) as client:
+            response = client.post(
+                endpoint,
+                headers=_get_headers(),
+                json={
+                    "transaction_ids": unique_ids,
+                },
+            )
+            response.raise_for_status()
+            payload = response.json()
+    except (httpx.HTTPError, ValueError) as exc:
+        raise SupabasePersistenceError(
+            "Failed to retrieve combined risk scores."
+        ) from exc
+
+    if not isinstance(payload, list):
+        raise SupabasePersistenceError(
+            "Supabase returned invalid combined risk scores."
+        )
+
+    scores: dict[str, dict[str, Any]] = {}
+
+    for row in payload:
+        if not isinstance(row, dict):
+            continue
+
+        transaction_id = row.get("transaction_id")
+        rule_score = row.get("rule_score")
+        ai_score = row.get("ai_score")
+        risk_score = row.get("risk_score")
+        risk_level = row.get("risk_level")
+
+        if (
+            not isinstance(transaction_id, str)
+            or not isinstance(rule_score, (int, float))
+            or not isinstance(ai_score, (int, float))
+            or not isinstance(risk_score, (int, float))
+            or risk_level not in {
+                "LOW",
+                "MEDIUM",
+                "HIGH",
+            }
+        ):
+            continue
+
+        scores[transaction_id] = {
+            "scoring_version": row.get(
+                "scoring_version"
+            ),
+            "rule_evaluation_version": row.get(
+                "rule_evaluation_version"
+            ),
+            "anomaly_model_version": row.get(
+                "anomaly_model_version"
+            ),
+            "rule_score": float(rule_score),
+            "ai_score": float(ai_score),
+            "risk_score": float(risk_score),
+            "risk_level": risk_level,
+            "calculated_at": row.get("calculated_at"),
+        }
+
+    return scores
+
 def get_evaluation_coverage() -> dict[str, int | float]:
     url, _ = _get_configuration()
     endpoint = (
@@ -881,6 +1024,12 @@ def list_transactions(
         )
     )
 
+    persisted_risk_scores = (
+        get_latest_transaction_risk_scores(
+            transaction_ids
+        )
+    )
+
     duplicate_counts = get_duplicate_payment_counts(
         transaction_ids
     )
@@ -935,6 +1084,11 @@ def list_transactions(
                 ),
                 persisted_anomaly_score=(
                     persisted_anomaly_scores.get(transaction_id)
+                ),
+                persisted_risk_score=(
+                    persisted_risk_scores.get(
+                        transaction_id
+                    )
                 ),
                 duplicate_payment_count=(
                     duplicate_payment_count
@@ -1009,6 +1163,12 @@ def get_transaction_by_id(
         )
     )
 
+    persisted_risk_scores = (
+        get_latest_transaction_risk_scores(
+            [transaction_id]
+        )
+    )
+
     duplicate_counts = get_duplicate_payment_counts(
         [transaction_id]
     )
@@ -1027,6 +1187,11 @@ def get_transaction_by_id(
         first_row,
         persisted_anomaly_score=(
             persisted_anomaly_scores.get(
+                transaction_id
+            )
+        ),
+        persisted_risk_score=(
+            persisted_risk_scores.get(
                 transaction_id
             )
         ),
