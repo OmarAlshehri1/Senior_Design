@@ -1,4 +1,4 @@
-import { getRiskLevel } from './risk.js';
+import { getTransactionRiskLevel } from './risk.js';
 import { AUDIT_RULES } from '../data/auditRules.js';
 
 export const TRANSACTION_SORT_OPTIONS = Object.freeze({
@@ -108,7 +108,7 @@ export function filterAndSortTransactions(transactions, options = {}) {
     .filter((transaction) => matchesTransactionSearch(transaction, search))
     .filter((transaction) => (
       riskFilter === 'All'
-      || getRiskLevel(transaction?.riskScore) === `${riskFilter} Risk`
+      || getTransactionRiskLevel(transaction) === `${riskFilter} Risk`
     ))
     .filter((transaction) => (
       ruleFilter === 'All' || transaction?.ruleStatus === ruleFilter

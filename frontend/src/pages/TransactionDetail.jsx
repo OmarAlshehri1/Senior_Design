@@ -9,7 +9,7 @@ import {
   ruleStatusPillClass,
 } from '../components/statusUtils';
 import { ArrowLeftIcon } from '../components/icons';
-import { getRiskLevel } from '../utils/risk';
+import { getRiskLevel, getTransactionRiskLevel } from '../utils/risk';
 import { AUDIT_RULE_DEFINITIONS, getTransactionDataQuality } from '../utils/transactions';
 import ReviewHistory from '../components/ReviewHistory.jsx';
 import { createReviewAccountability } from '../audit/reviewRecords.js';
@@ -130,7 +130,7 @@ export default function TransactionDetail() {
     );
   }
 
-  const riskLevel = getRiskLevel(transaction.riskScore) ?? 'Not available';
+  const riskLevel = getTransactionRiskLevel(transaction) ?? 'Not available';
   const alertRiskLevel = alert
     ? getRiskLevel(alert.riskScore) ?? 'Not available'
     : null;
@@ -263,8 +263,8 @@ export default function TransactionDetail() {
               <span>AI Score</span>
               <strong>{formatScore(transaction.aiScore)}</strong>
             </div>
-            <span className="analysis-status">{displayValue(transaction.aiStatus)}</span>
-            <p>{displayValue(transaction.aiExplanation)}</p>
+            <span className="analysis-status">Isolation Forest</span>
+            <p>The anomaly score is supplied by the authoritative backend model.</p>
           </div>
         </section>
 

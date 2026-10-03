@@ -6,7 +6,7 @@ import {
   ruleStatusPillClass,
   riskStatusPillClass,
 } from './statusUtils';
-import { getRiskLevel } from '../utils/risk';
+import { getTransactionRiskLevel } from '../utils/risk';
 import VendorMonitoringIndicator from './VendorMonitoringIndicator.jsx';
 
 export default function TransactionsTable({ transactions, highlightId }) {
@@ -39,7 +39,7 @@ export default function TransactionsTable({ transactions, highlightId }) {
         </thead>
         <tbody>
           {transactions.map((transaction) => {
-            const riskLevel = getRiskLevel(transaction?.riskScore) ?? 'Not available';
+            const riskLevel = getTransactionRiskLevel(transaction) ?? 'Not available';
             const transactionId = displayValue(transaction?.id);
             const vendor = displayValue(transaction?.vendor);
             const canOpenTransaction = typeof transaction?.id === 'string'

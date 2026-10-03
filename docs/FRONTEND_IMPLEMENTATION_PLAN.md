@@ -691,6 +691,48 @@ Evidence:
 
 Backend dependency: Direct detail requires the existing `GET /api/v1/transactions/{transaction_id}` endpoint. No new endpoint or domain integration was activated.
 
+## Live alerts, authoritative risk, and reports integration
+
+Date: 2026-10-03
+Commit(s): `a8e1b8a` (PR #22)
+
+Status:
+[x] Implementation and local live verification completed
+[x] Commit and merge completed (PR #22)
+
+Purpose: Replace remaining automatic transaction-domain preview behavior with authoritative FastAPI alert, risk, explanation, and report data.
+
+Implemented:
+
+- Backend-authoritative transaction risk-level precedence with score-derived classification retained only as a safe preview fallback.
+- Authoritative transaction data-quality, rule-score, AI-score, combined-risk, and persisted Gemini explanation presentation.
+- Durable alert loading through `GET /api/v1/alerts`, review updates through `PATCH /api/v1/alerts/{alert_id}/review`, and live `alert.created` delivery through `/ws/alerts`.
+- API mode starts without mock alerts; WebSocket events are adapted and deduplicated by persisted alert ID.
+- Persisted daily report listing, generation, authoritative summary adaptation, report selection, and CSV download.
+- Loading, error, empty, and unavailable states for alert and report integration.
+- Desktop alert-table handling for long persisted alert and transaction identifiers.
+
+Validation:
+
+- 204 frontend tests passed after adapter and service integration; lint and production build passed.
+- Live alert verification loaded two persisted alerts, reviewed the active alert through the UI, and confirmed the stored `REVIEWED` state through REST.
+- Live WebSocket verification added `TX-LIVE-HIGH-*` without refreshing the page and updated the page to three alerts: one active and two reviewed.
+- Live report verification generated `RPT-2026-10-03` with 9 evaluated transactions, average risk score 45.69, 6 LOW and 3 HIGH transactions, and 3 HIGH alerts split between 1 active and 2 reviewed.
+- CSV download was exposed through the completed persisted report.
+
+Evidence:
+
+- `frontend/src/context/AppContext.jsx`
+- `frontend/src/adapters/alertAdapter.js`
+- `frontend/src/adapters/reportAdapter.js`
+- `frontend/src/services/alertsService.js`
+- `frontend/src/services/realtimeService.js`
+- `frontend/src/services/reportsService.js`
+- `frontend/src/pages/Alerts.jsx`
+- `frontend/src/pages/Reports.jsx`
+- `frontend/test/reportIntegration.test.js`
+
+Backend dependency: Local integration is verified against the implemented FastAPI and Supabase services. Deployed host configuration, production secrets, approved Vercel CORS origin, and deployed end-to-end verification remain pending.
 ## Git Traceability
 
 | Date | Phase / Change | Commit | Frontend Evidence | Status |
@@ -825,15 +867,15 @@ The only active backend domain integration in the current frontend is Transactio
 - Backend `missing_fields` maps to `dataQuality.missingFields` and is authoritative whenever an array is supplied.
 - Risk and rule-status filters remain current-page frontend filters; UI wording does not claim global coverage.
 
-Alerts, Reports, Auth, Users, Audit Log, Reviews, Teams, Assignments, Notifications, Cases, Vendors, Analytics, and Settings are not activated as real backend integrations in the current frontend, even where `docs/API_CONTRACT.md` describes backend endpoints.
+Auth, Users, Audit Log, Reviews, Teams, Assignments, Notifications, Cases, Vendors, Analytics, and Settings are not activated as real backend integrations in the current frontend.
 
 ## Frontend service boundaries
 
 | Domain | Frontend UI | Service/Contract Prepared | Real Backend Connected | Current State |
 | --- | --- | --- | --- | --- |
 | Transactions | Yes | Yes | Yes | Connected: list and detail |
-| Alerts | Yes | Yes | No | Preview / awaiting coordinated activation |
-| Reports | Yes | Yes | No | Preview / awaiting coordinated activation |
+| Alerts | Yes | Yes | Yes | Connected: REST listing/review and live WebSocket delivery |
+| Reports | Yes | Yes | Yes | Connected: persisted generation, listing, and CSV download |
 | Auth | Yes | Yes | No | Prepared / awaiting backend |
 | Users | Yes | Yes | No | Prepared / awaiting backend |
 | Audit Log | Yes | Yes | No | Prepared / awaiting backend |
@@ -933,14 +975,14 @@ No frontend claim is made for the five audit-rule implementations, Isolation For
 | Dashboard | Completed presentation | Connected transactions; other summaries remain frontend/preview scoped | Yes, with scope explanation |
 | Transactions | Connected | FastAPI/Supabase transaction API | Yes |
 | Transaction Detail | Connected | FastAPI detail endpoint | Yes |
-| Alerts | Completed frontend | API activation and persistence | Frontend-only |
+| Alerts | Connected | FastAPI/Supabase alert REST and WebSocket APIs | Yes |
 | Audit Rules | Completed presentation | Rule execution is backend-owned | Yes, presentation |
-| Reports | Completed frontend | API activation/download | Frontend-only |
+| Reports | Connected | FastAPI/Supabase report and CSV endpoints | Yes |
 | Auth and roles | Completed UX/contracts | Authentication and RBAC | Frontend-only |
 | Accountability/management | Completed architecture | Identity and persistence | Frontend-only |
 | Cases/vendors/analytics | Completed architecture | Domain services and persistence | Unavailable-state demo |
 | Accessibility | Implemented and tested helpers | Live assistive-technology review remains advisable | Yes |
-| Test baseline | 199 passing | Live E2E remains required | Yes |
+| Test baseline | 204 passing | Deployed E2E remains required | Yes |
 
 ## Change Log
 

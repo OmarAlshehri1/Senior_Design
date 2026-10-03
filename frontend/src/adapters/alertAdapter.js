@@ -1,6 +1,22 @@
 const ALERT_STATUS_MAP = Object.freeze({ ACTIVE: 'Active', REVIEWED: 'Reviewed' });
 const SEVERITY_MAP = Object.freeze({ LOW: 'Low', MEDIUM: 'Medium', HIGH: 'High' });
 
+function nullableNumber(value) {
+  return Number.isFinite(value) ? value : null;
+}
+
+function getTimeDisplay(value) {
+  if (typeof value !== 'string') return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return new Intl.DateTimeFormat('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'UTC',
+  }).format(parsed);
+}
+
 export function adaptAlert(payload) {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
 
@@ -8,7 +24,10 @@ export function adaptAlert(payload) {
     id: payload.id ?? null,
     transactionId: payload.transaction_id ?? null,
     timestamp: payload.created_at ?? null,
+    time: getTimeDisplay(payload.created_at),
     severity: SEVERITY_MAP[payload.severity] ?? null,
+    riskScore: nullableNumber(payload.risk_score),
+    latencyMs: nullableNumber(payload.latency_ms),
     title: payload.title ?? null,
     description: payload.description ?? null,
     reason: payload.reason ?? null,
