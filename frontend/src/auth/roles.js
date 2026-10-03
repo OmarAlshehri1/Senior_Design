@@ -23,6 +23,7 @@ export const PERMISSIONS = Object.freeze({
   VIEW_OWN_PROFILE: 'VIEW_OWN_PROFILE',
   VIEW_CASES: 'VIEW_CASES',
   CREATE_CASE: 'CREATE_CASE',
+  ASSIGN_CASE: 'ASSIGN_CASE',
   UPDATE_ASSIGNED_CASE: 'UPDATE_ASSIGNED_CASE',
   REQUEST_CASE_CLOSURE: 'REQUEST_CASE_CLOSURE',
   APPROVE_CASE_CLOSURE: 'APPROVE_CASE_CLOSURE',
@@ -53,10 +54,11 @@ const auditorPermissions = Object.freeze([
 ]);
 
 const supervisorPermissions = Object.freeze([
-  ...auditorPermissions,
+  ...auditorPermissions.filter((permission) => permission !== PERMISSIONS.REQUEST_CASE_CLOSURE),
   PERMISSIONS.VIEW_REPORTS,
   PERMISSIONS.VIEW_TEAM_ACTIVITY,
   PERMISSIONS.ASSIGN_ALERTS,
+  PERMISSIONS.ASSIGN_CASE,
   PERMISSIONS.VIEW_AUDIT_LOG,
   PERMISSIONS.APPROVE_CASE_CLOSURE,
   PERMISSIONS.REVIEW_VENDOR_WATCHLIST_REQUEST,
@@ -84,7 +86,7 @@ export const ROLE_DEFINITIONS = Object.freeze({
 export const ROLE_PERMISSION_MAP = Object.freeze({
   [ROLE_KEYS.AUDITOR]: auditorPermissions,
   [ROLE_KEYS.SUPERVISOR]: supervisorPermissions,
-  [ROLE_KEYS.ADMIN]: Object.freeze(Object.values(PERMISSIONS)),
+  [ROLE_KEYS.ADMIN]: Object.freeze(Object.values(PERMISSIONS).filter((permission) => permission !== PERMISSIONS.REQUEST_CASE_CLOSURE)),
 });
 
 export function getRoleDefinition(role) {

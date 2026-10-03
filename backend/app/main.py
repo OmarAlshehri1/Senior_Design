@@ -15,6 +15,7 @@ from app.api.identity import router as identity_router
 from app.api.accountability import router as accountability_router
 from app.api.teams import router as teams_router
 from app.api.notifications import router as notifications_router
+from app.api.cases import router as cases_router
 
 
 LOCAL_FRONTEND_ORIGINS = (
@@ -42,7 +43,10 @@ def get_allowed_origins() -> list[str]:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     from app.services.transaction_processing import enabled, recovery_loop
+    from app.services.case_sla import escalation_loop
     task = asyncio.create_task(recovery_loop()) if enabled() else None
+    sla_enabled = os.getenv("CASE_SLA_ESCALATION_ENABLED", "false").lower() == "true"
+    sla_task = asyncio.create_task(escalation_loop()) if sla_enabled else None
     try:
         yield
     finally:
@@ -50,6 +54,10 @@ async def lifespan(app: FastAPI):
             task.cancel()
             with suppress(asyncio.CancelledError):
                 await task
+        if sla_task is not None:
+            sla_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await sla_task
 
 
 app = FastAPI(
@@ -73,6 +81,7 @@ app.add_middleware(
         "Accept",
         "Content-Type",
         "Authorization",
+        "X-File-Name",
     ],
 )
 
@@ -93,6 +102,7 @@ app.include_router(identity_router, prefix="/api/v1")
 app.include_router(accountability_router, prefix="/api/v1")
 app.include_router(teams_router, prefix="/api/v1")
 app.include_router(notifications_router, prefix="/api/v1")
+app.include_router(cases_router, prefix="/api/v1")
 
 
 @app.get("/api/v1/health")

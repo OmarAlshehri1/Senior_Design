@@ -70,22 +70,24 @@ test('unknown roles receive no permissions or role definition', () => {
   assert.equal(hasPermission('UNKNOWN', PERMISSIONS.VIEW_DASHBOARD), false);
 });
 
-test('Admin receives every defined permission', () => {
+test('Admin can decide closures but cannot submit closure requests', () => {
   assert.deepEqual(
     new Set(getPermissionsForRole(ROLE_KEYS.ADMIN)),
-    new Set(Object.values(PERMISSIONS))
+    new Set(Object.values(PERMISSIONS).filter((permission) => permission !== PERMISSIONS.REQUEST_CASE_CLOSURE))
   );
+  assert.equal(hasPermission(ROLE_KEYS.ADMIN, PERMISSIONS.REQUEST_CASE_CLOSURE), false);
 });
 
 test('Supervisor receives Auditor permissions plus approved supervisor permissions', () => {
   const auditor = getPermissionsForRole(ROLE_KEYS.AUDITOR);
   const supervisor = getPermissionsForRole(ROLE_KEYS.SUPERVISOR);
 
-  assert.ok(auditor.every((permission) => supervisor.includes(permission)));
-  assert.deepEqual(supervisor.slice(auditor.length), [
+  assert.ok(auditor.filter((permission) => permission !== PERMISSIONS.REQUEST_CASE_CLOSURE).every((permission) => supervisor.includes(permission)));
+  assert.deepEqual(supervisor.filter((permission) => !auditor.includes(permission)), [
     PERMISSIONS.VIEW_REPORTS,
     PERMISSIONS.VIEW_TEAM_ACTIVITY,
     PERMISSIONS.ASSIGN_ALERTS,
+    PERMISSIONS.ASSIGN_CASE,
     PERMISSIONS.VIEW_AUDIT_LOG,
     PERMISSIONS.APPROVE_CASE_CLOSURE,
     PERMISSIONS.REVIEW_VENDOR_WATCHLIST_REQUEST,

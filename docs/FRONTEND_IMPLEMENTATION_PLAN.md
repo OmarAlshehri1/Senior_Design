@@ -82,7 +82,7 @@ Frontend permissions improve navigation and presentation, but they are not a sec
 | `src/management/` | User and access-request administrative models and unavailable service boundaries. |
 | `src/team/` | Team activity and workload presentation contracts. |
 | `src/assignments/` | Alert-assignment state, history, and service boundary. |
-| `src/notifications/` | Notification types/read-state helpers and the authenticated notification API adapter (Phase 17 branch; Migration 016 pending). |
+| `src/notifications/` | Notification types/read-state helpers and authenticated notification API adapter (Phase 17 merged; Migration 016 owner-reported applied). |
 | `src/cases/` | Case lifecycle, evidence, discussion, closure, priority, status, and SLA presentation models. |
 | `src/vendors/` | Vendor monitoring vocabulary and safe vendor-profile models. |
 | `src/analytics/` | Audit coverage and risk-trend presentation models. |
@@ -529,7 +529,7 @@ Evidence:
 
 - `/session-expired`, `frontend/src/notifications/`, `frontend/src/security/`, and `RequestStateView.jsx`.
 
-At the 2026-09-30 frontend-only milestone, notification delivery/read state remained backend-dependent. Phase 17 currently integrates it with the backend on a separate branch; Migration 016 remains unapplied.
+At the historical 2026-09-30 frontend-only milestone, notification delivery/read state remained backend-dependent. Phase 17 later connected it to backend persistence in PR #30; Migration 016 application is owner-reported.
 
 ## Phase 8.9A — Overlay keyboard accessibility
 
@@ -871,9 +871,9 @@ Active backend domain integrations are Transactions, Alerts, and Reports. Transa
 - Backend `missing_fields` maps to `dataQuality.missingFields` and is authoritative whenever an array is supplied.
 - Risk and rule-status filters remain current-page frontend filters; UI wording does not claim global coverage.
 
-Auth, Users, Access Requests, Reviews, Audit Log, Teams, and Assignments are connected to backend Phases 14-16 on `main`. The owner confirmed migrations 013-015 applied successfully in Supabase; there was no independent live-schema query. Notifications and paginated alert catch-up are being implemented on `feature/notifications-catchup`; migration 016 remains unapplied. Rejected access requests remain visible in Admin request/audit records and do not generate an in-app notification until a safe delivery channel is selected.
+Auth, Users, Access Requests, Reviews, Audit Log, Teams, Assignments, Notifications, and paginated alert catch-up are connected to backend Phases 14-17 on `main`. The owner confirmed migrations 013-016 applied successfully in Supabase; there was no independent live-schema query. Rejected access requests remain visible in Admin request/audit records and do not generate an in-app notification until a safe delivery channel is selected.
 
-Alerts and Reports are connected after PR #22; earlier phase descriptions retain their historical preview status. On `main` after PR #26, Auth/JWT/RBAC, authenticated REST/WebSocket/CSV, token lifecycle, and local CORS `Authorization` support are implemented. PRs #27-29 add review/audit history and team-scoped assignments/activity. Phase 17 replaces full-row WebSocket alerts with invalidation plus paginated REST catch-up and connects notification persistence/UI; it is in progress on a separate branch, and migration 016 is not live-applied. Vercel Production deployments triggered by prior PR merges do not complete approved-origin, backend-topology, or final E2E work in Phase 24.
+Alerts and Reports are connected after PR #22; earlier phase descriptions retain their historical preview status. PR #30 completes Notifications and data-free WebSocket invalidation with paginated REST catch-up; owner-reported Migration 016 application is not an independent live-schema check. Phase 18 connects case workflows; Migration 017 and evidence storage/scanning configuration remain prerequisites. Vercel Production deployments triggered by prior PR merges do not complete approved-origin, backend-topology, or final E2E work in Phase 24.
 
 `GET /api/v1/dashboard/summary` and `GET /api/v1/audit-rules` are documented but not implemented. Dashboard derivations are scoped to available frontend data, and Audit Rules uses local definitions. Authoritative summaries/rule-definition reads and connected coverage/trend analytics belong to backend Phase 20.
 
@@ -890,8 +890,8 @@ Alerts and Reports are connected after PR #22; earlier phase descriptions retain
 | Reviews | Yes | Yes | Yes | Connected: reopenable alert/transaction reviews, notes, history, and team-scoped access |
 | Teams | Yes | Yes | Yes | Connected: Admin team management and scoped Supervisor team activity |
 | Assignments | Yes | Yes | Yes | Connected: persistent team-scoped assign/reassign/unassign history |
-| Notifications | Yes | Yes | No | Phase 17 implementation in progress; Migration 016 is not yet live-applied |
-| Cases | Yes | Yes | No | Prepared / unavailable |
+| Notifications | Yes | Yes | Yes | Connected on `main` after PR #30; migration application is owner-reported |
+| Cases | Yes | Yes | No | Phase 18 integration in progress; migration 017 and private storage/scanner setup pending |
 | Vendors | Yes | Yes | No | Prepared / unavailable |
 | Analytics | Yes | Yes | No | Prepared / unavailable |
 | Settings | Yes | Yes | No | Read-only preview / unavailable persistence |
@@ -947,14 +947,14 @@ No frontend claim is made for the five audit-rule implementations, Isolation For
 | Dashboard | Enterprise overview, risk distribution, recent activity, role workspace | `/` or `/dashboard` |
 | Transactions | Connected pagination/search/sort, loading/error states, responsive results | `/transactions` |
 | Transaction Detail | Direct lookup, rule/risk/data-quality presentation, not-found/error separation | `/transactions/:id` |
-| Alerts | Connected on `main`: persisted listing/review, assignment history, and scoped access; Phase 17 branch adds data-free WebSocket invalidation with paginated reconnect catch-up | `/alerts` |
+| Alerts | Connected on `main`: persisted listing/review, assignment history, scoped access, data-free WebSocket invalidation, and paginated reconnect catch-up | `/alerts` |
 | Audit Rules | Five named rule definitions and accessible disclosures; execution is backend-owned | `/audit-rules` |
 | Reports | Connected persisted listing/generation, authoritative summaries, and CSV download; automatic scheduling remains pending | `/reports` |
 | Role Preview | Development-only Auditor/Supervisor/Admin presentation | Application shell in development |
 | Login UX | Supabase Auth session lifecycle and account-state routes; owner confirmed migration 013 applied | `/login` and auth routes |
 | User Management | Authenticated access-request, profile, and account lifecycle APIs; owner confirmed migration 013 applied | `/users` |
 | Audit Log | Connected immutable actor-attributed history and team-scoped reads (Phases 15-16) | `/audit-log` |
-| Cases | Workflow architecture and truthful unavailable states | `/cases`, `/cases/:caseId` |
+| Cases | Phase 18 list/detail, case actions, discussion, closure, and SLA UI integration in progress | `/cases`, `/cases/:caseId` |
 | Vendors | Monitoring/profile architecture and disabled unavailable sections | `/vendors`, `/vendors/:vendorId` |
 | Responsive behavior | Drawer navigation, responsive tables/cards/tabs | Desktop/tablet/mobile browser widths |
 | Accessibility behavior | Keyboard overlays, focus restoration, semantic states/navigation | Dialogs, Sidebar drawer, focused tests |
@@ -1034,4 +1034,4 @@ No frontend claim is made for the five audit-rule implementations, Isolation For
 
 ## Next action
 
-Preserve the existing frontend design, services, and adapters. Phase 17 is active on `feature/notifications-catchup`; finish its isolated tests/review and PR cycle, then apply Migration 016 only after owner approval. After main verification and live migration confirmation, proceed to Phase 18. Deployment and final three-role E2E remain in Phase 24.
+Preserve the existing frontend design, services, and adapters. Phase 17 PR #30 is merged and the owner reported Migration 016 succeeded. Phase 18 is active on `feature/cases-evidence-sla`; do not enable evidence upload until private storage and antivirus scanning are configured. Apply Migration 017 only after the merge is reviewed and the owner approves the live database change. Deployment and final three-role E2E remain in Phase 24.

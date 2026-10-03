@@ -50,6 +50,22 @@ test('API client sends POST and PATCH bodies as JSON', async () => {
   ]);
 });
 
+test('API client posts raw evidence bytes without JSON encoding', async () => {
+  const calls = [];
+  const bytes = new Blob(['%PDF-1.7'], { type: 'application/pdf' });
+  const client = createApiClient({
+    baseUrl: 'https://api.example.test/api/v1',
+    fetchImpl: async (...args) => { calls.push(args); return jsonResponse({ id: 'evidence-1' }); },
+  });
+  await client.postRaw('/cases/case-1/evidence', bytes, {
+    query: { category: 'DOCUMENT' },
+    headers: { 'Content-Type': 'application/pdf', 'X-File-Name': 'evidence.pdf' },
+  });
+  assert.equal(calls[0][0], 'https://api.example.test/api/v1/cases/case-1/evidence?category=DOCUMENT');
+  assert.equal(calls[0][1].body, bytes);
+  assert.equal(calls[0][1].headers['Content-Type'], 'application/pdf');
+});
+
 test('API client adds bearer auth and supports authenticated file downloads', async () => {
   const calls = [];
   const client = createApiClient({
