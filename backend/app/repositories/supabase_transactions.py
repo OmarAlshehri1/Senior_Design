@@ -124,6 +124,7 @@ def _from_database_row(
     persisted_anomaly_score: dict[str, Any] | None = None,
     persisted_risk_score: dict[str, Any] | None = None,
     persisted_explanation: dict[str, Any] | None = None,
+    processing_status: str | None = None,
 ) -> dict[str, Any]:
     missing_fields = row.get("missing_fields")
 
@@ -164,6 +165,13 @@ def _from_database_row(
             else None
         ),
     }
+
+    if processing_status is not None:
+        transaction["processing_status"] = processing_status
+        if processing_status != "COMPLETED":
+            transaction["ai_score"] = None
+            transaction["explanation"] = None
+            return transaction
 
     if persisted_evaluation is not None:
         transaction["rule_status"] = (
@@ -1105,6 +1113,22 @@ TRANSACTION_SORT_ORDERS = {
     "lowest-amount": "amount.asc.nullslast,id.asc",
 }
 
+def get_processing_statuses(transaction_ids: list[str]) -> dict[str, str]:
+    if not transaction_ids or os.getenv("TRANSACTION_RECOVERY_ENABLED", "false").lower() != "true":
+        return {}
+    from app.repositories.transaction_processing import rpc
+    rows = rpc("get_transaction_processing_statuses", {"p_ids": transaction_ids})
+    if not isinstance(rows, list):
+        raise SupabasePersistenceError("Invalid processing status response.")
+    statuses = {}
+    for row in rows:
+        if (not isinstance(row, dict) or row.get("transaction_id") not in transaction_ids
+                or row.get("status") not in {"PENDING", "PROCESSING", "COMPLETED"}):
+            raise SupabasePersistenceError("Invalid processing status record.")
+        statuses[row["transaction_id"]] = row["status"]
+    return statuses
+
+
 def list_transactions(
     *,
     page: int = 1,
@@ -1175,6 +1199,10 @@ def list_transactions(
         )
     ]
 
+    processing_statuses = get_processing_statuses(transaction_ids)
+    # Avoid context lookups and runtime fallback evaluation for pending jobs.
+    transaction_ids = [identifier for identifier in transaction_ids
+                       if processing_statuses.get(identifier) not in {"PENDING", "PROCESSING"}]
     persisted_evaluations = (
         get_latest_transaction_evaluations(
             transaction_ids
@@ -1246,6 +1274,7 @@ def list_transactions(
         transactions.append(
             _from_database_row(
                 row,
+                processing_status=processing_statuses.get(transaction_id),
                 persisted_evaluation=(
                     persisted_evaluations.get(
                         transaction_id
@@ -1325,6 +1354,10 @@ def get_transaction_by_id(
             "Supabase returned an invalid transaction record."
         )
 
+    processing_status = get_processing_statuses([transaction_id]).get(transaction_id)
+    if processing_status in {"PENDING", "PROCESSING"}:
+        return _from_database_row(first_row, processing_status=processing_status)
+
     persisted_evaluations = (
         get_latest_transaction_evaluations(
             [transaction_id]
@@ -1365,6 +1398,7 @@ def get_transaction_by_id(
 
     return _from_database_row(
         first_row,
+        processing_status=processing_status,
         persisted_anomaly_score=(
             persisted_anomaly_scores.get(
                 transaction_id

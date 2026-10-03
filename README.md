@@ -6,7 +6,7 @@ This repository is a monorepo containing the React frontend, FastAPI backend, an
 
 At `f9c7dd5` (PR #22), the core implements Supabase transaction persistence, five versioned audit rules, evaluation-coverage calculation, Isolation Forest, authoritative 60/40 combined risk, durable alerts/WebSocket delivery, advisory Gemini explanations, and daily report generation/CSV download. The frontend connects transaction list/detail, alerts/review/realtime, and reports through existing services and adapters; API mode has no automatic mock transaction/alert fallback.
 
-Authentication/JWT/RBAC, user/access-request persistence, full reviews/audit history, teams/assignments, notifications, cases, vendor workflows, analytics endpoints, settings persistence, automatic report scheduling, performance evidence, and final three-role E2E remain pending. Prepared frontend UX/services are not functioning backend integrations. Phase 13A separates insert-only runtime creation (`409` on duplicate ID) from offline seed upsert. Persistence steps remain separate; durable recovery is next in Phase 13B.
+Authentication/JWT/RBAC, user/access-request persistence, full reviews/audit history, teams/assignments, notifications, cases, vendor workflows, analytics endpoints, settings persistence, automatic report scheduling, performance evidence, and final three-role E2E remain pending. Prepared frontend UX/services are not functioning backend integrations. Phase 13A separates insert-only runtime creation (`409` on duplicate ID) from offline seed upsert. Phase 13B adds an opt-in durable job/atomic snapshot path; it stays disabled until migration 012 and activation are explicitly approved. The legacy path while disabled still uses separate persistence steps. See [the recovery design](docs/TRANSACTION_RECOVERY_DESIGN.md).
 
 See [the backend plan](docs/BACKEND_IMPLEMENTATION_PLAN.md) and [frontend evidence](docs/FRONTEND_IMPLEMENTATION_PLAN.md). Omar's [handoff requests](docs/Backend_Final_Handoff_Tasks.docx) define the approved remaining scope; no official rubric was found in the repository. PDF is conditional on a confirmed requirement. Render/Vercel deployment is deferred, and the Render free/paid plan is undecided.
 
@@ -45,7 +45,7 @@ The frontend displays backend results but is never the authoritative source for 
 │   │   ├── services/
 │   │   └── main.py
 │   ├── tests/
-│   ├── migrations/           SQL migrations 001–011; live application unverified
+│   ├── migrations/           SQL migrations 001–012; live application unverified
 │   ├── scripts/              Offline seed, training, and backfill tools
 │   ├── models/               Versioned Isolation Forest artifact and metrics
 │   ├── .env.example

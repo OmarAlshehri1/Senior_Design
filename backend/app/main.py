@@ -1,4 +1,6 @@
 import os
+import asyncio
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -33,9 +35,23 @@ def get_allowed_origins() -> list[str]:
     ]
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    from app.services.transaction_processing import enabled, recovery_loop
+    task = asyncio.create_task(recovery_loop()) if enabled() else None
+    try:
+        yield
+    finally:
+        if task is not None:
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
+
+
 app = FastAPI(
     title="Continuous Auditing API",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(

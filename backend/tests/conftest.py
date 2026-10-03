@@ -7,6 +7,7 @@ import pytest
 def mock_transaction_persistence(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setenv("TRANSACTION_RECOVERY_ENABLED", "false")
     def fake_insert_transaction(
         transaction: dict[str, Any],
     ) -> None:
