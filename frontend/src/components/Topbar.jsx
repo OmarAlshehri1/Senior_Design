@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { BellIcon, MenuIcon } from './icons';
 import useApp from '../context/useApp';
 import useAuthorization from '../auth/useAuthorization.js';
@@ -8,6 +8,8 @@ import { getRoleDefinition } from '../auth/roles.js';
 import { APPLICATION_ROUTES } from '../auth/routeAccess.js';
 import NotificationCenter from './NotificationCenter.jsx';
 import { getUnreadNotificationCount } from '../notifications/notifications.js';
+import { authService } from '../auth/authService.js';
+import { AUTH_ROUTES } from '../auth/authRoutes.js';
 
 const NOTIFICATIONS = Object.freeze([]);
 
@@ -25,7 +27,8 @@ function formatUpdatedTime(timestamp) {
  */
 export default function Topbar({ mobileNavOpen, onMenuToggle, menuButtonRef, identity = null }) {
   const { lastUpdated } = useApp();
-  const { mode, effectiveRole } = useAuthorization();
+  const { mode, effectiveRole, user } = useAuthorization();
+  const navigate = useNavigate();
   const previewRole = mode === AUTHORIZATION_MODES.ROLE_PREVIEW
     ? getRoleDefinition(effectiveRole)
     : null;
@@ -34,6 +37,11 @@ export default function Topbar({ mobileNavOpen, onMenuToggle, menuButtonRef, ide
   const notificationButtonRef = useRef(null);
   const closeNotifications = useCallback(() => setNotificationsOpen(false), []);
   const unreadCount = getUnreadNotificationCount(NOTIFICATIONS);
+
+  const handleSignOut = async () => {
+    try { await authService.signOut(); } catch { /* Local credentials are cleared by the service. */ }
+    navigate(AUTH_ROUTES.LOGIN, { replace: true });
+  };
 
   return (
     <header className="topbar">
@@ -69,6 +77,7 @@ export default function Topbar({ mobileNavOpen, onMenuToggle, menuButtonRef, ide
             </Link>
           </>
         )}
+        {user && <button type="button" className="topbar-profile-preview-link" onClick={handleSignOut}>Sign out</button>}
         <span className="updated-time">
           <span>Data updated</span>
           <strong>{formatUpdatedTime(lastUpdated)}</strong>

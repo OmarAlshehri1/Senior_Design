@@ -3,6 +3,7 @@ import { ROLE_KEYS } from '../auth/roles.js';
 
 export const USER_FIELDS = Object.freeze([
   'id', 'name', 'email', 'role', 'accountStatus', 'lastLoginAt',
+  'failedSignInAttempts', 'lockedAt', 'disabledAt', 'lockReason', 'disabledReason',
   'createdAt', 'updatedAt', 'teamId', 'supervisorId',
 ]);
 

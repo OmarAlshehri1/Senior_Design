@@ -12,6 +12,8 @@ const { pgcrypto } = await import(pathToFileURL(require.resolve('@electric-sql/p
 const db = new PGlite({ extensions: { pgcrypto } });
 const migrationDir = fileURLToPath(new URL('../migrations/', import.meta.url));
 await db.exec('create role anon; create role authenticated; create role service_role bypassrls;');
+// Isolated Auth schema fixture; never connect to Supabase's live auth.users.
+await db.exec("create schema auth; create table auth.users(id uuid primary key, email text, raw_user_meta_data jsonb default '{}'::jsonb);");
 for (const file of (await readdir(migrationDir)).filter(x => x.endsWith('.sql')).sort()) {
   await db.exec(await readFile(`${migrationDir}/${file}`, 'utf8'));
 }
@@ -134,6 +136,71 @@ test('durable event pending state survives dump and restore', async () => {
   try {
     assert.equal((await restored.query("select status, event_pending from public.transaction_processing_jobs where transaction_id='RESTART'")).rows[0].event_pending, true);
   } finally { await restored.close(); }
+});
+
+test('identity migration provisions disabled users, lockout, and login history', async () => {
+  const adminId = '10000000-0000-4000-8000-000000000001';
+  const lockedId = '10000000-0000-4000-8000-000000000002';
+  await db.query(`insert into auth.users(id,email) values ($1,'admin@example.test'),($2,'locked@example.test')`, [adminId, lockedId]);
+  await db.query("update public.user_profiles set role='ADMIN',account_status='ACTIVE' where id=$1", [adminId]);
+  const initial = await db.query("select account_status from public.user_profiles where id=$1", [lockedId]);
+  assert.equal(initial.rows[0].account_status, 'DISABLED');
+  await db.query("update public.user_profiles set account_status='ACTIVE' where id=$1", [lockedId]);
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await db.query("select public.record_login('locked@example.test',false)");
+  }
+  const profile = await db.query("select account_status,failed_sign_in_attempts,locked_at from public.user_profiles where id=$1", [lockedId]);
+  assert.equal(profile.rows[0].account_status, 'LOCKED');
+  assert.equal(profile.rows[0].failed_sign_in_attempts, 3);
+  assert.ok(profile.rows[0].locked_at);
+  assert.equal(Number((await db.query("select count(*) as n from public.login_history where user_id=$1 and outcome='DENIED'", [lockedId])).rows[0].n), 3);
+  await db.query("update public.user_profiles set account_status='DISABLED' where id=$1", [adminId]);
+});
+
+test('identity migration atomically decides access and revokes sessions on admin lifecycle changes', async () => {
+  const adminId = '20000000-0000-4000-8000-000000000001';
+  const userId = '20000000-0000-4000-8000-000000000002';
+  await db.query(`insert into auth.users(id,email) values ($1,'root@example.test'),($2,'approved@example.test')`, [adminId, userId]);
+  await db.query("update public.user_profiles set role='ADMIN',account_status='ACTIVE' where id=$1", [adminId]);
+  const requestId = (await db.query(
+    "insert into public.access_requests(email,full_name,department,reason) values ('approved@example.test','Approved User','Audit','Needs system access') returning id"
+  )).rows[0].id;
+  const decision = (await db.query(
+    'select public.decide_access_request($1,$2,true,$3,\'SUPERVISOR\',\'Verified by administrator\') as value',
+    [adminId, requestId, userId]
+  )).rows[0].value;
+  assert.equal(decision.status, 'APPROVED');
+  const active = await db.query("select role,account_status from public.user_profiles where id=$1", [userId]);
+  assert.deepEqual(active.rows[0], { role: 'SUPERVISOR', account_status: 'ACTIVE' });
+
+  const tokenHash = 'a'.repeat(64);
+  await db.query('select public.start_app_session($1,$2,now()+interval \'1 hour\')', [userId, tokenHash]);
+  await db.query("select public.admin_user_action($1,$2,'disable',null)", [adminId, userId]);
+  assert.equal((await db.query('select public.check_app_session($1) as value', [tokenHash])).rows[0].value, null);
+  await assert.rejects(db.query("select public.admin_user_action($1,$2,'disable',null)", [adminId, adminId]), /Last active administrator/);
+});
+
+test('locked accounts require their own request and an administrator decision to unlock', async () => {
+  const adminId = '30000000-0000-4000-8000-000000000001';
+  const userId = '30000000-0000-4000-8000-000000000002';
+  await db.query(`insert into auth.users(id,email) values ($1,'admin-unlock@example.test'),($2,'locked-request@example.test')`, [adminId, userId]);
+  await db.query("update public.user_profiles set role='ADMIN',account_status='ACTIVE' where id=$1", [adminId]);
+  await db.query("update public.user_profiles set account_status='ACTIVE' where id=$1", [userId]);
+  for (let attempt = 0; attempt < 3; attempt += 1) await db.query("select public.record_login('locked-request@example.test',false)");
+  await db.exec('set role service_role');
+  try {
+    await assert.rejects(() => db.query("select public.admin_user_action($1,$2,'unlock',null)", [adminId, userId]), /Invalid action/);
+    await db.query("select public.request_account_unlock('locked-request@example.test')");
+    await db.query("select public.request_account_unlock('locked-request@example.test')");
+    const requestId = (await db.query("select id from public.account_unlock_requests where user_id=$1 and status='PENDING'", [userId])).rows[0].id;
+    assert.equal(Number((await db.query("select count(*) as n from public.account_unlock_requests where user_id=$1 and status='PENDING'", [userId])).rows[0].n), 1);
+    const result = (await db.query("select public.decide_account_unlock($1,$2,true,'Identity verified') as result", [adminId, requestId])).rows[0].result;
+    assert.equal(result.status, 'APPROVED');
+  } finally { await db.exec('reset role'); }
+  const profile = (await db.query("select account_status,failed_sign_in_attempts from public.user_profiles where id=$1", [userId])).rows[0];
+  assert.equal(profile.account_status, 'ACTIVE');
+  assert.equal(profile.failed_sign_in_attempts, 0);
 });
 
 test.after(async () => { await db.close(); });

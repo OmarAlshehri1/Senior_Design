@@ -2,9 +2,9 @@
 
 This document is the preliminary contract between the React frontend and FastAPI backend. It defines planned field names and payload shapes so frontend and backend development can proceed independently.
 
-The documented health, transaction, alert, report, CSV-download, and alert WebSocket endpoints are implemented. `GET /api/v1/dashboard/summary` and `GET /api/v1/audit-rules` are planned contracts only; no router currently implements them. Shapes may be extended through team agreement, but existing names should not be changed without coordinating both branches.
+The documented health, transaction, alert, report, CSV-download, and alert WebSocket endpoints are implemented. `GET /api/v1/dashboard/summary` and `GET /api/v1/audit-rules` are planned contracts only; no router currently implements them. Authentication and identity endpoints are listed below. Shapes may be extended through team agreement, but existing names should not be changed without coordinating both branches.
 
-Implementation status after Phase 13A: existing endpoints have no authoritative Auth/JWT/RBAC enforcement. Runtime transaction creation uses insert-only semantics and returns `409` for an existing ID without overwriting it; offline seed upsert remains separate. Phase 13B provides an opt-in durable processing path (migration 012, TRANSACTION_RECOVERY_ENABLED); it remains disabled until approved live application/activation. Phase 14 adds authenticated API/WebSocket/CSV transport and CORS support for `Authorization`; Phase 17 adds alert catch-up after reconnect. Approved production origins and the worker/instance delivery topology are completed in Phase 24. These are pending changes, not current guarantees. Live measurements below are historical observations, not newly verified database state.
+Implementation status for this branch: runtime transaction creation is insert-only and returns `409` for an existing ID without overwriting it; offline seed upsert remains separate. Migration 012 is live-verified, while `TRANSACTION_RECOVERY_ENABLED` remains disabled. Phase 14 work adds API identity, bearer authentication, role checks, authenticated report download and WebSocket subscriptions, plus local `Authorization` CORS support. Migration 013 is covered only by isolated local tests and has not been applied to the live database. The project owner confirmed `POST /transactions` is Supervisor/Admin-only; account lockout follows three consecutive failed sign-ins, and an active Admin may unlock only after the account owner verifies their email and submits an unlock request. Initial Admin provisioning is manual by the Supabase database owner as documented in [IDENTITY_BOOTSTRAP.md](IDENTITY_BOOTSTRAP.md). Phase 17 adds alert catch-up after reconnect. Approved production origins and the worker/instance delivery topology are completed in Phase 24. Live measurements below are historical observations, not newly verified database state.
 
 ## Conventions
 
@@ -190,6 +190,34 @@ Response `200 OK`:
 }
 ```
 
+### Identity and session endpoints
+
+All routes below are implemented in this branch. Protected routes require `Authorization: Bearer <access_token>`. Supabase Auth validates provider tokens; the application checks an opaque token hash against `app_sessions` and the active account profile on protected requests. Tokens are returned to the authenticated client and kept in tab-scoped session storage by the frontend. The Supabase service-role key remains backend-only.
+
+| Method and path | Access | Behavior |
+|---|---|---|
+| `POST /api/v1/auth/login` | Public, rate-limited | Verify credentials; return provider access/refresh tokens and current active user. |
+| `POST /api/v1/auth/refresh` | Public, rate-limited | Rotate provider and application sessions; revoke the previous application token. |
+| `POST /api/v1/auth/exchange` | Public, rate-limited | Verify provider-issued invitation/recovery tokens and start an application session. |
+| `GET /api/v1/auth/me` | Any active session | Return current application profile. |
+| `POST /api/v1/auth/logout` | Any active session | Revoke application sessions and request provider logout. |
+| `POST /api/v1/auth/password-reset` | Public, rate-limited | Request provider reset instructions with a neutral response. |
+| `POST /api/v1/auth/password` | Any active session | Update the provider password and revoke current application sessions. |
+| `POST /api/v1/auth/unlock-request` | Public, rate-limited | Send a provider verification link; response does not disclose whether an account exists. |
+| `POST /api/v1/auth/unlock-request/confirm` | Public, rate-limited, provider-verified token | Submit the verified account owner's unlock request for Admin review; this does not create an application session. |
+| `POST /api/v1/access-requests` | Public, rate-limited | Create a pending request; requesters cannot choose a role. |
+| `GET /api/v1/users`, `GET /api/v1/users/{id}` | Admin | List or read account profiles. |
+| `PATCH /api/v1/users/{id}` | Admin | `role`, `disable`, or `enable`; lifecycle changes revoke existing sessions. Unlocks require the separate request workflow. |
+| `GET /api/v1/users/{id}/login-history` | Self or Admin | Read paginated sign-in/security history. |
+| `GET /api/v1/access-requests` | Admin | List pending and decided requests. |
+| `POST /api/v1/access-requests/{id}/decision` | Admin | Approve with a role or reject with an optional reason. |
+| `GET /api/v1/account-unlock-requests` | Admin | List account-owner unlock requests. |
+| `POST /api/v1/account-unlock-requests/{id}/decision` | Admin | Approve or reject a pending unlock request; approval resets failed attempts and revokes old sessions. |
+
+Login, refresh, exchange, access-request, password-reset, and unlock-request bodies use the frontend's established form fields. Login returns `{access_token, refresh_token, expires_in, user}`. Access-request approval requires a pending row and an already-created Auth profile with a matching email; the provider invitation is issued by the backend. Reset, invitation, and unlock-verification links use server-configured `SUPABASE_AUTH_REDIRECT_URL` (the local example is `/auth/callback`); the chosen URL must also be allowlisted in Supabase Auth. Configure the production URL in Phase 24. Three consecutive failed sign-ins lock an active account; only an active Admin can decide the account owner's provider-verified pending unlock request. The identity schema is migration 013 and is not assumed present in the live database.
+
+Protected role policy grants transaction reads and alert review to active Auditor/Supervisor/Admin users, report operations and `POST /transactions` to Supervisor/Admin, and user administration to Admin. All authorization is enforced by the backend; frontend visibility alone does not grant access.
+
 ### `GET /api/v1/dashboard/summary`
 
 Planned; not implemented. The intended response is `DashboardSummary` for the authorized scope and reporting period. Backend-plan Phase 20 defines and implements the authoritative summary.
@@ -220,6 +248,7 @@ Returns one Supabase-backed `Transaction`, including its current `rule_results`,
 ### `POST /api/v1/transactions`
 
 Accepts one standardized transaction for schema validation and data-quality assessment. The transaction `id` is required. The remaining fields are optional so incomplete source transactions can be accepted and reported instead of silently rejected.
+Requires an active Supervisor or Admin bearer session. Auditor and unauthenticated callers are rejected by the backend. A duplicate transaction ID returns `409 Conflict`; this endpoint never overwrites an existing transaction.
 
 Request example:
 
@@ -388,7 +417,7 @@ Preliminary event envelope:
 }
 ```
 
-The client implements bounded reconnection attempts and loads persisted alerts through `GET /api/v1/alerts` at mount (currently the first page, up to 100 items). Reconnect does not currently trigger catch-up retrieval. Backend-plan Phase 17 adds paginated reconciliation and persisted-ID deduplication to recover missed events. The WebSocket stream provides live delivery while connected and does not replace persisted alert storage. Its current manager is process-local and has no authentication; Phases 14 and 24 address access control and the approved hosting topology respectively.
+The client implements bounded reconnection attempts, sends its bearer token in the first WebSocket application frame (`{"type":"auth","access_token":"…"}`), and subscribes only after `{"type":"auth.ready"}`. The backend validates the session at connection and during delivery. The client loads persisted alerts through `GET /api/v1/alerts` at mount (currently the first page, up to 100 items). Reconnect does not currently trigger catch-up retrieval. Backend-plan Phase 17 adds paginated reconciliation and persisted-ID deduplication to recover missed events. The stream manager remains process-local; Phase 24 must choose an approved deployment topology that accounts for this.
 
 ## Responsibility boundary
 

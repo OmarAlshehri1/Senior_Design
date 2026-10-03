@@ -19,7 +19,7 @@ import {
   AuthError,
   normalizeAuthError,
 } from '../src/auth/authErrors.js';
-import { authService } from '../src/auth/authService.js';
+import { createAuthService } from '../src/auth/authService.js';
 import { AUTH_STATUSES, createAuthState } from '../src/auth/authState.js';
 import { validateEmail, validateLoginForm } from '../src/auth/loginValidation.js';
 import {
@@ -113,11 +113,60 @@ test('role helpers do not expose mutable permission metadata', () => {
   assert.ok(Object.isFrozen(ROLE_PERMISSION_MAP[ROLE_KEYS.AUDITOR]));
 });
 
-test('auth service never fabricates successful authentication', async () => {
-  await assert.rejects(
-    authService.signIn('auditor@example.com', 'not-persisted'),
-    (error) => error instanceof AuthError && error.code === AUTH_ERROR_CODES.AUTH_UNAVAILABLE
-  );
+test('auth service signs in through API and keeps credentials only in session storage', async () => {
+  const values = new Map();
+  const calls = [];
+  const service = createAuthService({
+    storage: { getItem: (key) => values.get(key) ?? null, setItem: (key, value) => values.set(key, value), removeItem: (key) => values.delete(key) },
+    client: { post: async (...args) => { calls.push(args); return { access_token: 'access', refresh_token: 'refresh', user: { id: 'u1', role: 'AUDITOR' } }; } },
+  });
+  const user = await service.signIn('auditor@example.com', 'password');
+  assert.deepEqual(user, { id: 'u1', role: 'AUDITOR' });
+  assert.deepEqual(calls[0], ['/auth/login', { email: 'auditor@example.com', password: 'password' }]);
+  assert.equal(JSON.parse([...values.values()][0]).access_token, 'access');
+  assert.equal(JSON.parse([...values.values()][0]).user.id, 'u1');
+  await service.signOut();
+  assert.equal(values.size, 0);
+});
+
+test('auth service restores and rotates an expired session before loading profile', async () => {
+  const values = new Map([['m004.auth.session.v1', JSON.stringify({ access_token: 'old', refresh_token: 'refresh' })]]);
+  const calls = [];
+  const service = createAuthService({
+    storage: { getItem: (key) => values.get(key) ?? null, setItem: (key, value) => values.set(key, value), removeItem: (key) => values.delete(key) },
+    client: {
+      get: async () => {
+        calls.push('me');
+        if (calls.length === 1) throw Object.assign(new Error('expired'), { status: 401 });
+        return { id: 'u2', role: 'SUPERVISOR' };
+      },
+      post: async (path, body) => { calls.push({ path, body }); return { access_token: 'new', refresh_token: 'new-refresh' }; },
+    },
+  });
+  assert.deepEqual(await service.restoreSession(), { id: 'u2', role: 'SUPERVISOR' });
+  assert.equal(calls[1].path, '/auth/refresh');
+  assert.equal(JSON.parse(values.get('m004.auth.session.v1')).access_token, 'new');
+  await service.signOut();
+});
+
+test('auth service exchanges one-time link credentials and clears the session after password update', async () => {
+  const values = new Map();
+  const calls = [];
+  const service = createAuthService({
+    storage: { getItem: (key) => values.get(key) ?? null, setItem: (key, value) => values.set(key, value), removeItem: (key) => values.delete(key) },
+    client: { post: async (...args) => {
+      calls.push(args);
+      if (args[0] === '/auth/exchange') return { access_token: 'verified', refresh_token: 'rotating', user: { id: 'u3' } };
+      return null;
+    } },
+  });
+  assert.deepEqual(await service.exchange('provider-access', 'provider-refresh'), { id: 'u3' });
+  await service.updatePassword('long-secure-password');
+  assert.deepEqual(calls, [
+    ['/auth/exchange', { access_token: 'provider-access', refresh_token: 'provider-refresh' }],
+    ['/auth/password', { password: 'long-secure-password' }],
+  ]);
+  assert.equal(values.size, 0);
 });
 
 test('AUTH_UNAVAILABLE and unknown errors normalize to a safe message', () => {
@@ -235,22 +284,19 @@ test('forgot-password validation uses the same neutral email rules', () => {
   assert.equal(validateEmail('person@company.test'), null);
 });
 
-test('auth service does not fabricate access-request submission', async () => {
-  await assert.rejects(
-    authService.requestAccess({ fullName: 'Not persisted' }),
-    (error) => error instanceof AuthError
-      && error.code === AUTH_ERROR_CODES.ACCESS_REQUESTS_UNAVAILABLE
-      && error.message === 'Access requests are not available yet.'
-  );
+test('auth service submits access requests without selecting a role', async () => {
+  const calls = [];
+  const service = createAuthService({ client: { post: async (...args) => { calls.push(args); return { message: 'received' }; } } });
+  await service.requestAccess({ fullName: 'Casey Morgan', email: 'casey@example.com', department: 'Audit', reason: 'Review work.' });
+  assert.equal(calls[0][0], '/access-requests');
+  assert.equal('role' in calls[0][1], false);
 });
 
-test('auth service does not fabricate password-reset success', async () => {
-  await assert.rejects(
-    authService.requestPasswordReset('person@example.com'),
-    (error) => error instanceof AuthError
-      && error.code === AUTH_ERROR_CODES.PASSWORD_RESET_UNAVAILABLE
-      && error.message === 'Password reset is not available yet.'
-  );
+test('auth service requests a password reset through the backend', async () => {
+  const calls = [];
+  const service = createAuthService({ client: { post: async (...args) => { calls.push(args); return { message: 'received' }; } } });
+  await service.requestPasswordReset('person@example.com');
+  assert.deepEqual(calls[0], ['/auth/password-reset', { email: 'person@example.com' }]);
 });
 
 test('support configuration safely handles missing contact data', () => {
@@ -266,6 +312,7 @@ test('standalone auth route contract contains the complete auth experience', () 
     '/login',
     '/request-access',
     '/forgot-password',
+    '/auth/callback',
     '/access-pending',
     '/account-locked',
     '/account-disabled',

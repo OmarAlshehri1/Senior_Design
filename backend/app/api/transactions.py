@@ -1,6 +1,7 @@
 import logging
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from app.services.identity import get_current_user, require_roles
 from starlette.concurrency import run_in_threadpool
 from typing import Literal
 
@@ -72,6 +73,7 @@ def _get_anomaly_model() -> AnomalyScoringModel:
 router = APIRouter(
     prefix="/transactions",
     tags=["transactions"],
+    dependencies=[Depends(get_current_user)],
 )
 
 
@@ -143,7 +145,8 @@ async def get_transaction(
     return transaction
 
 
-@router.post("", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED,
+             dependencies=[Depends(require_roles("SUPERVISOR", "ADMIN"))])
 async def create_transaction(
     transaction: TransactionCreate,
 ) -> dict[str, object]:

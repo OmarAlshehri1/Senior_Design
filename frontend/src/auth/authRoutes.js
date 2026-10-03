@@ -2,6 +2,7 @@ export const AUTH_ROUTES = Object.freeze({
   LOGIN: '/login',
   REQUEST_ACCESS: '/request-access',
   FORGOT_PASSWORD: '/forgot-password',
+  PASSWORD_RECOVERY: '/auth/callback',
   ACCESS_PENDING: '/access-pending',
   ACCOUNT_LOCKED: '/account-locked',
   ACCOUNT_DISABLED: '/account-disabled',

@@ -12,7 +12,7 @@ export const AUTH_ERROR_CODES = Object.freeze({
 export const AUTH_ERROR_MESSAGES = Object.freeze({
   [AUTH_ERROR_CODES.AUTH_UNAVAILABLE]: 'Sign-in service is not available yet.',
   [AUTH_ERROR_CODES.INVALID_CREDENTIALS]: 'The email or password is incorrect.',
-  [AUTH_ERROR_CODES.ACCOUNT_LOCKED]: 'Your account is locked. Contact an administrator for assistance.',
+  [AUTH_ERROR_CODES.ACCOUNT_LOCKED]: 'Your account is locked. Request an unlock from the sign-in page for administrator review.',
   [AUTH_ERROR_CODES.ACCOUNT_DISABLED]: 'This account is currently unavailable. Contact an administrator.',
   [AUTH_ERROR_CODES.SESSION_EXPIRED]: 'Your session has expired. Sign in again.',
   [AUTH_ERROR_CODES.FORBIDDEN]: 'You do not have permission to complete this action.',

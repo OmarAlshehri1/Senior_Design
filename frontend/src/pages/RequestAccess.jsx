@@ -34,6 +34,7 @@ export default function RequestAccess() {
         fullName: values.fullName.trim(), email: values.email.trim(), department: values.department.trim(),
         employeeId: values.employeeId.trim() || null, reason: values.reason.trim(),
       });
+      setServiceMessage('Your request has been received for review.');
     } catch (error) {
       setServiceMessage(normalizeAuthError(error).message);
     } finally {

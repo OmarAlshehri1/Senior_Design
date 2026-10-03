@@ -1,5 +1,5 @@
 import { useId, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import AuthFieldError from '../auth/AuthFieldError.jsx';
 import AuthLayout from '../auth/AuthLayout.jsx';
 import { AUTH_ROUTES } from '../auth/authRoutes.js';
@@ -8,6 +8,7 @@ import { normalizeAuthError } from '../auth/authErrors.js';
 import { validateLoginForm } from '../auth/loginValidation.js';
 
 export default function Login() {
+  const navigate = useNavigate();
   const emailId = useId();
   const passwordId = useId();
   const [email, setEmail] = useState('');
@@ -16,6 +17,7 @@ export default function Login() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [serviceMessage, setServiceMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [unlockMessage, setUnlockMessage] = useState('');
 
   const resetFeedback = () => {
     setFieldErrors({});
@@ -32,6 +34,7 @@ export default function Login() {
     setSubmitting(true);
     try {
       await authService.signIn(email.trim(), password);
+      navigate('/dashboard', { replace: true });
     } catch (error) {
       setServiceMessage(normalizeAuthError(error).message);
     } finally {
@@ -43,6 +46,20 @@ export default function Login() {
 
   const emailErrorId = `${emailId}-error`;
   const passwordErrorId = `${passwordId}-error`;
+
+  const requestUnlock = async () => {
+    const normalizedEmail = email.trim();
+    if (!normalizedEmail) {
+      setUnlockMessage('Enter your email above to request an account unlock.');
+      return;
+    }
+    try {
+      const result = await authService.requestAccountUnlock(normalizedEmail);
+      setUnlockMessage(result.message);
+    } catch (error) {
+      setUnlockMessage(normalizeAuthError(error).message);
+    }
+  };
 
   return (
     <AuthLayout>
@@ -75,6 +92,8 @@ export default function Login() {
         </div>
         <button className="auth-submit" type="submit" disabled={submitting}>Sign In</button>
         <Link className="auth-text-action" to={AUTH_ROUTES.FORGOT_PASSWORD}>Forgot password?</Link>
+        <button className="auth-text-action" type="button" onClick={requestUnlock}>Request account unlock</button>
+        {unlockMessage && <p role="status">{unlockMessage}</p>}
       </form>
       <section className="auth-account-entry" aria-labelledby="request-access-title">
         <div>

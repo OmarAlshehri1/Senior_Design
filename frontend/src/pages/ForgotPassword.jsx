@@ -24,6 +24,7 @@ export default function ForgotPassword() {
     setSubmitting(true);
     try {
       await authService.requestPasswordReset(email.trim());
+      setServiceMessage('If the account is eligible, reset instructions will be sent.');
     } catch (requestError) {
       setServiceMessage(normalizeAuthError(requestError).message);
     } finally {

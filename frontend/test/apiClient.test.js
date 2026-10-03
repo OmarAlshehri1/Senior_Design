@@ -50,6 +50,60 @@ test('API client sends POST and PATCH bodies as JSON', async () => {
   ]);
 });
 
+test('API client adds bearer auth and supports authenticated file downloads', async () => {
+  const calls = [];
+  const client = createApiClient({
+    baseUrl: 'https://api.example.test/api/v1',
+    getToken: () => 'private-test-token',
+    fetchImpl: async (...args) => {
+      calls.push(args);
+      return { ok: true, status: 200, blob: async () => new Blob(['id,score\\n1,90']) };
+    },
+  });
+  const file = await client.getFile('/reports/R-1/download');
+  assert.equal(calls[0][1].headers.Authorization, 'Bearer private-test-token');
+  assert.equal(await file.text(), 'id,score\\n1,90');
+});
+
+test('API client preserves backend authorization error codes from detail', async () => {
+  const client = createApiClient({
+    baseUrl: 'http://localhost:8000/api/v1',
+    fetchImpl: async () => jsonResponse({ detail: 'SESSION_EXPIRED' }, { ok: false, status: 401 }),
+  });
+  await assert.rejects(client.get('/reports'), (error) => {
+    assert.equal(error.status, 401);
+    assert.equal(error.code, 'SESSION_EXPIRED');
+    return true;
+  });
+});
+
+test('API client refreshes an expired session once and retries with the new bearer token', async () => {
+  const calls = [];
+  let session = { access_token: 'expired-access', refresh_token: 'refresh-1' };
+  const client = createApiClient({
+    baseUrl: 'http://localhost:8000/api/v1',
+    getToken: () => session.access_token,
+    getSession: () => session,
+    saveSession: (value) => { session = value; },
+    clearSession: () => { session = null; },
+    fetchImpl: async (url, options) => {
+      calls.push([url, options]);
+      if (url.endsWith('/reports') && options.headers.Authorization === 'Bearer expired-access') {
+        return jsonResponse({ detail: 'SESSION_EXPIRED' }, { ok: false, status: 401 });
+      }
+      if (url.endsWith('/auth/refresh')) return jsonResponse({ access_token: 'fresh-access', refresh_token: 'refresh-2', user: { role: 'AUDITOR' } });
+      return jsonResponse({ items: [] });
+    },
+  });
+  assert.deepEqual(await client.get('/reports'), { items: [] });
+  assert.equal(calls.length, 3);
+  assert.equal(calls[0][1].headers.Authorization, 'Bearer expired-access');
+  assert.equal(calls[1][0], 'http://localhost:8000/api/v1/auth/refresh');
+  assert.equal(calls[1][1].headers.Authorization, undefined);
+  assert.equal(calls[2][1].headers.Authorization, 'Bearer fresh-access');
+  assert.equal(session.refresh_token, 'refresh-2');
+});
+
 test('API client normalizes non-success responses', async () => {
   const client = createApiClient({
     baseUrl: 'http://localhost:8000/api/v1',

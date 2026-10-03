@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import useOverlayFocus from '../accessibility/useOverlayFocus.js';
 
-export default function ConfirmationDialog({ open, title, description, confirmLabel, onConfirm, onClose }) {
+export default function ConfirmationDialog({ open, title, description, confirmLabel, onConfirm, onClose, available = false, busy = false, note = 'This action will become available when account administration is available.' }) {
   const cancelRef = useRef(null);
   const dialogRef = useRef(null);
   const backdropRef = useRef(null);
@@ -15,10 +15,10 @@ export default function ConfirmationDialog({ open, title, description, confirmLa
       <section ref={dialogRef} tabIndex="-1" className="management-dialog confirmation-dialog" role="alertdialog" aria-modal="true" aria-labelledby="confirmation-title" aria-describedby="confirmation-description">
         <h2 id="confirmation-title">{title}</h2>
         <p id="confirmation-description">{description}</p>
-        <p className="integration-note">This action will become available when account administration is available.</p>
+        {note && <p className="integration-note">{note}</p>}
         <div className="dialog-actions">
           <button ref={cancelRef} type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button type="button" className="btn btn-primary" onClick={onConfirm} disabled>{confirmLabel}</button>
+          <button type="button" className="btn btn-primary" onClick={onConfirm} disabled={!available || busy}>{busy ? 'Working…' : confirmLabel}</button>
         </div>
       </section>
     </div>

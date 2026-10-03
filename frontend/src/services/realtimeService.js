@@ -1,4 +1,5 @@
 import { environment } from '../config/env.js';
+import { getAccessToken, onAuthSessionChange } from '../auth/authSession.js';
 
 export const REALTIME_STATES = Object.freeze({
   IDLE: 'idle',
@@ -29,6 +30,7 @@ export function createRealtimeClient(options = {}) {
   const {
     url = environment.websocketUrl,
     webSocketFactory = (socketUrl) => new WebSocket(socketUrl),
+    getToken = getAccessToken,
     maxReconnectAttempts = 3,
     reconnectDelayMs = 1000,
     schedule = (callback, delay) => setTimeout(callback, delay),
@@ -41,6 +43,7 @@ export function createRealtimeClient(options = {}) {
   let reconnectTimer = null;
   let intentionallyDisconnected = false;
   let connectionGeneration = 0;
+  let authenticated = false;
   const messageListeners = new Set();
   const stateListeners = new Set();
 
@@ -59,6 +62,11 @@ export function createRealtimeClient(options = {}) {
 
   const connect = () => {
     if (!url || socket) return false;
+    if (!getToken?.()) {
+      authenticated = false;
+      setState(REALTIME_STATES.DISCONNECTED);
+      return false;
+    }
 
     intentionallyDisconnected = false;
     connectionGeneration += 1;
@@ -75,12 +83,25 @@ export function createRealtimeClient(options = {}) {
 
     socket.onopen = () => {
       if (generation !== connectionGeneration) return;
-      reconnectAttempts = 0;
-      setState(REALTIME_STATES.CONNECTED);
+      const accessToken = getToken?.();
+      if (!accessToken) {
+        socket.close(1008, 'Authentication required');
+        return;
+      }
+      socket.send(JSON.stringify({ type: 'auth', access_token: accessToken }));
     };
     socket.onmessage = (message) => {
       if (generation !== connectionGeneration) return;
-      const parsedMessage = parseRealtimeMessage(message?.data);
+      let event;
+      try { event = JSON.parse(message?.data); } catch { return; }
+      if (event?.type === 'auth.ready') {
+        authenticated = true;
+        reconnectAttempts = 0;
+        setState(REALTIME_STATES.CONNECTED);
+        return;
+      }
+      if (!authenticated) return;
+      const parsedMessage = parseRealtimeMessage(event);
       if (parsedMessage) messageListeners.forEach((listener) => listener(parsedMessage));
     };
     socket.onerror = () => {
@@ -90,6 +111,7 @@ export function createRealtimeClient(options = {}) {
       if (generation !== connectionGeneration) return;
       detachSocket();
       socket = null;
+      authenticated = false;
 
       if (intentionallyDisconnected) {
         setState(REALTIME_STATES.DISCONNECTED);
@@ -120,6 +142,7 @@ export function createRealtimeClient(options = {}) {
       reconnectTimer = null;
     }
     const activeSocket = socket;
+    authenticated = false;
     detachSocket();
     socket = null;
     activeSocket?.close();
@@ -143,3 +166,15 @@ export function createRealtimeClient(options = {}) {
 }
 
 export const realtimeService = createRealtimeClient();
+let previousAccessToken = null;
+onAuthSessionChange((session) => {
+  const accessToken = session?.access_token ?? null;
+  if (!accessToken) {
+    previousAccessToken = null;
+    realtimeService.disconnect();
+  } else if (accessToken !== previousAccessToken) {
+    previousAccessToken = accessToken;
+    realtimeService.disconnect();
+    realtimeService.connect();
+  }
+});

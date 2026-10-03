@@ -380,15 +380,16 @@ Evidence: migration 012, `transaction_processing` repository/service, `test_tran
 
 - [ ] Apply migration 012 and verify live activation only after explicit approval; no live completion claim is made.
 
-## Phase 14 — Authentication, users, and RBAC — CURRENT
+## Phase 14 — Authentication, users, and RBAC
 
 Omar mapping: sections 1, 2, 11–13; dependency: Phase 13.
 
-- [ ] Integrate Supabase Auth, JWT validation, current profile/session, and AUDITOR/SUPERVISOR/ADMIN roles.
-- [ ] Persist ACTIVE/LOCKED/DISABLED status, login/security history, failed-login tracking, lockout policy, admin lifecycle actions, and password reset.
-- [ ] Persist access requests through pending, approve/reject, role assignment, and activation.
-- [ ] Enforce endpoint/action and object-level authorization, including WebSocket and authenticated report download; activate prepared frontend auth/user services.
-- [ ] Support `Authorization` in local CORS preflight and API transport; define token refresh/expiry and WebSocket authentication without leaking credentials.
+- [x] Integrate Supabase Auth, JWT validation, current profile/session, and AUDITOR/SUPERVISOR/ADMIN roles.
+- [x] Persist ACTIVE/LOCKED/DISABLED status, login/security history, failed-login tracking, lockout policy, admin lifecycle actions, and password reset.
+- [x] Persist access requests through pending, approve/reject, role assignment, and activation; require a provider-verified account-owner unlock request before an Admin can unlock a locked account.
+- [x] Enforce endpoint/action and object-level authorization, including Supervisor/Admin-only transaction creation, WebSocket and authenticated report download; activate prepared frontend auth/user services.
+- [x] Support `Authorization` in local CORS preflight and API transport; define token refresh/expiry and WebSocket authentication without leaking credentials.
+- [x] Lock an active account after three consecutive failed sign-ins; only an active Admin may approve a pending unlock request. Document owner-only manual provisioning of the initial Admin.
 
 Acceptance criteria:
 
@@ -396,6 +397,10 @@ Acceptance criteria:
 - Tests verify role changes, access-request decisions, account transitions, login history/lockout, and reset/session behavior; UI visibility is not authorization evidence.
 - Allowed local-origin preflight accepts authenticated requests; unknown origins remain disallowed. Supabase privileged keys remain backend-only.
 - CSV download retains its UI behavior while using authenticated transport. Document contracts and local migration evidence without assuming live application.
+- Three consecutive failed sign-ins lock an account; no direct Admin unlock is available without a provider-verified pending account-owner request, and only an active Admin may decide that request.
+- `POST /transactions` is allowed to active Supervisor/Admin users only. Every new Auth profile is disabled; initial Admin provisioning follows [IDENTITY_BOOTSTRAP.md](IDENTITY_BOOTSTRAP.md) and requires the Supabase database owner.
+
+Evidence: 179 backend tests passed (one existing Starlette/httpx deprecation warning), 16 isolated PGlite migration/recovery tests passed, 212 frontend tests passed, frontend lint passed, production build passed, `git diff --check` passed, and the changed-source secret scan found no matches. Migration 013 has not been applied to the live database. Main-branch verification follows the Phase 14 PR merge.
 
 ## Phase 15 — Reviews and immutable accountability
 
@@ -590,4 +595,4 @@ These are historical implementation estimates retained from Phases 0–12, not c
 
 ## Next action
 
-Finish Phase 13B PR review/merge and main verification, then proceed with Phase 14 on its own branch. The frontend role matrix has no transaction-ingestion permission: confirm the authorized POST /transactions actor policy before enabling authoritative RBAC. Live migration 012 and recovery activation remain approval-gated; independent local Auth preparation can continue. Preserve the user requirements modification and backup stash; deployment remains Phase 24.
+Phase 13A/13B are merged and verified on `main`. Phase 14 implementation and local verification are complete on `feature/auth-rbac`; merge and main verification remain. The project owner confirmed transaction creation is Supervisor/Admin-only, lockout is three consecutive failed sign-ins with Admin-only approval of a provider-verified user unlock request, and initial Admin provisioning is manual by the Supabase database owner. Migration 013 remains local; do not claim it exists in the live database. After the Phase 14 PR is verified on `main`, proceed with Phase 15 on its own branch. Preserve the user requirements modification and backup stash; deployment remains Phase 24.

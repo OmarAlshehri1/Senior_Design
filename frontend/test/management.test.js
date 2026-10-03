@@ -9,7 +9,7 @@ import { PERMISSIONS, ROLE_KEYS } from '../src/auth/roles.js';
 import { deriveWorkspaceData } from '../src/auth/workspace.js';
 import { createApprovalModel, normalizeAccessRequests } from '../src/management/accessRequestAdmin.js';
 import { deriveUserSummary, normalizeUser, normalizeUsers } from '../src/management/userModel.js';
-import { userManagementService } from '../src/management/userManagementService.js';
+import { createUserManagementService } from '../src/management/userManagementService.js';
 import { createTeamActivityModel } from '../src/team/teamActivity.js';
 import { teamService } from '../src/team/teamService.js';
 import { ALERT_ASSIGNMENT_FIELDS, ASSIGNMENT_STATUSES, normalizeAlertAssignment, normalizeAssignmentHistory } from '../src/assignments/alertAssignments.js';
@@ -63,7 +63,7 @@ test('User model reuses centralized account status definitions', () => {
 
 test('User model supports unavailable and null values', () => {
   const user = normalizeUser({ id: null });
-  assert.deepEqual(Object.keys(user), ['id', 'name', 'email', 'role', 'accountStatus', 'lastLoginAt', 'createdAt', 'updatedAt', 'teamId', 'supervisorId']);
+  assert.deepEqual(Object.keys(user), ['id', 'name', 'email', 'role', 'accountStatus', 'lastLoginAt', 'failedSignInAttempts', 'lockedAt', 'disabledAt', 'lockReason', 'disabledReason', 'createdAt', 'updatedAt', 'teamId', 'supervisorId']);
   assert.ok(Object.values(user).every((value) => value === null));
 });
 
@@ -113,14 +113,45 @@ test('Admin user and security metrics accept unavailable state', () => {
   assert.ok(workspace.metrics.every((metric) => metric.value === null));
 });
 
-test('Management, team, and assignment service boundaries do not fabricate success', async () => {
+test('Team and assignment service boundaries do not fabricate success', async () => {
   const calls = [
-    ...Object.values(userManagementService).map((method) => method()),
     ...Object.values(teamService).map((method) => method()),
     ...Object.values(assignmentService).map((method) => method()),
   ];
   const results = await Promise.allSettled(calls);
   assert.ok(results.every((result) => result.status === 'rejected'));
+});
+
+test('user management service calls identity routes with role decisions server-side', async () => {
+  const calls = [];
+  const service = createUserManagementService({
+    get: async (path, options) => { calls.push({ method: 'GET', path, options }); return { items: [] }; },
+    post: async (path, body) => { calls.push({ method: 'POST', path, body }); return { id: 'req-1', status: 'APPROVED', assigned_role: body.role }; },
+    patch: async (path, body) => { calls.push({ method: 'PATCH', path, body }); return { id: 'u1', role: body.role ?? 'AUDITOR', accountStatus: 'ACTIVE' }; },
+  });
+  await service.listUsers();
+  await service.approveAccessRequest('req-1', ROLE_KEYS.AUDITOR);
+  await service.changeUserRole('u1', ROLE_KEYS.SUPERVISOR);
+  assert.deepEqual(calls.map(({ method, path }) => [method, path]), [
+    ['GET', '/users'], ['POST', '/access-requests/req-1/decision'], ['PATCH', '/users/u1'],
+  ]);
+  assert.deepEqual(calls[1].body, { approve: true, role: ROLE_KEYS.AUDITOR, reason: null });
+});
+
+test('unlock administration uses the request decision flow instead of a direct user unlock', async () => {
+  const calls = [];
+  const service = createUserManagementService({
+    get: async (path) => { calls.push(['GET', path]); return { items: [] }; },
+    post: async (path, body) => { calls.push(['POST', path, body]); return { id: 'unlock-1', status: 'APPROVED' }; },
+    patch: async (path, body) => { calls.push(['PATCH', path, body]); return { id: 'u1' }; },
+  });
+  await service.listUnlockRequests();
+  await service.decideUnlockRequest('unlock-1', { approve: true });
+  assert.deepEqual(calls, [
+    ['GET', '/account-unlock-requests'],
+    ['POST', '/account-unlock-requests/unlock-1/decision', { approve: true }],
+  ]);
+  assert.equal('unlockUser' in service, false);
 });
 
 test('Administrative models do not mutate inputs and assignment history is immutable', () => {
