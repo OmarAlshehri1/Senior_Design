@@ -39,6 +39,7 @@ def test_list_alerts(
 
     def fake_list_alerts(
         *,
+        actor_id: str,
         page: int,
         page_size: int,
         status_filter: str | None,
@@ -46,6 +47,7 @@ def test_list_alerts(
         received.update(
             {
                 "page": page,
+                "actor_id": actor_id,
                 "page_size": page_size,
                 "status_filter": status_filter,
             }
@@ -68,6 +70,7 @@ def test_list_alerts(
     assert body["page"] == 2
     assert body["page_size"] == 10
     assert received["status_filter"] == "ACTIVE"
+    assert received["actor_id"] == "00000000-0000-0000-0000-000000000001"
 
 
 def test_review_alert(
@@ -126,6 +129,40 @@ def test_reopening_alert_preserves_alert_response_contract(monkeypatch: pytest.M
     assert received["note"] == "Needs evidence"
 
 
+def test_assignment_api_uses_authenticated_actor_and_database_history(monkeypatch: pytest.MonkeyPatch) -> None:
+    received = {}
+    monkeypatch.setattr("app.api.alerts.identity.rpc", lambda name, **kwargs: received.update({"name": name, **kwargs}) or {
+        "assignment": {"alertId": "AL-001", "assigneeId": "auditor-2"}, "history": [], "eligible_users": []})
+    bundle = client.get("/api/v1/alerts/AL-001/assignment")
+    assert bundle.status_code == 200
+    assert received["name"] == "get_alert_assignment_bundle"
+    assert received["p_actor"] == "00000000-0000-0000-0000-000000000001"
+
+    response = client.post("/api/v1/alerts/AL-001/assignment", json={
+        "action": "ASSIGNED", "assignee_id": "auditor-2", "note": "Queue triage",
+    })
+    assert response.status_code == 200
+    assert received == {"name": "record_alert_assignment", "p_actor": "00000000-0000-0000-0000-000000000001",
+                        "p_alert_id": "AL-001", "p_action": "ASSIGNED", "p_assignee_id": "auditor-2", "p_note": "Queue triage"}
+
+
+def test_auditor_cannot_call_assignment_mutation(monkeypatch: pytest.MonkeyPatch) -> None:
+    called = False
+    def unexpected(*_args, **_kwargs):
+        nonlocal called
+        called = True
+    monkeypatch.setattr("app.api.alerts.identity.rpc", unexpected)
+    from app.services.identity import get_current_user
+    from app.main import app
+    app.dependency_overrides[get_current_user] = lambda: {"id": "auditor-1", "role": "AUDITOR", "account_status": "ACTIVE"}
+    try:
+        response = client.post("/api/v1/alerts/AL-001/assignment", json={"action": "UNASSIGNED"})
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
+    assert response.status_code == 403
+    assert not called
+
+
 def test_review_rejects_invalid_status() -> None:
     response = client.patch(
         "/api/v1/alerts/AL-001/review",
@@ -149,3 +186,12 @@ def test_patch_is_allowed_by_cors() -> None:
         response.headers["access-control-allow-origin"]
         == "http://localhost:5173"
     )
+
+
+def test_delete_is_allowed_by_cors_for_team_administration() -> None:
+    response = client.options(
+        "/api/v1/teams/00000000-0000-0000-0000-000000000001",
+        headers={"Origin": "http://localhost:5173", "Access-Control-Request-Method": "DELETE"},
+    )
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"

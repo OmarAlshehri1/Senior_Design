@@ -425,14 +425,17 @@ Phase 15 is complete on `main`: PR #27, merge `4d987ce`. Main verification on 20
 
 Omar mapping: section 4, sections 3 and 11–13; dependency: Phases 14–15.
 
-- [ ] Persist teams/membership and supervisor relationships; expose activity and workload.
-- [ ] Implement assign/reassign/unassign and assignment history; activate team/assignment services.
+- [ ] Persist teams/membership and supervisor relationships; expose activity and workload through scoped API and frontend services.
+- [ ] Implement assign/reassign/unassign and immutable assignment history; activate the assignment dialog and team activity view.
+- [ ] Apply team scope to alert listing, review history, and audit events; preserve the documented API response shapes.
 
 Acceptance criteria:
 
-- Auditors access permitted assignments, supervisors manage their teams, and administrators operate within the defined authorized scope.
-- Concurrent reassignment has deterministic results, preserves history, and records the actor in the audit log.
-- Tests cover cross-team denial, membership changes, unassignment, activity/workload accuracy, and review/audit team scope.
+- Admin has global alert/team visibility. An Auditor sees only alerts currently assigned to that Auditor. A Supervisor sees that Supervisor's team queue and unclaimed alerts, and cannot access another team's assigned alerts.
+- A Supervisor may assign an alert to an active Auditor or active Supervisor in the same team; Admin may assign across teams. Assignment mutations are serialized per alert, preserve append-only history, and record the actor in the audit log.
+- Admin creates/updates/deactivates teams, manages global membership, and may transfer Auditors between teams. A Supervisor may add/remove active Auditors only in the Supervisor's own team; members with assigned alerts must be reassigned or unassigned first.
+- Team workload/activity counts are based on current assignments and team-attributed review events, without double counting reassignment history.
+- Tests cover cross-team denial, concurrent assignment, membership changes and restrictions, unassignment, activity/workload accuracy, review/audit team scope, API role gates, and CORS preflight for team-management DELETE requests.
 
 ## Phase 17 — Notifications and alert catch-up
 

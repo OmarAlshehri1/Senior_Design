@@ -13,6 +13,7 @@ from app.api.reports import router as reports_router
 from app.api.transactions import router as transactions_router
 from app.api.identity import router as identity_router
 from app.api.accountability import router as accountability_router
+from app.api.teams import router as teams_router
 
 
 LOCAL_FRONTEND_ORIGINS = (
@@ -64,6 +65,7 @@ app.add_middleware(
         "GET",
         "POST",
         "PATCH",
+        "DELETE",
         "OPTIONS",
     ],
     allow_headers=[
@@ -88,6 +90,7 @@ app.include_router(
 app.include_router(alerts_websocket_router)
 app.include_router(identity_router, prefix="/api/v1")
 app.include_router(accountability_router, prefix="/api/v1")
+app.include_router(teams_router, prefix="/api/v1")
 
 
 @app.get("/api/v1/health")

@@ -243,6 +243,14 @@ export function AppProvider({ children }) {
     return reviewedAlert;
   }, [alerts]);
 
+  const setAlertAssignment = useCallback((alertId, assignment) => {
+    setAlerts((previous) => previous.map((alert) => alert.id === alertId ? { ...alert, assignment: assignment ? {
+      assigneeId: assignment.assignee_id ?? assignment.assigneeId ?? null,
+      assigneeName: assignment.assignee_name ?? assignment.assigneeName ?? null,
+      status: assignment.status ?? null,
+    } : null } : alert));
+  }, []);
+
   const simulateNewTransaction = useCallback(() => {
     if (simulating) return;
     setSimulating(true);
@@ -364,6 +372,7 @@ export function AppProvider({ children }) {
       lastSimulatedTransactionId,
       showNotification,
       markAlertReviewed,
+      setAlertAssignment,
       simulateNewTransaction,
       getTransaction,
       getAlertForTransaction,
@@ -388,6 +397,7 @@ export function AppProvider({ children }) {
       lastSimulatedTransactionId,
       showNotification,
       markAlertReviewed,
+      setAlertAssignment,
       simulateNewTransaction,
       getTransaction,
       getAlertForTransaction,

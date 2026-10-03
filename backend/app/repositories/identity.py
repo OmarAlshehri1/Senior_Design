@@ -25,6 +25,10 @@ def request(method: str, path: str, *, body: Any = None, token: str | None = Non
             response = client.request(method, f"{url}{'/auth/v1' if auth else '/rest/v1'}/{path}",
                                       headers=headers, json=body, params=query)
         if not response.is_success:
+            try:
+                database_code = response.json().get("code")
+            except (ValueError, AttributeError):
+                database_code = None
             if auth and response.status_code in (400, 401, 403, 422):
                 raise IdentityError("INVALID_CREDENTIALS", 401)
             if response.status_code == 429:
@@ -33,15 +37,15 @@ def request(method: str, path: str, *, body: Any = None, token: str | None = Non
                 raise IdentityError("FORBIDDEN", 403)
             if response.status_code == 404:
                 # Distinguish a missing review target from an unapplied RPC/schema.
-                try:
-                    database_code = response.json().get("code")
-                except (ValueError, AttributeError):
-                    database_code = None
                 if database_code == "P0002":
                     raise IdentityError("NOT_FOUND", 404)
                 raise IdentityError("AUTH_UNAVAILABLE")
             if response.status_code == 409:
                 raise IdentityError("CONFLICT", 409)
+            if database_code == "23505":
+                raise IdentityError("CONFLICT", 409)
+            if database_code in ("22023", "23514", "22P02"):
+                raise IdentityError("VALIDATION_ERROR", 422)
             raise IdentityError("AUTH_UNAVAILABLE")
         return response.json() if response.content else None
     except (httpx.HTTPError, ValueError) as exc:

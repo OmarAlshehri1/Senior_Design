@@ -46,6 +46,13 @@ class AlertReviewRequest(BaseModel):
     note: str | None = Field(default=None, max_length=2000)
 
 
+class AlertAssignmentRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    action: Literal["ASSIGNED", "REASSIGNED", "UNASSIGNED"]
+    assignee_id: str | None = None
+    note: str | None = Field(default=None, max_length=2000)
+
+
 @router.get("")
 async def get_alerts(
     page: int = Query(default=1, ge=1),
@@ -54,10 +61,12 @@ async def get_alerts(
         "ACTIVE",
         "REVIEWED",
     ] | None = Query(default=None, alias="status"),
+    user: dict = Depends(get_current_user),
 ) -> dict[str, object]:
     try:
         alerts, total = await run_in_threadpool(
             repository_list_alerts,
+            actor_id=user["id"],
             page=page,
             page_size=page_size,
             status_filter=status_filter,
@@ -72,6 +81,8 @@ async def get_alerts(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Alerts could not be retrieved.",
         ) from exc
+    except IdentityError as exc:
+        raise HTTPException(status_code=exc.status, detail=exc.code) from exc
 
     return {
         "items": alerts,
@@ -79,6 +90,28 @@ async def get_alerts(
         "page": page,
         "page_size": page_size,
     }
+
+
+@router.get("/{alert_id}/assignment")
+async def get_alert_assignment(alert_id: str, user: dict = Depends(get_current_user)):
+    try:
+        return await run_in_threadpool(identity.rpc, "get_alert_assignment_bundle",
+                                       p_actor=user["id"], p_alert_id=alert_id)
+    except IdentityError as exc:
+        raise HTTPException(status_code=exc.status, detail=exc.code) from exc
+
+
+@router.post("/{alert_id}/assignment")
+async def update_alert_assignment(alert_id: str, request: AlertAssignmentRequest,
+                                  user: dict = Depends(get_current_user)):
+    if user.get("role") not in ("SUPERVISOR", "ADMIN"):
+        raise HTTPException(status_code=403, detail="FORBIDDEN")
+    try:
+        return await run_in_threadpool(identity.rpc, "record_alert_assignment",
+            p_actor=user["id"], p_alert_id=alert_id, p_action=request.action,
+            p_assignee_id=request.assignee_id, p_note=request.note)
+    except IdentityError as exc:
+        raise HTTPException(status_code=exc.status, detail=exc.code) from exc
 
 
 @router.patch("/{alert_id}/review")

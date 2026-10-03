@@ -12,6 +12,7 @@ from app.repositories.supabase_transactions import (
     _get_configuration,
     _get_headers,
 )
+from app.repositories import identity
 
 
 ALERT_COLUMNS = ",".join(
@@ -33,7 +34,7 @@ ALERT_COLUMNS = ",".join(
 
 
 def _map_alert(row: dict[str, Any]) -> dict[str, Any]:
-    return {
+    result = {
         "id": row.get("id"),
         "transaction_id": row.get("transaction_id"),
         "created_at": row.get("created_at"),
@@ -49,6 +50,18 @@ def _map_alert(row: dict[str, Any]) -> dict[str, Any]:
         ),
         "latency_ms": row.get("latency_ms"),
     }
+    if "assignment" in row:
+        assignment = row.get("assignment")
+        result["assignment"] = ({
+            "alert_id": assignment.get("alert_id"),
+            "team_id": assignment.get("team_id"),
+            "assignee_id": assignment.get("assignee_id"),
+            "assignee_name": assignment.get("assignee_name"),
+            "assigned_by_id": assignment.get("assigned_by_id"),
+            "assigned_at": assignment.get("assigned_at"),
+            "status": assignment.get("status"),
+        } if isinstance(assignment, dict) else None)
+    return result
 
 
 def _parse_total(
@@ -127,55 +140,18 @@ def create_high_risk_alert(
 
 def list_alerts(
     *,
+    actor_id: str,
     page: int = 1,
     page_size: int = 25,
     status_filter: str | None = None,
 ) -> tuple[list[dict[str, Any]], int]:
-    url, _ = _get_configuration()
-    endpoint = f"{url}/rest/v1/alerts"
-
-    params = {
-        "select": ALERT_COLUMNS,
-        "order": "created_at.desc,id.asc",
-        "offset": str((page - 1) * page_size),
-        "limit": str(page_size),
-    }
-
-    if status_filter is not None:
-        params["status"] = f"eq.{status_filter}"
-
-    try:
-        with httpx.Client(
-            timeout=REQUEST_TIMEOUT_SECONDS
-        ) as client:
-            response = client.get(
-                endpoint,
-                headers=_get_headers(include_count=True),
-                params=params,
-            )
-            response.raise_for_status()
-            rows = response.json()
-    except (httpx.HTTPError, ValueError) as exc:
-        raise SupabasePersistenceError(
-            "Failed to retrieve alerts."
-        ) from exc
-
-    if not isinstance(rows, list):
+    result = identity.rpc("list_accessible_alerts", p_actor=actor_id, p_page=page,
+                          p_page_size=page_size, p_status=status_filter)
+    if not isinstance(result, dict) or not isinstance(result.get("items"), list):
         raise SupabasePersistenceError(
             "Supabase returned an invalid alerts response."
         )
-
-    alerts = [
-        _map_alert(row)
-        for row in rows
-        if isinstance(row, dict)
-    ]
-    total = _parse_total(
-        response.headers.get("content-range"),
-        len(alerts),
-    )
-
-    return alerts, total
+    return [_map_alert(row) for row in result["items"] if isinstance(row, dict)], int(result.get("total", 0))
 
 
 def mark_alert_reviewed(

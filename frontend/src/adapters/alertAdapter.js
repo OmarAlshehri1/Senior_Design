@@ -33,6 +33,11 @@ export function adaptAlert(payload) {
     reason: payload.reason ?? null,
     status: ALERT_STATUS_MAP[payload.status] ?? null,
     reviewedAt: payload.reviewed_at ?? null,
+    assignment: payload.assignment ? {
+      assigneeId: payload.assignment.assignee_id ?? null,
+      assigneeName: payload.assignment.assignee_name ?? null,
+      status: payload.assignment.status ?? null,
+    } : null,
   };
 }
 

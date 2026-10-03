@@ -54,7 +54,7 @@ def test_audit_events_filters_and_supervisor_scope(monkeypatch):
     finally:
         app.dependency_overrides.pop(get_current_user, None)
     assert response.status_code == 200
-    assert received["scope_actor_id"] == "supervisor-id"
+    assert received["actor_id"] == "supervisor-id"
     assert received["action"] == "LOGIN_SUCCESS"
     assert received["date"] == "2026-10-03"
     assert received["page"] == 3
@@ -87,19 +87,19 @@ def test_review_payload_rejects_unknown_action():
 
 def test_audit_repository_builds_bounded_filters_and_newest_or_oldest_order(monkeypatch):
     received = {}
-    monkeypatch.setattr(repository.identity, "collection", lambda table, **kwargs: (
-        received.update({"table": table, **kwargs}) or {"items": [], "total": 0, "page": kwargs["page"], "page_size": kwargs["page_size"]}
+    monkeypatch.setattr(repository.identity, "rpc", lambda name, **kwargs: (
+        received.update({"name": name, **kwargs}) or {"items": [], "total": 0, "page": kwargs["p_page"], "page_size": kwargs["p_page_size"]}
     ))
     result = repository.list_audit_events(
         page=2, page_size=50, actor="Reviewer", action="ALERT_REOPENED",
         resource_type="ALERT", outcome="SUCCESS", date="2026-10-03",
-        search="AL-4", scope_actor_id="actor-id", sort="OLDEST",
+        search="AL-4", actor_id="actor-id", sort="OLDEST",
     )
     assert result["total"] == 0
-    assert received["table"] == "audit_events"
-    assert received["filters"]["actor_id"] == "eq.actor-id"
-    assert received["filters"]["actor_name"] == "ilike.*Reviewer*"
-    assert received["filters"]["created_at.lte"].startswith("2026-10-03")
-    assert received["filters"]["or"].startswith("(actor_name.ilike.*AL-4*")
-    assert received["order"] == "created_at.asc,id.asc"
-    assert received["page"] == 2 and received["page_size"] == 50
+    assert received["name"] == "list_scoped_audit_events"
+    assert received["p_actor"] == "actor-id"
+    assert received["p_actor_name"] == "Reviewer"
+    assert received["p_date"] == "2026-10-03"
+    assert received["p_search"] == "AL-4"
+    assert received["p_sort"] == "OLDEST"
+    assert received["p_page"] == 2 and received["p_page_size"] == 50

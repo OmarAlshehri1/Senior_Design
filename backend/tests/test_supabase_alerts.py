@@ -125,50 +125,12 @@ def test_list_alerts(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     request: dict[str, Any] = {}
-
-    class FakeResponse:
-        headers = {"content-range": "25-25/52"}
-
-        def raise_for_status(self) -> None:
-            return None
-
-        def json(self) -> list[dict[str, Any]]:
-            return [build_alert()]
-
-    class FakeClient:
-        def __init__(self, timeout: float) -> None:
-            self.timeout = timeout
-
-        def __enter__(self) -> "FakeClient":
-            return self
-
-        def __exit__(
-            self,
-            exc_type: object,
-            exc_value: object,
-            traceback: object,
-        ) -> None:
-            return None
-
-        def get(
-            self,
-            endpoint: str,
-            *,
-            headers: dict[str, str],
-            params: dict[str, str],
-        ) -> FakeResponse:
-            request.update(
-                {
-                    "endpoint": endpoint,
-                    "headers": headers,
-                    "params": params,
-                }
-            )
-            return FakeResponse()
-
-    configure_repository(monkeypatch, FakeClient)
+    monkeypatch.setattr(repository.identity, "rpc", lambda name, **kwargs: request.update({"name": name, **kwargs}) or {
+        "items": [build_alert()], "total": 52, "page": 2, "page_size": 25,
+    })
 
     alerts, total = repository.list_alerts(
+        actor_id="actor-1",
         page=2,
         page_size=25,
         status_filter="ACTIVE",
@@ -177,10 +139,8 @@ def test_list_alerts(
     assert total == 52
     assert len(alerts) == 1
     assert alerts[0]["transaction_id"] == "TX-HIGH-001"
-    assert request["params"]["offset"] == "25"
-    assert request["params"]["limit"] == "25"
-    assert request["params"]["status"] == "eq.ACTIVE"
-    assert request["headers"]["Prefer"] == "count=exact"
+    assert request == {"name": "list_accessible_alerts", "p_actor": "actor-1", "p_page": 2,
+                       "p_page_size": 25, "p_status": "ACTIVE"}
 
 
 def test_mark_alert_reviewed(
