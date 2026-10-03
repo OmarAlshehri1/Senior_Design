@@ -11,6 +11,43 @@ Owner scope: ICS — SWE
 - Dates and commit identifiers below come from repository Git history, including the verified Phase 8.12B implementation commit.
 - Frontend permission checks are presentation and UX controls. Authoritative authentication, authorization, and data access must be enforced by the backend.
 
+## Frontend Phase Index
+
+| Phase | Date | Main Scope | Commit(s) | Status |
+| --- | --- | --- | --- | --- |
+| Phase 1 | 2026-09-20 | Shared React/Vite foundation | `94867ee` | [x] Completed |
+| Phase 2 | 2026-09-21 | Risk and data correctness | `9eb8b02` | [x] Completed |
+| Phase 3 | 2026-09-21 | Dashboard | `cb649a8` | [x] Completed |
+| Phase 4 | 2026-09-21 | Transactions and Transaction Detail | `2a28078` | [x] Completed |
+| Phase 5 | 2026-09-21 | Alerts monitoring | `7e62cb3` | [x] Completed |
+| Phase 6 | 2026-09-28 | Audit Rules frontend | `65ad852` | [x] Completed |
+| Phase 7 | 2026-09-28 | Reports frontend | `14b528a` | [x] Completed |
+| Phase 8 | 2026-09-28 | Settings, integration readiness, production routing | `b1d0663`, `fbfea89`, `485a914` | [x] Completed |
+| Phase 8.1 | — | No standalone frontend phase established by Git | — | Explained gap |
+| Phase 8.2 | — | No standalone frontend phase established by Git | — | Explained gap |
+| Phase 8.3 | — | No standalone frontend phase established by Git | — | Explained gap |
+| Phase 8.4 | — | No standalone frontend phase established by Git | — | Explained gap |
+| Phase 8.5 | 2026-09-30 | Enterprise visual-system refresh | `a0b6d55` | [x] Completed |
+| Phase 8.5B | 2026-09-30 | Width and surface refinements | `a0b6d55` | [x] Completed in shared milestone |
+| Phase 8.6A | 2026-09-30 | Authentication UX foundation | `18c25e0` | [x] Frontend completed |
+| Phase 8.6B | 2026-09-30 | Authorization and role navigation | `18c25e0` | [x] Frontend completed |
+| Phase 8.6C | 2026-09-30 | Role workspaces and Profile | `18c25e0` | [x] Frontend completed |
+| Phase 8.7 | 2026-09-30 | Accountability and audit trail | `b12f336` | [x] Frontend completed |
+| Phase 8.8 | 2026-09-30 | Management, team, and assignment | `e15f862` | [x] Frontend completed |
+| Phase 8.9 | 2026-09-30 | Notifications, security UX, request states | `496c45a` | [x] Frontend completed |
+| Phase 8.9A | 2026-09-30 | Overlay keyboard accessibility | `7ce6fdd` | [x] Completed |
+| Phase 8.10 | 2026-09-30 | Advanced Audit Workflow | `1bc6a50` | [x] Frontend completed |
+| Integration milestone | 2026-10-02 | Live transaction-list integration | `108f7aa` | [x] Connected |
+| Phase 8.11 | 2026-09-30–2026-10-03 | Final responsive/UI quality work | `1bc6a50`, `4dc7b5a` | [x] Completed |
+| Phase 8.12 | 2026-10-03 | Final functional QA | No distinct commit | [x] Inspection completed |
+| Phase 8.12B | 2026-10-03 | Final frontend freeze fixes | `dc368a4` | [x] Completed and verified |
+
+### Numbering provenance and explained gaps
+
+The first eight phase numbers are a chronological reconstruction from distinct frontend commits because those early commits did not embed phase labels. Repository history and changed files support each mapping shown above without reusing a commit across Phases 1–8.
+
+No commit message, source comment, test, or historical documentation establishes a standalone frontend Phase 8.1, 8.2, 8.3, or 8.4. Those numbers belong to the broader project workflow rather than evidenced frontend implementation milestones. They are therefore listed as explained gaps, not assigned invented scope. Phase 8.5 onward is supported by source comments, commit content, later documentation, or the final QA record. Phase 8.6A/B/C were implemented together in `18c25e0`; the content clearly separates authentication UX, authorization/navigation, and role workspace/Profile work, while the stylesheet explicitly identifies the 8.6C surface.
+
 ## Frontend architecture
 
 ```text
@@ -70,130 +107,344 @@ Implemented:
 - Shared Sidebar, Topbar, status components, transaction table, notification, and risk visualization.
 - Initial AppContext and preview-data structure.
 
-Validation and evidence:
+Validation:
+
+- Later phases added formal automated tests; this commit itself does not establish a historical test total.
+
+Evidence:
 
 - Commit `94867ee`; `frontend/src/App.jsx`, `frontend/src/components/`, and `frontend/src/pages/`.
-- Later phases added formal automated tests; this commit itself does not establish the final test count.
 
 Backend dependency: Initial data was frontend preview data; operational data required API integration.
 
-## Phase 2 — Risk correctness, Dashboard, Transactions, and Alerts
+## Phase 2 — Risk and data correctness
+
+Date: 2026-09-21
+Commit(s): `9eb8b02`
+
+Status:
+[x] Completed
+
+Purpose: Establish consistent frontend risk classification, safe derived metrics, and internally coherent preview data before completing individual monitoring pages.
+
+Implemented:
+
+- Centralized frontend preview risk thresholds and risk-distribution derivation.
+- Separated audit review status from risk classification.
+- Corrected transaction, alert, rule-result, score, timestamp, and linked-record consistency in preview fixtures.
+- Introduced pure dashboard/risk utilities and the first formal frontend test file.
+
+Validation:
+
+- Risk boundaries, derived summaries, and fixture consistency in `frontend/test/risk.test.js`.
+
+Evidence:
+
+- `frontend/src/utils/risk.js`, `frontend/src/utils/dashboard.js`, and safer context/hooks.
+- Commit `9eb8b02` also added the Not Found page.
+
+Backend dependency: Risk thresholds and fixtures were frontend preview behavior. Authoritative scores, risk levels, and rule findings remained backend responsibilities.
+
+## Phase 3 — Dashboard completion
+
+Date: 2026-09-21
+Commit(s): `cb649a8`
+
+Status:
+[x] Completed
+
+Purpose: Complete the primary monitoring overview and ensure every displayed metric is derived consistently from the current frontend dataset.
+
+Implemented:
+
+- Dashboard summary cards and risk distribution.
+- Recent Transactions table and recent alert presentation.
+- Risk-filter navigation from Dashboard into Transactions.
+- Responsive Dashboard layout and empty-safe derived metrics.
+
+Validation:
+
+- Dashboard summary and distribution assertions in `frontend/test/risk.test.js`.
+
+Evidence:
+
+- `frontend/src/utils/dashboard.js`, Dashboard-specific components, and routes `/` and `/dashboard`.
+
+Backend dependency: Dashboard values used frontend preview data at this stage; authoritative operational summaries required backend integration.
+
+## Phase 4 — Transactions and Transaction Detail
+
+Date: 2026-09-21
+Commit(s): `2a28078`
+
+Status:
+[x] Completed
+
+Purpose: Complete transaction exploration and detailed audit-result presentation with deterministic frontend behavior.
+
+Implemented:
+
+- Transaction search, risk/rule filters, deterministic sorting, and query-filter initialization.
+- Transaction table and responsive transaction presentation.
+- Transaction Detail fields, scores, five-rule results, risk explanations, and data-quality fallback behavior.
+- Null-safe helpers and consistent status formatting.
+
+Validation:
+
+- Search, filter, sort, missing-value, and detail-contract tests in `frontend/test/transactions.test.js`.
+
+Evidence:
+
+- `frontend/src/utils/transactions.js` and routes `/transactions` and `/transactions/:id`.
+
+Backend dependency: This phase completed preview-data UX. Live collection and direct-detail integration were activated in later milestones.
+
+## Phase 5 — Alerts monitoring
 
 Date: 2026-09-21  
-Commit(s): `9eb8b02`, `cb649a8`, `2a28078`, `7e62cb3`
+Commit(s): `7e62cb3`
 
 Status:  
 [x] Completed
 
-Purpose: Stabilize risk presentation and complete the primary monitoring experiences.
+Purpose: Complete the Alerts monitoring experience and make filtering, sorting, linked transaction context, and review-state behavior deterministic.
 
 Implemented:
 
-- Centralized risk thresholds and consistent risk/status display.
-- Dashboard summaries, risk distribution, recent transactions, and alert presentation.
-- Transaction search, sorting, filters, detail presentation, safe optional values, and responsive transaction components.
-- Alert table/list utilities and alert filtering corrections.
+- Alerts table and responsive alert presentation.
+- Search across alert ID, transaction ID, vendor, and alert type.
+- Active/Reviewed, risk, and five-rule alert-type filters.
+- Deterministic time/risk sorting, summary derivation, professional fallback reasons, and in-memory review updates.
 
-Validation and evidence:
+Validation:
 
-- `frontend/test/risk.test.js`, `frontend/test/transactions.test.js`, and `frontend/test/alerts.test.js`.
-- Routes `/`, `/transactions`, `/transactions/:id`, and `/alerts`.
+- `frontend/test/alerts.test.js` covers search, filters, sorting, linked transactions, optional values, and review-state safety.
 
-Backend dependency: These commits established frontend behavior using preview data; backend-derived scores and findings remained external responsibilities.
+Evidence:
 
-## Phase 3 — Audit Rules, Reports, and Settings
+- `frontend/src/utils/alerts.js`, `frontend/src/components/AlertsTable.jsx`, and `/alerts`.
+
+Backend dependency: Alert data and review changes were frontend preview/session state. Durable alerts and accountable review persistence required backend integration.
+
+## Phase 6 — Audit Rules frontend
+
+Date: 2026-09-28
+Commit(s): `65ad852`
+
+Status:
+[x] Completed
+
+Purpose: Provide a stable, accessible frontend reference for the project audit-rule identities and their transaction-detail presentation.
+
+Implemented:
+
+- Centralized metadata for the five named project audit rules.
+- Expandable Audit Rules page with definitions, required fields, evaluation description, and configuration presentation.
+- Shared rule identities between Audit Rules and Transaction Detail.
+- SPA fallback adjustments present in the same commit.
+
+Validation:
+
+- `frontend/test/auditRules.test.js` verifies rule identity, metadata completeness, safe status semantics, and independent disclosure state.
+
+Evidence:
+
+- `frontend/src/data/auditRules.js`, `frontend/src/utils/auditRules.js`, and `/audit-rules`.
+
+Backend dependency: This phase presents rule definitions and recorded results. Rule execution, configuration authority, and findings remain backend-owned.
+
+## Phase 7 — Reports frontend
 
 Date: 2026-09-28  
-Commit(s): `65ad852`, `14b528a`, `b1d0663`
+Commit(s): `14b528a`
 
 Status:  
 [x] Completed
 
-Purpose: Complete the frontend representations of audit-rule definitions, report summaries, and system configuration.
+Purpose: Complete a coherent frontend report preview derived from currently available transaction and alert records.
 
 Implemented:
 
-- Expandable definitions for the five project audit-rule identities.
-- Report summary, risk distribution, alert summary, rule summary, and high-risk transaction presentation.
-- Read-only configuration references and truthful unavailable integration states.
+- Daily summary, risk distribution, alert summary, rule summary, and high-risk transaction sections.
+- Pure, non-mutating report derivation with safe handling of empty and optional values.
+- Responsive report layout and high-risk transaction presentation.
 
-Validation and evidence:
+Validation:
 
-- `frontend/test/auditRules.test.js`, `frontend/test/reports.test.js`, and `frontend/test/settings.test.js`.
-- Routes `/audit-rules`, `/reports`, and `/settings`.
+- `frontend/test/reports.test.js` covers totals, distribution consistency, rule identities, high-risk rows, immutability, and empty datasets.
 
-Backend dependency: Rule execution, report persistence/download, and settings persistence are backend-owned. The frontend presents contracts and available data only.
+Evidence:
 
-## Phase 4 — Integration preparation and deployment routing
+- `frontend/src/utils/reports.js`, `frontend/src/pages/Reports.jsx`, and `/reports`.
+
+Backend dependency: This phase was a frontend-derived preview. Report generation, persistence, and downloads remained backend-dependent and were not activated.
+
+## Phase 8 — Settings, integration readiness, and production routing
 
 Date: 2026-09-28  
-Commit(s): `fbfea89`, `485a914`
+Commit(s): `b1d0663`, `fbfea89`, `485a914`
 
 Status:  
 [x] Completed
 
-Purpose: Create testable API boundaries and prepare the single-page application for deployed routing.
+Purpose: Finish the read-only Settings experience, establish testable backend integration boundaries, and prepare production SPA routing before the Phase 8.5 redesign.
 
 Implemented:
 
+- Settings risk ranges, audit-rule reference, reporting configuration, real-time alert reference, and truthful availability states.
 - Environment normalization, API client, integration errors, adapters, and transaction/alert/report/settings service boundaries.
-- Request-state helpers and real-time client lifecycle contract.
-- Vercel/Vite SPA routing and production entry-point corrections.
+- Request-state helpers and real-time client lifecycle/reconnect contract.
+- Vercel/Vite production entry-point and SPA routing corrections.
 
-Validation and evidence:
+Validation:
 
-- `frontend/test/apiClient.test.js`, `frontend/test/adapters.test.js`, `frontend/test/env.test.js`, `frontend/test/integrationFoundation.test.js`, and `frontend/test/realtime.test.js`.
-- `frontend/vercel.json`, `frontend/vite.config.js`, `frontend/src/services/`, and `frontend/src/adapters/`.
+- `frontend/test/settings.test.js`, `frontend/test/apiClient.test.js`, `frontend/test/adapters.test.js`, `frontend/test/env.test.js`, `frontend/test/integrationFoundation.test.js`, and `frontend/test/realtime.test.js`.
 
-Backend dependency: Service readiness did not itself activate an endpoint. Only integrations explicitly identified later as connected are operational.
+Evidence:
 
-## Phase 8.5 / 8.5B — Enterprise visual redesign and information architecture
+- `frontend/src/pages/Settings.jsx`, `frontend/src/services/`, `frontend/src/adapters/`, `frontend/vercel.json`, and `frontend/vite.config.js`.
 
-Date: 2026-09-30  
+Backend dependency: Settings remained read-only and unsupported services remained unavailable. These service contracts did not activate endpoints; only explicitly documented later integrations are operational.
+
+## Phase 8.5 — Enterprise visual-system refresh
+
+Date: 2026-09-30
 Commit(s): `a0b6d55`
+Status: [x] Completed
 
-Status:  
-[x] Completed
+Purpose:
 
-Purpose: Introduce the final enterprise shell and consistent information hierarchy across the main operational pages.
+Introduce the enterprise application shell and a consistent visual hierarchy across the main operational pages.
 
 Implemented:
 
 - Dark navy Sidebar and light application surfaces.
 - Revised Dashboard, Transactions, Reports, Settings, summary cards, and Topbar.
-- Shared spacing, typography, status, and page-width conventions in `refresh.css`.
+- Shared typography, spacing, status, control, and page-surface conventions in `refresh.css`.
 
-Validation and evidence:
+Validation:
 
-- Commit `a0b6d55`; `frontend/src/refresh.css`, shell components, and primary pages.
-- Phase numbering is retained because it is established in the project workflow; Git contains one combined visual-redesign commit rather than separate 8.5 and 8.5B commits.
+- Commit diff confirms presentation-focused changes across the shell and primary pages.
+- No historical build or test total is attributed to this individual commit.
+
+Evidence:
+
+- `frontend/src/refresh.css` explicitly begins with “Phase 8.5 visual system refresh.”
+- `Sidebar.jsx`, `Topbar.jsx`, `SummaryCards.jsx`, and the Dashboard, Transactions, Reports, and Settings pages.
 
 Backend dependency: None for visual structure.
 
-## Phase 8.6 — Authentication UX, roles, permissions, profile, and workspaces
+## Phase 8.5B — Width and surface refinement
 
-Date: 2026-09-30  
-Commit(s): `18c25e0`
+Date: 2026-09-30
+Commit(s): `a0b6d55` — implemented together and committed as one frontend milestone with Phase 8.5
+Status: [x] Completed
 
-Status:  
-[x] Frontend UX and contracts completed  
-[ ] Real authentication and account persistence
+Purpose:
 
-Purpose: Define role-aware navigation and the full frontend authentication-state experience without claiming backend identity enforcement.
+Refine balanced content widths and complete visual boundaries after the main enterprise redesign.
 
 Implemented:
 
-- Auditor, Supervisor, and Administrator role/permission model.
-- Protected-route presentation, accessible locked navigation, 403 and 404 separation, profile, and role workspaces.
-- Login, Request Access, Forgot Password, Access Pending, Account Locked, Account Disabled, Support, and Privacy & Security routes.
-- Development-only, in-memory Role Preview.
+- Balanced application and page-width behavior.
+- Completed surface, card, and content-boundary treatment.
+- Responsive refinements within the same stylesheet milestone.
 
-Validation and evidence:
+Validation:
 
-- `frontend/test/auth.test.js`, `frontend/test/authorization.test.js`, and `frontend/test/workspace.test.js`.
-- `frontend/src/auth/`, `/login`, `/request-access`, `/forgot-password`, `/access-pending`, `/account-locked`, `/account-disabled`, `/support`, `/privacy-security`, `/profile`, and `/403`.
+- Verified against the `a0b6d55` stylesheet diff and affected page layouts.
+- No separate historical test total is claimed for the subphase.
 
-Backend dependency: Authentication, session management, account persistence, and authoritative RBAC are not connected.
+Evidence:
+
+- `frontend/src/refresh.css` contains the explicit “Phase 8.5B refinement” source comment in commit `a0b6d55`.
+- Shared commit evidence is intentional; Git contains no separate 8.5B commit.
+
+Backend dependency: None.
+
+## Phase 8.6A — Authentication UX foundation
+
+Date: 2026-09-30
+Commit(s): `18c25e0` — implemented together and committed as one frontend milestone with Phases 8.6B and 8.6C
+Status: [x] Frontend UX and contracts completed
+
+Purpose:
+
+Build the standalone authentication and account-state UX without claiming real backend authentication.
+
+Implemented:
+
+- Login form, validation, password visibility, and safe unavailable-service feedback.
+- Request Access and Forgot Password validation flows.
+- Access Pending, Account Locked, Account Disabled, Support, and Privacy & Security routes.
+- Auth-state, account-status, lifecycle, service-error, and support contracts.
+
+Validation:
+
+- Auth validation, lifecycle, account-state, and unavailable-service tests in `frontend/test/auth.test.js`.
+- Route-contract checks confirm authentication pages remain outside the application shell.
+
+Evidence:
+
+- `/login`, `/request-access`, `/forgot-password`, `/access-pending`, `/account-locked`, `/account-disabled`, `/support`, and `/privacy-security`.
+- `frontend/src/auth/`, authentication pages, and `frontend/src/pages/Login.css`.
+
+Backend dependency: Real authentication, password reset, access-request persistence, account state, and sessions remain backend-dependent.
+
+## Phase 8.6B — Authorization and role-aware navigation
+
+Date: 2026-09-30
+Commit(s): `18c25e0` — implemented together and committed as one frontend milestone with Phases 8.6A and 8.6C
+Status: [x] Frontend UX enforcement completed
+
+Purpose:
+
+Centralize role permissions, route presentation, and navigation behavior for Auditor, Supervisor, and Administrator.
+
+Implemented:
+
+- Centralized roles, permissions, route-access map, and permission helpers.
+- Protected-route presentation, role-aware Sidebar links, locked navigation, and distinct 403/404 behavior.
+- Development-only in-memory Role Preview.
+- Accessible locked-state context without treating the preview role as authenticated identity.
+
+Validation:
+
+- Permission matrices, route access, locked navigation, and Role Preview behavior in `frontend/test/authorization.test.js` and `frontend/test/auth.test.js`.
+
+Evidence:
+
+- `frontend/src/auth/roles.js`, `routeAccess.js`, `RequirePermission.jsx`, `navigationConfig.js`, and `RolePreviewControl.jsx`.
+- `/403` and permission-protected application routes.
+
+Backend dependency: Frontend checks are UX controls only; authoritative authentication and RBAC require backend enforcement.
+
+## Phase 8.6C — Role workspaces and Profile
+
+Date: 2026-09-30
+Commit(s): `18c25e0` — implemented together and committed as one frontend milestone with Phases 8.6A and 8.6B
+Status: [x] Frontend presentation completed
+
+Purpose:
+
+Keep the Dashboard shared while presenting truthful role-specific workspace and Profile states.
+
+Implemented:
+
+- Shared Dashboard with Auditor, Supervisor, and Administrator workspace sections.
+- Auditor review metrics, Supervisor team placeholders, and Administrator security placeholders without fabricated records.
+- Profile route and null-safe profile model separated from development Role Preview identity.
+
+Validation:
+
+- Workspace derivation, role labels, unavailable metrics, immutability, and Profile access tests in `frontend/test/workspace.test.js` and `frontend/test/authorization.test.js`.
+
+Evidence:
+
+- `frontend/src/auth/workspace.js`, `profileModel.js`, `frontend/src/components/RoleWorkspace.jsx`, `/profile`, and Dashboard.
+- `frontend/src/refresh.css` explicitly identifies “Phase 8.6C role workspace and profile surfaces.”
+
+Backend dependency: Identity-backed Profile data, personal work queues, team relationships, and security activity require backend services.
 
 ## Phase 8.7 — Accountability and audit trail frontend
 
@@ -212,9 +463,12 @@ Implemented:
 - Login History presentation and profile security activity.
 - Audit Log filters, sorting, detail presentation, route access, and empty states.
 
-Validation and evidence:
+Validation:
 
-- `frontend/test/audit.test.js` and `frontend/test/authorization.test.js`.
+- Accountability, Audit Log, history, and permission tests in `frontend/test/audit.test.js` and `frontend/test/authorization.test.js`.
+
+Evidence:
+
 - `/audit-log`, `/profile`, Transaction Detail, and `frontend/src/audit/`.
 
 Backend dependency: Review records, login activity, and audit events require authoritative server persistence and identity.
@@ -236,9 +490,12 @@ Implemented:
 - Team Activity, workload presentation, alert assignment dialog, and assignment history.
 - Permission-derived action visibility and navigation.
 
-Validation and evidence:
+Validation:
 
-- `frontend/test/management.test.js` and `frontend/test/authorization.test.js`.
+- Management models, unavailable services, and route permissions in `frontend/test/management.test.js` and `frontend/test/authorization.test.js`.
+
+Evidence:
+
 - `/users`, `/users/:userId`, `/team-activity`, and Alerts assignment components.
 
 Backend dependency: Users, requests, team relationships, assignments, and administrative actions require backend services and persistence.
@@ -261,9 +518,12 @@ Implemented:
 - Session Expired route and centralized sensitive-action confirmations.
 - Security-oriented unavailable states that do not fabricate identity or activity.
 
-Validation and evidence:
+Validation:
 
-- `frontend/test/productPolish.test.js`, `frontend/test/auth.test.js`, and `frontend/test/settings.test.js`.
+- Notification contracts, request states, session UX, and sensitive actions in `frontend/test/productPolish.test.js`, `frontend/test/auth.test.js`, and `frontend/test/settings.test.js`.
+
+Evidence:
+
 - `/session-expired`, `frontend/src/notifications/`, `frontend/src/security/`, and `RequestStateView.jsx`.
 
 Backend dependency: Notification delivery/read state, sessions, and security activity remain backend-dependent.
@@ -284,9 +544,12 @@ Implemented:
 - Forward/reverse focus trapping, Escape handling, focus restoration, and inert application background.
 - Applied behavior to navigation drawer, assignment and confirmation dialogs, and profile/notification overlays where applicable.
 
-Validation and evidence:
+Validation:
 
-- `frontend/test/focusManagement.test.js`.
+- Focus wrapping and empty/single-target behavior in `frontend/test/focusManagement.test.js`.
+
+Evidence:
+
 - `frontend/src/accessibility/focusManagement.js` and `frontend/src/accessibility/useOverlayFocus.js`.
 
 Backend dependency: None.
@@ -309,9 +572,12 @@ Implemented:
 - Audit Coverage and Risk Trend presentation models.
 - Permission-aware workflow actions and explicit disabled/unavailable controls.
 
-Validation and evidence:
+Validation:
 
 - `frontend/test/advancedAuditWorkflow.test.js` plus related audit, auth, management, and product-polish tests.
+
+Evidence:
+
 - `/cases`, `/cases/:caseId`, `/vendors`, `/vendors/:vendorId`, `frontend/src/cases/`, `frontend/src/vendors/`, and `frontend/src/analytics/`.
 
 Backend dependency: Case records, evidence storage/scanning, discussion, assignment, closure, SLA events, vendor state, watchlists, blocks, coverage, and trend data are not persisted by the frontend.
@@ -333,17 +599,20 @@ Implemented:
 - Server pagination, search, and sorting parameters.
 - Loading/error/empty states and adapted backend transaction payloads.
 
-Validation and evidence:
+Validation:
 
-- `frontend/test/adapters.test.js` and `frontend/test/integrationFoundation.test.js`.
+- Collection adaptation and service-boundary tests in `frontend/test/adapters.test.js` and `frontend/test/integrationFoundation.test.js`.
+
+Evidence:
+
 - `frontend/src/context/AppContext.jsx`, `frontend/src/pages/Transactions.jsx`, and `frontend/src/services/transactionsService.js`.
 
 Backend dependency: Requires the configured FastAPI transaction endpoint and its Supabase-backed data. Risk/rule filters still apply to the current loaded server page because those backend filters are not implemented.
 
 ## Phase 8.11 — Final responsive, layout, and UI quality fixes
 
-Date: 2026-10-03  
-Commit(s): `4dc7b5a`
+Date: 2026-09-30–2026-10-03
+Commit(s): `1bc6a50`, `4dc7b5a` — the initial layout repair shared `1bc6a50` with Phase 8.10
 
 Status:  
 [x] Completed and verified
@@ -352,14 +621,19 @@ Purpose: Resolve final page-width, transaction-layout, navigation, and responsiv
 
 Implemented:
 
+- Initial application layout repair committed with the Phase 8.10 workflow milestone.
 - Final shell/layout corrections, responsive transaction presentation, and page overflow controls.
 - Transaction list and AppContext refinements without replacing server pagination.
 - Audit-rule presentation cleanup.
 
-Validation and evidence:
+Validation:
 
-- Commit `4dc7b5a`; `Layout.jsx`, `Transactions.jsx`, `AppContext.jsx`, `auditRules.js`, and `refresh.css`.
 - Current suite and build validate the resulting implementation; no claim is made that every physical device was tested.
+
+Evidence:
+
+- `frontend/src/refresh.css` contains the explicit Phase 8.11 application-layout marker in `1bc6a50`.
+- Commit `4dc7b5a`; `Layout.jsx`, `Transactions.jsx`, `AppContext.jsx`, `auditRules.js`, and final `refresh.css` changes.
 
 Backend dependency: None beyond the existing transaction endpoint.
 
@@ -370,9 +644,17 @@ Commit(s): No distinct implementation commit established by Git
 
 Status:  
 [x] Inspection completed  
-[ ] Findings required the committed Phase 8.12B fixes below
+[x] Findings resolved in the committed Phase 8.12B fixes below
 
 Purpose: Inspect the complete frontend behavior and identify the remaining freeze-blocking functional issues without attributing an unsupported implementation commit.
+
+Inspected:
+
+- Full functional inspection of direct transaction detail, data quality, production-only controls, filter wording, and Vendor Profile controls.
+
+Validation:
+
+- Inspection findings were converted into focused Phase 8.12B regression tests.
 
 Evidence:
 
@@ -399,35 +681,43 @@ Implemented:
 - Development-only test-transaction control eliminated from production builds.
 - Non-global high-risk filter wording and disabled Vendor Profile section controls.
 
-Validation and evidence:
+Validation:
+
+- Final local validation: 199 tests passed; build, lint, and `git diff --check` passed.
+
+Evidence:
 
 - `frontend/test/transactionDetailLoader.test.js`, `frontend/test/freezeFixes.test.js`, `frontend/test/adapters.test.js`, and `frontend/test/transactions.test.js`.
-- Final local validation: 199 tests passed; build, lint, and `git diff --check` passed.
 
 Backend dependency: Direct detail requires the existing `GET /api/v1/transactions/{transaction_id}` endpoint. No new endpoint or domain integration was activated.
 
-## Git traceability
+## Git Traceability
 
 | Date | Phase / Change | Commit | Frontend Evidence | Status |
 | --- | --- | --- | --- | --- |
-| 2026-09-20 | Shared frontend foundation | `94867ee` | App, shell, primary pages/components | [x] |
-| 2026-09-21 | Risk and data correctness | `9eb8b02` | Risk helpers, context, tests | [x] |
-| 2026-09-21 | Dashboard completion | `cb649a8` | Dashboard utilities/components | [x] |
-| 2026-09-21 | Transactions completion | `2a28078` | Transactions and detail, tests | [x] |
-| 2026-09-21 | Alerts corrections | `7e62cb3` | Alerts page/table/helpers/tests | [x] |
-| 2026-09-28 | Audit Rules completion | `65ad852` | Rule definitions, page, tests | [x] |
-| 2026-09-28 | Reports completion | `14b528a` | Report derivation/page/tests | [x] |
-| 2026-09-28 | Settings completion | `b1d0663` | Settings derivation/page/tests | [x] |
-| 2026-09-28 | Backend-integration preparation | `fbfea89` | API client, adapters, services/tests | [x] |
-| 2026-09-28 | Vercel production routing | `485a914` | Vite/Vercel entry and SPA routing | [x] |
-| 2026-09-30 | Phase 8.5/8.5B visual redesign | `a0b6d55` | Shell, primary pages, `refresh.css` | [x] |
-| 2026-09-30 | Phase 8.6 auth and roles | `18c25e0` | Auth modules/routes/tests | [x] frontend |
+| 2026-09-20 | Phase 1 — Shared frontend foundation | `94867ee` | App, shell, primary pages/components | [x] |
+| 2026-09-21 | Phase 2 — Risk and data correctness | `9eb8b02` | Risk helpers, context, tests | [x] |
+| 2026-09-21 | Phase 3 — Dashboard completion | `cb649a8` | Dashboard utilities/components | [x] |
+| 2026-09-21 | Phase 4 — Transactions and Transaction Detail | `2a28078` | Transactions and detail, tests | [x] |
+| 2026-09-21 | Phase 5 — Alerts monitoring | `7e62cb3` | Alerts page/table/helpers/tests | [x] |
+| 2026-09-28 | Phase 6 — Audit Rules frontend | `65ad852` | Rule definitions, page, tests | [x] |
+| 2026-09-28 | Phase 7 — Reports frontend | `14b528a` | Report derivation/page/tests | [x] |
+| 2026-09-28 | Phase 8 — Settings completion | `b1d0663` | Settings derivation/page/tests | [x] |
+| 2026-09-28 | Phase 8 — Backend-integration preparation | `fbfea89` | API client, adapters, services/tests | [x] |
+| 2026-09-28 | Phase 8 — Vercel production routing | `485a914` | Vite/Vercel entry and SPA routing | [x] |
+| — | Phases 8.1–8.4 | — | No standalone frontend milestone established by Git | Explained gap |
+| 2026-09-30 | Phase 8.5 visual-system refresh | `a0b6d55` | Shell, primary pages, `refresh.css` | [x] |
+| 2026-09-30 | Phase 8.5B width/surface refinement | `a0b6d55` | Shared visual milestone; explicit stylesheet marker | [x] shared commit |
+| 2026-09-30 | Phase 8.6A authentication UX | `18c25e0` | Auth contracts, forms, account-state routes/tests | [x] shared commit |
+| 2026-09-30 | Phase 8.6B authorization/navigation | `18c25e0` | Permissions, guards, Sidebar, 403, Role Preview | [x] shared commit |
+| 2026-09-30 | Phase 8.6C workspaces/Profile | `18c25e0` | Role workspaces, Profile, explicit stylesheet marker | [x] shared commit |
 | 2026-09-30 | Phase 8.7 accountability | `b12f336` | Audit models/pages/tests | [x] frontend |
 | 2026-09-30 | Phase 8.8 management/team | `e15f862` | Management/team/assignment modules | [x] frontend |
 | 2026-09-30 | Phase 8.9 notifications/security | `496c45a` | Notifications, security, request states | [x] frontend |
-| 2026-09-30 | Overlay accessibility | `7ce6fdd` | Focus architecture and tests | [x] |
+| 2026-09-30 | Phase 8.9A overlay accessibility | `7ce6fdd` | Focus architecture and tests | [x] |
 | 2026-09-30 | Phase 8.10 advanced workflow | `1bc6a50` | Cases/vendors/analytics architecture | [x] frontend |
 | 2026-10-02 | Live transaction-list integration | `108f7aa` | API data source, AppContext, adapter | [x] connected |
+| 2026-09-30 | Phase 8.11 initial layout repair | `1bc6a50` | Shared milestone with Phase 8.10; explicit stylesheet marker | [x] shared commit |
 | 2026-10-03 | Phase 8.11 final responsive fixes | `4dc7b5a` | Layout, transactions, CSS | [x] |
 | 2026-10-03 | Phase 8.12 final functional QA | No distinct commit | Inspection resulting in Phase 8.12B fixes | [x] inspection |
 | 2026-10-03 | Phase 8.12B freeze fixes | `dc368a4` | Final functional fixes and 199 tests | [x] verified |
@@ -572,7 +862,7 @@ Current final baseline before documentation:
 - [x] `npm test`: 199 tests passed, 0 failed.
 - [x] `npm run build`: production build passed.
 - [x] `npm run lint`: passed.
-- [x] `git diff --check`: passed for the Phase 8.12B implementation; rerun after this documentation change is recorded below.
+- [x] `git diff --check`: passed for the Phase 8.12B implementation and the current documentation correction.
 
 Tests cover domain models, contracts, adapters, risk/report derivations, API-client behavior, route authorization, service boundaries, request states, accessibility helpers, real-time lifecycle contracts, and transaction detail loading. They do not replace live backend end-to-end, browser, security, or persistence testing.
 
@@ -654,23 +944,29 @@ No frontend claim is made for the five audit-rule implementations, Isolation For
 
 ## Change Log
 
-| Date | Change | Commit |
-| --- | --- | --- |
-| 2026-09-20 | Established shared frontend foundation | `94867ee` |
-| 2026-09-21 | Completed risk correctness, Dashboard, Transactions, and Alerts | `9eb8b02`, `cb649a8`, `2a28078`, `7e62cb3` |
-| 2026-09-28 | Completed Audit Rules, Reports, and Settings | `65ad852`, `14b528a`, `b1d0663` |
-| 2026-09-28 | Added integration boundaries and production SPA routing | `fbfea89`, `485a914` |
-| 2026-09-30 | Refreshed enterprise visual design | `a0b6d55` |
-| 2026-09-30 | Added authentication UX, roles, and route access | `18c25e0` |
-| 2026-09-30 | Added accountability and Audit Log frontend | `b12f336` |
-| 2026-09-30 | Added management, team, and assignment frontend | `e15f862` |
-| 2026-09-30 | Added notifications, security UX, and request states | `496c45a` |
-| 2026-09-30 | Added reusable overlay accessibility | `7ce6fdd` |
-| 2026-09-30 | Added advanced audit workflow frontend architecture | `1bc6a50` |
-| 2026-10-02 | Connected transaction list to live API data | `108f7aa` |
-| 2026-10-03 | Completed final responsive fixes | `4dc7b5a` |
-| 2026-10-03 | Completed final functional QA inspection | No distinct commit |
-| 2026-10-03 | Completed Phase 8.12B freeze fixes | `dc368a4` |
+| Date | Phase | Change | Commit |
+| --- | --- | --- | --- |
+| 2026-09-20 | Phase 1 | Established shared frontend foundation | `94867ee` |
+| 2026-09-21 | Phase 2 | Completed risk and data correctness | `9eb8b02` |
+| 2026-09-21 | Phase 3 | Completed Dashboard frontend | `cb649a8` |
+| 2026-09-21 | Phase 4 | Completed Transactions and Transaction Detail frontend | `2a28078` |
+| 2026-09-21 | Phase 5 | Completed Alerts monitoring frontend | `7e62cb3` |
+| 2026-09-28 | Phase 6 | Completed Audit Rules frontend | `65ad852` |
+| 2026-09-28 | Phase 7 | Completed Reports frontend | `14b528a` |
+| 2026-09-28 | Phase 8 | Completed Settings, integration readiness, and production routing | `b1d0663`, `fbfea89`, `485a914` |
+| — | Phases 8.1–8.4 | No standalone frontend implementation milestone established by Git | — |
+| 2026-09-30 | Phase 8.5 / 8.5B | Completed visual-system and width/surface refinements | `a0b6d55` |
+| 2026-09-30 | Phase 8.6A / 8.6B / 8.6C | Completed auth UX, authorization/navigation, and workspaces/Profile in one milestone | `18c25e0` |
+| 2026-09-30 | Phase 8.7 | Added accountability and Audit Log frontend | `b12f336` |
+| 2026-09-30 | Phase 8.8 | Added management, team, and assignment frontend | `e15f862` |
+| 2026-09-30 | Phase 8.9 | Added notifications, security UX, and request states | `496c45a` |
+| 2026-09-30 | Phase 8.9A | Added reusable overlay accessibility | `7ce6fdd` |
+| 2026-09-30 | Phase 8.10 | Added advanced audit workflow frontend architecture | `1bc6a50` |
+| 2026-10-02 | Integration milestone | Connected transaction list to live API data | `108f7aa` |
+| 2026-09-30 | Phase 8.11 | Added initial application-layout repair in the shared advanced-workflow milestone | `1bc6a50` |
+| 2026-10-03 | Phase 8.11 | Completed final responsive/UI quality fixes | `4dc7b5a` |
+| 2026-10-03 | Phase 8.12 | Completed final functional QA inspection | No distinct commit |
+| 2026-10-03 | Phase 8.12B | Completed final frontend freeze fixes | `dc368a4` |
 
 ## Next action
 
