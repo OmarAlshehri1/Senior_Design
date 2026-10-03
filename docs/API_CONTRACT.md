@@ -4,7 +4,7 @@ This document is the preliminary contract between the React frontend and FastAPI
 
 The documented health, transaction, alert, report, CSV-download, and alert WebSocket endpoints are implemented. `GET /api/v1/dashboard/summary` and `GET /api/v1/audit-rules` are planned contracts only; no router currently implements them. Authentication and identity endpoints are listed below. Shapes may be extended through team agreement, but existing names should not be changed without coordinating both branches.
 
-Implementation status: runtime transaction creation is insert-only and returns `409` for an existing ID without overwriting it; offline seed upsert remains separate. The project owner confirmed migration 012 applied successfully in Supabase; this was not independently queried. `TRANSACTION_RECOVERY_ENABLED` remains disabled. Phase 14 adds API identity, bearer authentication, role checks, authenticated report download and WebSocket subscriptions, plus local `Authorization` CORS support. Migration 013 is covered only by isolated local tests and has not been applied to the live database. The project owner confirmed `POST /transactions` is Supervisor/Admin-only; account lockout follows three consecutive failed sign-ins, and an active Admin may unlock only after the account owner verifies their email and submits an unlock request. Initial Admin provisioning is manual by the Supabase database owner as documented in [IDENTITY_BOOTSTRAP.md](IDENTITY_BOOTSTRAP.md). Phase 15 adds actor-attributed reviews and immutable audit events through migration 014; migration 014 is locally tested and not live-applied. Until Phase 16 adds team relationships, Supervisors see only their own audit events. Phase 17 adds alert catch-up after reconnect. Approved production origins and the worker/instance delivery topology are completed in Phase 24. Live measurements below are historical observations, not newly verified database state.
+Implementation status: runtime transaction creation is insert-only and returns `409` for an existing ID without overwriting it; offline seed upsert remains separate. The project owner confirmed migrations 012, 013, and 014 were applied successfully in Supabase; this was not independently queried. `TRANSACTION_RECOVERY_ENABLED` remains disabled. Phase 14 adds API identity, bearer authentication, role checks, authenticated report download and WebSocket subscriptions, plus local `Authorization` CORS support. The project owner confirmed `POST /transactions` is Supervisor/Admin-only; account lockout follows three consecutive failed sign-ins, and an active Admin may unlock only after the account owner verifies their email and submits an unlock request. Initial Admin provisioning is manual by the Supabase database owner as documented in [IDENTITY_BOOTSTRAP.md](IDENTITY_BOOTSTRAP.md). Phase 15 adds actor-attributed reviews and immutable audit events through migration 014. Phase 16 adds persisted teams and assignments, team-scoped alert/review/audit visibility, and team activity; Migration 015 remains isolated until separately approved for the live database. Phase 17 adds alert catch-up after reconnect. Approved production origins and the worker/instance delivery topology are completed in Phase 24. Live measurements below are historical observations, not newly verified database state.
 
 ## Conventions
 
@@ -130,7 +130,8 @@ Combined risk scoring version `1.0.0` calculates `risk_score = (0.60 * rule_scor
   "description": "The transaction requires auditor review.",
   "reason": "Rule and anomaly results exceeded the high-risk threshold.",
   "status": "ACTIVE",
-  "reviewed_at": null
+  "reviewed_at": null,
+  "assignment": null
 }
 ```
 
@@ -214,9 +215,9 @@ All routes below are implemented in this branch. Protected routes require `Autho
 | `GET /api/v1/account-unlock-requests` | Admin | List account-owner unlock requests. |
 | `POST /api/v1/account-unlock-requests/{id}/decision` | Admin | Approve or reject a pending unlock request; approval resets failed attempts and revokes old sessions. |
 
-Login, refresh, exchange, access-request, password-reset, and unlock-request bodies use the frontend's established form fields. Login returns `{access_token, refresh_token, expires_in, user}`. Access-request approval requires a pending row and an already-created Auth profile with a matching email; the provider invitation is issued by the backend. Reset, invitation, and unlock-verification links use server-configured `SUPABASE_AUTH_REDIRECT_URL` (the local example is `/auth/callback`); the chosen URL must also be allowlisted in Supabase Auth. Configure the production URL in Phase 24. Three consecutive failed sign-ins lock an active account; only an active Admin can decide the account owner's provider-verified pending unlock request. The identity schema is migration 013 and is not assumed present in the live database.
+Login, refresh, exchange, access-request, password-reset, and unlock-request bodies use the frontend's established form fields. Login returns `{access_token, refresh_token, expires_in, user}`. Access-request approval requires a pending row and an already-created Auth profile with a matching email; the provider invitation is issued by the backend. Reset, invitation, and unlock-verification links use server-configured `SUPABASE_AUTH_REDIRECT_URL` (the local example is `/auth/callback`); the chosen URL must also be allowlisted in Supabase Auth. Configure the production URL in Phase 24. Three consecutive failed sign-ins lock an active account; only an active Admin can decide the account owner's provider-verified pending unlock request. The project owner confirmed identity migration 013 is applied in the live database; this is owner-reported, not independently queried.
 
-Protected role policy grants transaction reads and alert review to active Auditor/Supervisor/Admin users, report operations and `POST /transactions` to Supervisor/Admin, and user administration to Admin. All authorization is enforced by the backend; frontend visibility alone does not grant access.
+Protected role policy grants transaction reads and alert review to active Auditor/Supervisor/Admin users, report operations and `POST /transactions` to Supervisor/Admin, and user administration to Admin. `GET /alerts` is team-scoped: Auditors see only their current assignments, Supervisors see their active team's alerts plus unclaimed alerts, and Admins see all alerts. A Supervisor may assign only to an active Auditor or Supervisor from that same team; Admin may assign across teams. All authorization is enforced by the backend; frontend visibility alone does not grant access.
 
 ### `GET /api/v1/dashboard/summary`
 
@@ -330,7 +331,7 @@ The current SME retail dataset does not provide `approval_limit`, so its seeded 
 
 ### `GET /api/v1/alerts`
 
-Returns a paginated collection of `Alert` objects. The optional `status` query parameter accepts `ACTIVE` or `REVIEWED`.
+Returns a paginated collection of `Alert` objects. The optional `status` query parameter accepts `ACTIVE` or `REVIEWED`. Each alert includes `assignment: null` if never assigned, or a summary with team, assignee, actor, timestamp, and `ASSIGNED`/`UNASSIGNED` state.
 
 ```json
 {
@@ -353,15 +354,34 @@ Request:
 }
 ```
 
-Full actor-attributed alert and transaction review history, notes, and immutable audit events are implemented by backend-plan Phase 15. These routes require migration 014; local PostgreSQL/PGlite coverage does not imply that it is applied to the live database.
+Full actor-attributed alert and transaction review history, notes, and immutable audit events are implemented by backend-plan Phase 15. The project owner confirmed migration 014 is applied in Supabase; isolated tests do not independently verify the live schema.
 
 ### `POST /api/v1/reviews/{resource_type}/{resource_id}` and `GET /api/v1/reviews/{resource_type}/{resource_id}`
 
-`resource_type` is `TRANSACTION` or `ALERT`. Active Auditors, Supervisors, and Admins may review. POST accepts `{"action":"REVIEWED"}`, `{"action":"REOPENED"}`, or `{"action":"NOTE_ADDED","note":"..."}`. Reviews can be reopened; each action appends a review record with actor ID, actor name/role snapshot, note, and timestamp. Repeated or invalid state transitions return `409 Conflict`. Notes cannot be empty and are limited to 2,000 characters. GET returns filtered-by-resource history in newest-first pages of 25, up to 100 per page.
+`resource_type` is `TRANSACTION` or `ALERT`. Active Auditors, Supervisors, and Admins may review. Alert review and alert review history follow the same Auditor/Supervisor/Admin team visibility scope as `GET /alerts`; transaction review access follows the authenticated role policy. POST accepts `{"action":"REVIEWED"}`, `{"action":"REOPENED"}`, or `{"action":"NOTE_ADDED","note":"..."}`. Reviews can be reopened; each action appends a review record with actor ID, actor name/role snapshot, note, and timestamp. Repeated or invalid state transitions return `409 Conflict`. Notes cannot be empty and are limited to 2,000 characters. GET returns filtered-by-resource history in newest-first pages of 25, up to 100 per page.
 
 ### `GET /api/v1/audit-events`
 
-Supervisor and Admin access only. Supports `page`, `page_size`, `search`, `actor`, `action`, `resource_type`, `outcome`, `date` (UTC calendar day), and `sort` (`NEWEST` or `OLDEST`). Admins see all retained activity. Until Phase 16 provides team membership, Supervisors see only events they performed. Review transitions/notes and identity events captured from `login_history` are append-only; application roles cannot update or delete accountability records. `GET /api/v1/users/{id}/login-history` remains scoped to the user or Admin.
+Supervisor and Admin access only. Supports `page`, `page_size`, `search`, `actor`, `action`, `resource_type`, `outcome`, `date` (UTC calendar day), and `sort` (`NEWEST` or `OLDEST`). Admins see all retained activity; Supervisors see their own events and events attributed to their active team. Review transitions/notes and identity events captured from `login_history` are append-only; application roles cannot update or delete accountability records. `GET /api/v1/users/{id}/login-history` remains scoped to the user or Admin.
+
+### Team and alert-assignment endpoints
+
+- `GET /api/v1/teams`: Admin sees all teams; Supervisor sees the Supervisor's active team.
+- `GET /api/v1/teams/activity?team_id=...`: authorized team overview, workload, and recent activity. A Supervisor cannot query another team.
+- `POST /api/v1/teams` and `PATCH /api/v1/teams/{team_id}`: Admin creates or updates a team.
+- `DELETE /api/v1/teams/{team_id}`: Admin deactivates an empty team; active memberships or assignment history prevent deactivation.
+- `POST /api/v1/teams/{team_id}/members`: Supervisor adds/removes active Auditors from the Supervisor's own team; only Admin may transfer Auditors between teams. An Auditor with assigned alerts must first have them reassigned or unassigned.
+- `GET /api/v1/teams/{team_id}/member-candidates`: lists active Auditor candidates visible to Admin or the owning Supervisor; the response includes the current team so Admin can make an authorized transfer.
+- `GET /api/v1/alerts/{alert_id}/assignment`: returns current assignment, immutable history, and eligible assignees to users who can access the alert. Auditor results contain no eligible-assignee list.
+- `POST /api/v1/alerts/{alert_id}/assignment`: Supervisor/Admin performs `ASSIGNED`, `REASSIGNED`, or `UNASSIGNED`; each accepted change is serialized per alert and records history and an audit event.
+
+Assignment request example:
+
+```json
+{"action":"ASSIGNED","assignee_id":"00000000-0000-4000-8000-000000000001","note":"Initial review"}
+```
+
+Cross-team or role denial returns `403`, invalid state transitions return `409`, and invalid payloads return `422`. Team and assignment runtime behavior depends on migration 015; the migration is tested only in isolated local PostgreSQL and is not applied to the live database by this change.
 
 ### `GET /api/v1/audit-rules`
 

@@ -481,7 +481,8 @@ Commit(s): `e15f862`
 
 Status:  
 [x] Frontend architecture completed  
-[ ] Persistent management and assignment operations
+[x] Persistent alert assignment, assignment history, and team activity API integration (Backend Phase 16)
+[x] Team creation and membership administration controls
 
 Purpose: Build permission-aware administrative and supervisory UX with safe unavailable states.
 
@@ -493,7 +494,8 @@ Implemented:
 
 Validation:
 
-- Management models, unavailable services, and route permissions in `frontend/test/management.test.js` and `frontend/test/authorization.test.js`.
+- Assignment and team service payloads plus route permissions are covered in `frontend/test/management.test.js` and `frontend/test/authorization.test.js`.
+- Backend Phase 16 provides persistent assignment/team endpoints and scoped activity. The Admin can create/update teams and manage supervisors; Admin/Supervisor can add, transfer, and remove members within the authorized scope.
 
 Evidence:
 
@@ -1019,6 +1021,7 @@ No frontend claim is made for the five audit-rule implementations, Isolation For
 | 2026-09-30 | Phase 8.6A / 8.6B / 8.6C | Completed auth UX, authorization/navigation, and workspaces/Profile in one milestone | `18c25e0` |
 | 2026-09-30 | Phase 8.7 | Added accountability and Audit Log frontend | `b12f336` |
 | 2026-09-30 | Phase 8.8 | Added management, team, and assignment frontend | `e15f862` |
+| 2026-10-03 | Phase 16 integration | Connected alert assignment/history and team activity to persistent team-scoped APIs; team administration controls remain pending | Pending PR |
 | 2026-09-30 | Phase 8.9 | Added notifications, security UX, and request states | `496c45a` |
 | 2026-09-30 | Phase 8.9A | Added reusable overlay accessibility | `7ce6fdd` |
 | 2026-09-30 | Phase 8.10 | Added advanced audit workflow frontend architecture | `1bc6a50` |

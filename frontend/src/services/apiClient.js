@@ -145,6 +145,7 @@ export function createApiClient({ baseUrl, fetchImpl = globalThis.fetch, getToke
     get: (path, options) => request('GET', path, options),
     post: (path, body, options = {}) => request('POST', path, { ...options, body }),
     patch: (path, body, options = {}) => request('PATCH', path, { ...options, body }),
+    delete: (path, options = {}) => request('DELETE', path, options),
     getFile: requestFile,
   });
 }

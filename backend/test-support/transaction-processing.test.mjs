@@ -239,6 +239,7 @@ test('concurrent review transitions allow one winner and serialize alert reopen 
   await db.query("insert into public.transactions(id,completeness_status) values('REVIEW-ALERT-TX','COMPLETE')");
   await db.query("insert into public.alerts(transaction_id,severity,title,description,reason,risk_score,risk_scoring_version,request_received_at) values('REVIEW-ALERT-TX','HIGH','Alert','Description','Reason',90,'1.0.0',now())");
   const alertId = (await db.query("select id from public.alerts where transaction_id='REVIEW-ALERT-TX'")).rows[0].id;
+  await db.query("update public.user_profiles set role='ADMIN' where id=$1", [reviewerId]);
   await db.query("select public.record_review_action($1,'ALERT',$2,'REVIEWED',null)", [reviewerId, alertId]);
   await db.query("select public.record_review_action($1,'ALERT',$2,'REOPENED',null)", [reviewerId, alertId]);
   const alert = (await db.query("select status,reviewed_at from public.alerts where id=$1", [alertId])).rows[0];
@@ -270,6 +271,99 @@ test('accountability RPC and history tables expose append-only least privilege',
     anon_execute: false, auth_execute: false, service_execute: true,
     review_insert: false, review_update: false, event_delete: false,
   });
+});
+
+const teamUsers = {
+  admin: '00000000-0000-4000-8000-000000000016',
+  supervisorA: '00000000-0000-4000-8000-000000000017',
+  supervisorB: '00000000-0000-4000-8000-000000000018',
+  auditorA: '00000000-0000-4000-8000-000000000019',
+  auditorB: '00000000-0000-4000-8000-000000000020',
+};
+let teamA; let teamB; let teamAlertA; let teamAlertB;
+const prepareTeams = async () => {
+  if (teamA) return;
+  const entries = Object.entries(teamUsers);
+  await db.query(`insert into auth.users(id,email) values ${entries.map((_, i) => `($${i + 1},$${i + entries.length + 1})`).join(',')} on conflict do nothing`,
+    [...entries.map(([, id]) => id), ...entries.map(([name]) => `phase16-${name}@example.test`)]);
+  for (const [key, id] of entries) {
+    const role = key === 'admin' ? 'ADMIN' : key.startsWith('supervisor') ? 'SUPERVISOR' : 'AUDITOR';
+    await db.query('update public.user_profiles set name=$2,role=$3,account_status=\'ACTIVE\' where id=$1', [id, key, role]);
+  }
+  const first = (await db.query("select public.manage_audit_team($1,'CREATE',null,'Team A',$2) as value", [teamUsers.admin, teamUsers.supervisorA])).rows[0].value;
+  const second = (await db.query("select public.manage_audit_team($1,'CREATE',null,'Team B',$2) as value", [teamUsers.admin, teamUsers.supervisorB])).rows[0].value;
+  teamA = first.id; teamB = second.id;
+  await db.query("select public.set_audit_team_member($1,$2,$3,'ADD')", [teamUsers.supervisorA, teamA, teamUsers.auditorA]);
+  await db.query("select public.set_audit_team_member($1,$2,$3,'ADD')", [teamUsers.admin, teamB, teamUsers.auditorB]);
+  await create('TEAM-TX-A'); await create('TEAM-TX-B'); await create('TEAM-TX-UNCLAIMED');
+  for (const transactionId of ['TEAM-TX-A', 'TEAM-TX-B', 'TEAM-TX-UNCLAIMED']) {
+    await db.query(`insert into public.alerts(transaction_id,severity,title,description,reason,risk_score,risk_scoring_version,request_received_at)
+      values($1,'HIGH','Alert','Description','Reason',90,'1.0.0',now())`, [transactionId]);
+  }
+  teamAlertA = (await db.query("select id from public.alerts where transaction_id='TEAM-TX-A'")).rows[0].id;
+  teamAlertB = (await db.query("select id from public.alerts where transaction_id='TEAM-TX-B'")).rows[0].id;
+  await db.query("select public.record_alert_assignment($1,$2,'ASSIGNED',$3,null)", [teamUsers.supervisorA, teamAlertA, teamUsers.auditorA]);
+  await db.query("select public.record_alert_assignment($1,$2,'ASSIGNED',$3,null)", [teamUsers.supervisorB, teamAlertB, teamUsers.auditorB]);
+};
+
+test('team alert visibility enforces assigned Auditor and team Supervisor scopes', async () => {
+  await prepareTeams();
+  const can = async (actor, alert) => (await db.query('select public.can_access_team_alert($1,$2) as allowed', [actor, alert])).rows[0].allowed;
+  assert.equal(await can(teamUsers.auditorA, teamAlertA), true);
+  assert.equal(await can(teamUsers.auditorA, teamAlertB), false);
+  assert.equal(await can(teamUsers.supervisorA, teamAlertA), true);
+  assert.equal(await can(teamUsers.supervisorA, teamAlertB), false);
+  const queue = (await db.query('select public.list_accessible_alerts($1,1,100,null) as page', [teamUsers.supervisorA])).rows[0].page;
+  assert.ok(queue.items.some(row => row.id === teamAlertA));
+  assert.ok(queue.items.some(row => row.transaction_id === 'TEAM-TX-UNCLAIMED'));
+  assert.ok(!queue.items.some(row => row.id === teamAlertB));
+  const teamCandidates = (await db.query('select public.list_team_member_candidates($1,$2) as value', [teamUsers.supervisorA, teamA])).rows[0].value;
+  assert.ok(teamCandidates.some(row => row.id === teamUsers.auditorA));
+  assert.ok(!teamCandidates.some(row => row.id === teamUsers.auditorB));
+  await assert.rejects(db.query('select public.list_team_member_candidates($1,$2)', [teamUsers.supervisorA, teamB]), /Team membership denied/);
+  const auditorPage = (await db.query('select public.list_accessible_alerts($1,1,100,null) as page', [teamUsers.auditorA])).rows[0].page;
+  assert.deepEqual(auditorPage.items.map(row => row.id), [teamAlertA]);
+  await assert.rejects(db.query('select public.get_alert_assignment_bundle($1,$2)', [teamUsers.supervisorA, teamAlertB]), /Alert access denied/);
+});
+
+test('assignment targets, concurrent writes, unassignment history, and membership locks are enforced', async () => {
+  await prepareTeams();
+  await assert.rejects(db.query("select public.record_alert_assignment($1,$2,'ASSIGNED',$3,null)", [teamUsers.supervisorA, teamAlertB, teamUsers.auditorA]), /Cross-team assignment denied/);
+  const otherQueueAlert = (await db.query("select id from public.alerts where transaction_id='TEAM-TX-UNCLAIMED'")).rows[0].id;
+  const outcomes = await Promise.allSettled([
+    db.query("select public.record_alert_assignment($1,$2,'ASSIGNED',$3,null)", [teamUsers.supervisorA, otherQueueAlert, teamUsers.auditorA]),
+    db.query("select public.record_alert_assignment($1,$2,'ASSIGNED',$3,null)", [teamUsers.supervisorA, otherQueueAlert, teamUsers.supervisorA]),
+  ]);
+  assert.equal(outcomes.filter(result => result.status === 'fulfilled').length, 1);
+  assert.equal(Number((await db.query('select count(*) as n from public.alert_assignment_history where alert_id=$1', [otherQueueAlert])).rows[0].n), 1);
+  await assert.rejects(db.query("select public.set_audit_team_member($1,$2,$3,'REMOVE')", [teamUsers.supervisorA, teamA, teamUsers.auditorA]), /Reassign or unassign active alerts/);
+  const current = (await db.query('select assignee_id from public.alert_assignments where alert_id=$1', [otherQueueAlert])).rows[0];
+  await db.query("select public.record_alert_assignment($1,$2,'UNASSIGNED',null,'Return to queue')", [teamUsers.supervisorA, otherQueueAlert]);
+  assert.equal((await db.query('select status,assignee_id from public.alert_assignments where alert_id=$1', [otherQueueAlert])).rows[0].status, 'UNASSIGNED');
+  assert.notEqual(current.assignee_id, null);
+  assert.equal(Number((await db.query('select count(*) as n from public.alert_assignment_history where alert_id=$1', [otherQueueAlert])).rows[0].n), 2);
+  await assert.rejects(db.query('delete from public.alert_assignment_history where alert_id=$1', [otherQueueAlert]), /append-only/);
+});
+
+test('team activity and scoped audit/review history are bounded and least privilege', async () => {
+  await prepareTeams();
+  await db.query("select public.record_review_action($1,'ALERT',$2,'REVIEWED',null)", [teamUsers.auditorA, teamAlertA]);
+  const activity = (await db.query('select public.get_team_activity($1,$2) as value', [teamUsers.supervisorA, teamA])).rows[0].value;
+  assert.equal(activity.overview.team_members, 2);
+  assert.equal(activity.overview.reviews_today, 1);
+  const expectedOpen = Number((await db.query(`select count(*) as n from public.alerts a left join public.alert_assignments aa on aa.alert_id=a.id
+    where a.status='ACTIVE' and (aa.alert_id is null or aa.team_id=$1)`, [teamA])).rows[0].n);
+  assert.equal(activity.overview.open_alerts, expectedOpen); // Reviewed alerts are excluded; unclaimed alerts remain visible.
+  assert.ok(activity.activity.some(event => event.action === 'ALERT_REVIEWED'));
+  const adminTeam = (await db.query('select public.get_team_activity($1,$2) as value', [teamUsers.admin, teamA])).rows[0].value;
+  assert.equal(adminTeam.overview.open_alerts, expectedOpen);
+  await assert.rejects(db.query('select public.get_team_activity($1,$2)', [teamUsers.supervisorA, teamB]), /Cross-team activity denied/);
+  await assert.rejects(db.query('select public.list_scoped_review_records($1,\'ALERT\',$2,1,25)', [teamUsers.auditorB, teamAlertA]), /Alert review scope denied/);
+  const grants = (await db.query(`select
+    has_function_privilege('anon','public.record_alert_assignment(uuid,text,text,uuid,text)','execute') as anon_write,
+    has_function_privilege('service_role','public.list_accessible_alerts(uuid,integer,integer,text)','execute') as service_list,
+    has_function_privilege('authenticated','public.list_audit_teams(uuid)','execute') as auth_list`)).rows[0];
+  assert.deepEqual(grants, { anon_write: false, service_list: true, auth_list: false });
 });
 
 test.after(async () => { await db.close(); });

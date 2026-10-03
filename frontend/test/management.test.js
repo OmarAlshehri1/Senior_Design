@@ -11,9 +11,9 @@ import { createApprovalModel, normalizeAccessRequests } from '../src/management/
 import { deriveUserSummary, normalizeUser, normalizeUsers } from '../src/management/userModel.js';
 import { createUserManagementService } from '../src/management/userManagementService.js';
 import { createTeamActivityModel } from '../src/team/teamActivity.js';
-import { teamService } from '../src/team/teamService.js';
+import { createTeamService } from '../src/team/teamService.js';
 import { ALERT_ASSIGNMENT_FIELDS, ASSIGNMENT_STATUSES, normalizeAlertAssignment, normalizeAssignmentHistory } from '../src/assignments/alertAssignments.js';
-import { assignmentService } from '../src/assignments/assignmentService.js';
+import { createAssignmentService } from '../src/assignments/assignmentService.js';
 
 test('User Management denies Auditor and Supervisor while allowing Admin', () => {
   assert.equal(getRoutePermission(APPLICATION_ROUTES.USERS), PERMISSIONS.MANAGE_USERS);
@@ -113,13 +113,42 @@ test('Admin user and security metrics accept unavailable state', () => {
   assert.ok(workspace.metrics.every((metric) => metric.value === null));
 });
 
-test('Team and assignment service boundaries do not fabricate success', async () => {
-  const calls = [
-    ...Object.values(teamService).map((method) => method()),
-    ...Object.values(assignmentService).map((method) => method()),
-  ];
-  const results = await Promise.allSettled(calls);
-  assert.ok(results.every((result) => result.status === 'rejected'));
+test('team and assignment services use the authorized API contracts', async () => {
+  const calls = [];
+  const client = {
+    get: async (path, options) => { calls.push({ method: 'GET', path, options }); return {
+      assignment: { assigneeId: 'auditor-1' }, eligible_users: [{ id: 'auditor-1' }],
+      history: [{ id: 1, created_at: 'now', assignee_name: 'Auditor' }],
+    }; },
+    post: async (path, body) => { calls.push({ method: 'POST', path, body }); return {}; },
+    patch: async (path, body) => { calls.push({ method: 'PATCH', path, body }); return {}; },
+    delete: async (path) => { calls.push({ method: 'DELETE', path }); return {}; },
+  };
+  const teams = createTeamService(client);
+  const assignments = createAssignmentService(client);
+  await teams.getTeams();
+  await teams.getTeamActivity('team-1');
+  await teams.getMemberCandidates('team-1');
+  await teams.createTeam('Team One', 'supervisor-1');
+  await teams.updateTeam('team-1', { name: 'Renamed' });
+  await teams.updateMember('team-1', 'auditor-1', 'ADD');
+  await teams.deactivateTeam('team-1');
+  await assignments.assignAlert('alert-1', 'auditor-1', 'initial');
+  await assignments.reassignAlert('alert-1', 'supervisor-1');
+  await assignments.unassignAlert('alert-1');
+  const history = await assignments.getAlertAssignmentHistory('alert-1');
+  assert.equal(history.history[0].assigneeName, 'Auditor');
+  assert.equal(history.history[0].assignedAt, 'now');
+  assert.deepEqual(calls.map(({ method, path }) => [method, path]), [
+    ['GET', '/teams'], ['GET', '/teams/activity'], ['GET', '/teams/team-1/member-candidates'], ['POST', '/teams'], ['PATCH', '/teams/team-1'],
+    ['POST', '/teams/team-1/members'], ['DELETE', '/teams/team-1'],
+    ['POST', '/alerts/alert-1/assignment'], ['POST', '/alerts/alert-1/assignment'],
+    ['POST', '/alerts/alert-1/assignment'], ['GET', '/alerts/alert-1/assignment'],
+  ]);
+  assert.deepEqual(calls[3].body, { name: 'Team One', supervisor_id: 'supervisor-1' });
+  assert.equal(calls[7].body.action, 'ASSIGNED');
+  assert.equal(calls[8].body.action, 'REASSIGNED');
+  assert.equal(calls[9].body.action, 'UNASSIGNED');
 });
 
 test('user management service calls identity routes with role decisions server-side', async () => {

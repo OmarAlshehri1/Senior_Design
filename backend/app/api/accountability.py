@@ -40,11 +40,12 @@ async def record_review(resource_type: ReviewerResource, resource_id: str,
 @router.get("/reviews/{resource_type}/{resource_id}", dependencies=[Depends(require_roles("AUDITOR", "SUPERVISOR", "ADMIN"))])
 async def get_review_history(resource_type: ReviewerResource, resource_id: str,
                              page: int = Query(default=1, ge=1),
-                             page_size: int = Query(default=25, ge=1, le=100)):
+                             page_size: int = Query(default=25, ge=1, le=100),
+                             user: dict = Depends(get_current_user)):
     try:
         return await run_in_threadpool(
             accountability.review_history, resource_type=resource_type,
-            resource_id=resource_id, page=page, page_size=page_size,
+            resource_id=resource_id, actor_id=user["id"], page=page, page_size=page_size,
         )
     except identity.IdentityError as exc:
         raise HTTPException(status_code=exc.status, detail=exc.code) from exc
@@ -71,7 +72,7 @@ async def get_audit_events(
             actor=actor, action=action, resource_type=resource_type,
             outcome=outcome, date=date_filter.isoformat() if date_filter else None,
             search=search,
-            scope_actor_id=user["id"] if user["role"] == "SUPERVISOR" else None,
+            actor_id=user["id"],
             sort=sort,
         )
     except identity.IdentityError as exc:

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import useApp from '../context/useApp';
 import AlertsTable from '../components/AlertsTable';
 import { SearchIcon } from '../components/icons';
@@ -11,6 +11,7 @@ import {
 import AssignmentDialog from '../components/AssignmentDialog.jsx';
 import useAuthorization from '../auth/useAuthorization.js';
 import { hasPermission, PERMISSIONS } from '../auth/roles.js';
+import { assignmentService } from '../assignments/assignmentService.js';
 
 function EmptyAlertsState({
   alertCount,
@@ -54,6 +55,7 @@ export default function Alerts() {
     transactions,
     markAlertReviewed,
     showNotification,
+    setAlertAssignment,
   } = useApp();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -61,8 +63,55 @@ export default function Alerts() {
   const [typeFilter, setTypeFilter] = useState('All');
   const [sortBy, setSortBy] = useState(ALERT_SORT_OPTIONS.NEWEST);
   const [assignmentAlert, setAssignmentAlert] = useState(null);
+  const [assignmentData, setAssignmentData] = useState({ alertId: null, assignment: null, history: [], eligibleUsers: [] });
+  const [assignmentBusy, setAssignmentBusy] = useState(false);
+  const [assignmentError, setAssignmentError] = useState(null);
   const canAssignAlerts = hasPermission(effectiveRole, PERMISSIONS.ASSIGN_ALERTS);
   const canEscalateToCase = hasPermission(effectiveRole, PERMISSIONS.CREATE_CASE);
+
+  useEffect(() => {
+    if (!assignmentAlert) return undefined;
+    let active = true;
+    setAssignmentError(null);
+    setAssignmentData({ alertId: assignmentAlert.id, assignment: null, history: [], eligibleUsers: [] });
+    assignmentService.getAlertAssignmentHistory(assignmentAlert.id).then((data) => {
+      if (active) setAssignmentData({ ...data, alertId: assignmentAlert.id });
+    }).catch((error) => {
+      if (active) setAssignmentError(error instanceof Error ? error.message : 'Assignment details could not be loaded.');
+    });
+    return () => { active = false; };
+  }, [assignmentAlert]);
+
+  const saveAssignment = async ({ assigneeId, note }) => {
+    setAssignmentBusy(true);
+    setAssignmentError(null);
+    try {
+      const current = assignmentData.alertId === assignmentAlert.id ? assignmentData.assignment : null;
+      const result = current?.assigneeId
+        ? await assignmentService.reassignAlert(assignmentAlert.id, assigneeId, note || null)
+        : await assignmentService.assignAlert(assignmentAlert.id, assigneeId, note || null);
+      setAlertAssignment(assignmentAlert.id, result.assignment);
+      setAssignmentData((previous) => ({ ...previous, alertId: assignmentAlert.id, assignment: result.assignment }));
+      showNotification('Alert assignment saved.', 'success');
+      setAssignmentAlert(null);
+    } catch (error) {
+      setAssignmentError(error instanceof Error ? error.message : 'Alert assignment could not be saved.');
+    } finally { setAssignmentBusy(false); }
+  };
+
+  const unassignAlert = async () => {
+    setAssignmentBusy(true);
+    setAssignmentError(null);
+    try {
+      const result = await assignmentService.unassignAlert(assignmentAlert.id);
+      setAlertAssignment(assignmentAlert.id, result.assignment);
+      setAssignmentData((previous) => ({ ...previous, alertId: assignmentAlert.id, assignment: result.assignment }));
+      showNotification('Alert returned to the team queue.', 'success');
+      setAssignmentAlert(null);
+    } catch (error) {
+      setAssignmentError(error instanceof Error ? error.message : 'Alert could not be unassigned.');
+    } finally { setAssignmentBusy(false); }
+  };
 
   const summary = useMemo(() => deriveAlertSummary(alerts), [alerts]);
   const filteredAlerts = useMemo(
@@ -235,7 +284,12 @@ export default function Alerts() {
           />
         )}
       </section>
-      <AssignmentDialog alert={assignmentAlert} onClose={() => setAssignmentAlert(null)} />
+      <AssignmentDialog alert={assignmentAlert}
+        currentAssignment={assignmentData.alertId === assignmentAlert?.id ? assignmentData.assignment : null}
+        eligibleUsers={assignmentData.alertId === assignmentAlert?.id ? assignmentData.eligibleUsers : []}
+        history={assignmentData.alertId === assignmentAlert?.id ? assignmentData.history : []}
+        busy={assignmentBusy} error={assignmentError} onSave={saveAssignment} onUnassign={unassignAlert}
+        onClose={() => setAssignmentAlert(null)} />
     </>
   );
 }
