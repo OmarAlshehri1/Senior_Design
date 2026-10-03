@@ -4,11 +4,11 @@ Senior Design project for team **M004**.
 
 This repository is a monorepo containing the React frontend, FastAPI backend, and shared API contract. The system monitors standardized retail transactions, evaluates audit rules and anomalous behavior, produces a unified risk assessment, and delivers high-risk alerts.
 
-At `f9c7dd5` (PR #22), the core implements Supabase transaction persistence, five versioned audit rules, evaluation-coverage calculation, Isolation Forest, authoritative 60/40 combined risk, durable alerts/WebSocket delivery, advisory Gemini explanations, and daily report generation/CSV download. The frontend connects transaction list/detail, alerts/review/realtime, and reports through existing services and adapters; API mode has no automatic mock transaction/alert fallback.
+The implementation recorded at `f9c7dd5` (PR #22) includes Supabase transaction persistence, five versioned audit rules, evaluation-coverage calculation, Isolation Forest, authoritative 60/40 combined risk, durable alerts/WebSocket delivery, advisory Gemini explanations, and daily report generation/CSV download. PR #26 adds Supabase Auth/JWT, account/access-request workflows, backend RBAC, authenticated report/WebSocket access, and local CORS `Authorization` support. Review and immutable audit-log integration is in progress on `feature/reviews-audit-log`.
 
-Authentication/JWT/RBAC, user/access-request persistence, full reviews/audit history, teams/assignments, notifications, cases, vendor workflows, analytics endpoints, settings persistence, automatic report scheduling, performance evidence, and final three-role E2E remain pending. Prepared frontend UX/services are not functioning backend integrations. Phase 13A separates insert-only runtime creation (`409` on duplicate ID) from offline seed upsert. Phase 13B adds an opt-in durable job/atomic snapshot path; it stays disabled until migration 012 and activation are explicitly approved. The legacy path while disabled still uses separate persistence steps. See [the recovery design](docs/TRANSACTION_RECOVERY_DESIGN.md).
+Migrations 013 (identity) and 014 (reviews/audit) have local test evidence only and are not confirmed on the live database. Teams/assignments, notifications, cases, vendor workflows, analytics endpoints, settings persistence, automatic report scheduling, performance evidence, and final three-role E2E remain pending. Phase 13A separates insert-only runtime creation (`409` on duplicate ID) from offline seed upsert. The project owner confirmed migration 012 is applied in Supabase, but this was not independently queried; `TRANSACTION_RECOVERY_ENABLED` remains false. The legacy processing path while disabled still uses separate persistence steps. See [the recovery design](docs/TRANSACTION_RECOVERY_DESIGN.md).
 
-See [the backend plan](docs/BACKEND_IMPLEMENTATION_PLAN.md) and [frontend evidence](docs/FRONTEND_IMPLEMENTATION_PLAN.md). Omar's [handoff requests](docs/Backend_Final_Handoff_Tasks.docx) define the approved remaining scope; no official rubric was found in the repository. PDF is conditional on a confirmed requirement. Render/Vercel deployment is deferred, and the Render free/paid plan is undecided.
+See [the backend plan](docs/BACKEND_IMPLEMENTATION_PLAN.md) and [frontend evidence](docs/FRONTEND_IMPLEMENTATION_PLAN.md). Omar's [handoff requests](docs/Backend_Final_Handoff_Tasks.docx) define the approved remaining scope; no official rubric was found in the repository. PDF is conditional on a confirmed requirement. Render/Vercel were selected. Merging PR #26 triggered a successful Vercel Production deployment; planned deployment configuration, security review, and final E2E remain in Phase 24. The Render free/paid plan is undecided.
 
 ## Architecture
 
@@ -45,7 +45,7 @@ The frontend displays backend results but is never the authoritative source for 
 │   │   ├── services/
 │   │   └── main.py
 │   ├── tests/
-│   ├── migrations/           SQL migrations 001–012; live application unverified
+│   ├── migrations/           SQL migrations 001–014; 013–014 live application unverified
 │   ├── scripts/              Offline seed, training, and backfill tools
 │   ├── models/               Versioned Isolation Forest artifact and metrics
 │   ├── .env.example
@@ -101,9 +101,9 @@ Implemented routes include health, transaction list/detail/create, alert list/re
 
 Local inspection on 2026-10-03 at `f9c7dd5`: backend `129 passed` with the known Starlette TestClient warning; frontend `204 passed`; frontend lint and `git diff --check` passed. Tests use mocked external services and do not prove live database state or deployed role workflows. Production build was not run in that inspection; previous build successes in the frontend plan are historical results, not a fresh build verification.
 
-Subsequent documentation pre-commit checks on 2026-10-03: backend `129 passed`, frontend `204 passed`, lint passed, and an actual `npm run build` production build passed (138 modules). `git diff --check` and the documentation/handoff-source secret scan passed. The tested environment uses the existing local dependency pins; their uncommitted `requirements.txt` change is excluded from the documentation commit. Phase 13A starts on a separate branch only after the documentation PR is merged and verified on `main`.
+Historical documentation-commit checks on 2026-10-03 at `f9c7dd5`: backend `129 passed`, frontend `204 passed`, lint passed, and an actual production build passed (138 modules). After PR #26 merged to `main`, the verified baseline was backend `179 passed` (one known Starlette/httpx deprecation warning), frontend `212 passed`, 16 isolated migration/recovery tests, lint and production build passed. Phase 15's current branch has its own results recorded in the backend plan after completion. The local `requirements.txt` edit remains outside the documentation and Phase 14 commits.
 
-Migrations 001–011 are present; no live migration application was checked. Stored model metrics report held-out detection 87.04% and false positives 3.45%; training was not rerun. Historical coverage/latency measurements are retained in the backend plan. A 10,000-row dataset does not prove throughput, and manual report generation does not prove automatic daily scheduling.
+Migration files 001–014 are present. The project owner confirmed migration 012 was applied; migration 013/014 have no live-application confirmation here. Stored model metrics report held-out detection 87.04% and false positives 3.45%; training was not rerun. Historical coverage/latency measurements are retained in the backend plan. A 10,000-row dataset does not prove throughput, and manual report generation does not prove automatic daily scheduling.
 
 ## Technology stack
 

@@ -869,9 +869,9 @@ Active backend domain integrations are Transactions, Alerts, and Reports. Transa
 - Backend `missing_fields` maps to `dataQuality.missingFields` and is authoritative whenever an array is supplied.
 - Risk and rule-status filters remain current-page frontend filters; UI wording does not claim global coverage.
 
-Auth, Users, Audit Log, Reviews, Teams, Assignments, Notifications, Cases, Vendors, Analytics, and Settings are not activated as real backend integrations in the current frontend.
+Auth, Users, and Access Requests are integrated with the Phase 14 backend. Phase 15 currently connects Review History and Audit Log to the review/audit API on `feature/reviews-audit-log`; migration 014 and that branch are not yet on `main`. Teams, Assignments, Notifications, Cases, Vendors, Analytics, and Settings remain unavailable or preview-only as described below.
 
-Alerts and Reports are connected after PR #22; earlier phase descriptions retain their historical preview status. Alert review currently persists status/time only. Alert loading currently retrieves the first 100 records at mount; reconnect catch-up is pending in backend Phase 17. Authenticated REST/WebSocket and CSV download, token lifecycle, and CORS `Authorization` support belong to Phase 14; approved production origins and deployed topology verification belong to Phase 24.
+Alerts and Reports are connected after PR #22; earlier phase descriptions retain their historical preview status. On `main` after PR #26, Auth/JWT/RBAC, authenticated REST/WebSocket/CSV, token lifecycle, and local CORS `Authorization` support are implemented, pending live application of migration 013. The Phase 15 branch records alert and transaction review actions, notes, and immutable history through migration 014; it has local tests but is not yet merged or live-applied. Alert loading currently retrieves the first 100 records at mount; reconnect catch-up is pending in backend Phase 17. Approved production origins and deployed topology verification belong to Phase 24; PR #26 did trigger a Vercel Production deployment.
 
 `GET /api/v1/dashboard/summary` and `GET /api/v1/audit-rules` are documented but not implemented. Dashboard derivations are scoped to available frontend data, and Audit Rules uses local definitions. Authoritative summaries/rule-definition reads and connected coverage/trend analytics belong to backend Phase 20.
 
@@ -882,10 +882,10 @@ Alerts and Reports are connected after PR #22; earlier phase descriptions retain
 | Transactions | Yes | Yes | Yes | Connected: list and detail |
 | Alerts | Yes | Yes | Yes | Connected: REST listing/review and live WebSocket delivery |
 | Reports | Yes | Yes | Yes | Connected: persisted generation, listing, and CSV download |
-| Auth | Yes | Yes | No | Prepared / awaiting backend |
-| Users | Yes | Yes | No | Prepared / awaiting backend |
-| Audit Log | Yes | Yes | No | Prepared / awaiting backend |
-| Reviews | Yes | Yes | No | Frontend session/empty presentation only |
+| Auth | Yes | Yes | Yes | Phase 14 API integration on `main`; migration 013 not live-confirmed |
+| Users | Yes | Yes | Yes | Phase 14 admin/access-request integration on `main`; migration 013 not live-confirmed |
+| Audit Log | Yes | Yes | No | Phase 15 branch integration; awaiting migration 014 and main merge |
+| Reviews | Yes | Yes | No | Phase 15 branch integration; migration 014 and main merge pending |
 | Teams | Yes | Yes | No | Prepared / unavailable |
 | Assignments | Yes | Yes | No | Prepared / unavailable |
 | Notifications | Yes | Yes | No | Prepared / preview data only |
@@ -945,13 +945,13 @@ No frontend claim is made for the five audit-rule implementations, Isolation For
 | Dashboard | Enterprise overview, risk distribution, recent activity, role workspace | `/` or `/dashboard` |
 | Transactions | Connected pagination/search/sort, loading/error states, responsive results | `/transactions` |
 | Transaction Detail | Direct lookup, rule/risk/data-quality presentation, not-found/error separation | `/transactions/:id` |
-| Alerts | Connected persisted listing, status/time review, and live WebSocket delivery; assignment/full review history remain pending | `/alerts` |
+| Alerts | Connected persisted listing/status review and live WebSocket delivery; Phase 15 branch adds attributable review/reopen history; assignment remains pending | `/alerts` |
 | Audit Rules | Five named rule definitions and accessible disclosures; execution is backend-owned | `/audit-rules` |
 | Reports | Connected persisted listing/generation, authoritative summaries, and CSV download; automatic scheduling remains pending | `/reports` |
 | Role Preview | Development-only Auditor/Supervisor/Admin presentation | Application shell in development |
-| Login UX | Validation and account-state routes; no real authentication | `/login` and auth routes |
-| User Management | Permission-aware administrative UX and empty states; no persistence | `/users` |
-| Audit Log | Filters, sorting, details, empty state; no backend event store connected | `/audit-log` |
+| Login UX | Supabase Auth session lifecycle and account-state routes; requires live migration 013 | `/login` and auth routes |
+| User Management | Authenticated access-request, profile, and account lifecycle APIs; requires live migration 013 | `/users` |
+| Audit Log | Filters, server pagination/details, and role scope connected to Phase 15 branch audit-event store | `/audit-log` |
 | Cases | Workflow architecture and truthful unavailable states | `/cases`, `/cases/:caseId` |
 | Vendors | Monitoring/profile architecture and disabled unavailable sections | `/vendors`, `/vendors/:vendorId` |
 | Responsive behavior | Drawer navigation, responsive tables/cards/tabs | Desktop/tablet/mobile browser widths |

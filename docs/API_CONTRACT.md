@@ -4,7 +4,7 @@ This document is the preliminary contract between the React frontend and FastAPI
 
 The documented health, transaction, alert, report, CSV-download, and alert WebSocket endpoints are implemented. `GET /api/v1/dashboard/summary` and `GET /api/v1/audit-rules` are planned contracts only; no router currently implements them. Authentication and identity endpoints are listed below. Shapes may be extended through team agreement, but existing names should not be changed without coordinating both branches.
 
-Implementation status for this branch: runtime transaction creation is insert-only and returns `409` for an existing ID without overwriting it; offline seed upsert remains separate. Migration 012 is live-verified, while `TRANSACTION_RECOVERY_ENABLED` remains disabled. Phase 14 work adds API identity, bearer authentication, role checks, authenticated report download and WebSocket subscriptions, plus local `Authorization` CORS support. Migration 013 is covered only by isolated local tests and has not been applied to the live database. The project owner confirmed `POST /transactions` is Supervisor/Admin-only; account lockout follows three consecutive failed sign-ins, and an active Admin may unlock only after the account owner verifies their email and submits an unlock request. Initial Admin provisioning is manual by the Supabase database owner as documented in [IDENTITY_BOOTSTRAP.md](IDENTITY_BOOTSTRAP.md). Phase 17 adds alert catch-up after reconnect. Approved production origins and the worker/instance delivery topology are completed in Phase 24. Live measurements below are historical observations, not newly verified database state.
+Implementation status: runtime transaction creation is insert-only and returns `409` for an existing ID without overwriting it; offline seed upsert remains separate. The project owner confirmed migration 012 applied successfully in Supabase; this was not independently queried. `TRANSACTION_RECOVERY_ENABLED` remains disabled. Phase 14 adds API identity, bearer authentication, role checks, authenticated report download and WebSocket subscriptions, plus local `Authorization` CORS support. Migration 013 is covered only by isolated local tests and has not been applied to the live database. The project owner confirmed `POST /transactions` is Supervisor/Admin-only; account lockout follows three consecutive failed sign-ins, and an active Admin may unlock only after the account owner verifies their email and submits an unlock request. Initial Admin provisioning is manual by the Supabase database owner as documented in [IDENTITY_BOOTSTRAP.md](IDENTITY_BOOTSTRAP.md). Phase 15 adds actor-attributed reviews and immutable audit events through migration 014; migration 014 is locally tested and not live-applied. Until Phase 16 adds team relationships, Supervisors see only their own audit events. Phase 17 adds alert catch-up after reconnect. Approved production origins and the worker/instance delivery topology are completed in Phase 24. Live measurements below are historical observations, not newly verified database state.
 
 ## Conventions
 
@@ -343,7 +343,7 @@ Returns a paginated collection of `Alert` objects. The optional `status` query p
 
 ### `PATCH /api/v1/alerts/{alert_id}/review`
 
-Marks an alert as `REVIEWED`, records `reviewed_at`, and returns the updated `Alert`. This is not a full review record: actor identity, notes, review history, and immutable accountability remain pending in backend-plan Phase 15, after Phase 14 authentication.
+Requires an active Auditor, Supervisor, or Admin bearer session. `REVIEWED` marks the alert complete; `ACTIVE` reopens a completed review. Both return the updated `Alert`. Repeating the current transition returns `409 Conflict` and does not append a duplicate event. The optional note is limited to 2,000 characters.
 
 Request:
 
@@ -352,6 +352,16 @@ Request:
   "status": "REVIEWED"
 }
 ```
+
+Full actor-attributed alert and transaction review history, notes, and immutable audit events are implemented by backend-plan Phase 15. These routes require migration 014; local PostgreSQL/PGlite coverage does not imply that it is applied to the live database.
+
+### `POST /api/v1/reviews/{resource_type}/{resource_id}` and `GET /api/v1/reviews/{resource_type}/{resource_id}`
+
+`resource_type` is `TRANSACTION` or `ALERT`. Active Auditors, Supervisors, and Admins may review. POST accepts `{"action":"REVIEWED"}`, `{"action":"REOPENED"}`, or `{"action":"NOTE_ADDED","note":"..."}`. Reviews can be reopened; each action appends a review record with actor ID, actor name/role snapshot, note, and timestamp. Repeated or invalid state transitions return `409 Conflict`. Notes cannot be empty and are limited to 2,000 characters. GET returns filtered-by-resource history in newest-first pages of 25, up to 100 per page.
+
+### `GET /api/v1/audit-events`
+
+Supervisor and Admin access only. Supports `page`, `page_size`, `search`, `actor`, `action`, `resource_type`, `outcome`, `date` (UTC calendar day), and `sort` (`NEWEST` or `OLDEST`). Admins see all retained activity. Until Phase 16 provides team membership, Supervisors see only events they performed. Review transitions/notes and identity events captured from `login_history` are append-only; application roles cannot update or delete accountability records. `GET /api/v1/users/{id}/login-history` remains scoped to the user or Admin.
 
 ### `GET /api/v1/audit-rules`
 

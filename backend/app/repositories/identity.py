@@ -29,6 +29,17 @@ def request(method: str, path: str, *, body: Any = None, token: str | None = Non
                 raise IdentityError("INVALID_CREDENTIALS", 401)
             if response.status_code == 429:
                 raise IdentityError("RATE_LIMITED", 429)
+            if response.status_code == 403:
+                raise IdentityError("FORBIDDEN", 403)
+            if response.status_code == 404:
+                # Distinguish a missing review target from an unapplied RPC/schema.
+                try:
+                    database_code = response.json().get("code")
+                except (ValueError, AttributeError):
+                    database_code = None
+                if database_code == "P0002":
+                    raise IdentityError("NOT_FOUND", 404)
+                raise IdentityError("AUTH_UNAVAILABLE")
             if response.status_code == 409:
                 raise IdentityError("CONFLICT", 409)
             raise IdentityError("AUTH_UNAVAILABLE")

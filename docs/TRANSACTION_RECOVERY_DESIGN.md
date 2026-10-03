@@ -2,9 +2,9 @@
 
 ## Activation boundary
 
-Migration `012_create_transaction_processing.sql` and the runtime path are locally tested. They have not been applied to the live database. `TRANSACTION_RECOVERY_ENABLED=false` is the safe default until explicit approval, migration application, and activation verification. With the flag off, Phase 13A insert-only protection remains active, but the legacy separate persistence steps still have no automatic recovery guarantee.
+Migration `012_create_transaction_processing.sql` and the runtime path are locally tested. The project owner confirmed that migration 012 was applied successfully to Supabase; the agent has not independently queried the live database. `TRANSACTION_RECOVERY_ENABLED=false` remains the safe default until the migration's live grants/functions are verified and runtime activation is explicitly approved. With the flag off, Phase 13A insert-only protection remains active, but the legacy separate persistence steps still have no automatic recovery guarantee.
 
-The rollout procedure, requiring approval for its live steps, is: review/apply migration 012, verify its grants/functions/indexes, enable the flag in the approved backend environment, restart the backend, and verify new transaction -> job -> completed snapshots/alert plus recovery. Do not switch the flag off while jobs remain unfinished. No live action is part of the local test commands below.
+The rollout procedure, requiring approval for its live steps, is: verify the owner-applied migration's grants/functions/indexes, enable the flag in the approved backend environment, restart the backend, and verify new transaction -> job -> completed snapshots/alert plus recovery. Do not switch the flag off while jobs remain unfinished. No live action is part of the local test commands below.
 
 ## Persistence and failure semantics
 

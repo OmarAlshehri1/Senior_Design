@@ -34,13 +34,13 @@ Each phase (and each Phase 13 subphase) uses an independent branch and PR. Befor
 
 ## API implementation boundaries
 
-Implemented REST routes: health; transaction list/detail/create; alert list/review; report list/generation/CSV download. `/ws/alerts` is implemented for live delivery. These routes currently have no authoritative Auth/RBAC enforcement.
+Implemented REST routes: health; authenticated transaction list/detail/create; authenticated alert list/review; authenticated report list/generation/CSV download; identity/session/access-request/user management; and Phase 15 review history/audit-event reads. `/ws/alerts` authenticates bearer tokens after connection. Review writes are transactionally recorded by migration 014. Migration 013 and 014 have local-only evidence and are not live-applied as of this plan update.
 
 - `GET /api/v1/dashboard/summary`: documented shape only; no router implementation. Implement the agreed summary scope in Phase 20.
 - `GET /api/v1/audit-rules`: documented shape only; no router implementation. Add authoritative read-only rule definitions in Phase 20; the five rule implementations already exist.
 - Evaluation coverage: migration 006 and repository calculation exist, but no public analytics endpoint or activated frontend analytics service. Complete in Phase 20.
-- Auth, Users, Access Requests, full Reviews/Audit Log, Teams, Assignments, Notifications, Cases, Vendor workflows, and Settings need backend contracts and implementations. Prepared frontend services do not prove backend availability.
-- CORS currently permits local origins and does not allow the `Authorization` header. Phase 14 adds and tests authenticated transport; Phase 24 configures the approved production origin.
+- Auth, Users, and Access Requests are implemented in Phase 14. Review history/audit events and login activity are integrated in Phase 15; Supervisor visibility is temporarily restricted to the Supervisor's own events until Phase 16 can enforce team scope. Teams, Assignments, Notifications, Cases, Vendor workflows, and Settings remain future phases; prepared frontend services do not prove backend availability.
+- Local CORS preflight permits `Authorization`; Phase 24 configures and verifies the approved production origin.
 - Alerts load the first REST page (100 items) at mount. Reconnection does not currently trigger catch-up retrieval. Phase 17 implements paginated reconciliation and deduplication after reconnect; Phase 24 verifies it on the chosen hosting topology.
 
 ## Target runtime architecture
@@ -376,9 +376,10 @@ Acceptance criteria:
 - Temporary rule-context lookup failures have an explicit recovery policy that prevents unavailable context from becoming permanently accepted final results.
 - The design explains concurrent historical-rule evaluation, commit/publication failure windows, and the actual delivery guarantee; manual backfill alone is insufficient recovery.
 
-Evidence: migration 012, `transaction_processing` repository/service, `test_transaction_processing.py`, and [recovery design](TRANSACTION_RECOVERY_DESIGN.md). Backend 159 passed; 13 isolated PostgreSQL/PGlite tests passed against migrations 001–012, including failure injection, idempotent completion, lease fencing/backoff, and dump/restore. No live database calls. The runtime flag remains false until approved migration/activation; legacy processing while disabled has no recovery guarantee.
+Evidence: migration 012, `transaction_processing` repository/service, `test_transaction_processing.py`, and [recovery design](TRANSACTION_RECOVERY_DESIGN.md). Backend 159 passed; 13 isolated PostgreSQL/PGlite tests passed against migrations 001–012, including failure injection, idempotent completion, lease fencing/backoff, and dump/restore. The project owner confirmed migration 012 applied successfully in Supabase; this was not independently queried by the agent. The runtime flag remains false; legacy processing while disabled has no recovery guarantee.
 
-- [ ] Apply migration 012 and verify live activation only after explicit approval; no live completion claim is made.
+- [x] Project owner confirmed migration 012 was applied successfully in Supabase (not independently queried).
+- [ ] Verify the migration's live grants/functions, then enable `TRANSACTION_RECOVERY_ENABLED` and verify recovery on the approved backend host in Phase 24. Do not treat local test evidence as live activation.
 
 ## Phase 14 — Authentication, users, and RBAC
 
@@ -402,19 +403,23 @@ Acceptance criteria:
 
 Evidence: 179 backend tests passed (one existing Starlette/httpx deprecation warning), 16 isolated PGlite migration/recovery tests passed, 212 frontend tests passed, frontend lint passed, production build passed, `git diff --check` passed, and the changed-source secret scan found no matches. Migration 013 has not been applied to the live database. Main-branch verification follows the Phase 14 PR merge.
 
-## Phase 15 — Reviews and immutable accountability
+## Phase 15 — Reviews and immutable accountability (CURRENT)
 
 Omar mapping: section 3, sections 11–13; dependency: Phase 14.
 
-- [ ] Persist transaction and full alert reviews with actor, role, notes, timestamps, and history; decide whether reopen is supported.
-- [ ] Record audit events with actor/role/action/resource/resource_id/time/outcome/details, with searchable, filtered, paginated reads.
-- [ ] Activate prepared review/audit/login-history services and enforce authorized scope.
+- [x] Project owner chose to allow reopening completed reviews, retaining each transition in history.
+- [x] Persist transaction and full alert reviews with actor, role, notes, timestamps, and history.
+- [x] Record audit events with actor/role/action/resource/resource_id/time/outcome/details, with searchable, filtered, paginated reads.
+- [x] Activate review/audit/login-history services and enforce authorized scope.
 
 Acceptance criteria:
 
 - Review updates retain prior history and attributed notes; repeated/concurrent requests follow documented semantics.
 - Important mutations record attributable outcomes; application callers cannot rewrite/delete accountability history.
 - Tests verify query filters/pagination, unauthorized access, role scope, and preservation of history after state changes. Team scope is completed with Phase 16.
+- Admins can query all audit events; until Phase 16 provides team relationships, Supervisors are restricted to events they performed. Auditors cannot query the audit log.
+
+Local implementation is complete on `feature/reviews-audit-log`: backend `187 passed` (one known Starlette/httpx deprecation warning), 20 isolated PGlite migration tests passed, frontend `214 passed`, lint and production build passed, `git diff --check` passed, and the changed-file secret scan found no credential-pattern matches. Migration 014 is not live-applied. PR checks/main verification remain; Phase 15 is not recorded as merged until those pass. Supervisor team-wide visibility remains Phase 16.
 
 ## Phase 16 — Teams and assignments
 
@@ -592,7 +597,8 @@ These are historical implementation estimates retained from Phases 0–12, not c
 | 2026-10-03 | Added versioned advisory Gemini explanations after authoritative scoring | PR #21; `0d7c85a`, merge `3ad0831` |
 | 2026-10-03 | Connected live alerts, authoritative risk/explanations, and persisted reports in the frontend | PR #22; `a8e1b8a`, `eb38337`, merge `f9c7dd5` |
 | 2026-10-03 | Added approved handoff Phases 13–24, split 13A/13B, deferred deployment, and included reviewed handoff source | PR #23; `0aca9ed`, merge `3a07512` |
+| 2026-10-03 | Added Supabase Auth/JWT, account/access requests, backend RBAC, and authenticated frontend transport | PR #26; `8e3bcf2`, merge `acb1996` |
 
 ## Next action
 
-Phase 13A/13B are merged and verified on `main`. Phase 14 implementation and local verification are complete on `feature/auth-rbac`; merge and main verification remain. The project owner confirmed transaction creation is Supervisor/Admin-only, lockout is three consecutive failed sign-ins with Admin-only approval of a provider-verified user unlock request, and initial Admin provisioning is manual by the Supabase database owner. Migration 013 remains local; do not claim it exists in the live database. After the Phase 14 PR is verified on `main`, proceed with Phase 15 on its own branch. Preserve the user requirements modification and backup stash; deployment remains Phase 24.
+Phase 13A/13B and Phase 14 are merged and verified on `main`; Phase 14 main verification: backend 179 passed (one known Starlette warning), 16 isolated migration/recovery tests, frontend 212 passed, lint/build/diff-check passed. Migration 013 remains local; do not claim it exists in the live database. PR #26 triggered a successful Vercel Production deployment automatically; this does not complete Phase 24 deployment validation, and no deploy settings were changed. Phase 15 implementation is locally verified on `feature/reviews-audit-log`; its PR and main verification remain. The project owner approved reopenable reviews with full history and approved the normal PR cycle despite automatic Vercel deployments. Migration 014 remains isolated/local until explicit live-database approval. The `requirements.txt` user change and backup stash remain preserved and excluded from phase commits.
