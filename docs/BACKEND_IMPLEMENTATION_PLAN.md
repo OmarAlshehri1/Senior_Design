@@ -481,12 +481,16 @@ Omar mapping: section 7, sections 11–13; dependency: Phases 14–18.
 
 - [ ] Extend the approved-vendor registry with list/profile, transaction/alert/case/risk history, and monitoring state.
 - [ ] Implement auditor watchlist request and supervisor decision; supervisor block request and admin decision/block/unblock; watchlist removal and history.
+- [ ] Implement Migration 018 and verify it in isolated PGlite before requesting owner application; do not infer live application from local tests.
+- [ ] Connect the existing vendor pages and service adapter to authenticated endpoints without changing navigation or asserting ERP payment enforcement.
 
 Acceptance criteria:
 
 - Role and object-scope tests cover each decision and denied action; state changes preserve accountable history and integrate audit/notifications.
 - Ghost Vendor behavior remains compatible with registry authority and unavailable states.
 - Backend contracts and UI wording describe blocking in audit monitoring; no ERP payment prevention is claimed without a separate real integration.
+
+Documented but unimplemented when this phase starts: vendor endpoints and the existing frontend `vendorsService` are placeholders. Migration 004 supplies only the approved-vendor registry used by Ghost Vendor evaluation. Migration 018 adds monitoring workflow tables and does not alter `approved_vendors.is_active`. A live deployment cannot use these routes until the owner applies Migration 018.
 
 ## Phase 20 — Authoritative analytics and read endpoints
 

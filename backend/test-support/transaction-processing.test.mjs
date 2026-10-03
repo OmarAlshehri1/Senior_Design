@@ -498,4 +498,44 @@ test('cases enforce team scope, immutable discussion, closure approval, clean ev
   assert.deepEqual(privileges, { anon_create: false, auth_read: false, service_insert: false });
 });
 
+test('vendor watchlist/block workflows enforce role and team scope with immutable history and notifications', async () => {
+  await prepareTeams();
+  await db.query("insert into public.approved_vendors(vendor_id,vendor_name,source_reference) values('VM-001','Vendor One','isolated fixture')");
+  await db.query("update public.transactions set vendor_id='VM-001',vendor_name='Vendor One' where id='TEAM-TX-A'");
+  await db.query("insert into public.transaction_risk_scores(transaction_id,scoring_version,rule_evaluation_version,anomaly_model_version,rule_score,ai_score,risk_score,risk_level) values('TEAM-TX-A','1.0.0','1.0.0','1.0.0',80,70,76,'HIGH')");
+  const vendorPage = (await db.query("select public.list_vendor_monitoring($1,1,25,null) as value", [teamUsers.admin])).rows[0].value;
+  assert.ok(vendorPage.items.some(item => item.vendorId === 'VM-001'));
+  const watchRequest = (await db.query("select public.request_vendor_monitoring($1,'VM-001','WATCHLIST','Repeated control exceptions') as value", [teamUsers.auditorA])).rows[0].value.request;
+  await assert.rejects(db.query("select public.decide_vendor_monitoring($1,$2,true,null)", [teamUsers.supervisorB, watchRequest.id]), /Request outside supervisor team/);
+  await assert.rejects(db.query("select public.request_vendor_monitoring($1,'VM-001','WATCHLIST','Duplicate')", [teamUsers.auditorA]), /Pending request exists/);
+  await db.query('select public.decide_vendor_monitoring($1,$2,true,null)', [teamUsers.supervisorA, watchRequest.id]);
+  assert.equal((await db.query("select monitoring_status from public.approved_vendors where vendor_id='VM-001'")).rows[0].monitoring_status, 'WATCHLISTED');
+  await assert.rejects(db.query("select public.change_vendor_monitoring($1,'VM-001','REMOVE_WATCHLIST',null)", [teamUsers.supervisorB]), /outside supervisor scope/);
+  const bundle = (await db.query("select public.get_vendor_monitoring_bundle($1,'VM-001') as value", [teamUsers.auditorA])).rows[0].value;
+  assert.equal(bundle.transactions[0].id, 'TEAM-TX-A');
+  assert.equal(bundle.risk_history[0].risk_level, 'HIGH');
+  assert.equal(bundle.history.length, 2);
+  const otherTeamBundle = (await db.query("select public.get_vendor_monitoring_bundle($1,'VM-001') as value", [teamUsers.supervisorB])).rows[0].value;
+  assert.deepEqual(otherTeamBundle.requests, []);
+  assert.deepEqual(otherTeamBundle.history, []);
+  await assert.rejects(db.query("update public.vendor_monitoring_history set note='rewritten' where vendor_id=(select id from public.approved_vendors where vendor_id='VM-001')"), /append-only/);
+  await db.query("select public.change_vendor_monitoring($1,'VM-001','REMOVE_WATCHLIST','Review completed')", [teamUsers.supervisorA]);
+  const blockRequest = (await db.query("select public.request_vendor_monitoring($1,'VM-001','BLOCK','Material policy violation') as value", [teamUsers.supervisorA])).rows[0].value.request;
+  await assert.rejects(db.query('select public.decide_vendor_monitoring($1,$2,true,null)', [teamUsers.supervisorA, blockRequest.id]), /Forbidden/);
+  await db.query('select public.decide_vendor_monitoring($1,$2,true,null)', [teamUsers.admin, blockRequest.id]);
+  assert.equal((await db.query("select monitoring_status from public.approved_vendors where vendor_id='VM-001'")).rows[0].monitoring_status, 'BLOCKED');
+  await db.query("select public.change_vendor_monitoring($1,'VM-001','UNBLOCK','Controls remediated')", [teamUsers.admin]);
+  assert.equal((await db.query("select monitoring_status from public.approved_vendors where vendor_id='VM-001'")).rows[0].monitoring_status, 'NORMAL');
+  const notifications = (await db.query("select type from public.user_notifications where resource_type='VENDOR' and resource_id='VM-001' order by type")).rows.map(row => row.type);
+  assert.ok(notifications.includes('VENDOR_WATCHLIST_REQUEST'));
+  assert.ok(notifications.includes('VENDOR_WATCHLIST_APPROVED'));
+  assert.ok(notifications.includes('VENDOR_BLOCK_REQUEST'));
+  assert.ok(notifications.includes('VENDOR_BLOCKED'));
+  assert.equal(Number((await db.query("select count(*) as n from public.audit_events where resource_type='VENDOR' and resource_id='VM-001' and outcome='SUCCESS'")).rows[0].n), 6);
+  const privileges = (await db.query(`select has_function_privilege('anon','public.request_vendor_monitoring(uuid,text,text,text)','execute') as anon_call,
+    has_function_privilege('service_role','public.request_vendor_monitoring(uuid,text,text,text)','execute') as service_call,
+    has_table_privilege('authenticated','public.vendor_monitoring_history','select') as auth_read`)).rows[0];
+  assert.deepEqual(privileges, { anon_call: false, service_call: true, auth_read: false });
+});
+
 test.after(async () => { await db.close(); });

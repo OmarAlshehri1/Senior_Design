@@ -12,12 +12,16 @@ test('test-transaction control is gated by the Vite development flag', async () 
   assert.doesNotMatch(source, /import\.meta\.env\.(?:MODE|PROD)/);
 });
 
-test('vendor profile section controls are explicitly unavailable', async () => {
+test('vendor profile renders authoritative records, decisions, and monitoring history', async () => {
   const source = await readFile(
     new URL('../src/pages/VendorProfile.jsx', import.meta.url),
     'utf8'
   );
 
-  assert.match(source, /<button key=\{label\} type="button" disabled/);
+  assert.match(source, /vendorsService\.getVendor/);
+  assert.match(source, /Related audit records/);
+  assert.match(source, /Monitoring history/);
+  assert.match(source, /reviewVendorWatchlistRequest/);
+  assert.doesNotMatch(source, /sections are unavailable/);
   assert.doesNotMatch(source, /role="tab"/);
 });

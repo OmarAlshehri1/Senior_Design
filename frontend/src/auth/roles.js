@@ -62,6 +62,7 @@ const supervisorPermissions = Object.freeze([
   PERMISSIONS.VIEW_AUDIT_LOG,
   PERMISSIONS.APPROVE_CASE_CLOSURE,
   PERMISSIONS.REVIEW_VENDOR_WATCHLIST_REQUEST,
+  PERMISSIONS.REMOVE_VENDOR_WATCHLIST,
   PERMISSIONS.REQUEST_VENDOR_BLOCK,
 ]);
 
@@ -86,7 +87,12 @@ export const ROLE_DEFINITIONS = Object.freeze({
 export const ROLE_PERMISSION_MAP = Object.freeze({
   [ROLE_KEYS.AUDITOR]: auditorPermissions,
   [ROLE_KEYS.SUPERVISOR]: supervisorPermissions,
-  [ROLE_KEYS.ADMIN]: Object.freeze(Object.values(PERMISSIONS).filter((permission) => permission !== PERMISSIONS.REQUEST_CASE_CLOSURE)),
+  [ROLE_KEYS.ADMIN]: Object.freeze(Object.values(PERMISSIONS).filter((permission) => ![
+    PERMISSIONS.REQUEST_CASE_CLOSURE,
+    PERMISSIONS.REQUEST_VENDOR_WATCHLIST,
+    PERMISSIONS.REVIEW_VENDOR_WATCHLIST_REQUEST,
+    PERMISSIONS.REQUEST_VENDOR_BLOCK,
+  ].includes(permission))),
 });
 
 export function getRoleDefinition(role) {
