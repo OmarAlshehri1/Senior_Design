@@ -49,6 +49,8 @@ export default function Alerts() {
   const { effectiveRole } = useAuthorization();
   const {
     alerts,
+    alertsLoading,
+    alertsError,
     transactions,
     markAlertReviewed,
     showNotification,
@@ -90,9 +92,21 @@ export default function Alerts() {
     setSortBy(ALERT_SORT_OPTIONS.NEWEST);
   };
 
-  const handleMarkReviewed = (transactionId) => {
-    markAlertReviewed(transactionId);
-    showNotification('Alert marked as reviewed.', 'success');
+  const handleMarkReviewed = async (transactionId) => {
+    try {
+      await markAlertReviewed(transactionId);
+      showNotification(
+        'Alert marked as reviewed.',
+        'success'
+      );
+    } catch (error) {
+      showNotification(
+        error instanceof Error
+          ? error.message
+          : 'Alert could not be reviewed.',
+        'error'
+      );
+    }
   };
 
   const summaryItems = [
@@ -199,7 +213,17 @@ export default function Alerts() {
         <div className="card-header">
           <h2 id="alerts-results-heading">{resultLabel}</h2>
         </div>
-        {filteredAlerts.length > 0 ? (
+        {alertsLoading ? (
+          <div className="alerts-empty-state" role="status">
+            <h3>Loading alerts…</h3>
+            <p>Retrieving authoritative alerts from the audit service.</p>
+          </div>
+        ) : alertsError ? (
+          <div className="alerts-empty-state" role="alert">
+            <h3>Alerts could not be loaded.</h3>
+            <p>{alertsError}</p>
+          </div>
+        ) : filteredAlerts.length > 0 ? (
           <AlertsTable alerts={filteredAlerts} onMarkReviewed={handleMarkReviewed} canAssign={canAssignAlerts} onAssign={setAssignmentAlert} canEscalateToCase={canEscalateToCase} />
         ) : (
           <EmptyAlertsState

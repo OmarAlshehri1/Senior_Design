@@ -5951,3 +5951,25 @@ body {
     white-space: normal;
   }
 }
+
+/* Live backend alert identifier layout */
+@media (min-width: 1101px) {
+  .alerts-table .alert-column-id { width: 8%; }
+  .alerts-table .alert-column-transaction { width: 13%; }
+  .alerts-table .alert-column-vendor { width: 12%; }
+  .alerts-table .alert-column-type { width: 17%; }
+  .alerts-table .alert-column-time { width: 5%; }
+  .alerts-table .alert-column-score { width: 7%; }
+  .alerts-table .alert-column-risk { width: 9%; }
+  .alerts-table .alert-column-status { width: 9%; }
+  .alerts-table .alert-column-assignment { width: 6%; }
+  .alerts-table .alert-column-actions { width: 14%; }
+
+  .alerts-table tbody td:nth-child(1),
+  .alerts-table tbody td:nth-child(2) {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

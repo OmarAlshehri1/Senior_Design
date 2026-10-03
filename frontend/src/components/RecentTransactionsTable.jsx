@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { formatSAR, ruleStatusPillClass, riskStatusPillClass } from './statusUtils';
-import { getRiskLevel } from '../utils/risk';
+import { getTransactionRiskLevel } from '../utils/risk';
 
 export default function RecentTransactionsTable({ transactions, highlightId }) {
   const navigate = useNavigate();
@@ -30,7 +30,7 @@ export default function RecentTransactionsTable({ transactions, highlightId }) {
         </thead>
         <tbody>
           {transactions.map((transaction) => {
-            const riskLevel = getRiskLevel(transaction.riskScore) ?? 'Processing';
+            const riskLevel = getTransactionRiskLevel(transaction) ?? 'Processing';
 
             return (
               <tr

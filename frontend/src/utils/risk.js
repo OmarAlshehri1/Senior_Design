@@ -23,12 +23,22 @@ export function getRiskLevel(riskScore) {
   return RISK_LEVELS.LOW;
 }
 
+export function getTransactionRiskLevel(transaction) {
+  const authoritativeLevel = transaction?.riskLevel;
+
+  if (Object.values(RISK_LEVELS).includes(authoritativeLevel)) {
+    return authoritativeLevel;
+  }
+
+  return getRiskLevel(transaction?.riskScore);
+}
+
 export function deriveRiskDistribution(transactions) {
   const evaluated = transactions
     .filter((transaction) => !transaction.processing)
     .map((transaction) => ({
       transaction,
-      riskLevel: getRiskLevel(transaction.riskScore),
+      riskLevel: getTransactionRiskLevel(transaction),
     }))
     .filter(({ riskLevel }) => riskLevel !== null);
 

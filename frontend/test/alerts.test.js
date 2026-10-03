@@ -9,6 +9,7 @@ import {
   deriveAlertSummary,
   filterAndSortAlerts,
   getAlertReason,
+  getAlertRiskLevel,
   reviewAlertForTransaction,
   sortAlerts,
 } from '../src/utils/alerts.js';
@@ -131,4 +132,20 @@ test('empty results and missing optional alert values are handled safely', () =>
   assert.deepEqual(empty, []);
   assert.doesNotThrow(() => filterAndSortAlerts([incompleteAlert], [], { search: 'ghost' }));
   assert.equal(getAlertReason(incompleteAlert), 'Vendor may not match the registered vendor records.');
+});
+
+test('alert risk level prefers authoritative backend severity', () => {
+  assert.equal(
+    getAlertRiskLevel({
+      severity: 'High',
+      riskScore: 10,
+    }),
+    'High Risk'
+  );
+  assert.equal(
+    getAlertRiskLevel({
+      riskScore: 60,
+    }),
+    'Medium Risk'
+  );
 });

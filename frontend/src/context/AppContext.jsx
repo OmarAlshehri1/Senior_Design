@@ -4,7 +4,9 @@ import { currentDataSource } from '../data/dataSource';
 import { deriveDashboardSummary } from '../utils/dashboard';
 import { getRiskLevel, RISK_LEVELS } from '../utils/risk';
 import { findTransactionById } from '../utils/transactions';
-import { reviewAlertForTransaction } from '../utils/alerts';
+import { adaptAlert } from '../adapters/alertAdapter';
+import { alertsService } from '../services/alertsService';
+import { realtimeService } from '../services/realtimeService';
 import { transactionsService } from '../services/transactionsService';
 
 let nextTxNumber = 10497;
@@ -68,6 +70,8 @@ export function AppProvider({ children }) {
   const [transactionsSearch, setTransactionsSearch] = useState('');
   const [transactionsSortBy, setTransactionsSortBy] = useState('newest');
   const [alerts, setAlerts] = useState(initialAlerts);
+  const [alertsLoading, setAlertsLoading] = useState(true);
+  const [alertsError, setAlertsError] = useState(null);
   const [notification, setNotification] = useState(null);
   const [simulating, setSimulating] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(() => new Date().toISOString());
@@ -81,7 +85,7 @@ export function AppProvider({ children }) {
     }, 3500);
   }, []);
 
-    useEffect(() => {
+  useEffect(() => {
     const controller = new AbortController();
     let active = true;
 
@@ -134,10 +138,108 @@ export function AppProvider({ children }) {
     transactionsSortBy,
   ]);
 
-  const markAlertReviewed = useCallback((transactionId) => {
-    setAlerts((previous) => reviewAlertForTransaction(previous, transactionId));
-    setLastUpdated(new Date().toISOString());
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+
+    async function loadAlerts() {
+      setAlertsLoading(true);
+      setAlertsError(null);
+
+      try {
+        const result = await alertsService.list({
+          query: {
+            page: 1,
+            page_size: 100,
+          },
+          signal: controller.signal,
+        });
+
+        if (!active) return;
+
+        setAlerts((previous) => {
+          const alertsById = new Map(
+            result.items
+              .filter((alert) => alert?.id)
+              .map((alert) => [alert.id, alert])
+          );
+
+          previous.forEach((alert) => {
+            if (alert?.id && !alertsById.has(alert.id)) {
+              alertsById.set(alert.id, alert);
+            }
+          });
+
+          return [...alertsById.values()];
+        });
+        setLastUpdated(new Date().toISOString());
+      } catch (error) {
+        if (!active || controller.signal.aborted) return;
+
+        setAlertsError(
+          error instanceof Error
+            ? error.message
+            : 'Alerts could not be loaded.'
+        );
+      } finally {
+        if (active) {
+          setAlertsLoading(false);
+        }
+      }
+    }
+
+    loadAlerts();
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = realtimeService.onMessage((event) => {
+      const alert = adaptAlert(event.data);
+
+      if (!alert?.id) return;
+
+      setAlerts((previous) => [
+        alert,
+        ...previous.filter((item) => item.id !== alert.id),
+      ]);
+      setLastUpdated(new Date().toISOString());
+    });
+
+    realtimeService.connect();
+
+    return () => {
+      unsubscribe();
+      realtimeService.disconnect();
+    };
+  }, []);
+  const markAlertReviewed = useCallback(async (transactionId) => {
+    const alert = alerts.find(
+      (item) => item.transactionId === transactionId
+    );
+
+    if (!alert?.id) {
+      throw new Error('The alert could not be found.');
+    }
+
+    const reviewedAlert = await alertsService.markReviewed(alert.id);
+
+    if (!reviewedAlert?.id) {
+      throw new Error('The alert could not be reviewed.');
+    }
+
+    setAlerts((previous) => previous.map((item) => (
+      item.id === reviewedAlert.id
+        ? reviewedAlert
+        : item
+    )));
+    setLastUpdated(new Date().toISOString());
+
+    return reviewedAlert;
+  }, [alerts]);
 
   const simulateNewTransaction = useCallback(() => {
     if (simulating) return;
@@ -249,6 +351,8 @@ export function AppProvider({ children }) {
       transactionsSortBy,
       setTransactionsSortBy,
       alerts,
+      alertsLoading,
+      alertsError,
       summary,
       riskCounts,
       riskOverview,
@@ -271,6 +375,8 @@ export function AppProvider({ children }) {
       transactionsSearch,
       transactionsSortBy,
       alerts,
+      alertsLoading,
+      alertsError,
       summary,
       riskCounts,
       riskOverview,

@@ -7,7 +7,10 @@ import {
   deriveDashboardSummary,
   getRecentTransactions,
 } from '../src/utils/dashboard.js';
-import { getRiskLevel } from '../src/utils/risk.js';
+import {
+  getRiskLevel,
+  getTransactionRiskLevel,
+} from '../src/utils/risk.js';
 
 const boundaryCases = [
   [0, 'Low Risk'],
@@ -111,4 +114,20 @@ test('every alert is consistent with its linked transaction and rule evidence', 
     assert.ok(['Active', 'Reviewed'].includes(alert.status));
     assert.equal(Number.isNaN(Date.parse(alert.timestamp)), false);
   });
+});
+
+test('transaction risk level prefers the authoritative backend value', () => {
+  assert.equal(
+    getTransactionRiskLevel({
+      riskScore: 99,
+      riskLevel: 'Low Risk',
+    }),
+    'Low Risk'
+  );
+  assert.equal(
+    getTransactionRiskLevel({
+      riskScore: 80,
+    }),
+    'High Risk'
+  );
 });

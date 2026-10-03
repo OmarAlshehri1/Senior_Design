@@ -5,7 +5,7 @@ import {
   formatScore,
   riskStatusPillClass,
 } from './statusUtils';
-import { getRiskLevel } from '../utils/risk';
+import { getAlertRiskLevel } from '../utils/alerts';
 
 export default function AlertsTable({ alerts, onMarkReviewed, canAssign = false, onAssign, canEscalateToCase = false }) {
   const navigate = useNavigate();
@@ -52,7 +52,7 @@ export default function AlertsTable({ alerts, onMarkReviewed, canAssign = false,
         <tbody>
           {alerts.map((alert) => {
             const { Icon, bg, color } = getAlertPresentation(alert?.title ?? '');
-            const riskLevel = getRiskLevel(alert?.riskScore) ?? 'Not available';
+            const riskLevel = getAlertRiskLevel(alert) ?? 'Not available';
             const canOpenTransaction = typeof alert?.transactionId === 'string'
               && alert.transactionId.trim().length > 0;
             const isReviewed = alert?.status === 'Reviewed';
@@ -71,8 +71,8 @@ export default function AlertsTable({ alerts, onMarkReviewed, canAssign = false,
                   canOpenTransaction && handleRowKeyDown(event, alert.transactionId)
                 )}
               >
-                <td data-label="Alert ID">{displayValue(alert?.id)}</td>
-                <td data-label="Transaction ID">{displayValue(alert?.transactionId)}</td>
+                <td data-label="Alert ID" title={displayValue(alert?.id)}>{displayValue(alert?.id)}</td>
+                <td data-label="Transaction ID" title={displayValue(alert?.transactionId)}>{displayValue(alert?.transactionId)}</td>
                 <td className="vendor-cell" data-label="Vendor" title={displayValue(alert?.vendor)}>
                   {displayValue(alert?.vendor)}
                 </td>

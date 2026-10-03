@@ -1,4 +1,7 @@
-import { deriveRiskDistribution, getRiskLevel } from './risk.js';
+import {
+  deriveRiskDistribution,
+  getTransactionRiskLevel,
+} from './risk.js';
 import { sortNewestFirst } from './transactions.js';
 
 export const DASHBOARD_RISK_LINKS = Object.freeze({
@@ -13,7 +16,7 @@ export function getRecentTransactions(transactions, limit = 6) {
 
 export function deriveDashboardSummary(transactions) {
   const evaluated = transactions.filter(
-    (transaction) => !transaction.processing && getRiskLevel(transaction.riskScore) !== null
+    (transaction) => !transaction.processing && getTransactionRiskLevel(transaction) !== null
   );
   const { counts, percentages } = deriveRiskDistribution(transactions);
   const riskScoreTotal = evaluated.reduce(

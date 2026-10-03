@@ -691,6 +691,48 @@ Evidence:
 
 Backend dependency: Direct detail requires the existing `GET /api/v1/transactions/{transaction_id}` endpoint. No new endpoint or domain integration was activated.
 
+## Live alerts, authoritative risk, and reports integration
+
+Date: 2026-10-03
+Commit(s): Pending on `feature/frontend-integration`
+
+Status:
+[x] Implementation and local live verification completed
+[ ] Commit and merge pending
+
+Purpose: Replace remaining automatic transaction-domain preview behavior with authoritative FastAPI alert, risk, explanation, and report data.
+
+Implemented:
+
+- Backend-authoritative transaction risk-level precedence with score-derived classification retained only as a safe preview fallback.
+- Authoritative transaction data-quality, rule-score, AI-score, combined-risk, and persisted Gemini explanation presentation.
+- Durable alert loading through `GET /api/v1/alerts`, review updates through `PATCH /api/v1/alerts/{alert_id}/review`, and live `alert.created` delivery through `/ws/alerts`.
+- API mode starts without mock alerts; WebSocket events are adapted and deduplicated by persisted alert ID.
+- Persisted daily report listing, generation, authoritative summary adaptation, report selection, and CSV download.
+- Loading, error, empty, and unavailable states for alert and report integration.
+- Desktop alert-table handling for long persisted alert and transaction identifiers.
+
+Validation:
+
+- 204 frontend tests passed after adapter and service integration; lint and production build passed.
+- Live alert verification loaded two persisted alerts, reviewed the active alert through the UI, and confirmed the stored `REVIEWED` state through REST.
+- Live WebSocket verification added `TX-LIVE-HIGH-*` without refreshing the page and updated the page to three alerts: one active and two reviewed.
+- Live report verification generated `RPT-2026-10-03` with 9 evaluated transactions, average risk score 45.69, 6 LOW and 3 HIGH transactions, and 3 HIGH alerts split between 1 active and 2 reviewed.
+- CSV download was exposed through the completed persisted report.
+
+Evidence:
+
+- `frontend/src/context/AppContext.jsx`
+- `frontend/src/adapters/alertAdapter.js`
+- `frontend/src/adapters/reportAdapter.js`
+- `frontend/src/services/alertsService.js`
+- `frontend/src/services/realtimeService.js`
+- `frontend/src/services/reportsService.js`
+- `frontend/src/pages/Alerts.jsx`
+- `frontend/src/pages/Reports.jsx`
+- `frontend/test/reportIntegration.test.js`
+
+Backend dependency: Local integration is verified against the implemented FastAPI and Supabase services. Deployed host configuration, production secrets, approved Vercel CORS origin, and deployed end-to-end verification remain pending.
 ## Git Traceability
 
 | Date | Phase / Change | Commit | Frontend Evidence | Status |

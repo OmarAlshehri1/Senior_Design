@@ -288,21 +288,24 @@ Targets:
 - [x] Generate explanations only after authoritative scoring.
 - [x] Ensure Gemini explanations never modify scores or rule outcomes.
 - [x] Handle unavailable Gemini service without losing audit results.
-- [ ] **CURRENT:** Commit and merge versioned Gemini explanations.
+- [x] Commit and merge versioned Gemini explanations (PR #21).
 
 ## Phase 12 — Frontend integration and deployment coordination
 
-- [ ] Coordinate activation of the API data source with the frontend owner.
-- [ ] Configure `VITE_API_BASE_URL` for local and deployed environments.
+- [x] Activate the API data source with the frontend implementation.
+- [x] Configure `VITE_API_BASE_URL` and `VITE_WS_URL` for local integration.
+- [ ] Configure the deployed frontend API and WebSocket environment variables.
 - [ ] Configure backend CORS for the approved Vercel origin.
-- [ ] Fix frontend mapping of `missing_fields` into `dataQuality.missingFields`.
-- [ ] Derive or display date/time consistently from `timestamp`.
-- [ ] Map any required AI status and explanation fields.
-- [ ] Keep mock preview data available only as an explicit demo fallback.
+- [x] Map backend `missing_fields` into `dataQuality.missingFields`.
+- [x] Display transaction and alert date/time values from authoritative timestamps.
+- [x] Map authoritative rule, AI, combined-risk, and Gemini explanation fields.
+- [x] Remove automatic mock transaction and alert fallback from API mode.
+- [x] Integrate durable alert listing, review updates, and `alert.created` WebSocket delivery.
+- [x] Integrate persisted daily report listing, generation, summaries, and CSV download.
 - [ ] Deploy FastAPI to the selected backend host.
 - [ ] Store secrets only in backend host environment variables.
-- [ ] Run an end-to-end test: frontend -> FastAPI -> Supabase -> frontend.
-
+- [x] Run a local end-to-end test: frontend -> FastAPI -> Supabase -> frontend. Live verification loaded persisted alerts, changed an alert from `ACTIVE` to `REVIEWED`, received a newly generated high-risk alert through WebSocket without refreshing, generated `RPT-2026-10-03`, and downloaded its CSV.
+- [ ] **CURRENT:** Commit and merge live frontend API integration.
 ## Specification verification checklist
 
 - [ ] C1 evidence: source adapter, standardized mapping, tests, and seed tool.

@@ -1,4 +1,4 @@
-import { getRiskLevel } from './risk.js';
+import { getRiskLevel, RISK_LEVELS } from './risk.js';
 
 export const ALERT_SORT_OPTIONS = Object.freeze({
   NEWEST: 'newest',
@@ -60,6 +60,20 @@ function compareRisk(a, b, direction) {
 
   const difference = direction === 'asc' ? aScore - bScore : bScore - aScore;
   return difference || compareTimestamps(a, b, 'desc');
+}
+
+export function getAlertRiskLevel(alert) {
+  const authoritativeLevel = (
+    typeof alert?.severity === 'string'
+      ? alert.severity + ' Risk'
+      : null
+  );
+
+  if (Object.values(RISK_LEVELS).includes(authoritativeLevel)) {
+    return authoritativeLevel;
+  }
+
+  return getRiskLevel(alert?.riskScore);
 }
 
 export function getAlertType(title) {
@@ -130,7 +144,7 @@ export function filterAndSortAlerts(alerts, transactions, options = {}) {
     .filter((alert) => statusFilter === 'All' || alert?.status === statusFilter)
     .filter((alert) => (
       riskFilter === 'All'
-      || getRiskLevel(alert?.riskScore) === `${riskFilter} Risk`
+      || getAlertRiskLevel(alert) === `${riskFilter} Risk`
     ))
     .filter((alert) => typeFilter === 'All' || alert?.alertType === typeFilter);
 
@@ -142,7 +156,7 @@ export function deriveAlertSummary(alerts) {
     if (alert?.status === 'Active') summary.active += 1;
     if (alert?.status === 'Reviewed') summary.reviewed += 1;
 
-    const riskLevel = getRiskLevel(alert?.riskScore);
+    const riskLevel = getAlertRiskLevel(alert);
     if (riskLevel === 'High Risk') summary.high += 1;
     if (riskLevel === 'Medium Risk') summary.medium += 1;
     return summary;
