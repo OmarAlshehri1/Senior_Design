@@ -720,3 +720,164 @@ def test_high_risk_transaction_creates_and_publishes_alert(
     assert len(created_alerts) == 1
     assert created_alerts[0]["latency_ms"] <= 5000
     assert published_alerts == created_alerts
+
+def test_create_transaction_generates_and_persists_explanation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    generation_request: dict[str, Any] = {}
+    persisted_explanations: list[dict[str, Any]] = []
+
+    def generate_explanation(
+        **kwargs: Any,
+    ) -> str:
+        generation_request.update(kwargs)
+        return (
+            "The finalized scores indicate low risk. "
+            "No failed control requires immediate escalation."
+        )
+
+    def capture_explanations(
+        explanations: list[dict[str, Any]],
+    ) -> int:
+        persisted_explanations.extend(explanations)
+        return len(explanations)
+
+    monkeypatch.setattr(
+        (
+            "app.api.transactions."
+            "generate_risk_explanation"
+        ),
+        generate_explanation,
+    )
+    monkeypatch.setattr(
+        (
+            "app.api.transactions."
+            "get_gemini_model_name"
+        ),
+        lambda: "gemini-3.8-flash",
+    )
+    monkeypatch.setattr(
+        (
+            "app.api.transactions."
+            "persist_transaction_explanations"
+        ),
+        capture_explanations,
+    )
+
+    response = client.post(
+        "/api/v1/transactions",
+        json={
+            "id": "TX-EXPLANATION-001",
+            "timestamp": "2026-10-03T04:45:00Z",
+            "vendor_id": "VND-101",
+            "vendor_name": "Almarai Dairy Co.",
+            "invoice_number": "INV-EXPLANATION-001",
+            "category": "Inventory",
+            "amount": 500,
+            "currency": "SAR",
+            "created_by": "EMP-101",
+            "approved_by": "MGR-201",
+            "approver_role": "Manager",
+            "approval_limit": 1000,
+        },
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+
+    assert body["rule_score"] == 0.0
+    assert body["ai_score"] == 25.0
+    assert body["risk_score"] == 10.0
+    assert body["risk_level"] == "LOW"
+    assert body["explanation"] == (
+        "The finalized scores indicate low risk. "
+        "No failed control requires immediate escalation."
+    )
+
+    assert generation_request["rule_score"] == 0.0
+    assert generation_request["ai_score"] == 25.0
+    assert generation_request["risk_score"] == 10.0
+    assert generation_request["risk_level"] == "LOW"
+
+    assert persisted_explanations == [
+        {
+            "transaction_id": "TX-EXPLANATION-001",
+            "model_name": "gemini-3.8-flash",
+            "prompt_version": "1.0.0",
+            "rule_evaluation_version": "1.0.0",
+            "anomaly_model_version": "1.0.0",
+            "risk_scoring_version": "1.0.0",
+            "explanation": (
+                "The finalized scores indicate low risk. "
+                "No failed control requires immediate escalation."
+            ),
+        }
+    ]
+
+
+def test_gemini_failure_preserves_authoritative_results(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    persisted_explanations: list[dict[str, Any]] = []
+
+    def fail_generation(
+        **kwargs: Any,
+    ) -> str:
+        from app.api.transactions import (
+            GeminiExplanationError,
+        )
+
+        raise GeminiExplanationError(
+            "Gemini is unavailable."
+        )
+
+    def capture_explanations(
+        explanations: list[dict[str, Any]],
+    ) -> int:
+        persisted_explanations.extend(explanations)
+        return len(explanations)
+
+    monkeypatch.setattr(
+        (
+            "app.api.transactions."
+            "generate_risk_explanation"
+        ),
+        fail_generation,
+    )
+    monkeypatch.setattr(
+        (
+            "app.api.transactions."
+            "persist_transaction_explanations"
+        ),
+        capture_explanations,
+    )
+
+    response = client.post(
+        "/api/v1/transactions",
+        json={
+            "id": "TX-EXPLANATION-FAIL-001",
+            "timestamp": "2026-10-03T04:46:00Z",
+            "vendor_id": "VND-101",
+            "vendor_name": "Almarai Dairy Co.",
+            "invoice_number": (
+                "INV-EXPLANATION-FAIL-001"
+            ),
+            "category": "Inventory",
+            "amount": 500,
+            "currency": "SAR",
+            "created_by": "EMP-101",
+            "approved_by": "MGR-201",
+            "approver_role": "Manager",
+            "approval_limit": 1000,
+        },
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+
+    assert body["rule_score"] == 0.0
+    assert body["ai_score"] == 25.0
+    assert body["risk_score"] == 10.0
+    assert body["risk_level"] == "LOW"
+    assert body["explanation"] is None
+    assert persisted_explanations == []

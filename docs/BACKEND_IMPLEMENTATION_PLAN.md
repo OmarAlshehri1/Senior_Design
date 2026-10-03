@@ -284,10 +284,11 @@ Targets:
 
 - [x] Generate daily audit summaries from stored evaluation results.
 - [x] Implement report list, generation, and download endpoints.
-- [ ] **CURRENT:** Commit and merge daily audit reports.
-- [ ] Generate explanations only after authoritative scoring.
-- [ ] Ensure Gemini explanations never modify scores or rule outcomes.
-- [ ] Handle unavailable Gemini service without losing audit results.
+- [x] Commit and merge daily audit reports (PR #20).
+- [x] Generate explanations only after authoritative scoring.
+- [x] Ensure Gemini explanations never modify scores or rule outcomes.
+- [x] Handle unavailable Gemini service without losing audit results.
+- [ ] **CURRENT:** Commit and merge versioned Gemini explanations.
 
 ## Phase 12 — Frontend integration and deployment coordination
 
@@ -347,7 +348,8 @@ These are implementation estimates, not final evaluation grades.
 | 2026-10-02 | Added versioned Isolation Forest anomaly scoring | PR #17 |
 | 2026-10-03 | Added persisted 60/40 combined risk scoring | PR #18 |
 | 2026-10-03 | Added persisted real-time high-risk alerts | PR #19 |
+| 2026-10-03 | Added persisted daily audit reports | PR #20 |
 
 ## Next action
 
-Commit and merge daily audit reports, then implement Gemini explanations without allowing them to modify authoritative scores or rule outcomes.
+Commit and merge versioned Gemini explanations, then continue frontend integration and deployment coordination.
