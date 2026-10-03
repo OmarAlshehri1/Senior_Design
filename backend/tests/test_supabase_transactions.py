@@ -449,6 +449,18 @@ def test_list_transactions_maps_rows_and_total(
         },
     )
 
+    monkeypatch.setattr(
+        repository,
+        "get_latest_transaction_explanations",
+        lambda transaction_ids: {
+            "TX-READ-001": {
+                "model_name": "gemini-3.8-flash",
+                "prompt_version": "1.0.0",
+                "explanation": "Medium-risk audit explanation.",
+            }
+        },
+    )
+
     transactions, total = repository.list_transactions(
         page=2,
         page_size=25,
@@ -488,6 +500,9 @@ def test_list_transactions_maps_rows_and_total(
         for result in not_evaluated_results
     )
     assert transaction["risk_score"] == 58.0
+    assert transaction["explanation"] == (
+        "Medium-risk audit explanation."
+    )
     assert transaction["risk_level"] == "MEDIUM"
     assert transaction["ai_score"] == 87.5
     assert "ground_truth" not in transaction
@@ -650,6 +665,18 @@ def test_get_transaction_by_id_and_not_found(
         },
     )
 
+    monkeypatch.setattr(
+        repository,
+        "get_latest_transaction_explanations",
+        lambda transaction_ids: {
+            "TX-READ-002": {
+                "model_name": "gemini-3.8-flash",
+                "prompt_version": "1.0.0",
+                "explanation": "Low-risk audit explanation.",
+            }
+        },
+    )
+
     transaction = repository.get_transaction_by_id(
         "TX-READ-002",
     )
@@ -661,6 +688,9 @@ def test_get_transaction_by_id_and_not_found(
     assert transaction["id"] == "TX-READ-002"
     assert transaction["ai_score"] == 42.0
     assert transaction["risk_score"] == 42.0
+    assert transaction["explanation"] == (
+        "Low-risk audit explanation."
+    )
     assert transaction["risk_level"] == "LOW"
     assert transaction["data_quality_status"] == "COMPLETE"
     assert len(transaction["rule_results"]) == 5
@@ -1150,4 +1180,181 @@ def test_persist_and_read_combined_risk_scores(
     )
     assert requests[1]["json"] == {
         "transaction_ids": ["TX-RISK-001"],
+    }
+
+def test_persist_transaction_explanations(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request: dict[str, Any] = {}
+    explanations = [
+        {
+            "transaction_id": "TX-EXPLAIN-001",
+            "model_name": "gemini-3.8-flash",
+            "prompt_version": "1.0.0",
+            "rule_evaluation_version": "1.0.0",
+            "anomaly_model_version": "1.0.0",
+            "risk_scoring_version": "1.0.0",
+            "explanation": "A concise audit explanation.",
+        }
+    ]
+
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+    class FakeClient:
+        def __init__(self, timeout: float) -> None:
+            request["timeout"] = timeout
+
+        def __enter__(self) -> "FakeClient":
+            return self
+
+        def __exit__(
+            self,
+            exc_type: object,
+            exc_value: object,
+            traceback: object,
+        ) -> None:
+            return None
+
+        def post(
+            self,
+            endpoint: str,
+            *,
+            headers: dict[str, str],
+            json: list[dict[str, Any]],
+        ) -> FakeResponse:
+            request.update(
+                {
+                    "endpoint": endpoint,
+                    "headers": headers,
+                    "json": json,
+                }
+            )
+            return FakeResponse()
+
+    monkeypatch.setenv(
+        "SUPABASE_URL",
+        "https://example.supabase.co",
+    )
+    monkeypatch.setenv(
+        "SUPABASE_SECRET_KEY",
+        "sb_secret_test",
+    )
+    monkeypatch.setattr(
+        repository.httpx,
+        "Client",
+        FakeClient,
+    )
+
+    persisted = (
+        repository.persist_transaction_explanations(
+            explanations
+        )
+    )
+
+    assert persisted == 1
+    assert request["endpoint"] == (
+        "https://example.supabase.co/rest/v1/"
+        "transaction_explanations"
+    )
+    assert request["headers"]["Prefer"] == "return=minimal"
+    assert request["json"] == explanations
+
+
+def test_get_latest_transaction_explanations(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request: dict[str, Any] = {}
+
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> list[dict[str, Any]]:
+            return [
+                {
+                    "transaction_id": "TX-EXPLAIN-001",
+                    "model_name": "gemini-3.8-flash",
+                    "prompt_version": "1.0.0",
+                    "rule_evaluation_version": "1.0.0",
+                    "anomaly_model_version": "1.0.0",
+                    "risk_scoring_version": "1.0.0",
+                    "explanation": (
+                        "  A concise audit explanation.  "
+                    ),
+                    "generated_at": (
+                        "2026-10-03T04:30:00+00:00"
+                    ),
+                },
+                {
+                    "transaction_id": "TX-INVALID",
+                    "explanation": "",
+                },
+            ]
+
+    class FakeClient:
+        def __init__(self, timeout: float) -> None:
+            request["timeout"] = timeout
+
+        def __enter__(self) -> "FakeClient":
+            return self
+
+        def __exit__(
+            self,
+            exc_type: object,
+            exc_value: object,
+            traceback: object,
+        ) -> None:
+            return None
+
+        def post(
+            self,
+            endpoint: str,
+            *,
+            headers: dict[str, str],
+            json: dict[str, list[str]],
+        ) -> FakeResponse:
+            request.update(
+                {
+                    "endpoint": endpoint,
+                    "headers": headers,
+                    "json": json,
+                }
+            )
+            return FakeResponse()
+
+    monkeypatch.setenv(
+        "SUPABASE_URL",
+        "https://example.supabase.co",
+    )
+    monkeypatch.setenv(
+        "SUPABASE_SECRET_KEY",
+        "sb_secret_test",
+    )
+    monkeypatch.setattr(
+        repository.httpx,
+        "Client",
+        FakeClient,
+    )
+
+    explanations = (
+        repository.get_latest_transaction_explanations(
+            [
+                "TX-EXPLAIN-001",
+                "TX-EXPLAIN-001",
+            ]
+        )
+    )
+
+    assert list(explanations) == ["TX-EXPLAIN-001"]
+    assert explanations["TX-EXPLAIN-001"][
+        "explanation"
+    ] == "A concise audit explanation."
+    assert request["endpoint"].endswith(
+        "/rest/v1/rpc/"
+        "get_latest_transaction_explanations"
+    )
+    assert request["json"] == {
+        "transaction_ids": ["TX-EXPLAIN-001"],
     }

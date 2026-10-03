@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, HTTPException, Query, status
 from starlette.concurrency import run_in_threadpool
 from typing import Literal
@@ -19,6 +21,7 @@ from app.repositories.supabase_transactions import (
     get_ghost_vendor_contexts,
     persist_transaction_anomaly_scores,
     persist_transaction_risk_scores,
+    persist_transaction_explanations,
 )
 from app.schemas.transaction import TransactionCreate
 
@@ -38,11 +41,20 @@ from app.services.anomaly_model import (
 )
 
 from app.services.alert_stream import alert_manager
+from app.services.gemini_explanations import (
+    GEMINI_PROMPT_VERSION,
+    GeminiExplanationError,
+    generate_risk_explanation,
+    get_gemini_model_name,
+)
 from app.services.risk_scoring import (
     RISK_SCORING_VERSION,
     calculate_risk_score,
     classify_risk_level,
 )
+
+logger = logging.getLogger(__name__)
+
 
 ANOMALY_MODEL_PATH = (
     Path(__file__).resolve().parents[2]
@@ -386,6 +398,58 @@ async def create_transaction(
 
         await alert_manager.publish_created(alert)
 
+    explanation: str | None = None
+
+    if (
+        rule_score is not None
+        and risk_score is not None
+        and risk_level is not None
+    ):
+        try:
+            explanation = await run_in_threadpool(
+                generate_risk_explanation,
+                transaction={
+                    **transaction_data,
+                    "data_quality_status": data_quality_status,
+                    "missing_fields": missing_fields,
+                },
+                rule_results=rule_results,
+                rule_score=rule_score,
+                ai_score=ai_score,
+                risk_score=risk_score,
+                risk_level=risk_level,
+            )
+
+            await run_in_threadpool(
+                persist_transaction_explanations,
+                [
+                    {
+                        "transaction_id": transaction_data["id"],
+                        "model_name": get_gemini_model_name(),
+                        "prompt_version": GEMINI_PROMPT_VERSION,
+                        "rule_evaluation_version": RULE_SCORE_VERSION,
+                        "anomaly_model_version": anomaly_model.version,
+                        "risk_scoring_version": RISK_SCORING_VERSION,
+                        "explanation": explanation,
+                    }
+                ],
+            )
+        except (
+            GeminiExplanationError,
+            SupabaseConfigurationError,
+            SupabasePersistenceError,
+        ) as exc:
+            logger.warning(
+                (
+                    "Transaction explanation unavailable "
+                    "for %s (%s): %s"
+                ),
+                transaction_data["id"],
+                type(exc).__name__,
+                str(exc),
+            )
+            explanation = None
+
     return {
         **transaction_data,
         "vendor_monitoring_status": None,
@@ -397,5 +461,5 @@ async def create_transaction(
         "risk_score": risk_score,
         "risk_level": risk_level,
         "rule_results": rule_results,
-        "explanation": None,
+        "explanation": explanation,
     }

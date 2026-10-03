@@ -171,3 +171,34 @@ def mock_transaction_persistence(
         ),
         fake_create_high_risk_alert,
     )
+
+    def unavailable_gemini_explanation(
+        **kwargs: Any,
+    ) -> str:
+        from app.api.transactions import (
+            GeminiExplanationError,
+        )
+
+        raise GeminiExplanationError(
+            "Gemini unavailable during tests."
+        )
+
+    def fake_persist_transaction_explanations(
+        explanations: list[dict[str, Any]],
+    ) -> int:
+        return len(explanations)
+
+    monkeypatch.setattr(
+        (
+            "app.api.transactions."
+            "generate_risk_explanation"
+        ),
+        unavailable_gemini_explanation,
+    )
+    monkeypatch.setattr(
+        (
+            "app.api.transactions."
+            "persist_transaction_explanations"
+        ),
+        fake_persist_transaction_explanations,
+    )

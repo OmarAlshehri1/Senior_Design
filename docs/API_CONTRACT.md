@@ -2,7 +2,7 @@
 
 This document is the preliminary contract between the React frontend and FastAPI backend. It defines planned field names and payload shapes so frontend and backend development can proceed independently.
 
-`GET /api/v1/health`, `GET /api/v1/transactions`, `GET /api/v1/transactions/{transaction_id}`, and `POST /api/v1/transactions` are implemented. The remaining endpoints in this document are contracts only and are not implemented yet. Shapes may be extended through team agreement, but existing names should not be changed without coordinating both branches.
+The documented health, transaction, alert, report, CSV-download, and alert WebSocket endpoints are implemented. Endpoints explicitly described as planned remain contracts only. Shapes may be extended through team agreement, but existing names should not be changed without coordinating both branches.
 
 ## Conventions
 
@@ -95,7 +95,7 @@ The authoritative `rule_score` uses equal weighting across evaluated rules only:
 
 Each completed evaluation is stored as a versioned snapshot in `transaction_evaluations`. Transaction reads return the latest persisted snapshot when available; transactions created before evaluation persistence continue to use safe runtime evaluation as a fallback. Evaluation storage and lookup use the service role, and persisted rule evidence never includes private `ground_truth` labels.
 
-Automated evaluation coverage is calculated as transactions whose latest snapshot contains at least one `PASSED` or `FAILED` rule divided by all stored transactions, multiplied by 100. Rules marked `NOT_EVALUATED` do not count as executed. The controlled 10,005-transaction database currently achieves 100% coverage after the idempotent evaluation backfill; no transactions remain unevaluated.
+Automated evaluation coverage is calculated as transactions whose latest snapshot contains at least one `PASSED` or `FAILED` rule divided by all stored transactions, multiplied by 100. Rules marked `NOT_EVALUATED` do not count as executed. The controlled 10,009-transaction database currently achieves 100% coverage after the idempotent evaluation backfill; no transactions remain unevaluated.
 
 The final Isolation Forest model `1.0.0` uses 400 isolation trees, increased from the initial 150-tree design configuration after prototype tuning, and produces `ai_score` values from 0 to 100 using transaction attributes and rule-derived runtime context only. Identifiers, `violation_type`, `is_anomaly`, and `ground_truth` are excluded from model inputs. The reproducible stratified split contains 7,000 training, 1,500 validation, and 1,500 held-out test transactions. The selected threshold is `90.6`; held-out detection rate is `87.04%` and false-positive rate is `3.45%`. Versioned scores are stored in `transaction_anomaly_scores`; the initial backfill stored 10,001 scores and classified 945 transactions above the threshold. POST evaluates and persists new scores immediately, while GET collection and detail responses return the latest persisted `ai_score`.
 
@@ -150,20 +150,11 @@ The planned rule keys are `segregation_of_duties`, `approval_limits`, `duplicate
 
 ### RiskExplanation
 
-```json
-{
-  "summary": "This transaction was classified as high risk.",
-  "factors": [
-    "A rule violation was detected.",
-    "The transaction pattern was anomalous."
-  ],
-  "source": "GEMINI",
-  "generated_at": "2026-09-20T14:42:05Z"
-}
-```
+The transaction `explanation` field is either a plain explanatory string or `null`. Prompt version `1.0.0` uses `gemini-3.8-flash` only after authoritative rule, anomaly, and combined-risk scoring has completed. Gemini receives sanitized transaction attributes, public rule evidence, and the already-calculated scores; identifiers, employee fields, `violation_type`, `is_anomaly`, and private `ground_truth` labels are excluded.
 
-`source` identifies how explanatory text was produced; it does not affect the authoritative score. An explanation may be `null` when unavailable or pending.
+The generated explanation is advisory only and cannot alter rule outcomes, component scores, the combined risk score, or the risk level. Completed explanations and their model, prompt, and authoritative source versions are stored in `transaction_explanations`, and transaction reads return the latest persisted explanation. Incomplete Gemini responses are rejected. When Gemini or explanation storage is unavailable, the transaction and all authoritative audit results remain successfully stored and `explanation` is returned as `null`.
 
+Live verification generated and persisted a 426-character explanation for `TX-GEMINI-20261003080425`; POST and subsequent GET returned identical text while preserving `risk_score` 12.0 and `risk_level` `LOW`. The measured POST duration including Gemini generation and persistence was 8,417 ms.
 ### Report
 
 ```json
@@ -278,7 +269,7 @@ Response `201 Created`:
 
 A transaction with missing optional fields returns `data_quality_status` as `PARTIAL` and lists the unavailable fields in `missing_fields`. Unknown fields or invalid values return `422 Unprocessable Entity`.
 
-The transaction is validated, assessed for missing fields, persisted to Supabase PostgreSQL, evaluated by the eligible audit rules, assigned an authoritative rule score, and stored with a versioned evaluation snapshot. Isolation Forest anomaly scoring is performed and persisted immediately. Combined risk scoring is performed and persisted immediately. Qualifying `HIGH` transactions generate a durable active alert and a WebSocket event. Live verification measured 3,556.213 ms from request receipt to persisted alert creation and 4,660.189 ms from request start to WebSocket receipt, satisfying the five-second target. Explanations will be added in a later stage.
+The transaction is validated, assessed for missing fields, persisted to Supabase PostgreSQL, evaluated by the eligible audit rules, assigned an authoritative rule score, and stored with a versioned evaluation snapshot. Isolation Forest anomaly scoring is performed and persisted immediately. Combined risk scoring is performed and persisted immediately. Qualifying `HIGH` transactions generate a durable active alert and a WebSocket event. Live verification measured 3,556.213 ms from request receipt to persisted alert creation and 4,660.189 ms from request start to WebSocket receipt, satisfying the five-second target. Gemini 3.8 Flash generates and persists a sanitized advisory explanation after authoritative scoring. If explanation generation is unavailable or incomplete, the transaction and audit results remain stored and `explanation` is `null`.
 
 ## Offline seed utility
 
