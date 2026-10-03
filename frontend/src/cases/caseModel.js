@@ -19,10 +19,10 @@ export const CASE_STATUS_META = Object.freeze({
 });
 
 export const CASE_FIELDS = Object.freeze([
-  'id', 'title', 'description', 'status', 'priority', 'riskLevel', 'vendorId', 'vendorName',
+  'id', 'reference', 'title', 'description', 'status', 'priority', 'riskLevel', 'department', 'sourceType', 'sourceId', 'vendorId', 'vendorName',
   'transactionId', 'alertId', 'assignedToId', 'assignedToName', 'createdById', 'createdByName',
-  'createdAt', 'updatedAt', 'slaDueAt', 'slaStatus', 'resolution', 'resolutionNote',
-  'evidenceSummary', 'closureRequestedBy', 'closureRequestedAt', 'closedBy', 'closedAt',
+  'createdAt', 'updatedAt', 'slaDueAt', 'slaStatus', 'slaTargetHours', 'resolution', 'resolutionOutcome', 'resolutionNote',
+  'evidenceSummary', 'closureRequestedById', 'closureRequestedBy', 'closureRequestedAt', 'closedBy', 'closedAt',
 ]);
 
 export function normalizeCase(value) {
@@ -42,15 +42,19 @@ export const CASES = normalizeCases();
 export const CASE_ACTIVITY_TYPES = Object.freeze({
   CREATED: 'CASE_CREATED', ASSIGNED: 'CASE_ASSIGNED', REASSIGNED: 'CASE_REASSIGNED',
   STATUS_CHANGED: 'CASE_STATUS_CHANGED', EVIDENCE_ADDED: 'EVIDENCE_ADDED',
-  COMMENT_ADDED: 'CASE_COMMENT_ADDED', ESCALATED: 'CASE_ESCALATED',
+  EVIDENCE_REJECTED: 'EVIDENCE_REJECTED', COMMENT_ADDED: 'CASE_COMMENT_ADDED', ESCALATED: 'CASE_ESCALATED',
   CLOSURE_REQUESTED: 'CASE_CLOSURE_REQUESTED', CLOSURE_REJECTED: 'CASE_CLOSURE_REJECTED',
-  CLOSURE_APPROVED: 'CASE_CLOSURE_APPROVED', CLOSED: 'CASE_CLOSED',
+  CLOSURE_APPROVED: 'CASE_CLOSURE_APPROVED', CLOSED: 'CASE_CLOSED', SLA_OVERDUE: 'SLA_OVERDUE',
 });
 
 export function normalizeCaseActivity(values = []) {
   if (!Array.isArray(values)) return Object.freeze([]);
   return Object.freeze(values.filter((item) => item && Object.values(CASE_ACTIVITY_TYPES).includes(item.type)).map((item) => Object.freeze({
     id: item.id ?? null, type: item.type, actorName: item.actorName ?? null,
-    timestamp: item.timestamp ?? null, details: item.details ?? null,
+    timestamp: item.timestamp ?? null,
+    details: typeof item.details === 'string' ? item.details
+      : item.details && typeof item.details === 'object'
+        ? Object.entries(item.details).map(([key, value]) => `${key.replaceAll('_', ' ')}: ${typeof value === 'object' ? JSON.stringify(value) : String(value)}`).join(' · ')
+        : null,
   })));
 }

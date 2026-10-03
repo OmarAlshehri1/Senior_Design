@@ -39,9 +39,9 @@ Implemented REST routes: health; authenticated transaction list/detail/create; a
 - `GET /api/v1/dashboard/summary`: documented shape only; no router implementation. Implement the agreed summary scope in Phase 20.
 - `GET /api/v1/audit-rules`: documented shape only; no router implementation. Add authoritative read-only rule definitions in Phase 20; the five rule implementations already exist.
 - Evaluation coverage: migration 006 and repository calculation exist, but no public analytics endpoint or activated frontend analytics service. Complete in Phase 20.
-- Auth, Users, Access Requests, Reviews, Audit Log, Teams, Assignments, and scoped activity are implemented on `main` in Phases 14-16. The owner confirmed migrations 013-015 were applied in Supabase; there was no independent live-schema query. Notifications and reconnect catch-up are the current Phase 17 work.
+- Auth, Users, Access Requests, Reviews, Audit Log, Teams, Assignments, scoped activity, Notifications, and alert reconnect catch-up are implemented on `main` in Phases 14-17. The owner confirmed migrations 013-016 were applied in Supabase; there was no independent live-schema query.
 - Local CORS preflight permits `Authorization`; Phase 24 configures and verifies the approved production origin.
-- On `main`, alert loading currently retrieves the first 100 records and reconnect does not catch up. Phase 17 on `feature/notifications-catchup` implements paginated actor-scoped reconciliation and a data-free WebSocket invalidation; it remains unmerged and migration 016 is not live-applied.
+- Phase 17 replaced first-page-only alert loading with paginated actor-scoped reconciliation and data-free WebSocket invalidation; PR #30 is merged. Migration 016 application is owner-reported.
 
 ## Target runtime architecture
 
@@ -438,13 +438,13 @@ Acceptance criteria:
 - Tests cover cross-team denial, concurrent assignment, membership changes and restrictions, unassignment, activity/workload accuracy, review/audit team scope, API role gates, and CORS preflight for team-management DELETE requests.
 Phase 16 is complete on `main`: PR #29, implementation `a65e5b7`, merge `3630bd9`. Main verification passed backend `195 passed` (one known Starlette/httpx warning), 23 isolated PGlite migration tests, frontend `214 passed`, frontend lint, production build, and `git diff --check`. The project owner confirmed Migration 015 applied successfully to Supabase; no independent live-schema inspection was performed.
 
-## Phase 17 — Notifications and alert catch-up (CURRENT)
+## Phase 17 — Notifications and alert catch-up
 
 Omar mapping: sections 5, 2 (WebSocket), 11 and 13; dependency: Phases 14–16.
 
-- [ ] Persist user/role-scoped notifications with list/read/unread/mark-one/mark-all operations.
-- [ ] Connect alert, assignment, access-request, and account/security events; extend to case/SLA/closure events in Phase 18.
-- [ ] Reconcile durable alerts after WebSocket reconnect with pagination and persisted-ID deduplication.
+- [x] Persist user/role-scoped notifications with list/read/unread/mark-one/mark-all operations (PR #30; Migration 016 owner-reported applied).
+- [x] Connect alert, assignment, access-request, and account/security events. Case/SLA/closure notifications are handled in Phase 18.
+- [x] Reconcile durable alerts after WebSocket reconnect with pagination and persisted-ID deduplication (PR #30).
 
 - Owner-approved notification recipients: high-risk alerts go to active Admins and active Supervisors; assignment/reassignment goes to the target assignee and that team Supervisor; new access/unlock requests go to active Admins; approved access requests may notify the activated request owner. Rejected access requests stay in the Admin request/audit records and send no in-app notification until a safe delivery channel is selected; lock/unlock events go to the account owner and active Admins.
 - An Auditor receives alert notification content only while that alert is within the Auditor current assignment scope. WebSocket messages carry no alert row or ID; REST reconciliation enforces the current server-side scope.
@@ -454,20 +454,26 @@ Acceptance criteria:
 - Tests verify read-state operations, event recipients, and audit/security linkage.
 - Disconnect/create/reconnect tests recover missed alerts across more than one page without duplicate entries; review states reconcile from REST rather than stale socket state.
 
-## Phase 18 — Cases, evidence, closure, and SLA
+## Phase 18 — Cases, evidence, closure, and SLA (CURRENT)
 
 Omar mapping: section 6, sections 11–13; dependency: Phases 14–17.
 
-- [ ] Create/escalate cases from explicit alert/review actions; implement OPEN, INVESTIGATING, ESCALATED, RESOLUTION_REQUESTED, RESOLVED, CLOSED and priority/reference/department where configured.
+- [ ] Create cases only from explicit Alert or Transaction actions; implement OPEN, INVESTIGATING, ESCALATED, RESOLUTION_REQUESTED, RESOLVED, CLOSED and priority/reference/department where configured. This phase starts on `feature/cases-evidence-sla` after PR #30 and main verification; Migration 016 was then reported applied by the owner.
 - [ ] Persist assignments, discussions, activity, resolution, and evidence metadata; validate authorized uploads/storage and scanning before enabling attachments.
 - [ ] Implement auditor closure requests and policy-controlled supervisor/admin approval/rejection.
 - [ ] Persist SLA deadlines and implement server-side overdue escalation with audit events and notifications.
+
+- Owner-approved policy: LOW 72 hours, MEDIUM 48, HIGH 24, CRITICAL 8. An overdue case changes to ESCALATED and notifies its assignee, team Supervisor, and all active Admins. Closure is requested by an assigned Auditor; an active Supervisor may decide only for the same team, an active Admin may decide globally, and the requester cannot decide their own request. Rejected closure reopens investigation and restarts its SLA deadline.
+- Evidence acceptance is fail-closed: PDF/PNG/JPEG only, maximum 10 MiB, signature/MIME checked, antivirus scanned, and stored in a private Supabase Storage bucket. Migration 017 stores metadata but does not create the bucket or scanner service. `CASE_EVIDENCE_BUCKET` and `CASE_ANTIVIRUS_EXECUTABLE` remain deployment configuration; the UI stays disabled until both are available and the bucket is private.
+- Server-side escalation runs in the API lifespan when `CASE_SLA_ESCALATION_ENABLED=true`; the database batch RPC uses row locks and state predicates for multiple-instance retry safety. Phase 24 must enable/verify the worker on the chosen Render topology; a sleeping or stopped instance cannot run it.
 
 Acceptance criteria:
 
 - Alerts do not automatically become cases; transition/closure tests reject unauthorized or invalid actions and retain resolution/history.
 - Evidence tests verify type/size validation, access restrictions, unsafe-upload handling, and metadata/storage consistency.
 - SLA escalation works with no browser open, survives restart, and does not duplicate events on retry. Case notifications and audit events have verified recipients/actors.
+
+Phase 17 complete: PR #30 (`d9fe6ee`, merge `1e7e311`). Main verification passed backend 198 tests, 24 isolated PGlite tests, frontend 217 tests, lint/build, and `git diff --check`; migration 016 application was reported by the owner.
 
 ## Phase 19 — Vendor monitoring workflows
 
@@ -606,7 +612,8 @@ These are historical implementation estimates retained from Phases 0–12, not c
 | 2026-10-03 | Added Supabase Auth/JWT, account/access requests, backend RBAC, and authenticated frontend transport | PR #26; `8e3bcf2`, merge `acb1996` |
 | 2026-10-03 | Added attributable reopenable reviews and immutable audit history | PR #27; `2e4fefc`, merge `4d987ce`; owner confirmed migration 014 applied |
 | 2026-10-03 | Added team-scoped assignments and activity | PR #29; `a65e5b7`, merge `3630bd9`; owner confirmed migration 015 applied |
+| 2026-10-03 | Added durable notifications and paginated alert reconnect catch-up | PR #30; `d9fe6ee`, merge `1e7e311`; owner confirmed migration 016 applied |
 
 ## Next action
 
-Phases 13A/13B, 14, 15, and 16 are merged and verified on `main`. PR #29 (`a65e5b7`, merge `3630bd9`) completed Teams and Assignments. Main verification on 2026-10-03 passed: backend 195 passed (one known Starlette warning), 23 isolated PGlite migration tests, frontend 214 passed, lint/build, and `git diff --check`. The project owner confirmed migrations 013, 014, and 015 applied successfully; this is owner-reported and was not independently queried. Phase 17 is current on `feature/notifications-catchup`; migration 016 is not applied. The user requirements change in `backend/requirements.txt` and backup stash remain preserved and excluded from phase commits.
+Phases 13A/13B and 14-17 are merged and verified on `main`. PR #30 (`d9fe6ee`, merge `1e7e311`) completed Notifications and alert reconnect catch-up. Main verification on 2026-10-03 passed backend 198 passed (known Starlette warning), 24 isolated PGlite migration tests, frontend 217 passed, lint/build, and `git diff --check`. The project owner confirmed migrations 013-016 applied successfully; this is owner-reported and was not independently queried. Phase 18 is current on `feature/cases-evidence-sla`; migration 017 is not applied. The user requirements change in `backend/requirements.txt` and backup stash remain preserved and excluded from phase commits.

@@ -7,7 +7,7 @@ import {
 } from './statusUtils';
 import { getAlertRiskLevel } from '../utils/alerts';
 
-export default function AlertsTable({ alerts, onMarkReviewed, canAssign = false, onAssign, canEscalateToCase = false }) {
+export default function AlertsTable({ alerts, onMarkReviewed, canAssign = false, onAssign, canEscalateToCase = false, onCreateCase }) {
   const navigate = useNavigate();
 
   const openTransaction = (transactionId) => navigate(`/transactions/${transactionId}`);
@@ -101,8 +101,8 @@ export default function AlertsTable({ alerts, onMarkReviewed, canAssign = false,
                 <td className="alert-actions-cell" data-label="Actions">
                   <div className="alert-actions">
                     {canEscalateToCase && (
-                      <button type="button" className="btn btn-secondary alert-case-button" disabled title="Case creation is not available until the case service is connected." onClick={(event) => event.stopPropagation()}>
-                        Escalate to Case
+                      <button type="button" className="btn btn-secondary alert-case-button" onClick={(event) => { event.stopPropagation(); onCreateCase?.(alert); }} onKeyDown={(event) => event.stopPropagation()}>
+                        Create Case
                       </button>
                     )}
                     {canAssign && (

@@ -442,4 +442,60 @@ test('notifications persist once per recipient, follow approved scopes, and enfo
   } finally { await restored.close(); }
 });
 
+test('cases enforce team scope, immutable discussion, closure approval, clean evidence, and retry-safe SLA escalation', async () => {
+  await prepareTeams();
+  const created = (await db.query(`select public.create_case($1,'ALERT',$2,'Case review','Investigate the alert','HIGH','Audit',null) as value`,
+    [teamUsers.auditorA, teamAlertA])).rows[0].value;
+  const caseId = created.id;
+  assert.equal(created.case_reference, 'CASE-000001');
+  assert.equal(created.sla_target_hours, 24);
+  assert.equal((await db.query('select public.can_access_case($1,$2) as value', [teamUsers.auditorA, caseId])).rows[0].value, true);
+  assert.equal((await db.query('select public.can_access_case($1,$2) as value', [teamUsers.supervisorA, caseId])).rows[0].value, true);
+  assert.equal((await db.query('select public.can_access_case($1,$2) as value', [teamUsers.supervisorB, caseId])).rows[0].value, false);
+  const otherTeam = (await db.query('select public.list_cases($1,1,25,null,null,null) as value', [teamUsers.supervisorB])).rows[0].value;
+  assert.equal(otherTeam.total, 0);
+  const referenceSearch = (await db.query('select public.list_cases($1,1,25,null,null,$2) as value', [teamUsers.auditorA, 'CASE-000001'])).rows[0].value;
+  assert.equal(referenceSearch.total, 1);
+  await assert.rejects(db.query(`select public.create_case($1,'ALERT',$2,'Cross-team','Denied','HIGH',null,null)`,
+    [teamUsers.supervisorA, teamAlertB]), /Source alert access denied/);
+
+  const comment = (await db.query('select public.add_case_comment($1,$2,$3) as value', [teamUsers.auditorA, caseId, 'Evidence reviewed'])).rows[0].value;
+  await assert.rejects(db.query('update public.case_comments set message=\'rewritten\' where id=$1', [comment.id]), /append-only/);
+  await db.query("select public.update_case_status($1,$2,'ESCALATED',null)", [teamUsers.auditorA, caseId]);
+  assert.equal((await db.query('select status from public.audit_cases where id=$1', [caseId])).rows[0].status, 'ESCALATED');
+  await db.query("select public.update_case_status($1,$2,'INVESTIGATING',null)", [teamUsers.auditorA, caseId]);
+  await db.query("select public.update_case_status($1,$2,'RESOLVED',null)", [teamUsers.auditorA, caseId]);
+  assert.equal((await db.query('select sla_status from public.audit_cases where id=$1', [caseId])).rows[0].sla_status, 'COMPLETED');
+  await db.query("select public.request_case_closure($1,$2,'ISSUE_CONFIRMED','Control failure confirmed',null)", [teamUsers.auditorA, caseId]);
+  await assert.rejects(db.query(`select public.add_case_evidence($1,$2,'unsafe.pdf',10,'application/pdf','DOCUMENT',null,'case/unsafe','PENDING')`,
+    [teamUsers.auditorA, caseId]), /Invalid or unscanned evidence/);
+  const cleanEvidence = (await db.query(`select public.add_case_evidence($1,$2,'record.pdf',10,'application/pdf','DOCUMENT',null,$3,'CLEAN') as value`,
+    [teamUsers.auditorA, caseId, `cases/${caseId}/record.pdf`])).rows[0].value;
+  assert.equal(cleanEvidence.scan_status, 'CLEAN');
+  assert.equal((await db.query('select public.get_case_evidence($1,$2,$3) as value', [teamUsers.auditorA, caseId, cleanEvidence.id])).rows[0].value.storage_key, `cases/${caseId}/record.pdf`);
+  await assert.rejects(db.query('select public.decide_case_closure($1,$2,true,null)', [teamUsers.supervisorB, caseId]), /Cross-team closure decision denied/);
+  await db.query("select public.decide_case_closure($1,$2,false,'Additional checks needed')", [teamUsers.supervisorA, caseId]);
+  assert.equal((await db.query('select status,closure_decision,sla_status from public.audit_cases where id=$1', [caseId])).rows[0].status, 'INVESTIGATING');
+  await db.query("select public.update_case_status($1,$2,'RESOLVED',null)", [teamUsers.auditorA, caseId]);
+  await db.query("select public.request_case_closure($1,$2,'ISSUE_CONFIRMED','Control failure confirmed',null)", [teamUsers.auditorA, caseId]);
+  await db.query("select public.decide_case_closure($1,$2,true,'Approved after review')", [teamUsers.admin, caseId]);
+  assert.equal((await db.query('select status,closure_decision,sla_status from public.audit_cases where id=$1', [caseId])).rows[0].status, 'CLOSED');
+  await assert.rejects(db.query('select public.add_case_comment($1,$2,$3)', [teamUsers.auditorA, caseId, 'After close']), /Closed case is read-only/);
+
+  const overdue = (await db.query(`select public.create_case($1,'ALERT',$2,'Overdue case','Investigate the alert','LOW','Audit',null) as value`,
+    [teamUsers.auditorA, teamAlertA])).rows[0].value;
+  await db.query("update public.audit_cases set sla_due_at=now()-interval '1 minute' where id=$1", [overdue.id]);
+  assert.deepEqual((await db.query('select public.escalate_overdue_cases(25) as value')).rows[0].value, { escalated: 1 });
+  assert.deepEqual((await db.query('select public.escalate_overdue_cases(25) as value')).rows[0].value, { escalated: 0 });
+  assert.deepEqual((await db.query('select status,sla_status,sla_target_hours from public.audit_cases where id=$1', [overdue.id])).rows[0],
+    { status: 'ESCALATED', sla_status: 'OVERDUE', sla_target_hours: 72 });
+  const recipients = (await db.query(`select recipient_id from public.user_notifications where type='SLA_OVERDUE' and resource_id=$1 order by recipient_id`, [overdue.id])).rows.map(row => row.recipient_id);
+  const activeAdmins = (await db.query("select id from public.user_profiles where role='ADMIN' and account_status='ACTIVE'")).rows.map(row => row.id);
+  assert.deepEqual(recipients, [...activeAdmins, teamUsers.auditorA, teamUsers.supervisorA].sort());
+  const privileges = (await db.query(`select has_function_privilege('anon','public.create_case(uuid,text,text,text,text,text,text,uuid)','execute') as anon_create,
+    has_table_privilege('authenticated','public.audit_cases','select') as auth_read,
+    has_table_privilege('service_role','public.audit_cases','insert') as service_insert`)).rows[0];
+  assert.deepEqual(privileges, { anon_create: false, auth_read: false, service_insert: false });
+});
+
 test.after(async () => { await db.close(); });

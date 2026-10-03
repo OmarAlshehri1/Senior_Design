@@ -82,8 +82,8 @@ test('Supervisor final permissions include team, assignment, reports, and audit 
   assert.equal(permissions.includes(PERMISSIONS.MANAGE_USERS), false);
 });
 
-test('Admin receives all current capabilities', () => {
-  assert.deepEqual(new Set(getPermissionsForRole(ROLE_KEYS.ADMIN)), new Set(Object.values(PERMISSIONS)));
+test('Admin receives all current capabilities except closure-requester-only permission', () => {
+  assert.deepEqual(new Set(getPermissionsForRole(ROLE_KEYS.ADMIN)), new Set(Object.values(PERMISSIONS).filter((permission) => permission !== PERMISSIONS.REQUEST_CASE_CLOSURE)));
 });
 
 test('assignment action visibility derives from ASSIGN_ALERTS permission', () => {

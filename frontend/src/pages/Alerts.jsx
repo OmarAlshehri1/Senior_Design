@@ -12,6 +12,9 @@ import AssignmentDialog from '../components/AssignmentDialog.jsx';
 import useAuthorization from '../auth/useAuthorization.js';
 import { hasPermission, PERMISSIONS } from '../auth/roles.js';
 import { assignmentService } from '../assignments/assignmentService.js';
+import { casesService } from '../services/casesService.js';
+import CaseCreateDialog from '../components/CaseCreateDialog.jsx';
+import { useNavigate } from 'react-router-dom';
 
 function EmptyAlertsState({
   alertCount,
@@ -47,6 +50,7 @@ function EmptyAlertsState({
 }
 
 export default function Alerts() {
+  const navigate = useNavigate();
   const { effectiveRole } = useAuthorization();
   const {
     alerts,
@@ -67,8 +71,24 @@ export default function Alerts() {
   const [assignmentData, setAssignmentData] = useState({ alertId: null, assignment: null, history: [], eligibleUsers: [] });
   const [assignmentBusy, setAssignmentBusy] = useState(false);
   const [assignmentError, setAssignmentError] = useState(null);
+  const [caseBusy, setCaseBusy] = useState(false);
+  const [caseAlert, setCaseAlert] = useState(null);
   const canAssignAlerts = hasPermission(effectiveRole, PERMISSIONS.ASSIGN_ALERTS);
   const canEscalateToCase = hasPermission(effectiveRole, PERMISSIONS.CREATE_CASE);
+
+  const createCaseFromAlert = (alert) => setCaseAlert(alert);
+  const saveCaseFromAlert = async (input) => {
+    if (!caseAlert) return;
+    setCaseBusy(true);
+    try {
+      const created = await casesService.createCase({ source_type: 'ALERT', source_id: caseAlert.id, ...input });
+      showNotification(`Case ${created.reference ?? created.id} created.`, 'success');
+      setCaseAlert(null);
+      navigate(`/cases/${encodeURIComponent(created.id)}`);
+    } catch (error) {
+      showNotification(error instanceof Error ? error.message : 'Case could not be created.', 'error');
+    } finally { setCaseBusy(false); }
+  };
 
   useEffect(() => {
     if (!assignmentAlert) return undefined;
@@ -276,7 +296,7 @@ export default function Alerts() {
             <p>{alertsError}</p>
           </div>
         ) : filteredAlerts.length > 0 ? (
-          <AlertsTable alerts={filteredAlerts} onMarkReviewed={handleMarkReviewed} canAssign={canAssignAlerts} onAssign={setAssignmentAlert} canEscalateToCase={canEscalateToCase} />
+          <>{caseBusy && <p role="status">Creating case…</p>}<AlertsTable alerts={filteredAlerts} onMarkReviewed={handleMarkReviewed} canAssign={canAssignAlerts} onAssign={setAssignmentAlert} canEscalateToCase={canEscalateToCase} onCreateCase={createCaseFromAlert} /></>
         ) : (
           <EmptyAlertsState
             alertCount={alerts.length}
@@ -293,6 +313,7 @@ export default function Alerts() {
         history={assignmentData.alertId === assignmentAlert?.id ? assignmentData.history : []}
         busy={assignmentBusy} error={assignmentError} onSave={saveAssignment} onUnassign={unassignAlert}
         onClose={() => setAssignmentAlert(null)} />
+      <CaseCreateDialog alert={caseAlert} busy={caseBusy} onClose={() => setCaseAlert(null)} onSubmit={saveCaseFromAlert} />
     </>
   );
 }

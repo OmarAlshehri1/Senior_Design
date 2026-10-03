@@ -78,8 +78,12 @@ export function createApiClient({ baseUrl, fetchImpl = globalThis.fetch, getToke
     if (accessToken && !headers.Authorization) headers.Authorization = `Bearer ${accessToken}`;
     const requestOptions = { method, headers, signal: options.signal };
     if (options.body !== undefined) {
-      headers['Content-Type'] = 'application/json';
-      requestOptions.body = JSON.stringify(options.body);
+      if (options.rawBody) {
+        requestOptions.body = options.body;
+      } else {
+        headers['Content-Type'] = 'application/json';
+        requestOptions.body = JSON.stringify(options.body);
+      }
     }
     const url = buildRequestUrl(normalizedBaseUrl, path, options.query);
     let response = await fetchImpl(url, requestOptions);
@@ -144,6 +148,7 @@ export function createApiClient({ baseUrl, fetchImpl = globalThis.fetch, getToke
   return Object.freeze({
     get: (path, options) => request('GET', path, options),
     post: (path, body, options = {}) => request('POST', path, { ...options, body }),
+    postRaw: (path, body, options = {}) => request('POST', path, { ...options, body, rawBody: true }),
     patch: (path, body, options = {}) => request('PATCH', path, { ...options, body }),
     delete: (path, options = {}) => request('DELETE', path, options),
     getFile: requestFile,
