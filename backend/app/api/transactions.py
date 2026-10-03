@@ -14,7 +14,8 @@ from app.repositories.supabase_transactions import (
     SupabasePersistenceError,
     get_transaction_by_id,
     list_transactions,
-    persist_transactions,
+    insert_transaction,
+    TransactionAlreadyExistsError,
     persist_transaction_evaluation,
     get_duplicate_payment_counts,
     get_invoice_splitting_contexts,
@@ -181,9 +182,14 @@ async def create_transaction(
 
     try:
         await run_in_threadpool(
-            persist_transactions,
-            [storage_transaction],
+            insert_transaction,
+            storage_transaction,
         )
+    except TransactionAlreadyExistsError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Transaction ID already exists.",
+        ) from exc
     except SupabaseConfigurationError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
