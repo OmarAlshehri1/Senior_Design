@@ -7,6 +7,7 @@ from app.api.alerts import (
     router as alerts_router,
     websocket_router as alerts_websocket_router,
 )
+from app.api.reports import router as reports_router
 from app.api.transactions import router as transactions_router
 
 
@@ -59,6 +60,10 @@ app.include_router(
 )
 app.include_router(
     alerts_router,
+    prefix="/api/v1",
+)
+app.include_router(
+    reports_router,
     prefix="/api/v1",
 )
 app.include_router(alerts_websocket_router)

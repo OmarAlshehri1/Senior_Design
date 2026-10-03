@@ -172,13 +172,15 @@ The planned rule keys are `segregation_of_duties`, `approval_limits`, `duplicate
   "type": "DAILY",
   "status": "COMPLETED",
   "period_start": "2026-09-20T00:00:00Z",
-  "period_end": "2026-09-20T23:59:59Z",
+  "period_end": "2026-09-21T00:00:00Z",
   "created_at": "2026-09-21T00:05:00Z",
   "download_url": "/api/v1/reports/RPT-2026-09-20/download"
 }
 ```
 
 Report `status` is `PENDING`, `COMPLETED`, or `FAILED`.
+
+Daily reports use an exact half-open UTC period from midnight `period_start` through, but not including, the following midnight `period_end`. Version `1.0.0` summaries are generated synchronously from the latest stored evaluation, risk-score, and alert snapshots; scores and rule outcomes are never recalculated during reporting, and private `ground_truth` labels are never included. Live verification generated `RPT-2026-10-03` with 3 evaluated transactions, an average risk score of 75.21, a distribution of 1 LOW and 2 HIGH transactions, and 2 alerts.
 
 ## REST endpoints
 
@@ -313,7 +315,7 @@ Returns a paginated collection of `Alert` objects. The optional `status` query p
 
 Marks an alert as `REVIEWED`, records `reviewed_at`, and returns the updated `Alert`.
 
-Preliminary request:
+Request:
 
 ```json
 {
@@ -333,7 +335,7 @@ Returns the available `AuditRule` definitions.
 
 ### `GET /api/v1/reports`
 
-Returns a collection of `Report` records.
+Returns paginated persisted `Report` records with `items`, `total`, `page`, and `page_size`. Completed reports include a CSV `download_url`.
 
 ```json
 {
@@ -341,17 +343,21 @@ Returns a collection of `Report` records.
 }
 ```
 
+### `GET /api/v1/reports/{report_id}/download`
+
+Returns a completed report as `text/csv` with an attachment filename. Returns `404` when the report does not exist and `409` when it is not completed.
+
 ### `POST /api/v1/reports`
 
-Requests report generation and returns a `Report` with its current processing status.
+Generates and persists a completed daily report from authoritative stored results. Repeating the same UTC period safely updates the same deterministic report.
 
-Preliminary request:
+Request:
 
 ```json
 {
   "type": "DAILY",
   "period_start": "2026-09-20T00:00:00Z",
-  "period_end": "2026-09-20T23:59:59Z"
+  "period_end": "2026-09-21T00:00:00Z"
 }
 ```
 
