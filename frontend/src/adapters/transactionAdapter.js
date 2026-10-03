@@ -110,7 +110,9 @@ export function adaptTransaction(payload) {
     riskLevel: RISK_LEVEL_MAP[payload.risk_level] ?? null,
     dataQuality: {
       status: QUALITY_STATUS_MAP[payload.data_quality_status] ?? null,
-      missingFields: null,
+      missingFields: Array.isArray(payload.missing_fields)
+        ? structuredClone(payload.missing_fields)
+        : null,
     },
     rules: mapRuleResults(payload.rule_results),
     riskExplanation: typeof payload.explanation === 'string'

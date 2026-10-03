@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import useApp from '../context/useApp';
 import {
@@ -14,6 +15,10 @@ import ReviewHistory from '../components/ReviewHistory.jsx';
 import { createReviewAccountability } from '../audit/reviewRecords.js';
 import { REVIEW_RESOLUTIONS } from '../cases/caseWorkflow.js';
 import VendorMonitoringIndicator from '../components/VendorMonitoringIndicator.jsx';
+import {
+  loadTransactionDetail,
+  TRANSACTION_DETAIL_STATES,
+} from '../services/transactionDetailLoader.js';
 
 function DetailField({ label, value }) {
   return (
@@ -38,11 +43,80 @@ function DetailNotFound({ id }) {
   );
 }
 
+function DetailLoading() {
+  return (
+    <div className="card transaction-processing-state" role="status">
+      <h1>Loading transaction</h1>
+      <p>The transaction detail is being retrieved.</p>
+    </div>
+  );
+}
+
+function DetailError() {
+  return (
+    <div className="card transaction-not-found" role="alert">
+      <span className="transaction-not-found-label">Transaction lookup</span>
+      <h1>Transaction detail is unavailable.</h1>
+      <p>The transaction could not be retrieved. Try again later.</p>
+      <Link className="btn btn-primary" to="/transactions">
+        <ArrowLeftIcon width={15} height={15} />
+        Back to Transactions
+      </Link>
+    </div>
+  );
+}
+
 export default function TransactionDetail() {
   const { id } = useParams();
   const { getTransaction, getAlertForTransaction, markAlertReviewed, showNotification } = useApp();
-  const transaction = getTransaction(id);
+  const currentTransaction = getTransaction(id);
+  const [detailState, setDetailState] = useState(() => ({
+    id,
+    status: currentTransaction ? TRANSACTION_DETAIL_STATES.SUCCESS : 'loading',
+    transaction: currentTransaction,
+    error: null,
+  }));
   const alert = getAlertForTransaction(id);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+
+    setDetailState({
+      id,
+      status: currentTransaction ? TRANSACTION_DETAIL_STATES.SUCCESS : 'loading',
+      transaction: currentTransaction,
+      error: null,
+    });
+
+    loadTransactionDetail({
+      id,
+      currentTransaction,
+      signal: controller.signal,
+    }).then((result) => {
+      if (!active || controller.signal.aborted) return;
+      setDetailState({ id, ...result });
+    });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [currentTransaction, id]);
+
+  if (detailState.id !== id || detailState.status === 'loading') {
+    return <DetailLoading />;
+  }
+
+  if (detailState.status === TRANSACTION_DETAIL_STATES.ERROR) {
+    return <DetailError />;
+  }
+
+  if (detailState.status === TRANSACTION_DETAIL_STATES.NOT_FOUND) {
+    return <DetailNotFound id={id} />;
+  }
+
+  const transaction = detailState.transaction;
 
   if (!transaction) return <DetailNotFound id={id} />;
 

@@ -149,7 +149,7 @@ export default function Reports() {
             <h2 id="high-risk-heading">High-Risk Transactions</h2>
             <p>Transactions currently classified as high risk.</p>
           </div>
-          <Link className="card-header-link" to="/transactions?risk=high">View All High-Risk Transactions</Link>
+          <Link className="card-header-link" to="/transactions?risk=high">View High-Risk Transactions</Link>
         </div>
         {report.highRiskTransactions.length > 0 ? (
           <div className="report-transactions-wrap">

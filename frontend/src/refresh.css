@@ -4916,6 +4916,11 @@ select,
 .operations-tabs button { flex: 0 0 auto; padding: 11px 14px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--text-secondary); font-weight: 700; }
 .operations-tabs button.is-active { border-bottom-color: var(--blue); color: var(--blue); }
 
+.vendor-profile-page .operations-tabs button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
 .operational-not-found { max-width: 680px; margin: 8vh auto; padding: 38px; text-align: center; }
 .operational-not-found .btn { display: inline-flex; margin-top: 12px; }
 .operational-detail-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding: 26px; border: 1px solid var(--border); border-radius: var(--radius-lg, 16px); background: linear-gradient(135deg, #fff, #f6f8ff); }

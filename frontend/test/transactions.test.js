@@ -91,6 +91,22 @@ test('missing optional values are safe and expose data-quality state', () => {
   });
 });
 
+test('authoritative backend missing fields take precedence over frontend derivation', () => {
+  const transaction = {
+    ...initialTransactions[0],
+    category: null,
+    dataQuality: {
+      status: 'Partially Complete',
+      missingFields: ['approval_limit'],
+    },
+  };
+
+  assert.deepEqual(getTransactionDataQuality(transaction), {
+    status: 'Partially Complete',
+    missingFields: ['approval_limit'],
+  });
+});
+
 test('transaction lookup handles missing IDs without broken detail data', () => {
   assert.equal(findTransactionById(initialTransactions, 'TX-DOES-NOT-EXIST'), null);
   assert.equal(findTransactionById(initialTransactions, 'TX-10480')?.id, 'TX-10480');

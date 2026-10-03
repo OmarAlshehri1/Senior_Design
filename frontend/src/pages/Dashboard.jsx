@@ -32,14 +32,16 @@ export default function Dashboard() {
           <h1>Dashboard</h1>
           <p>Overview of transaction auditing activity and risk status.</p>
         </div>
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={simulateNewTransaction}
-          disabled={simulating}
-        >
-          {simulating ? 'Adding Test Transaction...' : 'Add Test Transaction'}
-        </button>
+        {import.meta.env.DEV && (
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={simulateNewTransaction}
+            disabled={simulating}
+          >
+            {simulating ? 'Adding Test Transaction...' : 'Add Test Transaction'}
+          </button>
+        )}
       </div>
 
       <SummaryCards summary={summary} highRiskPercentage={riskOverview.high} />

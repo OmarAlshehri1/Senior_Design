@@ -18,6 +18,7 @@ const backendTransaction = {
   risk_score: 76,
   risk_level: 'HIGH',
   data_quality_status: 'COMPLETE',
+  missing_fields: ['approval_limit'],
   rule_results: [{
     rule_key: 'duplicate_payment',
     status: 'FAILED',
@@ -39,12 +40,23 @@ test('transaction adapter maps the documented backend shape', () => {
   assert.equal(transaction.ruleStatus, 'Review');
   assert.equal(transaction.riskLevel, 'High Risk');
   assert.equal(transaction.dataQuality.status, 'Complete');
+  assert.deepEqual(transaction.dataQuality.missingFields, ['approval_limit']);
   assert.deepEqual(transaction.rules.duplicatePayment, {
     status: 'Failed',
     detail: 'Possible duplicate payment.',
     scoreContribution: 35,
     evidence: { invoice_id: 'INV-1' },
   });
+});
+
+test('transaction adapter preserves an authoritative empty missing-fields list', () => {
+  const transaction = adaptTransaction({
+    id: 'TX-COMPLETE',
+    data_quality_status: 'COMPLETE',
+    missing_fields: [],
+  });
+
+  assert.deepEqual(transaction.dataQuality.missingFields, []);
 });
 
 test('transaction adapter preserves safe missing states without inventing scores', () => {

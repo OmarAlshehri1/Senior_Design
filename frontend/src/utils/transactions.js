@@ -154,6 +154,15 @@ export function getTransactionDataQuality(transaction) {
     .filter(([key]) => isMissing(transaction[key]))
     .map(([, label]) => label);
   const missingFields = [...missingCritical, ...missingSupporting];
+  const authoritativeMissingFields = transaction.dataQuality?.missingFields;
+
+  if (Array.isArray(authoritativeMissingFields)) {
+    return {
+      status: transaction.dataQuality?.status
+        ?? (authoritativeMissingFields.length > 0 ? 'Partially Complete' : 'Complete'),
+      missingFields: [...authoritativeMissingFields],
+    };
+  }
 
   if (transaction.dataQuality?.status) {
     return {
