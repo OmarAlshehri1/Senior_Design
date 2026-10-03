@@ -9,7 +9,7 @@ import { transactionsService } from '../services/transactionsService';
 
 let nextTxNumber = 10497;
 let nextAlertNumber = 7;
-const TRANSACTIONS_PAGE_SIZE = 100;
+const TRANSACTIONS_PAGE_SIZE = 10;
 const {
   buildRuleResults,
   initialAlerts,

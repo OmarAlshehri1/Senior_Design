@@ -80,6 +80,7 @@ export default function Transactions() {
     () => transactions.filter((transaction) => !transaction?.processing),
     [transactions]
   );
+  const loadedTransactionCount = transactions.length;
 
   const filtered = useMemo(
     () => filterAndSortTransactions(transactions, {
@@ -143,6 +144,7 @@ const changePage = (nextPage) => {
     if (filter === 'All') nextParams.delete('risk');
     else nextParams.set('risk', filter.toLowerCase());
     setSearchParams(nextParams);
+    setTransactionsPage(1);
   };
 
   const clearFilters = () => {
@@ -211,7 +213,10 @@ const changePage = (nextPage) => {
             <select
               className="select-input"
               value={ruleFilter}
-              onChange={(event) => setRuleFilter(event.target.value)}
+              onChange={(event) => {
+                setRuleFilter(event.target.value);
+                setTransactionsPage(1);
+              }}
             >
               <option value="All">All Statuses</option>
               <option value="Passed">Passed</option>

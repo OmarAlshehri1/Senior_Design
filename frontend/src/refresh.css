@@ -3923,6 +3923,14 @@ table.data-table {
   font-weight: 700;
 }
 
+.notification-mark-all:disabled,
+.notification-list button:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+  opacity: 0.48;
+  text-decoration: none;
+}
+
 .notification-center-empty {
   display: grid;
   min-height: 180px;
@@ -5602,6 +5610,93 @@ body {
 }
 
 @media (max-width: 900px) {
+  .dashboard-table-wrap,
+  .report-transactions-wrap {
+    overflow: hidden;
+  }
+
+  .dashboard-transactions-table,
+  .dashboard-transactions-table tbody,
+  .dashboard-transactions-table tr,
+  .dashboard-transactions-table td,
+  .report-transactions-table,
+  .report-transactions-table tbody,
+  .report-transactions-table tr,
+  .report-transactions-table td {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .dashboard-transactions-table thead,
+  .report-transactions-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .dashboard-transactions-table tbody,
+  .report-transactions-table tbody {
+    display: grid;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .dashboard-transactions-table tbody tr,
+  .report-transactions-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 13px 16px;
+    margin: 0;
+    padding: 15px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+
+  .dashboard-transactions-table tbody td,
+  .dashboard-transactions-table tbody td:first-child,
+  .dashboard-transactions-table tbody td:last-child,
+  .report-transactions-table tbody td,
+  .report-transactions-table tbody td:first-child,
+  .report-transactions-table tbody td:last-child {
+    display: flex;
+    width: auto;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 4px;
+    padding: 0;
+    overflow: visible;
+    border: 0;
+    white-space: normal;
+  }
+
+  .dashboard-transactions-table tbody td::before,
+  .report-transactions-table tbody td::before {
+    display: block;
+    content: attr(data-label);
+    color: var(--text-muted);
+    font-size: 9px;
+    font-weight: 750;
+    letter-spacing: 0.045em;
+    text-transform: uppercase;
+  }
+
+  .dashboard-transactions-table tbody td:nth-child(1),
+  .dashboard-transactions-table tbody td:nth-child(2),
+  .report-transactions-table tbody td:nth-child(1),
+  .report-transactions-table tbody td:nth-child(2) {
+    grid-column: 1 / -1;
+  }
+
   .transactions-table tbody tr,
   .alerts-table tbody tr {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -5634,6 +5729,18 @@ body {
 
   .risk-overview-card .donut-legend {
     width: 100%;
+  }
+
+  .settings-group-grid,
+  .settings-system-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-definition-list dt,
+  .settings-definition-list dd {
+    min-width: 0;
+    overflow-wrap: normal;
+    word-break: normal;
   }
 }
 
@@ -5809,5 +5916,33 @@ body {
 
   .alert-type-copy {
     flex: 1 1 auto;
+  }
+
+  .dashboard-transactions-table tbody tr,
+  .report-transactions-table tbody tr {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashboard-transactions-table tbody td:nth-child(n),
+  .report-transactions-table tbody td:nth-child(n) {
+    grid-column: 1;
+  }
+
+  .management-tabs,
+  .operations-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    padding: 10px;
+    overflow: visible;
+  }
+
+  .management-tabs button,
+  .operations-tabs button {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+    white-space: normal;
   }
 }

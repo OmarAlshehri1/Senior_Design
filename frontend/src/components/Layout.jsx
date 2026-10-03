@@ -40,7 +40,7 @@ export default function Layout({ children, identity = null }) {
           mobileNavOpen={mobileNavOpen}
           onMenuToggle={() => setMobileNavOpen((open) => !open)}
         />
-        <div className="page-content">{children}</div>
+        <main className="page-content">{children}</main>
       </div>
       <Notification />
     </div>
