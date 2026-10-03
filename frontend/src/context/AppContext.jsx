@@ -1,13 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AppContext from './contextStore';
 import { currentDataSource } from '../data/dataSource';
 import { deriveDashboardSummary } from '../utils/dashboard';
 import { getRiskLevel, RISK_LEVELS } from '../utils/risk';
 import { findTransactionById } from '../utils/transactions';
-import { adaptAlert } from '../adapters/alertAdapter';
 import { alertsService } from '../services/alertsService';
 import { realtimeService } from '../services/realtimeService';
 import { transactionsService } from '../services/transactionsService';
+import { notificationService } from '../notifications/notificationService.js';
+import { onAuthSessionChange, readAuthSession } from '../auth/authSession.js';
 
 let nextTxNumber = 10497;
 let nextAlertNumber = 7;
@@ -73,6 +74,12 @@ export function AppProvider({ children }) {
   const [alertsLoading, setAlertsLoading] = useState(true);
   const [alertsError, setAlertsError] = useState(null);
   const [notification, setNotification] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [notificationsError, setNotificationsError] = useState(null);
+  const notificationsGeneration = useRef(0);
+  const notificationsLoadSequence = useRef(0);
   const [simulating, setSimulating] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(() => new Date().toISOString());
   const [lastSimulatedTransactionId, setLastSimulatedTransactionId] = useState(null);
@@ -84,6 +91,98 @@ export function AppProvider({ children }) {
       setNotification((current) => (current?.key === key ? null : current));
     }, 3500);
   }, []);
+
+  const refreshNotifications = useCallback(async () => {
+    if (!readAuthSession()?.access_token) {
+      notificationsGeneration.current += 1;
+      notificationsLoadSequence.current += 1;
+      setNotifications([]);
+      setUnreadNotificationCount(0);
+      setNotificationsError(null);
+      setNotificationsLoading(false);
+      return;
+    }
+    const generation = notificationsGeneration.current;
+    const loadSequence = ++notificationsLoadSequence.current;
+    setNotificationsLoading(true);
+    setNotificationsError(null);
+    try {
+      const result = await notificationService.listNotifications({
+        query: { page: 1, page_size: 100 },
+      });
+      if (generation === notificationsGeneration.current && loadSequence === notificationsLoadSequence.current) {
+        setNotifications(result.items);
+        setUnreadNotificationCount(result.unreadCount);
+      }
+    } catch (error) {
+      if (generation === notificationsGeneration.current && loadSequence === notificationsLoadSequence.current) {
+        setNotificationsError(error instanceof Error ? error.message : 'Notifications could not be loaded.');
+      }
+    } finally {
+      if (generation === notificationsGeneration.current && loadSequence === notificationsLoadSequence.current) setNotificationsLoading(false);
+    }
+  }, []);
+
+  const markNotificationRead = useCallback(async (notificationId) => {
+    const generation = notificationsGeneration.current;
+    try {
+      const result = await notificationService.markNotificationRead(notificationId);
+      if (generation === notificationsGeneration.current) {
+        setNotifications((current) => current.map((item) => item.id === notificationId
+          ? { ...item, readAt: result?.readAt ?? new Date().toISOString() } : item));
+        setUnreadNotificationCount((current) => Math.max(0, current - 1));
+        setNotificationsError(null);
+      }
+    } catch (error) {
+      if (generation === notificationsGeneration.current) {
+        setNotificationsError(error instanceof Error ? error.message : 'Notification could not be updated.');
+      }
+    }
+  }, []);
+
+  const markAllNotificationsRead = useCallback(async () => {
+    const generation = notificationsGeneration.current;
+    try {
+      await notificationService.markAllNotificationsRead();
+      if (generation === notificationsGeneration.current) {
+        const readAt = new Date().toISOString();
+        setNotifications((current) => current.map((item) => item.readAt ? item : { ...item, readAt }));
+        setUnreadNotificationCount(0);
+        setNotificationsError(null);
+      }
+    } catch (error) {
+      if (generation === notificationsGeneration.current) {
+        setNotificationsError(error instanceof Error ? error.message : 'Notifications could not be updated.');
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    let subjectId = readAuthSession()?.user?.id ?? null;
+    const clearNotifications = () => {
+      notificationsGeneration.current += 1;
+      notificationsLoadSequence.current += 1;
+      setNotifications([]);
+      setUnreadNotificationCount(0);
+      setNotificationsError(null);
+      setNotificationsLoading(false);
+    };
+    const syncNotifications = (session) => {
+      const nextSubjectId = session?.user?.id ?? null;
+      if (nextSubjectId === subjectId) return;
+      subjectId = nextSubjectId;
+      notificationsGeneration.current += 1;
+      if (nextSubjectId) refreshNotifications();
+      else clearNotifications();
+    };
+    const unsubscribe = onAuthSessionChange(syncNotifications);
+    if (subjectId) refreshNotifications();
+    return () => {
+      notificationsGeneration.current += 1;
+      notificationsLoadSequence.current += 1;
+      unsubscribe();
+    };
+  }, [refreshNotifications]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -139,79 +238,51 @@ export function AppProvider({ children }) {
   ]);
 
   useEffect(() => {
-    const controller = new AbortController();
     let active = true;
+    let controller = null;
+    let loading = false;
+    let rerun = false;
 
-    async function loadAlerts() {
-      setAlertsLoading(true);
-      setAlertsError(null);
-
-      try {
-        const result = await alertsService.list({
-          query: {
-            page: 1,
-            page_size: 100,
-          },
-          signal: controller.signal,
-        });
-
-        if (!active) return;
-
-        setAlerts((previous) => {
-          const alertsById = new Map(
-            result.items
-              .filter((alert) => alert?.id)
-              .map((alert) => [alert.id, alert])
-          );
-
-          previous.forEach((alert) => {
-            if (alert?.id && !alertsById.has(alert.id)) {
-              alertsById.set(alert.id, alert);
-            }
-          });
-
-          return [...alertsById.values()];
-        });
-        setLastUpdated(new Date().toISOString());
-      } catch (error) {
-        if (!active || controller.signal.aborted) return;
-
-        setAlertsError(
-          error instanceof Error
-            ? error.message
-            : 'Alerts could not be loaded.'
-        );
-      } finally {
-        if (active) {
-          setAlertsLoading(false);
-        }
+    async function reconcileAlerts() {
+      if (loading) {
+        rerun = true;
+        return;
       }
+      loading = true;
+      do {
+        rerun = false;
+        controller = new AbortController();
+        setAlertsLoading(true);
+        setAlertsError(null);
+        try {
+          const result = await alertsService.listAll({ signal: controller.signal });
+          if (!active) return;
+          // Replace the snapshot: this also removes alerts that are no longer
+          // visible after a role, team, or assignment change.
+          setAlerts(result.items);
+          setLastUpdated(new Date().toISOString());
+        } catch (error) {
+          if (!active || controller.signal.aborted) return;
+          setAlertsError(error instanceof Error ? error.message : 'Alerts could not be loaded.');
+        } finally {
+          if (active) setAlertsLoading(false);
+        }
+      } while (active && rerun);
+      loading = false;
     }
 
-    loadAlerts();
+    const unsubscribe = realtimeService.onMessage((event) => {
+      if (event.type === 'alerts.changed' || event.type === 'alerts.catch_up') {
+        reconcileAlerts();
+        refreshNotifications();
+      }
+    });
+    realtimeService.connect();
+    reconcileAlerts();
 
     return () => {
       active = false;
-      controller.abort();
-    };
-  }, []);
-
-  useEffect(() => {
-    const unsubscribe = realtimeService.onMessage((event) => {
-      const alert = adaptAlert(event.data);
-
-      if (!alert?.id) return;
-
-      setAlerts((previous) => [
-        alert,
-        ...previous.filter((item) => item.id !== alert.id),
-      ]);
-      setLastUpdated(new Date().toISOString());
-    });
-
-    realtimeService.connect();
-
-    return () => {
+      controller?.abort();
       unsubscribe();
       realtimeService.disconnect();
     };
@@ -367,10 +438,17 @@ export function AppProvider({ children }) {
       riskCounts,
       riskOverview,
       notification,
+      notifications,
+      unreadNotificationCount,
+      notificationsLoading,
+      notificationsError,
       simulating,
       lastUpdated,
       lastSimulatedTransactionId,
       showNotification,
+      refreshNotifications,
+      markNotificationRead,
+      markAllNotificationsRead,
       markAlertReviewed,
       setAlertAssignment,
       simulateNewTransaction,
@@ -392,10 +470,17 @@ export function AppProvider({ children }) {
       riskCounts,
       riskOverview,
       notification,
+      notifications,
+      unreadNotificationCount,
+      notificationsLoading,
+      notificationsError,
       simulating,
       lastUpdated,
       lastSimulatedTransactionId,
       showNotification,
+      refreshNotifications,
+      markNotificationRead,
+      markAllNotificationsRead,
       markAlertReviewed,
       setAlertAssignment,
       simulateNewTransaction,

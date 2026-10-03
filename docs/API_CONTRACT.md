@@ -2,9 +2,9 @@
 
 This document is the preliminary contract between the React frontend and FastAPI backend. It defines planned field names and payload shapes so frontend and backend development can proceed independently.
 
-The documented health, transaction, alert, report, CSV-download, and alert WebSocket endpoints are implemented. `GET /api/v1/dashboard/summary` and `GET /api/v1/audit-rules` are planned contracts only; no router currently implements them. Authentication and identity endpoints are listed below. Shapes may be extended through team agreement, but existing names should not be changed without coordinating both branches.
+The documented health, transaction, alert, report, CSV-download, identity, team, accountability, and alert WebSocket endpoints are implemented on `main`. Notification routes and Migration 016 are being added in the current Phase 17 branch; the live notification API requires owner application of that migration. `GET /api/v1/dashboard/summary` and `GET /api/v1/audit-rules` are planned contracts only; no router currently implements them. Shapes may be extended through team agreement, but existing names should not be changed without coordinating both branches.
 
-Implementation status: runtime transaction creation is insert-only and returns `409` for an existing ID without overwriting it; offline seed upsert remains separate. The project owner confirmed migrations 012, 013, and 014 were applied successfully in Supabase; this was not independently queried. `TRANSACTION_RECOVERY_ENABLED` remains disabled. Phase 14 adds API identity, bearer authentication, role checks, authenticated report download and WebSocket subscriptions, plus local `Authorization` CORS support. The project owner confirmed `POST /transactions` is Supervisor/Admin-only; account lockout follows three consecutive failed sign-ins, and an active Admin may unlock only after the account owner verifies their email and submits an unlock request. Initial Admin provisioning is manual by the Supabase database owner as documented in [IDENTITY_BOOTSTRAP.md](IDENTITY_BOOTSTRAP.md). Phase 15 adds actor-attributed reviews and immutable audit events through migration 014. Phase 16 adds persisted teams and assignments, team-scoped alert/review/audit visibility, and team activity; Migration 015 remains isolated until separately approved for the live database. Phase 17 adds alert catch-up after reconnect. Approved production origins and the worker/instance delivery topology are completed in Phase 24. Live measurements below are historical observations, not newly verified database state.
+Implementation status: runtime transaction creation is insert-only and returns `409` for an existing ID without overwriting it; offline seed upsert remains separate. The project owner confirmed migrations 012-015 were applied successfully in Supabase; this was not independently queried. `TRANSACTION_RECOVERY_ENABLED` remains disabled. Phase 14 adds API identity, bearer authentication, role checks, authenticated report download and WebSocket subscriptions, plus local `Authorization` CORS support. The project owner confirmed `POST /transactions` is Supervisor/Admin-only; account lockout follows three consecutive failed sign-ins, and an active Admin may unlock only after the account owner verifies their email and submits an unlock request. Initial Admin provisioning is manual by the Supabase database owner as documented in [IDENTITY_BOOTSTRAP.md](IDENTITY_BOOTSTRAP.md). Phase 15 adds actor-attributed reviews and immutable audit events through migration 014. Phase 16 adds persisted teams and assignments, team-scoped alert/review/audit visibility, and team activity; the project owner confirmed Migration 015 was applied. Phase 17 adds durable private notifications and paginated alert catch-up; Migration 016 remains pending. Approved production origins and the worker/instance delivery topology are completed in Phase 24. Live measurements below are historical observations, not newly verified database state.
 
 ## Conventions
 
@@ -425,29 +425,20 @@ Request:
 
 ### `/ws/alerts`
 
-Implemented server-to-client alert stream. Each newly created high-risk alert is published immediately as an `alert.created` event.
+Implemented authenticated server-to-client change signal. Each newly created high-risk alert emits an `alerts.changed` invalidation event; the event contains no alert row or identifier. Clients reconcile through the paginated, actor-scoped `GET /api/v1/alerts` endpoint on connection readiness, reconnect, and change signals. This keeps WebSocket delivery from bypassing team and assignment visibility rules. Reconciliation deduplicates by persisted alert ID and replaces the client snapshot so alerts removed from the actor's current scope are dropped.
 
-Preliminary event envelope:
+Event envelope:
 
 ```json
 {
-  "type": "alert.created",
-  "occurred_at": "2026-09-20T14:42:03Z",
-  "data": {
-    "id": "AL-0001",
-    "transaction_id": "TX-10496",
-    "created_at": "2026-09-20T14:42:03Z",
-    "severity": "HIGH",
-    "title": "High-risk transaction detected",
-    "description": "The transaction requires auditor review.",
-    "reason": "Rule and anomaly results exceeded the high-risk threshold.",
-    "status": "ACTIVE",
-    "reviewed_at": null
-  }
+  "type": "alerts.changed",
+  "occurred_at": "2026-10-03T14:42:03Z"
 }
 ```
 
-The client implements bounded reconnection attempts, sends its bearer token in the first WebSocket application frame (`{"type":"auth","access_token":"…"}`), and subscribes only after `{"type":"auth.ready"}`. The backend validates the session at connection and during delivery. The client loads persisted alerts through `GET /api/v1/alerts` at mount (currently the first page, up to 100 items). Reconnect does not currently trigger catch-up retrieval. Backend-plan Phase 17 adds paginated reconciliation and persisted-ID deduplication to recover missed events. The stream manager remains process-local; Phase 24 must choose an approved deployment topology that accounts for this.
+The client implements bounded reconnection attempts, sends its bearer token in the first WebSocket application frame, and subscribes only after `auth.ready`. The backend validates the session at connection and during delivery. The client loads the complete actor-scoped alert snapshot through paginated `GET /api/v1/alerts` on mount, reconnect, and change signals. The stream manager remains process-local; Phase 24 must choose an approved deployment topology that accounts for this.
+
+The Phase 17 notification API contract is `GET /api/v1/notifications?page=1&page_size=25&unread_only=false`, `PATCH /api/v1/notifications/{notification_id}/read`, and `POST /api/v1/notifications/read-all`. Every operation derives the recipient from the authenticated user and cannot access another user's records. Event notifications are persisted idempotently with their source alert, assignment, access request, or account event. Approved access requests may notify the activated request owner; rejected requests remain in Admin request/audit records and do not send an in-app notification until a safe delivery channel is selected. Migration 016 must be applied before these routes can use live storage.
 
 ## Responsibility boundary
 

@@ -1,13 +1,22 @@
-import { IntegrationError, INTEGRATION_ERROR_CODES } from '../services/integrationError.js';
+import { apiClient } from '../services/apiClient.js';
+import { normalizeNotifications } from './notifications.js';
 
-const unavailable = (operation) => Promise.reject(new IntegrationError(
-  `${operation} is not available yet.`,
-  { code: INTEGRATION_ERROR_CODES.CONFIGURATION_UNAVAILABLE }
-));
+export function createNotificationService(client = apiClient) {
+  return Object.freeze({
+    async listNotifications(options = {}) {
+      const result = await client.get('/notifications', options);
+      return {
+        ...result,
+        items: normalizeNotifications(result?.items),
+        unreadCount: Number.isFinite(result?.unread_count) ? result.unread_count : 0,
+      };
+    },
+    markNotificationRead: (notificationId, options = {}) => client.patch(
+      `/notifications/${encodeURIComponent(notificationId)}/read`, {}, options
+    ),
+    markAllNotificationsRead: (options = {}) => client.post('/notifications/read-all', {}, options),
+  });
+}
 
-export const notificationService = Object.freeze({
-  listNotifications: () => unavailable('Notifications'),
-  markNotificationRead: () => unavailable('Notification updates'),
-  markAllNotificationsRead: () => unavailable('Notification updates'),
-});
+export const notificationService = createNotificationService();
 
