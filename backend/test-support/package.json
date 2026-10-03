@@ -1,0 +1,7 @@
+{
+  "name": "m004-isolated-postgres-tests",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test transaction-processing.test.mjs" },
+  "devDependencies": { "@electric-sql/pglite": "0.5.8" }
+}

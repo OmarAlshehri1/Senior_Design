@@ -180,6 +180,24 @@ async def create_transaction(
         "metadata": {},
     }
 
+    from app.services import transaction_processing as processing
+
+    if processing.enabled():
+        try:
+            await run_in_threadpool(processing.jobs.rpc, "create_transaction_with_job",
+                {"p_input": storage_transaction, "p_received_at": request_received_at})
+            result = await processing.process_job(transaction_data["id"])
+            if result is None:
+                raise SupabasePersistenceError("Processing already has an active lease.")
+            return await processing.attach_explanation(result)
+        except TransactionAlreadyExistsError as exc:
+            raise HTTPException(status_code=409, detail="Transaction ID already exists.") from exc
+        except SupabaseConfigurationError as exc:
+            raise HTTPException(status_code=503, detail="Transaction storage is not configured.") from exc
+        except (SupabasePersistenceError, OSError, ValueError, TypeError) as exc:
+            raise HTTPException(status_code=503,
+                detail="Transaction processing is unavailable. An accepted transaction will recover automatically; use GET to check its state.") from exc
+
     try:
         await run_in_threadpool(
             insert_transaction,

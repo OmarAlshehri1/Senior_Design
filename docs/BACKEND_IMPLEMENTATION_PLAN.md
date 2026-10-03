@@ -359,15 +359,15 @@ Acceptance criteria:
 - Repository/API tests exercise duplicate conflict mapping and concurrent creation at the persistence boundary; validation and storage errors remain distinguishable.
 - Seed tests still prove confirmation is required and repeated seeding uses the separate upsert path.
 
-Evidence: branch `feature/safe-transaction-create`; backend `140 passed` (one known Starlette warning). `test_transaction_creation.py` drives sequential/concurrent API calls through the real insert repository with a constraint-backed SQLite HTTP transport; duplicate/error classification and no processing after insert failure are covered. Existing seed tests prove repeated confirmed calls use upsert. No PostgreSQL server/docker was available locally; the concurrency harness is not live PostgreSQL verification. Migration 001 already defines the primary key, so no new migration is required. PR/merge evidence is recorded after publication.
+Evidence: branch `feature/safe-transaction-create`; backend `140 passed` (one known Starlette warning). `test_transaction_creation.py` drives sequential/concurrent API calls through the real insert repository with a constraint-backed SQLite HTTP transport; duplicate/error classification and no processing after insert failure are covered. Existing seed tests prove repeated confirmed calls use upsert. No PostgreSQL server/docker was available locally; the concurrency harness is not live PostgreSQL verification. Migration 001 already defines the primary key, so no new migration is required. PR #24; implementation `70b47f3`, merge `f470175`. Main verification: backend 140 passed, frontend 204 passed, lint/build and diff check passed.
 
-### Phase 13B — Atomicity or durable recovery — CURRENT
+### Phase 13B — Atomicity or durable recovery (locally verified; live activation pending)
 
 Omar mapping: section 2 (creation/evaluation/scoring/alert integrity), section 13 (partial failures/rollback); dependency: Phase 13A.
 
-- [ ] Document and implement the selected database atomicity and/or durable recovery design for transaction, evaluation, anomaly score, combined score, and alert persistence.
-- [ ] Define response semantics, durable processing state, retry ownership, idempotency, and recovery after process restart.
-- [ ] Publish alerts only after durable alert persistence; preserve advisory Gemini failure isolation.
+- [x] Document and implement the selected database atomicity and/or durable recovery design for transaction, evaluation, anomaly score, combined score, and alert persistence.
+- [x] Define response semantics, durable processing state, retry ownership, idempotency, and recovery after process restart.
+- [x] Publish alerts only after durable alert persistence; preserve advisory Gemini failure isolation.
 
 Acceptance criteria:
 
@@ -376,7 +376,11 @@ Acceptance criteria:
 - Temporary rule-context lookup failures have an explicit recovery policy that prevents unavailable context from becoming permanently accepted final results.
 - The design explains concurrent historical-rule evaluation, commit/publication failure windows, and the actual delivery guarantee; manual backfill alone is insufficient recovery.
 
-## Phase 14 — Authentication, users, and RBAC
+Evidence: migration 012, `transaction_processing` repository/service, `test_transaction_processing.py`, and [recovery design](TRANSACTION_RECOVERY_DESIGN.md). Backend 159 passed; 13 isolated PostgreSQL/PGlite tests passed against migrations 001–012, including failure injection, idempotent completion, lease fencing/backoff, and dump/restore. No live database calls. The runtime flag remains false until approved migration/activation; legacy processing while disabled has no recovery guarantee.
+
+- [ ] Apply migration 012 and verify live activation only after explicit approval; no live completion claim is made.
+
+## Phase 14 — Authentication, users, and RBAC — CURRENT
 
 Omar mapping: sections 1, 2, 11–13; dependency: Phase 13.
 
@@ -586,4 +590,4 @@ These are historical implementation estimates retained from Phases 0–12, not c
 
 ## Next action
 
-Finish Phase 13A PR review/merge and verification on `main`, then begin Phase 13B on a separate branch. Runtime overwrite protection is locally tested; atomicity/durable recovery remains incomplete. Preserve the user dependency modification and backup stash. Deployment stays deferred to Phase 24.
+Finish Phase 13B PR review/merge and main verification, then proceed with Phase 14 on its own branch. The frontend role matrix has no transaction-ingestion permission: confirm the authorized POST /transactions actor policy before enabling authoritative RBAC. Live migration 012 and recovery activation remain approval-gated; independent local Auth preparation can continue. Preserve the user requirements modification and backup stash; deployment remains Phase 24.
