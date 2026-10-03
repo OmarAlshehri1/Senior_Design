@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { AUDIT_RULES } from '../data/auditRules';
+import { useEffect, useState } from 'react';
+import { auditRulesService } from '../services/auditRulesService.js';
 import { toggleExpandedRuleIds } from '../utils/auditRules';
 import { UsersIcon, LimitIcon, DuplicateIcon, SplitIcon, GhostIcon } from '../components/icons';
 
@@ -13,6 +13,14 @@ const iconMap = {
 
 export default function AuditRules() {
   const [expandedRuleIds, setExpandedRuleIds] = useState(() => new Set());
+  const [rules, setRules] = useState([]);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    auditRulesService.list().then(setRules).catch((reason) => {
+      setError(reason instanceof Error ? reason.message : 'Audit rule definitions are unavailable.');
+    });
+  }, []);
 
   const toggleRule = (ruleId) => {
     setExpandedRuleIds((current) => toggleExpandedRuleIds(current, ruleId));
@@ -25,11 +33,14 @@ export default function AuditRules() {
           <h1>Audit Rules</h1>
           <p>Review the controls used to evaluate transaction compliance and risk.</p>
         </div>
-        <span className="audit-rules-count">5 Audit Rules</span>
+        <span className="audit-rules-count">{rules.length} Audit Rules</span>
       </div>
 
+      {error && <div className="request-state request-state-error" role="alert">{error}</div>}
+      {rules.length === 0 && !error && <div className="request-state" role="status">Loading authoritative rule definitions…</div>}
+
       <div className="rules-grid" aria-label="Audit rule definitions">
-        {AUDIT_RULES.map((rule) => {
+        {rules.map((rule) => {
           const Icon = iconMap[rule.key];
           const isExpanded = expandedRuleIds.has(rule.id);
           const detailsId = `${rule.id.toLowerCase()}-details`;

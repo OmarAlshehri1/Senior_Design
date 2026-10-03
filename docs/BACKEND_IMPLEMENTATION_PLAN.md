@@ -34,11 +34,10 @@ Each phase (and each Phase 13 subphase) uses an independent branch and PR. Befor
 
 ## API implementation boundaries
 
-Implemented REST routes: health; authenticated transaction list/detail/create; authenticated alert list/review; authenticated report list/generation/CSV download; identity/session/access-request/user management; and Phase 15 review history/audit-event reads. `/ws/alerts` authenticates bearer tokens after connection. Review writes are transactionally recorded by migration 014. The project owner confirmed migrations 013 and 014 applied successfully to Supabase; this is owner-reported evidence, not an independent live-schema inspection.
+Implemented REST routes: health; authenticated transaction list/detail/create; alert list/review; report list/generation/CSV download; identity/session/access-request/user management; review history/audit-event reads; team and assignment operations; durable notifications; cases/evidence/SLA; and vendor monitoring workflows. `/ws/alerts` authenticates bearer tokens after connection. Phase 20 analytics routes are implemented on the feature branch and await review and Migration 019 application before live use.
 
-- `GET /api/v1/dashboard/summary`: documented shape only; no router implementation. Implement the agreed summary scope in Phase 20.
-- `GET /api/v1/audit-rules`: documented shape only; no router implementation. Add authoritative read-only rule definitions in Phase 20; the five rule implementations already exist.
-- Evaluation coverage: migration 006 and repository calculation exist, but no public analytics endpoint or activated frontend analytics service. Complete in Phase 20.
+- `GET /api/v1/dashboard/summary`, `GET /api/v1/audit-rules`, and `GET /api/v1/analytics`: Phase 20 implementation in progress on `feature/authoritative-analytics`; migration 019 must be reviewed and applied by the owner before live use.
+- Evaluation coverage: Phase 20 adds authoritative latest-snapshot coverage, per-rule denominators, and explicit non-evaluation reasons; local PGlite test coverage does not imply live migration application.
 - Auth, Users, Access Requests, Reviews, Audit Log, Teams, Assignments, scoped activity, Notifications, and alert reconnect catch-up are implemented on `main` in Phases 14-17. The owner confirmed migrations 013-016 were applied in Supabase; there was no independent live-schema query.
 - Local CORS preflight permits `Authorization`; Phase 24 configures and verifies the approved production origin.
 - Phase 17 replaced first-page-only alert loading with paginated actor-scoped reconciliation and data-free WebSocket invalidation; PR #30 is merged. Migration 016 application is owner-reported.
@@ -454,14 +453,14 @@ Acceptance criteria:
 - Tests verify read-state operations, event recipients, and audit/security linkage.
 - Disconnect/create/reconnect tests recover missed alerts across more than one page without duplicate entries; review states reconcile from REST rather than stale socket state.
 
-## Phase 18 — Cases, evidence, closure, and SLA (CURRENT)
+## Phase 18 — Cases, evidence, closure, and SLA
 
 Omar mapping: section 6, sections 11–13; dependency: Phases 14–17.
 
-- [ ] Create cases only from explicit Alert or Transaction actions; implement OPEN, INVESTIGATING, ESCALATED, RESOLUTION_REQUESTED, RESOLVED, CLOSED and priority/reference/department where configured. This phase starts on `feature/cases-evidence-sla` after PR #30 and main verification; Migration 016 was then reported applied by the owner.
-- [ ] Persist assignments, discussions, activity, resolution, and evidence metadata; validate authorized uploads/storage and scanning before enabling attachments.
-- [ ] Implement auditor closure requests and policy-controlled supervisor/admin approval/rejection.
-- [ ] Persist SLA deadlines and implement server-side overdue escalation with audit events and notifications.
+- [x] Create cases only from explicit Alert or Transaction actions; implement OPEN, INVESTIGATING, ESCALATED, RESOLUTION_REQUESTED, RESOLVED, CLOSED and priority/reference/department where configured (PR #31).
+- [x] Persist assignments, discussions, activity, resolution, and evidence metadata; validate authorized uploads/storage and scanning before enabling attachments (PR #31).
+- [x] Implement auditor closure requests and policy-controlled supervisor/admin approval/rejection (PR #31).
+- [x] Persist SLA deadlines and implement server-side overdue escalation with audit events and notifications (PR #31).
 
 - Owner-approved policy: LOW 72 hours, MEDIUM 48, HIGH 24, CRITICAL 8. An overdue case changes to ESCALATED and notifies its assignee, team Supervisor, and all active Admins. Closure is requested by an assigned Auditor; an active Supervisor may decide only for the same team, an active Admin may decide globally, and the requester cannot decide their own request. Rejected closure reopens investigation and restarts its SLA deadline.
 - Evidence acceptance is fail-closed: PDF/PNG/JPEG only, maximum 10 MiB, signature/MIME checked, antivirus scanned, and stored in a private Supabase Storage bucket. Migration 017 stores metadata but does not create the bucket or scanner service. `CASE_EVIDENCE_BUCKET` and `CASE_ANTIVIRUS_EXECUTABLE` remain deployment configuration; the UI stays disabled until both are available and the bucket is private.
@@ -473,16 +472,16 @@ Acceptance criteria:
 - Evidence tests verify type/size validation, access restrictions, unsafe-upload handling, and metadata/storage consistency.
 - SLA escalation works with no browser open, survives restart, and does not duplicate events on retry. Case notifications and audit events have verified recipients/actors.
 
-Phase 17 complete: PR #30 (`d9fe6ee`, merge `1e7e311`). Main verification passed backend 198 tests, 24 isolated PGlite tests, frontend 217 tests, lint/build, and `git diff --check`; migration 016 application was reported by the owner.
+Phase 18 complete: PR #31 (`0ce368f`, merge `6efb157`). The owner confirmed Migration 017 applied successfully; this is owner-reported and was not independently queried. Backend, isolated PGlite, frontend, lint/build, and diff checks passed before merge as recorded in the PR workflow.
 
-## Phase 19 — Vendor monitoring workflows
+## Phase 19 — Vendor monitoring workflows (complete)
 
 Omar mapping: section 7, sections 11–13; dependency: Phases 14–18.
 
-- [ ] Extend the approved-vendor registry with list/profile, transaction/alert/case/risk history, and monitoring state.
-- [ ] Implement auditor watchlist request and supervisor decision; supervisor block request and admin decision/block/unblock; watchlist removal and history.
-- [ ] Implement Migration 018 and verify it in isolated PGlite before requesting owner application; do not infer live application from local tests.
-- [ ] Connect the existing vendor pages and service adapter to authenticated endpoints without changing navigation or asserting ERP payment enforcement.
+- [x] Extend the approved-vendor registry with list/profile, transaction/alert/case/risk history, and monitoring state.
+- [x] Implement auditor watchlist request and supervisor decision; supervisor block request and admin decision/block/unblock; watchlist removal and history.
+- [x] Implement Migration 018 and verify it in isolated PGlite; owner confirmed live application.
+- [x] Connect the existing vendor pages and service adapter to authenticated endpoints without changing navigation or asserting ERP payment enforcement.
 
 Acceptance criteria:
 
@@ -490,13 +489,13 @@ Acceptance criteria:
 - Ghost Vendor behavior remains compatible with registry authority and unavailable states.
 - Backend contracts and UI wording describe blocking in audit monitoring; no ERP payment prevention is claimed without a separate real integration.
 
-Documented but unimplemented when this phase starts: vendor endpoints and the existing frontend `vendorsService` are placeholders. Migration 004 supplies only the approved-vendor registry used by Ghost Vendor evaluation. Migration 018 adds monitoring workflow tables and does not alter `approved_vendors.is_active`. A live deployment cannot use these routes until the owner applies Migration 018.
+Phase 19 complete: PR #32 (`b9a9072`, merge `c3c3516`). Main verification passed backend 210 tests, 27 isolated PGlite tests, frontend 222 tests, lint/build, and `git diff --check`. The owner confirmed Migration 018 applied; this is owner-reported and was not independently queried. Migration 018 adds monitoring workflow tables and does not alter `approved_vendors.is_active`.
 
-## Phase 20 — Authoritative analytics and read endpoints
+## Phase 20 — Authoritative analytics and read endpoints (CURRENT)
 
 Omar mapping: section 8, sections 11–13; dependency: Phases 14–19.
 
-- [ ] Expose overall evaluation coverage, per-rule coverage, and reasons for NOT_EVALUATED/insufficient data.
+- [ ] Expose overall evaluation coverage, per-rule coverage, and reasons for NOT_EVALUATED/insufficient data (latest local PGlite validation: 28 tests pass; full phase completion remains pending).
 - [ ] Implement risk/violation trends and agreed dashboard summaries from authoritative data.
 - [ ] Implement the documented dashboard summary and read-only audit-rule-definition endpoints; activate analytics services and preserve adapters.
 
@@ -505,6 +504,10 @@ Acceptance criteria:
 - Tests verify denominators, latest-snapshot selection, period boundaries, empty datasets, per-rule missing/context reasons, and authorized scope.
 - Overall coverage counts transactions with at least one executed rule; it does not imply all five rules executed for every transaction.
 - Trends/summaries use defined time windows and full scoped data, not the current frontend page or fake records. Published endpoint contracts match implemented responses.
+
+Migration 019 is a new read-only analytics RPC migration. Its existence and isolated PGlite tests do not prove that it has been applied to Supabase. Pause before any live application; request owner confirmation, then record it as owner-reported.
+
+Phase 20 local verification on `feature/authoritative-analytics`: backend `213 passed` (one known Starlette warning), isolated PGlite `28 passed`, frontend `227 passed`, frontend lint and production build passed, Python 3.12.10 syntax compilation and `git diff --check` passed. Secret-pattern scan found no credentials in changed source. This is local branch evidence only; Migration 019 is not reported applied, and the phase has not merged to `main`.
 
 ## Phase 21 — Settings persistence
 
@@ -618,6 +621,13 @@ These are historical implementation estimates retained from Phases 0–12, not c
 | 2026-10-03 | Added team-scoped assignments and activity | PR #29; `a65e5b7`, merge `3630bd9`; owner confirmed migration 015 applied |
 | 2026-10-03 | Added durable notifications and paginated alert reconnect catch-up | PR #30; `d9fe6ee`, merge `1e7e311`; owner confirmed migration 016 applied |
 
+## Change log additions
+
+| Date | Change | Evidence |
+| --- | --- | --- |
+| 2026-10-03 | Added durable case, evidence, closure approval, and SLA workflows | PR #31; `0ce368f`, merge `6efb157`; owner confirmed migration 017 applied |
+| 2026-10-03 | Added vendor monitoring workflows and governed watchlist/block requests | PR #32; `b9a9072`, merge `c3c3516`; owner confirmed migration 018 applied |
+
 ## Next action
 
-Phases 13A/13B and 14-17 are merged and verified on `main`. PR #30 (`d9fe6ee`, merge `1e7e311`) completed Notifications and alert reconnect catch-up. Main verification on 2026-10-03 passed backend 198 passed (known Starlette warning), 24 isolated PGlite migration tests, frontend 217 passed, lint/build, and `git diff --check`. The project owner confirmed migrations 013-016 applied successfully; this is owner-reported and was not independently queried. Phase 18 is current on `feature/cases-evidence-sla`; migration 017 is not applied. The user requirements change in `backend/requirements.txt` and backup stash remain preserved and excluded from phase commits.
+Phases 13A/13B and 14-19 are merged on `main`. Phase 19 main verification passed backend 210 tests, 27 isolated PGlite tests, frontend 222 tests, lint/build, and `git diff --check`. The project owner reported migrations 013-018 applied successfully; this was not independently queried. Phase 20 (authoritative analytics) is current on `feature/authoritative-analytics`; Migration 019 is newly authored and must not be presumed applied. The user requirements change in `backend/requirements.txt` and backup stash remain preserved and excluded from phase commits.
