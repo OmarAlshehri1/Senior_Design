@@ -635,3 +635,88 @@ def test_create_transaction_persists_risk_score(
             "risk_level": "LOW",
         }
     ]
+
+def test_high_risk_transaction_creates_and_publishes_alert(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    created_alerts: list[dict[str, Any]] = []
+    published_alerts: list[dict[str, Any]] = []
+
+    def capture_alert(
+        *,
+        transaction_id: str,
+        risk_score: float,
+        risk_scoring_version: str,
+        request_received_at: Any,
+    ) -> dict[str, Any]:
+        alert = {
+            "id": "AL-HIGH-001",
+            "transaction_id": transaction_id,
+            "created_at": request_received_at.isoformat(),
+            "severity": "HIGH",
+            "title": "High-risk transaction detected",
+            "description": (
+                "The transaction requires auditor review."
+            ),
+            "reason": (
+                "Rule and anomaly results exceeded the "
+                "high-risk threshold."
+            ),
+            "status": "ACTIVE",
+            "reviewed_at": None,
+            "risk_score": risk_score,
+            "risk_scoring_version": risk_scoring_version,
+            "latency_ms": 250.0,
+        }
+        created_alerts.append(alert)
+        return alert
+
+    async def capture_publication(
+        alert: dict[str, Any],
+    ) -> None:
+        published_alerts.append(alert)
+
+    monkeypatch.setattr(
+        "app.api.transactions.calculate_risk_score",
+        lambda rule_score, ai_score: 80.0,
+    )
+    monkeypatch.setattr(
+        "app.api.transactions.classify_risk_level",
+        lambda risk_score: "HIGH",
+    )
+    monkeypatch.setattr(
+        "app.api.transactions.create_high_risk_alert",
+        capture_alert,
+    )
+    monkeypatch.setattr(
+        (
+            "app.api.transactions.alert_manager."
+            "publish_created"
+        ),
+        capture_publication,
+    )
+
+    response = client.post(
+        "/api/v1/transactions",
+        json={
+            "id": "TX-HIGH-ALERT-001",
+            "timestamp": "2026-10-03T03:00:00Z",
+            "vendor_id": "VND-101",
+            "vendor_name": "Almarai Dairy Co.",
+            "invoice_number": "INV-HIGH-ALERT-001",
+            "category": "Inventory",
+            "amount": 500,
+            "currency": "SAR",
+            "created_by": "EMP-101",
+            "approved_by": "MGR-201",
+            "approver_role": "Manager",
+            "approval_limit": 1000,
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["risk_score"] == 80.0
+    assert response.json()["risk_level"] == "HIGH"
+    assert len(created_alerts) == 1
+    assert created_alerts[0]["latency_ms"] <= 5000
+    assert published_alerts == created_alerts

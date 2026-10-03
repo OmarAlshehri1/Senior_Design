@@ -3,6 +3,10 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.alerts import (
+    router as alerts_router,
+    websocket_router as alerts_websocket_router,
+)
 from app.api.transactions import router as transactions_router
 
 
@@ -40,6 +44,7 @@ app.add_middleware(
     allow_methods=[
         "GET",
         "POST",
+        "PATCH",
         "OPTIONS",
     ],
     allow_headers=[
@@ -52,6 +57,11 @@ app.include_router(
     transactions_router,
     prefix="/api/v1",
 )
+app.include_router(
+    alerts_router,
+    prefix="/api/v1",
+)
+app.include_router(alerts_websocket_router)
 
 
 @app.get("/api/v1/health")

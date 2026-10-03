@@ -136,3 +136,38 @@ def mock_transaction_persistence(
         ),
         fake_persist_transaction_risk_scores,
     )
+
+    def fake_create_high_risk_alert(
+        *,
+        transaction_id: str,
+        risk_score: float,
+        risk_scoring_version: str,
+        request_received_at: Any,
+    ) -> dict[str, Any]:
+        return {
+            "id": "AL-TEST-001",
+            "transaction_id": transaction_id,
+            "created_at": request_received_at.isoformat(),
+            "severity": "HIGH",
+            "title": "High-risk transaction detected",
+            "description": (
+                "The transaction requires auditor review."
+            ),
+            "reason": (
+                "Rule and anomaly results exceeded the "
+                "high-risk threshold."
+            ),
+            "status": "ACTIVE",
+            "reviewed_at": None,
+            "risk_score": risk_score,
+            "risk_scoring_version": risk_scoring_version,
+            "latency_ms": 0.0,
+        }
+
+    monkeypatch.setattr(
+        (
+            "app.api.transactions."
+            "create_high_risk_alert"
+        ),
+        fake_create_high_risk_alert,
+    )

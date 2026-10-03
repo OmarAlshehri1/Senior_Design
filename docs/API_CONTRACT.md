@@ -95,7 +95,7 @@ The authoritative `rule_score` uses equal weighting across evaluated rules only:
 
 Each completed evaluation is stored as a versioned snapshot in `transaction_evaluations`. Transaction reads return the latest persisted snapshot when available; transactions created before evaluation persistence continue to use safe runtime evaluation as a fallback. Evaluation storage and lookup use the service role, and persisted rule evidence never includes private `ground_truth` labels.
 
-Automated evaluation coverage is calculated as transactions whose latest snapshot contains at least one `PASSED` or `FAILED` rule divided by all stored transactions, multiplied by 100. Rules marked `NOT_EVALUATED` do not count as executed. The controlled 10,002-transaction database currently achieves 100% coverage after the idempotent evaluation backfill; no transactions remain unevaluated.
+Automated evaluation coverage is calculated as transactions whose latest snapshot contains at least one `PASSED` or `FAILED` rule divided by all stored transactions, multiplied by 100. Rules marked `NOT_EVALUATED` do not count as executed. The controlled 10,005-transaction database currently achieves 100% coverage after the idempotent evaluation backfill; no transactions remain unevaluated.
 
 The final Isolation Forest model `1.0.0` uses 400 isolation trees, increased from the initial 150-tree design configuration after prototype tuning, and produces `ai_score` values from 0 to 100 using transaction attributes and rule-derived runtime context only. Identifiers, `violation_type`, `is_anomaly`, and `ground_truth` are excluded from model inputs. The reproducible stratified split contains 7,000 training, 1,500 validation, and 1,500 held-out test transactions. The selected threshold is `90.6`; held-out detection rate is `87.04%` and false-positive rate is `3.45%`. Versioned scores are stored in `transaction_anomaly_scores`; the initial backfill stored 10,001 scores and classified 945 transactions above the threshold. POST evaluates and persists new scores immediately, while GET collection and detail responses return the latest persisted `ai_score`.
 
@@ -132,7 +132,7 @@ Combined risk scoring version `1.0.0` calculates `risk_score = (0.60 * rule_scor
 }
 ```
 
-Alert `status` is `ACTIVE` or `REVIEWED`.
+Alert `status` is `ACTIVE` or `REVIEWED`. Alerts are generated only for transactions authoritatively classified as `HIGH`. Each alert stores the combined risk score, risk-scoring version, request-received timestamp, creation timestamp, and measured `latency_ms`.
 
 ### AuditRule
 
@@ -276,7 +276,7 @@ Response `201 Created`:
 
 A transaction with missing optional fields returns `data_quality_status` as `PARTIAL` and lists the unavailable fields in `missing_fields`. Unknown fields or invalid values return `422 Unprocessable Entity`.
 
-The transaction is validated, assessed for missing fields, persisted to Supabase PostgreSQL, evaluated by the eligible audit rules, assigned an authoritative rule score, and stored with a versioned evaluation snapshot. Isolation Forest anomaly scoring is performed and persisted immediately. Combined risk scoring is performed and persisted immediately. Alert generation and explanations will be added in later stages.
+The transaction is validated, assessed for missing fields, persisted to Supabase PostgreSQL, evaluated by the eligible audit rules, assigned an authoritative rule score, and stored with a versioned evaluation snapshot. Isolation Forest anomaly scoring is performed and persisted immediately. Combined risk scoring is performed and persisted immediately. Qualifying `HIGH` transactions generate a durable active alert and a WebSocket event. Live verification measured 3,556.213 ms from request receipt to persisted alert creation and 4,660.189 ms from request start to WebSocket receipt, satisfying the five-second target. Explanations will be added in a later stage.
 
 ## Offline seed utility
 
@@ -298,7 +298,7 @@ The current SME retail dataset does not provide `approval_limit`, so its seeded 
 
 ### `GET /api/v1/alerts`
 
-Returns a paginated collection of `Alert` objects.
+Returns a paginated collection of `Alert` objects. The optional `status` query parameter accepts `ACTIVE` or `REVIEWED`.
 
 ```json
 {
@@ -311,7 +311,7 @@ Returns a paginated collection of `Alert` objects.
 
 ### `PATCH /api/v1/alerts/{alert_id}/review`
 
-Marks an alert as reviewed and returns the updated `Alert`.
+Marks an alert as `REVIEWED`, records `reviewed_at`, and returns the updated `Alert`.
 
 Preliminary request:
 
@@ -359,7 +359,7 @@ Preliminary request:
 
 ### `/ws/alerts`
 
-Planned server-to-client alert stream. It is not implemented yet.
+Implemented server-to-client alert stream. Each newly created high-risk alert is published immediately as an `alert.created` event.
 
 Preliminary event envelope:
 
@@ -381,7 +381,7 @@ Preliminary event envelope:
 }
 ```
 
-Authentication, reconnect behavior, delivery guarantees, ordering, and missed-event reconciliation remain to be defined before implementation.
+The client implements bounded reconnection attempts. Durable alert reconciliation is performed through `GET /api/v1/alerts`; the WebSocket stream provides live delivery while connected and does not replace persisted alert storage.
 
 ## Responsibility boundary
 

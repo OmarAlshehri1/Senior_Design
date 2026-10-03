@@ -268,16 +268,17 @@ Targets:
 - [x] Persist the combined score and scoring version.
 - [x] Return rule results, anomaly score, combined score, and explanation inputs.
 - [x] Add unit and integration tests.
-- [ ] **CURRENT:** Commit and merge combined risk scoring.
+- [x] Commit and merge combined risk scoring (PR #18).
 
 ## Phase 10 — Alerts and five-second latency
 
-- [ ] Generate an alert for qualifying high-risk transactions.
-- [ ] Persist alert status as `ACTIVE` or `REVIEWED`.
-- [ ] Implement alert list and review endpoints.
-- [ ] Implement the planned WebSocket alert stream.
-- [ ] Measure posting-to-alert latency.
-- [ ] Demonstrate alert latency `<= 5 seconds`.
+- [x] Generate an alert for qualifying high-risk transactions.
+- [x] Persist alert status as `ACTIVE` or `REVIEWED`.
+- [x] Implement alert list and review endpoints.
+- [x] Implement the planned WebSocket alert stream.
+- [x] Measure posting-to-alert latency.
+- [x] Demonstrate alert latency `<= 5 seconds`; measured 3,556.213 ms to persistence and 4,660.189 ms end-to-end through WebSocket.
+- [ ] **CURRENT:** Commit and merge risk alerts and live WebSocket delivery.
 
 ## Phase 11 — Reports and Gemini explanations
 
@@ -343,7 +344,8 @@ These are implementation estimates, not final evaluation grades.
 | 2026-10-02 | Added versioned transaction-evaluation persistence | PR #15 |
 | 2026-10-02 | Measured 100% automated evaluation coverage | PR #16 |
 | 2026-10-02 | Added versioned Isolation Forest anomaly scoring | PR #17 |
+| 2026-10-03 | Added persisted 60/40 combined risk scoring | PR #18 |
 
 ## Next action
 
-Commit and merge combined risk scoring, then implement alerts and verify the five-second latency target.
+Commit and merge risk alerts and WebSocket delivery, then implement reports and Gemini explanations.

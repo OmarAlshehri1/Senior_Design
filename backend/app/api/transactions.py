@@ -2,9 +2,11 @@ from fastapi import APIRouter, HTTPException, Query, status
 from starlette.concurrency import run_in_threadpool
 from typing import Literal
 
+from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
 
+from app.repositories.supabase_alerts import create_high_risk_alert
 from app.repositories.supabase_transactions import (
     SupabaseConfigurationError,
     SupabasePersistenceError,
@@ -35,6 +37,7 @@ from app.services.anomaly_model import (
     load_anomaly_model,
 )
 
+from app.services.alert_stream import alert_manager
 from app.services.risk_scoring import (
     RISK_SCORING_VERSION,
     calculate_risk_score,
@@ -131,6 +134,7 @@ async def get_transaction(
 async def create_transaction(
     transaction: TransactionCreate,
 ) -> dict[str, object]:
+    request_received_at = datetime.now(timezone.utc)
     transaction_data = transaction.model_dump(mode="python")
 
     transaction_data["amount"] = (
@@ -361,6 +365,26 @@ async def create_transaction(
                     "could not be stored."
                 ),
             ) from exc
+
+    if risk_level == "HIGH" and risk_score is not None:
+        try:
+            alert = await run_in_threadpool(
+                create_high_risk_alert,
+                transaction_id=transaction_data["id"],
+                risk_score=risk_score,
+                risk_scoring_version=RISK_SCORING_VERSION,
+                request_received_at=request_received_at,
+            )
+        except (
+            SupabaseConfigurationError,
+            SupabasePersistenceError,
+        ) as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Transaction alert could not be created.",
+            ) from exc
+
+        await alert_manager.publish_created(alert)
 
     return {
         **transaction_data,
