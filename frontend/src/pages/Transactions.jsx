@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import useApp from '../context/useApp';
 import TransactionsTable from '../components/TransactionsTable';
+import Pagination from '../components/Pagination.jsx';
 import { SearchIcon } from '../components/icons';
 import {
   TRANSACTION_SORT_OPTIONS,
   filterAndSortTransactions,
   getRiskFilterFromQuery,
 } from '../utils/transactions';
+import { getPageSizeChange, getTotalPages } from '../utils/pagination.js';
 
 const riskFilters = ['All', 'Low', 'Medium', 'High'];
 
@@ -39,6 +41,7 @@ export default function Transactions() {
     transactionsTotal,
     transactionsPage,
     transactionsPageSize,
+    setTransactionsPageSize,
     setTransactionsPage,
     setTransactionsSearch,
     transactionsSortBy,
@@ -49,23 +52,26 @@ export default function Transactions() {
   const [ruleFilter, setRuleFilter] = useState('All');
   const riskFilter = getRiskFilterFromQuery(searchParams.get('risk'));
   useEffect(() => {
-  const timer = window.setTimeout(() => {
-    setTransactionsSearch(search.trim());
-    setTransactionsPage(1);
-  }, 300);
+    const timer = window.setTimeout(() => {
+      setTransactionsSearch(search.trim());
+      setTransactionsPage(1);
+    }, 300);
 
-  return () => {
-    window.clearTimeout(timer);
-  };
-}, [
-  search,
-  setTransactionsPage,
-  setTransactionsSearch,
-]);
-  const totalPages = Math.max(
-    1,
-    Math.ceil(transactionsTotal / transactionsPageSize)
-  );
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [
+    search,
+    setTransactionsPage,
+    setTransactionsSearch,
+  ]);
+  const totalPages = getTotalPages(transactionsTotal, transactionsPageSize);
+
+  useEffect(() => {
+    if (!transactionsLoading && transactionsPage > totalPages) {
+      setTransactionsPage(totalPages);
+    }
+  }, [transactionsLoading, transactionsPage, setTransactionsPage, totalPages]);
 
   const firstTransactionNumber = transactionsTotal === 0
     ? 0
@@ -98,46 +104,52 @@ export default function Transactions() {
   );
 
   const clientFiltersActive = (
-  riskFilter !== 'All'
-  || ruleFilter !== 'All'
-);
-
-const filtersActive = (
-  Boolean(search.trim())
-  || clientFiltersActive
-);
-
-let resultLabel = transactionsLoading
-  ? 'Loading transactions...'
-  : (
-    `${firstTransactionNumber.toLocaleString('en-US')}–`
-    + `${lastTransactionNumber.toLocaleString('en-US')} of `
-    + `${transactionsTotal.toLocaleString('en-US')} Transactions`
+    riskFilter !== 'All'
+    || ruleFilter !== 'All'
   );
 
-if (!transactionsLoading && clientFiltersActive) {
+  const filtersActive = (
+    Boolean(search.trim())
+    || clientFiltersActive
+  );
+
+  let resultLabel = transactionsLoading
+    ? 'Loading transactions...'
+    : (
+      `${firstTransactionNumber.toLocaleString('en-US')}–`
+      + `${lastTransactionNumber.toLocaleString('en-US')} of `
+      + `${transactionsTotal.toLocaleString('en-US')} Transactions`
+    );
+
+  if (!transactionsLoading && clientFiltersActive) {
     resultLabel = (
-    `${filtered.length} of ${loadedTransactionCount} Transactions `
-    + `on Page ${transactionsPage}`
-  );
-}
-
-const changePage = (nextPage) => {
-  if (
-    transactionsLoading
-    || nextPage < 1
-    || nextPage > totalPages
-    || nextPage === transactionsPage
-  ) {
-    return;
+      `${filtered.length} of ${loadedTransactionCount} Transactions `
+      + `on Page ${transactionsPage}`
+    );
   }
 
-  setTransactionsPage(nextPage);
-  window.scrollTo({
-    top: 0,
-    behavior: 'smooth',
-  });
-};
+  const changePage = (nextPage) => {
+    if (
+      transactionsLoading
+      || nextPage < 1
+      || nextPage > totalPages
+      || nextPage === transactionsPage
+    ) {
+      return;
+    }
+
+    setTransactionsPage(nextPage);
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+  };
+
+  const changePageSize = (nextPageSize) => {
+    const next = getPageSizeChange(nextPageSize);
+    setTransactionsPageSize(next.pageSize);
+    setTransactionsPage(next.page);
+  };
 
   const updateRiskFilter = (filter) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -148,17 +160,17 @@ const changePage = (nextPage) => {
   };
 
   const clearFilters = () => {
-  setSearch('');
-  setTransactionsSearch('');
-  setTransactionsSortBy(TRANSACTION_SORT_OPTIONS.NEWEST);
-  setTransactionsPage(1);
-  setRuleFilter('All');
+    setSearch('');
+    setTransactionsSearch('');
+    setTransactionsSortBy(TRANSACTION_SORT_OPTIONS.NEWEST);
+    setTransactionsPage(1);
+    setRuleFilter('All');
 
-  const nextParams = new URLSearchParams(searchParams);
-  nextParams.delete('risk');
-  nextParams.delete('vendor');
-  setSearchParams(nextParams);
-};
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('risk');
+    nextParams.delete('vendor');
+    setSearchParams(nextParams);
+  };
 
   return (
     <>
@@ -255,7 +267,7 @@ onChange={(event) => {
         <div className="card-header">
           <h2 id="transactions-results-heading">{resultLabel}</h2>
         </div>
-                {transactionsLoading ? (
+        {transactionsLoading ? (
           <div className="transactions-empty-state" role="status">
             <h3>Loading transactions...</h3>
             <p>The latest transaction data is being retrieved.</p>
@@ -273,34 +285,19 @@ onChange={(event) => {
             hasSearch={Boolean(search.trim())}
           />
         )}
-        {!transactionsLoading && !transactionsError && totalPages > 1 && (
-  <nav
-    className="transactions-pagination"
-    aria-label="Transaction pages"
-  >
-    <button
-      type="button"
-      className="btn btn-secondary"
-      disabled={transactionsPage === 1}
-      onClick={() => changePage(transactionsPage - 1)}
-    >
-      Previous
-    </button>
-
-    <span aria-live="polite">
-      Page {transactionsPage} of {totalPages}
-    </span>
-
-    <button
-      type="button"
-      className="btn btn-secondary"
-      disabled={transactionsPage === totalPages}
-      onClick={() => changePage(transactionsPage + 1)}
-    >
-      Next
-    </button>
-  </nav>
-)}
+        {!transactionsLoading && !transactionsError && (
+          <Pagination
+            currentPage={transactionsPage}
+            totalPages={totalPages}
+            pageSize={transactionsPageSize}
+            firstItem={firstTransactionNumber}
+            lastItem={lastTransactionNumber}
+            totalItems={transactionsTotal}
+            disabled={transactionsLoading}
+            onPageChange={changePage}
+            onPageSizeChange={changePageSize}
+          />
+        )}
       </section>
     </>
   );

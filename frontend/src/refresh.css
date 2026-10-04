@@ -2639,7 +2639,7 @@ table.data-table {
   font-size: 12px;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .audit-log-controls {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -4152,25 +4152,29 @@ table.data-table {
 .system-overview,
 .dashboard-section-heading,
 .dashboard-main-grid,
-.dashboard-alerts-card,
-.workspace-foundation,
-.role-workspace {
+.dashboard-alerts-card {
   width: 100%;
-  max-width: 1400px;
+  max-width: 1600px;
   margin-right: auto;
   margin-left: auto;
 }
 
 .audit-rules-page-header,
 .rules-grid,
-.reports-page-header,
-.report-preview-intro,
-.report-section,
-.reports-two-column-grid,
 .settings-page-header,
 .settings-groups,
 .profile-page {
   max-width: 1220px;
+}
+
+.reports-page-header,
+.report-preview-intro,
+.report-section,
+.reports-two-column-grid {
+  width: 100%;
+  max-width: 1600px;
+  margin-right: auto;
+  margin-left: auto;
 }
 
 /* Compact but deliberately composed System Overview. */
@@ -4438,6 +4442,11 @@ select,
   white-space: nowrap;
 }
 
+.transactions-table td:first-child {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .transactions-table .vendor-cell {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4572,6 +4581,20 @@ select,
 .audit-log-table { min-width: 980px; }
 .team-workload-table { min-width: 760px; }
 .report-transactions-table { min-width: 860px; }
+
+@media (max-width: 1100px) {
+  .audit-log-table-wrap {
+    overflow: hidden;
+  }
+
+  .audit-log-table {
+    min-width: 0;
+  }
+
+  .audit-log-table th:last-child {
+    position: relative;
+  }
+}
 
 .management-table th,
 .management-table td,
@@ -4996,7 +5019,7 @@ select,
 
 .operational-not-found { max-width: 680px; margin: 8vh auto; padding: 38px; text-align: center; }
 .operational-not-found .btn { display: inline-flex; margin-top: 12px; }
-.operational-detail-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding: 26px; border: 1px solid var(--border); border-radius: var(--radius-lg, 16px); background: linear-gradient(135deg, #fff, #f6f8ff); }
+.operational-detail-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding: 26px; border: 1px solid var(--border); border-radius: var(--radius-lg, 16px); background: #f8faff; }
 .operational-detail-header h1 { margin: 0 0 7px; }
 .operational-detail-header p { margin: 0; color: var(--text-secondary); }
 .detail-status-stack { display: grid; justify-items: end; gap: 8px; }
@@ -5091,7 +5114,7 @@ select,
   .operations-table td::before { content: attr(data-label); color: var(--text-secondary); font-weight: 600; }
 }
 
-/* Phase 8.11 — application layout repair. */
+/* Production application layout repair. */
 :root {
   --sidebar-width: 226px;
   --page-gutter: clamp(20px, 2.2vw, 34px);
@@ -5169,6 +5192,16 @@ body {
   padding: 30px var(--page-gutter) 52px;
 }
 
+.transaction-detail-page,
+.case-detail-page,
+.vendor-profile-page,
+.user-detail-page {
+  width: 100%;
+  max-width: 1220px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
 /* Data-heavy routes use the safe available width; documentation routes keep their measure. */
 .transactions-page-header,
 .transactions-toolbar,
@@ -5186,15 +5219,21 @@ body {
 
 .audit-rules-page-header,
 .rules-grid,
-.reports-page-header,
-.report-preview-intro,
-.report-section,
-.reports-two-column-grid,
 .settings-page-header,
 .settings-groups,
 .profile-page {
   width: 100%;
   max-width: 1220px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.reports-page-header,
+.report-preview-intro,
+.report-section,
+.reports-two-column-grid {
+  width: 100%;
+  max-width: 1600px;
   margin-right: auto;
   margin-left: auto;
 }
@@ -5363,15 +5402,15 @@ body {
   font-size: 11.5px;
 }
 
-.transactions-table th:nth-child(1) { width: 11%; }
-.transactions-table th:nth-child(2) { width: 18%; }
-.transactions-table th:nth-child(3) { width: 11%; }
-.transactions-table th:nth-child(4) { width: 11%; }
-.transactions-table th:nth-child(5) { width: 7%; }
-.transactions-table th:nth-child(6) { width: 11%; }
+.transactions-table th:nth-child(1) { width: 17%; }
+.transactions-table th:nth-child(2) { width: 16%; }
+.transactions-table th:nth-child(3) { width: 9%; }
+.transactions-table th:nth-child(4) { width: 9%; }
+.transactions-table th:nth-child(5) { width: 6%; }
+.transactions-table th:nth-child(6) { width: 10%; }
 .transactions-table th:nth-child(7) { width: 8%; }
 .transactions-table th:nth-child(8) { width: 10%; }
-.transactions-table th:nth-child(9) { width: 13%; }
+.transactions-table th:nth-child(9) { width: 15%; }
 
 .transactions-table th,
 .transactions-table td,
@@ -5464,13 +5503,96 @@ body {
   font-size: 10.5px;
 }
 
+/* Server-backed pagination remains compact, discoverable, and keyboard accessible. */
+.pagination-bar {
+  display: grid;
+  grid-template-columns: minmax(210px, 1fr) auto minmax(210px, 1fr);
+  align-items: center;
+  gap: 18px;
+  padding: 16px 18px;
+  border-top: 1px solid var(--border);
+  background: #fbfcfe;
+}
+
+.pagination-summary {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.pagination-pages,
+.pagination-number-list,
+.pagination-page-size {
+  display: flex;
+  align-items: center;
+}
+
+.pagination-pages {
+  justify-content: center;
+  gap: 7px;
+}
+
+.pagination-number-list {
+  gap: 5px;
+}
+
+.pagination-button {
+  display: inline-flex;
+  min-width: 34px;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.pagination-button:hover:not(:disabled) {
+  border-color: #9ab3cc;
+  background: #f3f7fb;
+}
+
+.pagination-button.is-current {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #fff;
+}
+
+.pagination-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.46;
+}
+
+.pagination-ellipsis {
+  min-width: 20px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.pagination-page-size {
+  justify-self: end;
+  gap: 9px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.pagination-page-size select {
+  min-width: 76px;
+}
+
 /* Cases and Vendors use their page width without forcing an undiscoverable overflow. */
 .operations-table {
   min-width: 0;
   table-layout: auto;
 }
 
-@media (max-width: 1199px) {
+@media (max-width: 1349px) {
   .transactions-table,
   .transactions-table tbody,
   .transactions-table tr,
@@ -5539,6 +5661,11 @@ body {
     overflow: visible;
     border: 0;
     white-space: normal;
+  }
+
+  .transactions-table tbody td,
+  .alerts-table tbody td {
+    overflow-wrap: anywhere;
   }
 
   .transactions-table tbody td::before,
@@ -5688,6 +5815,25 @@ body {
 }
 
 @media (max-width: 900px) {
+  .pagination-bar {
+    grid-template-columns: 1fr auto;
+  }
+
+  .pagination-pages {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .pagination-summary {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .pagination-page-size {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
   .dashboard-table-wrap,
   .report-transactions-wrap {
     overflow: hidden;
@@ -5958,6 +6104,37 @@ body {
 }
 
 @media (max-width: 480px) {
+  .pagination-bar {
+    grid-template-columns: 1fr;
+    gap: 13px;
+  }
+
+  .pagination-pages,
+  .pagination-summary,
+  .pagination-page-size {
+    grid-column: 1;
+  }
+
+  .pagination-pages {
+    flex-wrap: wrap;
+  }
+
+  .pagination-number-list {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .pagination-summary {
+    grid-row: 2;
+    text-align: center;
+  }
+
+  .pagination-page-size {
+    grid-row: 3;
+    justify-self: center;
+  }
+
   .topbar-organization,
   .updated-time,
   .topbar-access-state {
@@ -6030,19 +6207,20 @@ body {
   .alerts-table .alert-column-id { width: 8%; }
   .alerts-table .alert-column-transaction { width: 13%; }
   .alerts-table .alert-column-vendor { width: 12%; }
-  .alerts-table .alert-column-type { width: 17%; }
+  .alerts-table .alert-column-type { width: 16%; }
   .alerts-table .alert-column-time { width: 5%; }
   .alerts-table .alert-column-score { width: 7%; }
-  .alerts-table .alert-column-risk { width: 9%; }
+  .alerts-table .alert-column-risk { width: 10%; }
   .alerts-table .alert-column-status { width: 9%; }
-  .alerts-table .alert-column-assignment { width: 6%; }
-  .alerts-table .alert-column-actions { width: 14%; }
+  .alerts-table .alert-column-assignment { width: 8%; }
+  .alerts-table .alert-column-actions { width: 12%; }
 
   .alerts-table tbody td:nth-child(1),
   .alerts-table tbody td:nth-child(2) {
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 }

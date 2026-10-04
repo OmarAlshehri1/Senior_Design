@@ -11,6 +11,7 @@ import RoleWorkspace from '../components/RoleWorkspace';
 import useAuthorization from '../auth/useAuthorization.js';
 import { dashboardService } from '../services/dashboardService.js';
 import AuditAnalytics from '../components/AuditAnalytics.jsx';
+import { PRESENTATION_FEATURES } from '../config/presentation.js';
 
 export default function Dashboard() {
   const { effectiveRole } = useAuthorization();
@@ -92,9 +93,11 @@ export default function Dashboard() {
         <AlertsList alerts={recentAlerts} variant="dashboard" />
       </section>
 
-      <AuditAnalytics />
+      {PRESENTATION_FEATURES.assuranceAnalytics && <AuditAnalytics />}
 
-      <RoleWorkspace role={effectiveRole} transactions={transactions} />
+      {PRESENTATION_FEATURES.roleWorkspace && (
+        <RoleWorkspace role={effectiveRole} transactions={transactions} />
+      )}
     </>
   );
 }

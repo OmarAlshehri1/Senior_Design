@@ -12,7 +12,7 @@ import { onAuthSessionChange, readAuthSession } from '../auth/authSession.js';
 
 let nextTxNumber = 10497;
 let nextAlertNumber = 7;
-const TRANSACTIONS_PAGE_SIZE = 10;
+const DEFAULT_TRANSACTIONS_PAGE_SIZE = 10;
 const {
   buildRuleResults,
   initialAlerts,
@@ -68,6 +68,7 @@ export function AppProvider({ children }) {
   const [transactionsError, setTransactionsError] = useState(null);
   const [transactionsTotal, setTransactionsTotal] = useState(0);
   const [transactionsPage, setTransactionsPage] = useState(1);
+  const [transactionsPageSize, setTransactionsPageSize] = useState(DEFAULT_TRANSACTIONS_PAGE_SIZE);
   const [transactionsSearch, setTransactionsSearch] = useState('');
   const [transactionsSortBy, setTransactionsSortBy] = useState('newest');
   const [alerts, setAlerts] = useState(initialAlerts);
@@ -196,7 +197,7 @@ export function AppProvider({ children }) {
         const result = await transactionsService.list({
           query: {
             page: transactionsPage,
-            page_size: TRANSACTIONS_PAGE_SIZE,
+            page_size: transactionsPageSize,
             search: transactionsSearch || undefined,
             sort_by: transactionsSortBy,
           },
@@ -233,6 +234,7 @@ export function AppProvider({ children }) {
     };
   }, [
     transactionsPage,
+    transactionsPageSize,
     transactionsSearch,
     transactionsSortBy,
   ]);
@@ -425,7 +427,8 @@ export function AppProvider({ children }) {
       transactionsError,
       transactionsTotal,
       transactionsPage,
-      transactionsPageSize: TRANSACTIONS_PAGE_SIZE,
+      transactionsPageSize,
+      setTransactionsPageSize,
       setTransactionsPage,
       transactionsSearch,
       setTransactionsSearch,
@@ -461,6 +464,7 @@ export function AppProvider({ children }) {
       transactionsError,
       transactionsTotal,
       transactionsPage,
+      transactionsPageSize,
       transactionsSearch,
       transactionsSortBy,
       alerts,
