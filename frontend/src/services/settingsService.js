@@ -1,15 +1,20 @@
-import { INTEGRATION_ERROR_CODES, IntegrationError } from './integrationError.js';
+import { apiClient } from './apiClient.js';
 
-function unsupportedSettingsOperation() {
-  return Promise.reject(new IntegrationError(
-    'Settings persistence is not available.',
-    { code: INTEGRATION_ERROR_CODES.CONFIGURATION_UNAVAILABLE }
-  ));
+export function createSettingsService(client = apiClient) {
+  const adapt = (value) => Object.freeze({
+    organizationName: value?.organization_name ?? '',
+    updatedAt: value?.updated_at ?? null,
+  });
+  return Object.freeze({
+    async get(options = {}) {
+      return adapt(await client.get('/settings', options));
+    },
+    async update({ organizationName }, options = {}) {
+      return adapt(await client.patch('/settings/organization', {
+        organization_name: organizationName,
+      }, options));
+    },
+  });
 }
 
-// Settings endpoints are not part of the current API contract. This boundary keeps
-// pages independent of that future transport without inventing an endpoint today.
-export const settingsService = Object.freeze({
-  get: unsupportedSettingsOperation,
-  update: unsupportedSettingsOperation,
-});
+export const settingsService = createSettingsService();

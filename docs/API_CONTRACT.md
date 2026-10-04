@@ -2,9 +2,9 @@
 
 This document is the preliminary contract between the React frontend and FastAPI backend. It defines planned field names and payload shapes so frontend and backend development can proceed independently.
 
-The documented health, transaction, alert, report, CSV-download, identity, team, accountability, notification, alert WebSocket, case, and vendor endpoints are implemented on `main`. The owner reported migrations 013-018 applied successfully; this was not independently queried. Phase 20 adds `GET /api/v1/dashboard/summary`, `GET /api/v1/audit-rules`, and `GET /api/v1/analytics` on its feature branch; they require Migration 019 before live use. Shapes may be extended through team agreement, but existing names should not be changed without coordinating both branches.
+The documented health, transaction, alert, report, CSV-download, identity, team, accountability, notification, alert WebSocket, case, vendor, and Phase 20 analytics endpoints are implemented on `main`. Phase 21 settings endpoints are on `feature/settings-persistence` and await Migration 020 application and merge. The owner reported migrations 012-019 applied successfully; this was not independently queried. Shapes may be extended through team agreement, but existing names should not be changed without coordinating both branches.
 
-Implementation status: runtime transaction creation is insert-only and returns `409` for an existing ID without overwriting it; offline seed upsert remains separate. The owner confirmed migrations 012-018 were applied successfully in Supabase; this was not independently queried. `TRANSACTION_RECOVERY_ENABLED` remains disabled. Phase 14 adds API identity, bearer authentication, role checks, authenticated report download and WebSocket subscriptions, plus local `Authorization` CORS support. The owner confirmed `POST /transactions` is Supervisor/Admin-only; account lockout follows three consecutive failed sign-ins, and an active Admin may unlock only after the account owner verifies their email and submits an unlock request. Initial Admin provisioning is manual by the Supabase database owner as documented in [IDENTITY_BOOTSTRAP.md](IDENTITY_BOOTSTRAP.md). Phase 15 adds actor-attributed reviews and immutable audit events through migration 014. Phase 16 adds persisted teams and assignments, team-scoped alert/review/audit visibility, and team activity. Phase 17 adds durable private notifications and paginated alert catch-up. Phase 18 implements cases/evidence/closure/SLA, and Phase 19 implements vendor monitoring workflows. Phase 20 analytics routes are under implementation on `feature/authoritative-analytics`; Migration 019 is not confirmed applied. Approved production origins and the worker/instance delivery topology are completed in Phase 24. Live measurements below are historical observations, not newly verified database state.
+Implementation status: runtime transaction creation is insert-only and returns `409` for an existing ID without overwriting it; offline seed upsert remains separate. The owner confirmed migrations 012-019 were applied successfully in Supabase; this was not independently queried. `TRANSACTION_RECOVERY_ENABLED` remains disabled. Phase 14 adds API identity, bearer authentication, role checks, authenticated report download and WebSocket subscriptions, plus local `Authorization` CORS support. The owner confirmed `POST /transactions` is Supervisor/Admin-only; account lockout follows three consecutive failed sign-ins, and an active Admin may unlock only after the account owner verifies their email and submits an unlock request. Initial Admin provisioning is manual by the Supabase database owner as documented in [IDENTITY_BOOTSTRAP.md](IDENTITY_BOOTSTRAP.md). Phase 15 adds actor-attributed reviews and immutable audit events through migration 014. Phase 16 adds persisted teams and assignments, team-scoped alert/review/audit visibility, and team activity. Phase 17 adds durable private notifications and paginated alert catch-up. Phase 18 implements cases/evidence/closure/SLA, Phase 19 implements vendor monitoring workflows, and Phase 20 implements dashboard summaries, the read-only audit-rule catalog, and authoritative analytics. Approved production origins and the worker/instance delivery topology are completed in Phase 24. Live measurements below are historical observations, not newly verified database state.
 
 ## Conventions
 
@@ -221,7 +221,7 @@ Protected role policy grants transaction reads and alert review to active Audito
 
 ### `GET /api/v1/dashboard/summary`
 
-Phase 20 implementation in progress; available on its feature branch after Migration 019. Returns database-wide transaction counts and latest persisted risk summary. `transactions_evaluated` counts transactions with a persisted risk classification; rule-evaluation coverage is reported separately by `/analytics`. Active alerts are filtered to the caller's authorized team/assignment scope (Admin sees all). Requires an active Auditor, Supervisor, or Admin. This endpoint is not a time-period query.
+Implemented in Phase 20; the owner reported Migration 019 applied, without independent live-schema inspection. Returns database-wide transaction counts and latest persisted risk summary. `transactions_evaluated` counts transactions with a persisted risk classification; rule-evaluation coverage is reported separately by `/analytics`. Active alerts are filtered to the caller's authorized team/assignment scope (Admin sees all). Requires an active Auditor, Supervisor, or Admin. This endpoint is not a time-period query.
 
 ```json
 {"total_transactions":0,"transactions_evaluated":0,"high_risk_transactions":0,"medium_risk_transactions":0,"low_risk_transactions":0,"average_risk_score":0,"active_alerts":0,"generated_at":"2026-10-03T00:00:00Z"}
@@ -229,7 +229,7 @@ Phase 20 implementation in progress; available on its feature branch after Migra
 
 ### `GET /api/v1/analytics?period=7_DAYS|30_DAYS|90_DAYS`
 
-Phase 20 implementation in progress; requires Migration 019. Requires an active Auditor, Supervisor, or Admin. Coverage uses every transaction and its latest evaluation snapshot; a transaction is evaluated when at least one of five rules is `PASSED` or `FAILED`. Full evaluation requires all five rules to have executed. Exclusions identify missing required fields, unavailable rule context, or missing evaluation snapshots. Risk and alert trends use UTC calendar-day buckets for the selected period; case outcomes and alert trends follow the caller's case/alert scope. Rule violation trends count failed results from latest snapshots evaluated within the period.
+Implemented in Phase 20; the owner reported Migration 019 applied, without independent live-schema inspection. Requires an active Auditor, Supervisor, or Admin. Coverage uses every transaction and its latest evaluation snapshot; a transaction is evaluated when at least one of five rules is `PASSED` or `FAILED`. Full evaluation requires all five rules to have executed. Exclusions identify missing required fields, unavailable rule context, or missing evaluation snapshots. Risk and alert trends use UTC calendar-day buckets for the selected period; case outcomes and alert trends follow the caller's case/alert scope. Rule violation trends count failed results from latest snapshots evaluated within the period.
 
 ### `GET /api/v1/transactions`
 
@@ -393,7 +393,7 @@ Cross-team or role denial returns `403`, invalid state transitions return `409`,
 
 ### `GET /api/v1/audit-rules`
 
-Phase 20 implementation in progress; requires Migration 019. Requires an active Auditor, Supervisor, or Admin. Returns read-only definitions derived from the five versioned backend rule definitions and their field/context requirements.
+Implemented in Phase 20; the owner reported Migration 019 applied, without independent live-schema inspection. Requires an active Auditor, Supervisor, or Admin. Returns read-only definitions derived from the five versioned backend rule definitions and their field/context requirements.
 
 ```json
 {
@@ -492,3 +492,10 @@ These routes are implemented on `main`; the owner reported Migration 018 applied
 - A Supervisor submits `POST /api/v1/vendors/{vendor_id}/block-requests`; only an active Admin may decide. Supervisors may remove a watchlist entry within their team scope; only Admin may unblock a vendor.
 - Each request, decision, removal, and unblock retains actor, role, reason, status transition, and timestamp. Approved requests notify the requester; new watchlist requests notify the owning Supervisor and block requests notify active Admins.
 - `BLOCKED` means audit-monitoring status only. It does not prevent or reject an ERP payment. `approved_vendors.is_active` remains the independent approved-vendor registry state used by Ghost Vendor evaluation.
+## Settings (Phase 21, pending migration application and merge)
+
+- `GET /api/v1/settings` — any active Auditor, Supervisor, or Admin; returns the authoritative `organization_name` and `updated_at`.
+- `PATCH /api/v1/settings/organization` — active Admin only; body is `{ "organization_name": "..." }`. The trimmed name must be 2–120 characters. The server records `ORGANIZATION_SETTINGS_UPDATED` in the append-only audit log atomically with the setting change; a no-op update creates no audit event.
+- Currency, risk thresholds, audit rules, report frequency, alert thresholds, and integration status remain read-only reference values. This phase does not make them configurable.
+
+\r\n
