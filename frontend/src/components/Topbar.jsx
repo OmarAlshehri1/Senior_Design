@@ -18,10 +18,6 @@ function formatUpdatedTime(timestamp) {
   }).format(new Date(timestamp));
 }
 
-/**
- * `identity` is reserved for the future authenticated profile contract:
- * { name, role, accountStatus, lastLoginAt }. It remains null until real auth exists.
- */
 export default function Topbar({ mobileNavOpen, onMenuToggle, menuButtonRef, identity = null }) {
   const { lastUpdated, notifications, unreadNotificationCount, notificationsLoading,
     notificationsError, refreshNotifications, markNotificationRead, markAllNotificationsRead } = useApp();
@@ -30,7 +26,10 @@ export default function Topbar({ mobileNavOpen, onMenuToggle, menuButtonRef, ide
   const previewRole = mode === AUTHORIZATION_MODES.ROLE_PREVIEW
     ? getRoleDefinition(effectiveRole)
     : null;
-  void identity;
+  const authenticatedIdentity = mode === AUTHORIZATION_MODES.AUTHENTICATED
+    ? (identity ?? user)
+    : null;
+  const authenticatedRole = getRoleDefinition(user?.role);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const notificationButtonRef = useRef(null);
   const closeNotifications = useCallback(() => setNotificationsOpen(false), []);
@@ -79,6 +78,12 @@ export default function Topbar({ mobileNavOpen, onMenuToggle, menuButtonRef, ide
               Profile
             </Link>
           </>
+        )}
+        {(authenticatedIdentity?.name || authenticatedRole) && (
+          <div className="topbar-identity" aria-label="Signed-in user">
+            {authenticatedIdentity?.name && <strong>{authenticatedIdentity.name}</strong>}
+            {authenticatedRole && <span>{authenticatedRole.displayName}</span>}
+          </div>
         )}
         {user && <button type="button" className="topbar-profile-preview-link" onClick={handleSignOut}>Sign out</button>}
         <span className="updated-time">

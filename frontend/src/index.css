@@ -1935,8 +1935,7 @@ table.data-table {
 }
 
 @media (max-width: 420px) {
-  .topbar-left > svg,
-  .topbar-right .topbar-icon-btn {
+  .topbar-left > svg {
     display: none;
   }
   .dashboard-transactions-table tbody tr {

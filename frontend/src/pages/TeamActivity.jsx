@@ -138,8 +138,8 @@ export default function TeamActivity() {
           <p className="card-description">Reviews and assignment actions recorded for this team.</p><TeamActivityFeed events={events} /></section>
         <section className="management-detail-card" aria-labelledby="team-workload-heading"><h2 id="team-workload-heading">Team Workload</h2>
           <p className="card-description">Assignment and review workload by team member.</p>
-          <div className="management-table-wrap compact"><table className="management-table"><thead><tr><th>User</th><th>Role</th><th>Assigned Alerts</th><th>Open Reviews</th><th>Completed Today</th></tr></thead>
-            <tbody>{data.workload.map((member) => <tr key={member.user_id}><td>{member.name}</td><td>{member.role}</td><td>{member.assigned_alerts}</td><td>{member.open_reviews}</td><td>{member.completed_today}</td></tr>)}</tbody></table>
+          <div className="management-table-wrap team-workload-table-wrap compact"><table className="management-table team-workload-table"><thead><tr><th>User</th><th>Role</th><th>Assigned Alerts</th><th>Open Reviews</th><th>Completed Today</th></tr></thead>
+            <tbody>{data.workload.map((member) => <tr key={member.user_id}><td data-label="User">{member.name}</td><td data-label="Role">{member.role}</td><td data-label="Assigned Alerts">{member.assigned_alerts}</td><td data-label="Open Reviews">{member.open_reviews}</td><td data-label="Completed Today">{member.completed_today}</td></tr>)}</tbody></table>
             {!loading && data.workload.length === 0 && <ManagementEmptyState title="No team workload is available yet." />}</div>
         </section>
       </div>
