@@ -1,5 +1,8 @@
 import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { getSettingsOverview } from '../utils/settings';
+import useAuthorization from '../auth/useAuthorization.js';
+import { settingsService } from '../services/settingsService.js';
 
 function SettingsList({ items }) {
   return (
@@ -16,6 +19,41 @@ function SettingsList({ items }) {
 
 export default function Settings() {
   const settings = getSettingsOverview();
+  const { user } = useAuthorization();
+  const isAdmin = user?.role === 'ADMIN';
+  const [organizationName, setOrganizationName] = useState('');
+  const [draftName, setDraftName] = useState('');
+  const [loadError, setLoadError] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    settingsService.get()
+      .then((value) => {
+        if (!active) return;
+        setOrganizationName(value.organizationName);
+        setDraftName(value.organizationName);
+      })
+      .catch(() => { if (active) setLoadError(true); });
+    return () => { active = false; };
+  }, []);
+
+  async function saveOrganizationName(event) {
+    event.preventDefault();
+    setSaving(true);
+    setMessage('');
+    try {
+      const value = await settingsService.update({ organizationName: draftName });
+      setOrganizationName(value.organizationName);
+      setDraftName(value.organizationName);
+      setMessage('Organization name saved.');
+    } catch {
+      setMessage('Could not save the organization name.');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <>
@@ -24,7 +62,7 @@ export default function Settings() {
           <h1>Settings</h1>
           <p>Review system configuration and audit preferences.</p>
         </div>
-        <span className="settings-mode-badge">Read-only overview</span>
+        <span className="settings-mode-badge">Organization name {isAdmin ? 'editable by Admin' : 'managed by Admin'}; other settings read-only</span>
       </div>
 
       <div className="settings-groups">
@@ -38,10 +76,24 @@ export default function Settings() {
               <div className="settings-panel-header">
                 <h3 id="organization-settings-heading">Organization</h3>
               </div>
-              <SettingsList items={[
-                ['Organization Name', settings.organization.name],
-                ['Currency', settings.organization.currency],
-              ]} />
+              <dl className="settings-definition-list">
+                <div>
+                  <dt>Organization Name</dt>
+                  <dd>{loadError ? 'Unavailable' : organizationName || 'Loading…'}</dd>
+                </div>
+                <div><dt>Currency</dt><dd>{settings.organization.currency}</dd></div>
+              </dl>
+              {isAdmin && !loadError && organizationName && (
+                <form className="settings-organization-form" onSubmit={saveOrganizationName}>
+                  <label htmlFor="organization-name">Update organization name</label>
+                  <input id="organization-name" value={draftName} minLength={2} maxLength={120}
+                    onChange={(event) => setDraftName(event.target.value)} required />
+                  <button type="submit" disabled={saving || draftName.trim() === organizationName}>
+                    {saving ? 'Saving…' : 'Save'}
+                  </button>
+                  {message && <p role="status">{message}</p>}
+                </form>
+              )}
             </article>
 
             <article className="settings-panel" aria-labelledby="risk-settings-heading">

@@ -612,4 +612,37 @@ test('authoritative dashboard and analytics remain zero-safe with no transaction
   assert.ok(analytics.rule_violation_trends.every(day => day.violations === 0));
 });
 
+test('organization settings are Admin-editable, validated, atomic with immutable audit, and least privilege', async () => {
+  await prepareTeams();
+  const initial = (await db.query('select public.get_organization_settings($1) as value', [teamUsers.auditorA])).rows[0].value;
+  assert.equal(initial.organization_name, 'Retail Store Operations');
+  await assert.rejects(db.query('select public.update_organization_name($1,$2)', [teamUsers.auditorA, 'Forbidden']), /Settings update denied/);
+  await assert.rejects(db.query('select public.update_organization_name($1,$2)', [teamUsers.supervisorA, 'Forbidden']), /Settings update denied/);
+  await assert.rejects(db.query('select public.update_organization_name($1,$2)', ['00000000-0000-4000-8000-000000000099', 'Forbidden']), /Settings update denied/);
+  await assert.rejects(db.query('select public.update_organization_name($1,$2)', [teamUsers.admin, '  ']), /2 to 120 characters/);
+  await assert.rejects(db.query('select public.update_organization_name($1,$2)', [teamUsers.admin, 'x'.repeat(121)]), /2 to 120 characters/);
+
+  const before = Number((await db.query("select count(*) as n from public.audit_events where action='ORGANIZATION_SETTINGS_UPDATED'")).rows[0].n);
+  await db.query('select public.update_organization_name($1,$2)', [teamUsers.admin, '  Northwind Retail  ']);
+  const updated = (await db.query('select public.get_organization_settings($1) as value', [teamUsers.supervisorA])).rows[0].value;
+  assert.equal(updated.organization_name, 'Northwind Retail');
+  const event = (await db.query("select actor_id,details from public.audit_events where action='ORGANIZATION_SETTINGS_UPDATED'")).rows[0];
+  assert.equal(event.actor_id, teamUsers.admin);
+  assert.equal(event.details.old_value, 'Retail Store Operations');
+  assert.equal(event.details.new_value, 'Northwind Retail');
+  await db.query('select public.update_organization_name($1,$2)', [teamUsers.admin, 'Northwind Retail']);
+  assert.equal(Number((await db.query("select count(*) as n from public.audit_events where action='ORGANIZATION_SETTINGS_UPDATED'")).rows[0].n), before + 1);
+
+  await db.exec("create trigger fail_settings_audit before insert on public.audit_events for each row when (new.action='ORGANIZATION_SETTINGS_UPDATED') execute function public.test_fail();");
+  try { await assert.rejects(db.query('select public.update_organization_name($1,$2)', [teamUsers.admin, 'Contoso']), /injected isolated failure/); }
+  finally { await db.exec('drop trigger fail_settings_audit on public.audit_events'); }
+  assert.equal((await db.query('select public.get_organization_settings($1) as value', [teamUsers.admin])).rows[0].value.organization_name, 'Northwind Retail');
+  await assert.rejects(db.query("update public.audit_events set details='{}' where action='ORGANIZATION_SETTINGS_UPDATED'"), /append-only/);
+  const privileges = (await db.query(`select has_function_privilege('anon','public.get_organization_settings(uuid)','execute') as anon_read,
+    has_function_privilege('authenticated','public.update_organization_name(uuid,text)','execute') as auth_update,
+    has_function_privilege('service_role','public.update_organization_name(uuid,text)','execute') as service_update,
+    has_table_privilege('authenticated','public.organization_settings','select') as auth_table_read`)).rows[0];
+  assert.deepEqual(privileges, { anon_read: false, auth_update: false, service_update: true, auth_table_read: false });
+});
+
 test.after(async () => { await db.close(); });

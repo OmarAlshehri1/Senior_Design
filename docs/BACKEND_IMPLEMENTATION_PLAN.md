@@ -1,6 +1,6 @@
 # Backend Implementation Plan — Team M004
 
-Last updated: 2026-10-03
+Last updated: 2026-10-04
 Owner scope: CS — C1, C3, and the CS portions of IS1 and IS3
 
 ## How to use this file
@@ -36,8 +36,8 @@ Each phase (and each Phase 13 subphase) uses an independent branch and PR. Befor
 
 Implemented REST routes: health; authenticated transaction list/detail/create; alert list/review; report list/generation/CSV download; identity/session/access-request/user management; review history/audit-event reads; team and assignment operations; durable notifications; cases/evidence/SLA; and vendor monitoring workflows. `/ws/alerts` authenticates bearer tokens after connection. Phase 20 analytics routes are implemented on the feature branch and await review and Migration 019 application before live use.
 
-- `GET /api/v1/dashboard/summary`, `GET /api/v1/audit-rules`, and `GET /api/v1/analytics`: Phase 20 implementation in progress on `feature/authoritative-analytics`; migration 019 must be reviewed and applied by the owner before live use.
-- Evaluation coverage: Phase 20 adds authoritative latest-snapshot coverage, per-rule denominators, and explicit non-evaluation reasons; local PGlite test coverage does not imply live migration application.
+- `GET /api/v1/dashboard/summary`, `GET /api/v1/audit-rules`, and `GET /api/v1/analytics`: implemented and merged by PR #33; owner confirmed Migration 019 applied, without independent live-schema inspection.
+- Evaluation coverage: Phase 20 exposes authoritative latest-snapshot coverage, per-rule denominators, and explicit non-evaluation reasons through `/api/v1/analytics`.
 - Auth, Users, Access Requests, Reviews, Audit Log, Teams, Assignments, scoped activity, Notifications, and alert reconnect catch-up are implemented on `main` in Phases 14-17. The owner confirmed migrations 013-016 were applied in Supabase; there was no independent live-schema query.
 - Local CORS preflight permits `Authorization`; Phase 24 configures and verifies the approved production origin.
 - Phase 17 replaced first-page-only alert loading with paginated actor-scoped reconciliation and data-free WebSocket invalidation; PR #30 is merged. Migration 016 application is owner-reported.
@@ -491,13 +491,13 @@ Acceptance criteria:
 
 Phase 19 complete: PR #32 (`b9a9072`, merge `c3c3516`). Main verification passed backend 210 tests, 27 isolated PGlite tests, frontend 222 tests, lint/build, and `git diff --check`. The owner confirmed Migration 018 applied; this is owner-reported and was not independently queried. Migration 018 adds monitoring workflow tables and does not alter `approved_vendors.is_active`.
 
-## Phase 20 — Authoritative analytics and read endpoints (CURRENT)
+## Phase 20 — Authoritative analytics and read endpoints
 
 Omar mapping: section 8, sections 11–13; dependency: Phases 14–19.
 
-- [ ] Expose overall evaluation coverage, per-rule coverage, and reasons for NOT_EVALUATED/insufficient data (latest local PGlite validation: 28 tests pass; full phase completion remains pending).
-- [ ] Implement risk/violation trends and agreed dashboard summaries from authoritative data.
-- [ ] Implement the documented dashboard summary and read-only audit-rule-definition endpoints; activate analytics services and preserve adapters.
+- [x] Expose overall evaluation coverage, per-rule coverage, and reasons for NOT_EVALUATED/insufficient data (PR #33).
+- [x] Implement risk/violation trends and agreed dashboard summaries from authoritative data (PR #33).
+- [x] Implement the documented dashboard summary and read-only audit-rule-definition endpoints; activate analytics services and preserve adapters (PR #33).
 
 Acceptance criteria:
 
@@ -505,19 +505,26 @@ Acceptance criteria:
 - Overall coverage counts transactions with at least one executed rule; it does not imply all five rules executed for every transaction.
 - Trends/summaries use defined time windows and full scoped data, not the current frontend page or fake records. Published endpoint contracts match implemented responses.
 
-Migration 019 is a new read-only analytics RPC migration. Its existence and isolated PGlite tests do not prove that it has been applied to Supabase. Pause before any live application; request owner confirmation, then record it as owner-reported.
+Migration 019 adds read-only analytics RPCs. The owner confirmed application to Supabase on 2026-10-04; this is owner-reported and was not independently queried.
 
-Phase 20 local verification on `feature/authoritative-analytics`: backend `213 passed` (one known Starlette warning), isolated PGlite `28 passed`, frontend `227 passed`, frontend lint and production build passed, Python 3.12.10 syntax compilation and `git diff --check` passed. Secret-pattern scan found no credentials in changed source. This is local branch evidence only; Migration 019 is not reported applied, and the phase has not merged to `main`.
+Phase 20 complete: PR #33 (`5437085`, merge `45e3588`). Verification on `main` passed backend `213 passed` (one known Starlette warning), isolated PGlite `28 passed`, frontend `227 passed`, frontend lint and production build, and `git diff --check`. The PR secret-pattern scan passed. No live database query or deployment was performed by this verification.
 
-## Phase 21 — Settings persistence
+## Phase 21 — Settings persistence (CURRENT)
 
 Omar mapping: section 10, sections 11–13; dependency: Phase 14 and relevant domain implementations.
 
-- [ ] Agree which existing frontend settings require persistence; implement authorized read/update and activate the settings service.
+Repository baseline: `frontend/src/pages/Settings.jsx` was a read-only overview and the settings service had no API contract. Approved scope: persist and allow Admin edits only to Organization Name. Currency, risk boundaries, audit rules, report frequency, alert thresholds/latency, and integration/system status stay read-only. Do not make risk methodology adjustable or persist runtime availability/status as configuration.
+
+- [ ] Persist Organization Name with authorized read/update APIs and activate the frontend settings service.
+- [ ] Restrict updates to active Admins in both API and database RPC; keep read access to active project roles.
+- [ ] Record changed values in immutable audit history atomically; do not create an audit event for no-op updates.
 
 Acceptance criteria:
 
-- Validation, unauthorized update, persistence/reload, and audit-history tests pass for each editable setting.
+- PGlite verifies seed/read behavior, role restrictions, name trimming/length validation, persistence after reread, old/new audit values, immutable history, no-op behavior, and rollback of the setting when audit insertion fails.
+- Backend API tests verify authentication, active-role reads, Admin-only updates, request validation, and snake_case response contract.
+- Frontend checks verify the edit control requires a real authenticated Admin (role preview cannot grant it), and all other displayed settings remain read-only.
+- Owner applies Migration 020 to Supabase and reports success before merge; no live-database test is run by the implementation suite.
 - The 60/40 policy, score boundaries, and model/rule methodology remain fixed unless a separate explicit project decision approves a versioned change.
 - Unsupported settings retain truthful unavailable/read-only states.
 
@@ -627,7 +634,8 @@ These are historical implementation estimates retained from Phases 0–12, not c
 | --- | --- | --- |
 | 2026-10-03 | Added durable case, evidence, closure approval, and SLA workflows | PR #31; `0ce368f`, merge `6efb157`; owner confirmed migration 017 applied |
 | 2026-10-03 | Added vendor monitoring workflows and governed watchlist/block requests | PR #32; `b9a9072`, merge `c3c3516`; owner confirmed migration 018 applied |
+| 2026-10-04 | Added authoritative dashboard, audit-rule catalog, and evaluation analytics | PR #33; `5437085`, merge `45e3588`; owner confirmed migration 019 applied |
 
 ## Next action
 
-Phases 13A/13B and 14-19 are merged on `main`. Phase 19 main verification passed backend 210 tests, 27 isolated PGlite tests, frontend 222 tests, lint/build, and `git diff --check`. The project owner reported migrations 013-018 applied successfully; this was not independently queried. Phase 20 (authoritative analytics) is current on `feature/authoritative-analytics`; Migration 019 is newly authored and must not be presumed applied. The user requirements change in `backend/requirements.txt` and backup stash remain preserved and excluded from phase commits.
+Phases 13A/13B and 14-20 are merged on `main`. Phase 20 main verification passed backend 213 tests, 28 isolated PGlite tests, frontend 227 tests, lint/build, and `git diff --check`. The project owner reported migrations 013-019 applied successfully; this was not independently queried. Phase 21 is current on `feature/settings-persistence`; the approved editable field is Organization Name for Admin only. Migration 020 is pending owner application before PR merge. The user requirements change in `backend/requirements.txt` and backup stash remain preserved and excluded from phase commits.

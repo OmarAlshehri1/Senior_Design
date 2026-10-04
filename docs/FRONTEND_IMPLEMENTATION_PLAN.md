@@ -1,6 +1,6 @@
 # Frontend Implementation Plan — Team M004
 
-Last updated: 2026-10-03  
+Last updated: 2026-10-04
 Owner scope: ICS — SWE
 
 ## How to use this file
@@ -42,6 +42,7 @@ Owner scope: ICS — SWE
 | Phase 8.12 | 2026-10-03 | Final functional QA | No distinct commit | [x] Inspection completed |
 | Phase 8.12B | 2026-10-03 | Final frontend freeze fixes | `dc368a4` | [x] Completed and verified |
 | Integration milestone | 2026-10-03 | Live alerts, authoritative risk/explanations, and persisted reports | `a8e1b8a`, `eb38337` (PR #22) | [x] Connected |
+| Integration milestone | 2026-10-04 | Authoritative dashboard, audit-rule catalog, coverage, and trends | `5437085` (PR #33) | [x] Connected |
 
 ### Numbering provenance and explained gaps
 
@@ -390,7 +391,7 @@ Evidence:
 - `/login`, `/request-access`, `/forgot-password`, `/access-pending`, `/account-locked`, `/account-disabled`, `/support`, and `/privacy-security`.
 - `frontend/src/auth/`, authentication pages, and `frontend/src/pages/Login.css`.
 
-Backend dependency: Real authentication, password reset, access-request persistence, account state, and sessions remain backend-dependent.
+Backend dependency at the original Phase 8.6A UX milestone: Real authentication, password reset, access-request persistence, account state, and sessions were backend-dependent; Phase 14 later connected them.
 
 ## Phase 8.6B — Authorization and role-aware navigation
 
@@ -836,7 +837,7 @@ This table describes frontend presentation/UX enforcement in `auth/roles.js` and
 | `/privacy-security` | Privacy and security information route. |
 
 [x] Frontend UX, validation, route contracts, and safe failure states are complete.  
-[ ] Real authentication, password reset, account requests, session handling, user persistence, and identity-backed authorization remain backend-dependent.
+[x] Real authentication, password reset, account requests, session handling, user persistence, and identity-backed authorization are connected to backend Phase 14 on `main`.
 
 ## Accountability and management
 
@@ -856,11 +857,11 @@ This table describes frontend presentation/UX enforcement in `auth/roles.js` and
 
 Phase 8.10 provides frontend architecture for Cases, escalation, evidence attachments, discussion, closure request/approval, SLA/escalation presentation, Vendor Monitoring, watchlists, blocked vendors, Vendor Risk Profile, Audit Coverage, and Risk Trends.
 
-These workflows intentionally show unavailable, empty, or disabled states until authoritative backend implementation exists. Evidence upload remains disabled pending server-side validation and malware scanning. No case, comment, closure, vendor state, coverage metric, or trend is described as persisted today.
+At the historical Phase 8.10 milestone, these workflows intentionally showed unavailable, empty, or disabled states. Phases 18-20 later connected cases/SLA, vendor monitoring, and authoritative coverage/trends. Evidence upload remains disabled unless server-side validation, private storage, and malware scanning are configured.
 
 ## Current real backend integration
 
-Active backend domain integrations are Transactions, Alerts, and Reports. Transaction integration includes:
+Active backend domain integrations include Transactions, Alerts, Reports, Cases, Vendors, and Analytics. Transaction integration includes:
 
 - `currentDataSource.kind` is `DATA_SOURCE_KIND.API`.
 - AppContext calls `transactionsService.list` with `page`, `page_size`, `search`, and `sort_by`.
@@ -871,11 +872,11 @@ Active backend domain integrations are Transactions, Alerts, and Reports. Transa
 - Backend `missing_fields` maps to `dataQuality.missingFields` and is authoritative whenever an array is supplied.
 - Risk and rule-status filters remain current-page frontend filters; UI wording does not claim global coverage.
 
-Auth, Users, Access Requests, Reviews, Audit Log, Teams, Assignments, Notifications, and paginated alert catch-up are connected to backend Phases 14-17 on `main`. The owner confirmed migrations 013-016 applied successfully in Supabase; there was no independent live-schema query. Rejected access requests remain visible in Admin request/audit records and do not generate an in-app notification until a safe delivery channel is selected.
+Auth, Users, Access Requests, Reviews, Audit Log, Teams, Assignments, Notifications, and paginated alert catch-up are connected to backend Phases 14-17 on `main`. The owner reported migrations 013-019 applied successfully in Supabase; there was no independent live-schema query. Rejected access requests remain visible in Admin request/audit records and do not generate an in-app notification until a safe delivery channel is selected.
 
-Alerts and Reports are connected after PR #22; earlier phase descriptions retain their historical preview status. PR #30 completes Notifications and data-free WebSocket invalidation with paginated REST catch-up; owner-reported Migration 016 application is not an independent live-schema check. Phase 18 connects case workflows; Migration 017 and evidence storage/scanning configuration remain prerequisites. Vercel Production deployments triggered by prior PR merges do not complete approved-origin, backend-topology, or final E2E work in Phase 24.
+Alerts and Reports are connected after PR #22; earlier phase descriptions retain their historical preview status. PR #30 completes Notifications and paginated REST catch-up, PR #31 connects cases/SLA, PR #32 connects vendor workflows, and PR #33 connects dashboard summaries, audit-rule definitions, and authoritative analytics. Migration application is owner-reported, not independently verified. Evidence storage/scanning configuration remains a prerequisite for uploads. Vercel Production deployments triggered by prior PR merges do not complete approved-origin, backend-topology, or final E2E work in Phase 24.
 
-`GET /api/v1/dashboard/summary` and `GET /api/v1/audit-rules` are documented but not implemented. Dashboard derivations are scoped to available frontend data, and Audit Rules uses local definitions. Authoritative summaries/rule-definition reads and connected coverage/trend analytics belong to backend Phase 20.
+Dashboard summary, the audit-rule catalog, and coverage/trend analytics are connected to backend Phase 20 endpoints on `main`. Backend remains authoritative for counts, coverage, rule definitions, and risk trends.
 
 ## Frontend service boundaries
 
@@ -891,9 +892,9 @@ Alerts and Reports are connected after PR #22; earlier phase descriptions retain
 | Teams | Yes | Yes | Yes | Connected: Admin team management and scoped Supervisor team activity |
 | Assignments | Yes | Yes | Yes | Connected: persistent team-scoped assign/reassign/unassign history |
 | Notifications | Yes | Yes | Yes | Connected on `main` after PR #30; migration application is owner-reported |
-| Cases | Yes | Yes | No | Phase 18 integration in progress; migration 017 and private storage/scanner setup pending |
-| Vendors | Yes | Yes | No | Prepared / unavailable |
-| Analytics | Yes | Yes | No | Prepared / unavailable |
+| Cases | Yes | Yes | Yes | Connected on `main`; private storage/scanner deployment configuration remains pending |
+| Vendors | Yes | Yes | Yes | Connected on `main` after PR #32; migration 018 owner-reported applied |
+| Analytics | Yes | Yes | Yes | Connected on `main` after PR #33; migration 019 owner-reported applied |
 | Settings | Yes | Yes | No | Read-only preview / unavailable persistence |
 
 ## Test and validation history
@@ -923,6 +924,13 @@ Current independently rerun baseline, 2026-10-03 repository inspection at `f9c7d
 - Production build: not run during that inspection. Historical build successes above were not rerun at that point; see the subsequent pre-commit verification below.
 - Live Supabase verification, deployed E2E, model retraining, and performance benchmarks: not run during inspection.
 
+Phase 20 verification on `main`, 2026-10-04 after PR #33:
+
+- `npm test`: 227 passed; `npm run lint` and `npm run build` passed.
+- Backend tests: 213 passed with one known Starlette TestClient deprecation warning; isolated PGlite: 28 passed.
+- `git diff --check` passed before commit and after merge. Migration 019 application is owner-reported, not independently queried.
+- This verification does not establish deployed end-to-end behavior or complete the Phase 24 deployment work.
+
 Subsequent documentation pre-commit verification on 2026-10-03: frontend tests `204 passed`, lint passed, and `npm run build` production build passed (Vite 8.2.2, 138 modules). Backend tests again returned `129 passed` with the known Starlette TestClient warning. `git diff --check` and the documentation/handoff-source secret scan passed. This run verifies the local build; it does not establish deployed E2E or live database state. Generated `dist` files are excluded from the commit.
 
 Tests cover domain models, contracts, adapters, risk/report derivations, API-client behavior, route authorization, service boundaries, request states, accessibility helpers, real-time lifecycle contracts, and transaction detail loading. They do not replace live backend end-to-end, browser, security, or persistence testing.
@@ -935,7 +943,7 @@ The repository identifies requirements `C1`, `C3`, `IS1`, and `IS3` in `docs/BAC
 | --- | --- | --- | --- | --- |
 | C1 (formal wording not present) | Presents standardized transaction fields, data-quality status, and missing fields through an adapter and Transaction Detail. | `transactionAdapter.js`, `TransactionDetail.jsx`, adapter tests | Backend schema, ingestion, and persistence are CS/backend evidence. | [x] Frontend evidence |
 | C3 (formal wording not present) | Presents each rule result and preserves unavailable/not-evaluated states without inventing findings. | Audit Rules, Transaction Detail, audit-rule and transaction tests | Rule execution and eligibility are backend evidence. | [x] Frontend evidence |
-| IS1 (formal wording not present) | Provides audit-coverage presentation architecture and UI for evaluated transaction/rule results. | `AuditAnalytics.jsx`, `analyticsModels.js`, advanced workflow tests | Coverage calculation and attainment are backend evidence. | [x] Frontend presentation; [ ] connected analytics |
+| IS1 (formal wording not present) | Presents backend-authoritative overall/per-rule coverage and non-evaluation reasons. | `AuditAnalytics.jsx`, `analyticsModels.js`, authoritative analytics service/tests | Coverage calculation and attainment are backend evidence. | [x] Frontend presentation and connected integration |
 | IS3 (formal wording not present) | Presents rule, anomaly, combined-risk scores, risk levels, explanations, and consistent badges. | Dashboard, Transactions, Transaction Detail, risk tests | Score calculation/model performance and persistence are backend evidence. | [x] Frontend presentation |
 
 No frontend claim is made for the five audit-rule implementations, Isolation Forest model, authoritative risk-score calculation, Supabase persistence, alert generation, or backend report generation. The SWE contribution is limited to presentation, frontend contracts, adapters, service boundaries, and explicitly activated integration.
@@ -954,8 +962,8 @@ No frontend claim is made for the five audit-rule implementations, Isolation For
 | Login UX | Supabase Auth session lifecycle and account-state routes; owner confirmed migration 013 applied | `/login` and auth routes |
 | User Management | Authenticated access-request, profile, and account lifecycle APIs; owner confirmed migration 013 applied | `/users` |
 | Audit Log | Connected immutable actor-attributed history and team-scoped reads (Phases 15-16) | `/audit-log` |
-| Cases | Phase 18 list/detail, case actions, discussion, closure, and SLA UI integration in progress | `/cases`, `/cases/:caseId` |
-| Vendors | Monitoring/profile architecture and disabled unavailable sections | `/vendors`, `/vendors/:vendorId` |
+| Cases | Connected on `main`: case actions, discussion, closure, evidence metadata, and SLA; storage/scanner deployment configuration remains pending | `/cases`, `/cases/:caseId` |
+| Vendors | Connected on `main`: monitoring profile, watchlist and block workflows | `/vendors`, `/vendors/:vendorId` |
 | Responsive behavior | Drawer navigation, responsive tables/cards/tabs | Desktop/tablet/mobile browser widths |
 | Accessibility behavior | Keyboard overlays, focus restoration, semantic states/navigation | Dialogs, Sidebar drawer, focused tests |
 
@@ -971,20 +979,20 @@ No frontend claim is made for the five audit-rule implementations, Isolation For
 - [x] Live transaction-list integration plus direct Transaction Detail retrieval.
 - [x] Backend-authoritative `missing_fields` mapping and data-quality precedence.
 - [x] Production removal of development-only transaction simulation control.
-- [x] Current rerun baseline of 204 passing frontend tests; 199 remains the historical Phase 8.12B result.
+- [x] Current rerun baseline after PR #33: 227 passing frontend tests; 199 remains the historical Phase 8.12B result.
 
 ## Backend / Integration Dependencies
 
-- [ ] Real authentication, user sessions, password reset, access-request persistence, and authoritative RBAC.
-- [ ] User/account lifecycle, role changes, lock/unlock, and administrative persistence.
-- [ ] Audit-event, review-history, login-history, team-activity, and assignment persistence.
-- [ ] Notification delivery/read-state integration.
-- [ ] Cases, evidence storage/scanning, discussion, closure, escalation, and SLA persistence.
-- [ ] Vendor profiles, watchlists, blocked-vendor workflows, and monitoring persistence.
-- [ ] Audit-coverage and risk-trend analytics integration.
+- [x] Real authentication, user sessions, password reset, access-request persistence, and authoritative RBAC (Phase 14).
+- [x] User/account lifecycle, role changes, lock/unlock, and administrative persistence (Phase 14).
+- [x] Audit-event, review-history, login-history, team-activity, and assignment persistence (Phases 15-16).
+- [x] Notification delivery/read-state integration and paginated alert reconnect catch-up (Phase 17).
+- [x] Cases, discussion, closure, escalation, and SLA persistence (Phase 18); private evidence storage/scanning deployment configuration remains pending.
+- [x] Vendor profiles, watchlists, blocked-vendor workflows, and monitoring persistence (Phase 19).
+- [x] Audit-coverage and risk-trend analytics integration (Phase 20).
 - [ ] Settings persistence.
 - [x] Core Alerts and Reports integration activated in PR #22; historical local live verification recorded above.
-- [ ] Authenticated Alerts/Reports/CSV integration, reconnect catch-up, and final deployed three-role E2E (backend Phases 14, 17, and 24).
+- [x] Authenticated Alerts/Reports/CSV integration and reconnect catch-up (Phases 14 and 17); final deployed three-role E2E remains pending Phase 24.
 - [ ] Deployment configuration, CORS, identity/security review, and full frontend-to-FastAPI-to-Supabase end-to-end testing.
 
 ## Current frontend status
@@ -992,17 +1000,17 @@ No frontend claim is made for the five audit-rule implementations, Isolation For
 | Area | Frontend Status | Backend Dependency | Demo Ready |
 | --- | --- | --- | --- |
 | Shell and responsive design | Completed | None | Yes |
-| Dashboard | Completed presentation | Connected transactions; other summaries remain frontend/preview scoped | Yes, with scope explanation |
+| Dashboard | Connected summary and authoritative analytics | FastAPI dashboard and analytics endpoints; latest transactions/alerts use their established services | Yes, with backend availability |
 | Transactions | Connected | FastAPI/Supabase transaction API | Yes |
 | Transaction Detail | Connected | FastAPI detail endpoint | Yes |
 | Alerts | Connected | FastAPI/Supabase alert REST and WebSocket APIs | Yes |
-| Audit Rules | Completed presentation | Rule execution is backend-owned | Yes, presentation |
+| Audit Rules | Connected authoritative definitions | FastAPI read-only rule catalog; rule execution remains backend-owned | Yes |
 | Reports | Connected | FastAPI/Supabase report and CSV endpoints | Yes |
 | Auth and roles | Completed UX/contracts | Authentication and RBAC | Frontend-only |
 | Accountability/management | Completed architecture | Identity and persistence | Frontend-only |
-| Cases/vendors/analytics | Completed architecture | Domain services and persistence | Unavailable-state demo |
+| Cases/vendors/analytics | Connected integrations | FastAPI/Supabase workflows; evidence storage/scanner configuration and deployment E2E remain | Yes, with documented evidence limitation |
 | Accessibility | Implemented and tested helpers | Live assistive-technology review remains advisable | Yes |
-| Test baseline | 204 passing | Deployed E2E remains required | Yes |
+| Test baseline | 227 passing | Deployed E2E remains required | Yes |
 
 ## Change Log
 
@@ -1031,7 +1039,10 @@ No frontend claim is made for the five audit-rule implementations, Isolation For
 | 2026-10-03 | Phase 8.12 | Completed final functional QA inspection | No distinct commit |
 | 2026-10-03 | Phase 8.12B | Completed final frontend freeze fixes | `dc368a4` |
 | 2026-10-03 | Integration milestone | Connected live alerts, authoritative risk/explanations, and persisted reports | `a8e1b8a`, `eb38337` (PR #22) |
+| 2026-10-03 | Phase 18 integration | Connected case workflows and SLA | PR #31; merge `6efb157`; owner confirmed migration 017 applied |
+| 2026-10-03 | Phase 19 integration | Connected vendor monitoring workflows | PR #32; merge `c3c3516`; owner confirmed migration 018 applied |
+| 2026-10-04 | Phase 20 integration | Connected authoritative dashboard, audit-rule catalog, coverage, and trends | PR #33; merge `45e3588`; owner confirmed migration 019 applied |
 
 ## Next action
 
-Preserve the existing frontend design, services, and adapters. Phase 17 PR #30 is merged and the owner reported Migration 016 succeeded. Phase 18 is active on `feature/cases-evidence-sla`; do not enable evidence upload until private storage and antivirus scanning are configured. Apply Migration 017 only after the merge is reviewed and the owner approves the live database change. Deployment and final three-role E2E remain in Phase 24.
+Preserve the existing frontend design, services, and adapters. Phases 17-20 are connected on `main`; the owner reported migrations 016-019 applied, without independent live-schema inspection. Phase 21 on `feature/settings-persistence` persists Organization Name for Admin editing only; other settings remain read-only. Evidence upload stays unavailable until private storage and antivirus scanning are configured. Deployment and final three-role E2E remain in Phase 24.

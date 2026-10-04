@@ -4,8 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { createTransactionsService } from '../src/services/transactionsService.js';
 
 import { createRequestState, requestFailed, requestStarted, requestSucceeded } from '../src/utils/requestState.js';
-import { settingsService } from '../src/services/settingsService.js';
-import { INTEGRATION_ERROR_CODES } from '../src/services/integrationError.js';
+import { createSettingsService } from '../src/services/settingsService.js';
 
 test('request-state helpers cover idle, loading, success, and error without mutation', () => {
   const idle = createRequestState();
@@ -20,12 +19,18 @@ test('request-state helpers cover idle, loading, success, and error without muta
   assert.equal(error.error.status, 500);
 });
 
-test('settings service fails predictably until a contract endpoint exists', async () => {
-  await assert.rejects(settingsService.get(), (error) => {
-    assert.equal(error.code, INTEGRATION_ERROR_CODES.CONFIGURATION_UNAVAILABLE);
-    assert.equal(error.message, 'Settings persistence is not available.');
-    return true;
+test('settings service uses the contracted settings endpoints and adapts the response', async () => {
+  const calls = [];
+  const service = createSettingsService({
+    get: async (path) => { calls.push(['GET', path]); return { organization_name: 'Northwind', updated_at: 'now' }; },
+    patch: async (path, body) => { calls.push(['PATCH', path, body]); return { organization_name: body.organization_name, updated_at: 'later' }; },
   });
+  assert.deepEqual(await service.get(), { organizationName: 'Northwind', updatedAt: 'now' });
+  assert.deepEqual(await service.update({ organizationName: 'Contoso' }), { organizationName: 'Contoso', updatedAt: 'later' });
+  assert.deepEqual(calls, [
+    ['GET', '/settings'],
+    ['PATCH', '/settings/organization', { organization_name: 'Contoso' }],
+  ]);
 });
 
 test('main user-facing source contains no prohibited early-stage terminology', async () => {
