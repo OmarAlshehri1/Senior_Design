@@ -34,7 +34,7 @@ Each phase (and each Phase 13 subphase) uses an independent branch and PR. Befor
 
 ## API implementation boundaries
 
-Implemented REST routes: health; authenticated transaction list/detail/create; alert list/review; report list/generation/CSV download; identity/session/access-request/user management; review history/audit-event reads; team and assignment operations; durable notifications; cases/evidence/SLA; and vendor monitoring workflows. `/ws/alerts` authenticates bearer tokens after connection. Phase 20 analytics routes are implemented on the feature branch and await review and Migration 019 application before live use.
+Implemented REST routes: health; authenticated transaction list/detail/create; alert list/review; report list/generation/CSV download; identity/session/access-request/user management; review history/audit-event reads; team and assignment operations; durable notifications; cases/evidence/SLA; vendor monitoring; authoritative analytics; and Admin-managed organization settings. `/ws/alerts` authenticates bearer tokens after connection. Automatic report scheduling remains Phase 22 work.
 
 - `GET /api/v1/dashboard/summary`, `GET /api/v1/audit-rules`, and `GET /api/v1/analytics`: implemented and merged by PR #33; owner confirmed Migration 019 applied, without independent live-schema inspection.
 - Evaluation coverage: Phase 20 exposes authoritative latest-snapshot coverage, per-rule denominators, and explicit non-evaluation reasons through `/api/v1/analytics`.
@@ -509,26 +509,28 @@ Migration 019 adds read-only analytics RPCs. The owner confirmed application to 
 
 Phase 20 complete: PR #33 (`5437085`, merge `45e3588`). Verification on `main` passed backend `213 passed` (one known Starlette warning), isolated PGlite `28 passed`, frontend `227 passed`, frontend lint and production build, and `git diff --check`. The PR secret-pattern scan passed. No live database query or deployment was performed by this verification.
 
-## Phase 21 — Settings persistence (CURRENT)
+## Phase 21 — Settings persistence
 
 Omar mapping: section 10, sections 11–13; dependency: Phase 14 and relevant domain implementations.
 
 Repository baseline: `frontend/src/pages/Settings.jsx` was a read-only overview and the settings service had no API contract. Approved scope: persist and allow Admin edits only to Organization Name. Currency, risk boundaries, audit rules, report frequency, alert thresholds/latency, and integration/system status stay read-only. Do not make risk methodology adjustable or persist runtime availability/status as configuration.
 
-- [ ] Persist Organization Name with authorized read/update APIs and activate the frontend settings service.
-- [ ] Restrict updates to active Admins in both API and database RPC; keep read access to active project roles.
-- [ ] Record changed values in immutable audit history atomically; do not create an audit event for no-op updates.
+- [x] Persist Organization Name with authorized read/update APIs and activate the frontend settings service (PR #34).
+- [x] Restrict updates to active Admins in both API and database RPC; keep read access to active project roles (PR #34).
+- [x] Record changed values in immutable audit history atomically; do not create an audit event for no-op updates (PR #34).
 
 Acceptance criteria:
 
-- PGlite verifies seed/read behavior, role restrictions, name trimming/length validation, persistence after reread, old/new audit values, immutable history, no-op behavior, and rollback of the setting when audit insertion fails.
-- Backend API tests verify authentication, active-role reads, Admin-only updates, request validation, and snake_case response contract.
-- Frontend checks verify the edit control requires a real authenticated Admin (role preview cannot grant it), and all other displayed settings remain read-only.
-- Owner applies Migration 020 to Supabase and reports success before merge; no live-database test is run by the implementation suite.
+- [x] PGlite verifies seed/read behavior, role restrictions, name trimming/length validation, persistence after reread, old/new audit values, immutable history, no-op behavior, and rollback of the setting when audit insertion fails.
+- [x] Backend API tests verify authentication, active-role reads, Admin-only updates, request validation, and snake_case response contract.
+- [x] Frontend service contract checks pass; edit UI requires a real authenticated Admin, and other displayed settings remain read-only.
+- [x] Owner confirmed Migration 020 applied successfully before merge; no live-database test was run by the implementation suite.
 - The 60/40 policy, score boundaries, and model/rule methodology remain fixed unless a separate explicit project decision approves a versioned change.
 - Unsupported settings retain truthful unavailable/read-only states.
 
-## Phase 22 — Automatic daily reports
+Phase 21 complete: PR #34 (`d8ec2b2`, merge `37d9ac0`). Main verification passed backend `214 passed` (one known Starlette TestClient warning), isolated PGlite `29 passed`, frontend `227 passed`, lint, production build, and `git diff --check`. The owner confirmed Migration 020 applied; this was not independently queried. Vercel Preview checks passed. No live data was used for testing.
+
+## Phase 22 — Automatic daily reports (CURRENT)
 
 Omar mapping: section 9, sections 11–14; dependency: Phases 13B–14 and completed report integration.
 
@@ -635,7 +637,8 @@ These are historical implementation estimates retained from Phases 0–12, not c
 | 2026-10-03 | Added durable case, evidence, closure approval, and SLA workflows | PR #31; `0ce368f`, merge `6efb157`; owner confirmed migration 017 applied |
 | 2026-10-03 | Added vendor monitoring workflows and governed watchlist/block requests | PR #32; `b9a9072`, merge `c3c3516`; owner confirmed migration 018 applied |
 | 2026-10-04 | Added authoritative dashboard, audit-rule catalog, and evaluation analytics | PR #33; `5437085`, merge `45e3588`; owner confirmed migration 019 applied |
+| 2026-10-04 | Added Admin-managed Organization Name settings with immutable audit history | PR #34; `d8ec2b2`, merge `37d9ac0`; owner confirmed migration 020 applied |
 
 ## Next action
 
-Phases 13A/13B and 14-20 are merged on `main`. Phase 20 main verification passed backend 213 tests, 28 isolated PGlite tests, frontend 227 tests, lint/build, and `git diff --check`. The project owner reported migrations 013-019 applied successfully; this was not independently queried. Phase 21 is current on `feature/settings-persistence`; the approved editable field is Organization Name for Admin only. Migration 020 is pending owner application before PR merge. The user requirements change in `backend/requirements.txt` and backup stash remain preserved and excluded from phase commits.
+Phases 13A/13B and 14-21 are merged on `main`. Phase 21 merged as PR #34 (`d8ec2b2`, merge `37d9ac0`); main verification passed backend 214 tests, 29 isolated PGlite tests, frontend 227 tests, lint/build, and `git diff --check`. The project owner reported migrations 013-020 applied successfully; this was not independently queried. Phase 22 (automatic daily reports) is current on `feature/daily-report-scheduling`. The user requirements change in `backend/requirements.txt` and backup stash remain preserved and excluded from phase commits.

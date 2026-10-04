@@ -4,9 +4,9 @@ Senior Design project for team **M004**.
 
 This repository is a monorepo containing the React frontend, FastAPI backend, and shared API contract. The system monitors standardized retail transactions, evaluates audit rules and anomalous behavior, produces a unified risk assessment, and delivers high-risk alerts.
 
-Main at `45e3588` includes PR #22 and PRs #26, #27, and #29-33: transaction/audit/report integration, Auth/RBAC, reviews/audit history, team-scoped assignments, notifications, case/SLA workflows, vendor monitoring, and authoritative analytics. The project owner reports Supabase migrations 012-019 applied successfully; this was not independently queried.
+Main at `37d9ac0` includes PR #22 and PRs #26-34: transaction/audit/report integration, Auth/RBAC, reviews/audit history, team-scoped assignments, notifications, case/SLA workflows, vendor monitoring, authoritative analytics, and Admin-managed organization settings. The project owner reports Supabase migrations 012-020 applied successfully; this was not independently queried.
 
-Phase 17-20 are merged. Settings persistence is Phase 21; automatic report scheduling and performance evidence remain Phases 22-23. Private evidence storage/scanner configuration, approved deployment settings, and final three-role E2E remain in Phase 24. Phase 13A separates insert-only runtime creation (`409` on duplicate ID) from offline seed upsert. `TRANSACTION_RECOVERY_ENABLED` remains false; the legacy processing path while disabled still uses separate persistence steps. See [the recovery design](docs/TRANSACTION_RECOVERY_DESIGN.md).
+Phases 17-21 are merged. Automatic report scheduling and performance evidence remain Phases 22-23. Private evidence storage/scanner configuration, approved deployment settings, and final three-role E2E remain in Phase 24. Phase 13A separates insert-only runtime creation (`409` on duplicate ID) from offline seed upsert. `TRANSACTION_RECOVERY_ENABLED` remains false; the legacy processing path while disabled still uses separate persistence steps. See [the recovery design](docs/TRANSACTION_RECOVERY_DESIGN.md).
 
 See [the backend plan](docs/BACKEND_IMPLEMENTATION_PLAN.md) and [frontend evidence](docs/FRONTEND_IMPLEMENTATION_PLAN.md). Omar's [handoff requests](docs/Backend_Final_Handoff_Tasks.docx) define the approved remaining scope; no official rubric was found in the repository. PDF is conditional on a confirmed requirement. Render/Vercel were selected. Merging PR #26 triggered a successful Vercel Production deployment; planned deployment configuration, security review, and final E2E remain in Phase 24. The Render free/paid plan is undecided.
 
@@ -105,7 +105,9 @@ Historical documentation-commit checks on 2026-10-03 at `f9c7dd5`: backend `129 
 
 Main verification after PR #33 on 2026-10-04: backend `213 passed` with one known Starlette TestClient deprecation warning, 28 isolated PGlite tests passed, frontend `227 passed`, lint and production build passed. `git diff --check` passed; migration 019 application is owner-reported and was not independently queried. These results do not prove deployed end-to-end behavior.
 
-Migration files 001–020 are present. The project owner reported migrations 012–019 applied successfully; this was not independently queried. Migration 020 supports Phase 21 settings and remains pending owner application. Stored model metrics report held-out detection 87.04% and false positives 3.45%; training was not rerun. Historical coverage/latency measurements are retained in the backend plan. A 10,000-row dataset does not prove throughput, and manual report generation does not prove automatic daily scheduling.
+Main verification after PR #34 on 2026-10-04: backend `214 passed` with one known Starlette TestClient deprecation warning, 29 isolated PGlite tests passed, frontend `227 passed`, lint and production build passed. The owner reported Migration 020 applied; this was not independently queried. These results do not prove deployed end-to-end behavior.
+
+Migration files 001–020 are present. The project owner reported migrations 012–020 applied successfully; this was not independently queried. Stored model metrics report held-out detection 87.04% and false positives 3.45%; training was not rerun. Historical coverage/latency measurements are retained in the backend plan. A 10,000-row dataset does not prove throughput, and manual report generation does not prove automatic daily scheduling.
 
 ## Technology stack
 
