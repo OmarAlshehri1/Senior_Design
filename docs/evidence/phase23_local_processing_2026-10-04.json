@@ -1,0 +1,266 @@
+{
+    "cpu_count_logical":  8,
+    "dataset":  {
+                    "measured_requests":  10000,
+                    "scope":  "synthetic generated transactions; every row is a constructed five-rule high-risk case",
+                    "warmup_requests_per_mode_excluded":  10
+                },
+    "dependencies":  {
+                         "fastapi":  "0.141.1",
+                         "httpx":  "0.28.1",
+                         "numpy":  "2.5.3",
+                         "scikit-learn":  "1.9.1",
+                         "starlette":  "1.7.0"
+                     },
+    "isolation_forest_n_jobs":  1,
+    "isolation_forest_trees":  400,
+    "isolation_forest_version":  "1.0.0",
+    "platform":  "Windows-11-10.0.26300-SP0",
+    "python":  "3.12.10",
+    "risk_scoring_version":  "1.0.0",
+    "rule_scoring_version":  "1.0.0",
+    "run_utc":  "2026-10-04T09:48:37.398160+00:00",
+    "scenarios":  [
+                      {
+                          "accepted":  1250,
+                          "all_responses_high_risk":  true,
+                          "completed":  1250,
+                          "concurrency":  1,
+                          "duration_seconds":  39.673,
+                          "extrapolated_requests_per_day":  2722221,
+                          "failed":  0,
+                          "gemini_mode":  "disabled",
+                          "high_risk_alerts_created_by_stub":  1250,
+                          "posting_to_stub_alert_creation_ms":  {
+                                                                    "max":  108.873,
+                                                                    "p50":  29.427,
+                                                                    "p95":  45.136,
+                                                                    "p99":  57.201
+                                                                },
+                          "request_latency_ms":  {
+                                                     "max":  109.699,
+                                                     "p50":  29.939,
+                                                     "p95":  45.893,
+                                                     "p99":  57.967
+                                                 },
+                          "requests":  1250,
+                          "risk_score_range":  {
+                                                   "max":  100.0,
+                                                   "min":  100.0
+                                               },
+                          "throughput_requests_per_second":  31.507
+                      },
+                      {
+                          "accepted":  1250,
+                          "all_responses_high_risk":  true,
+                          "completed":  1250,
+                          "concurrency":  4,
+                          "duration_seconds":  39.018,
+                          "extrapolated_requests_per_day":  2767922,
+                          "failed":  0,
+                          "gemini_mode":  "disabled",
+                          "high_risk_alerts_created_by_stub":  1250,
+                          "posting_to_stub_alert_creation_ms":  {
+                                                                    "max":  188.676,
+                                                                    "p50":  112.138,
+                                                                    "p95":  147.164,
+                                                                    "p99":  172.024
+                                                                },
+                          "request_latency_ms":  {
+                                                     "max":  224.031,
+                                                     "p50":  123.3,
+                                                     "p95":  161.371,
+                                                     "p99":  185.259
+                                                 },
+                          "requests":  1250,
+                          "risk_score_range":  {
+                                                   "max":  100.0,
+                                                   "min":  100.0
+                                               },
+                          "throughput_requests_per_second":  32.036
+                      },
+                      {
+                          "accepted":  1250,
+                          "all_responses_high_risk":  true,
+                          "completed":  1250,
+                          "concurrency":  8,
+                          "duration_seconds":  35.567,
+                          "extrapolated_requests_per_day":  3036486,
+                          "failed":  0,
+                          "gemini_mode":  "disabled",
+                          "high_risk_alerts_created_by_stub":  1250,
+                          "posting_to_stub_alert_creation_ms":  {
+                                                                    "max":  463.925,
+                                                                    "p50":  204.298,
+                                                                    "p95":  244.114,
+                                                                    "p99":  284.673
+                                                                },
+                          "request_latency_ms":  {
+                                                     "max":  471.654,
+                                                     "p50":  222.384,
+                                                     "p95":  271.341,
+                                                     "p99":  305.559
+                                                 },
+                          "requests":  1250,
+                          "risk_score_range":  {
+                                                   "max":  100.0,
+                                                   "min":  100.0
+                                               },
+                          "throughput_requests_per_second":  35.145
+                      },
+                      {
+                          "accepted":  1250,
+                          "all_responses_high_risk":  true,
+                          "completed":  1250,
+                          "concurrency":  16,
+                          "duration_seconds":  32.842,
+                          "extrapolated_requests_per_day":  3288505,
+                          "failed":  0,
+                          "gemini_mode":  "disabled",
+                          "high_risk_alerts_created_by_stub":  1250,
+                          "posting_to_stub_alert_creation_ms":  {
+                                                                    "max":  500.409,
+                                                                    "p50":  374.305,
+                                                                    "p95":  433.807,
+                                                                    "p99":  478.094
+                                                                },
+                          "request_latency_ms":  {
+                                                     "max":  542.165,
+                                                     "p50":  414.118,
+                                                     "p95":  476.836,
+                                                     "p99":  505.575
+                                                 },
+                          "requests":  1250,
+                          "risk_score_range":  {
+                                                   "max":  100.0,
+                                                   "min":  100.0
+                                               },
+                          "throughput_requests_per_second":  38.061
+                      },
+                      {
+                          "accepted":  1250,
+                          "all_responses_high_risk":  true,
+                          "completed":  1250,
+                          "concurrency":  1,
+                          "duration_seconds":  23.429,
+                          "extrapolated_requests_per_day":  4609590,
+                          "failed":  0,
+                          "gemini_mode":  "stubbed",
+                          "high_risk_alerts_created_by_stub":  1250,
+                          "posting_to_stub_alert_creation_ms":  {
+                                                                    "max":  69.198,
+                                                                    "p50":  15.889,
+                                                                    "p95":  25.773,
+                                                                    "p99":  30.707
+                                                                },
+                          "request_latency_ms":  {
+                                                     "max":  69.698,
+                                                     "p50":  16.631,
+                                                     "p95":  26.489,
+                                                     "p99":  31.666
+                                                 },
+                          "requests":  1250,
+                          "risk_score_range":  {
+                                                   "max":  100.0,
+                                                   "min":  100.0
+                                               },
+                          "throughput_requests_per_second":  53.352
+                      },
+                      {
+                          "accepted":  1250,
+                          "all_responses_high_risk":  true,
+                          "completed":  1250,
+                          "concurrency":  4,
+                          "duration_seconds":  31.181,
+                          "extrapolated_requests_per_day":  3463653,
+                          "failed":  0,
+                          "gemini_mode":  "stubbed",
+                          "high_risk_alerts_created_by_stub":  1250,
+                          "posting_to_stub_alert_creation_ms":  {
+                                                                    "max":  156.008,
+                                                                    "p50":  86.104,
+                                                                    "p95":  113.121,
+                                                                    "p99":  131.139
+                                                                },
+                          "request_latency_ms":  {
+                                                     "max":  168.601,
+                                                     "p50":  97.124,
+                                                     "p95":  126.715,
+                                                     "p99":  152.697
+                                                 },
+                          "requests":  1250,
+                          "risk_score_range":  {
+                                                   "max":  100.0,
+                                                   "min":  100.0
+                                               },
+                          "throughput_requests_per_second":  40.089
+                      },
+                      {
+                          "accepted":  1250,
+                          "all_responses_high_risk":  true,
+                          "completed":  1250,
+                          "concurrency":  8,
+                          "duration_seconds":  27.735,
+                          "extrapolated_requests_per_day":  3894057,
+                          "failed":  0,
+                          "gemini_mode":  "stubbed",
+                          "high_risk_alerts_created_by_stub":  1250,
+                          "posting_to_stub_alert_creation_ms":  {
+                                                                    "max":  363.779,
+                                                                    "p50":  142.607,
+                                                                    "p95":  216.024,
+                                                                    "p99":  253.188
+                                                                },
+                          "request_latency_ms":  {
+                                                     "max":  392.963,
+                                                     "p50":  167.679,
+                                                     "p95":  241.879,
+                                                     "p99":  292.355
+                                                 },
+                          "requests":  1250,
+                          "risk_score_range":  {
+                                                   "max":  100.0,
+                                                   "min":  100.0
+                                               },
+                          "throughput_requests_per_second":  45.07
+                      },
+                      {
+                          "accepted":  1250,
+                          "all_responses_high_risk":  true,
+                          "completed":  1250,
+                          "concurrency":  16,
+                          "duration_seconds":  24.881,
+                          "extrapolated_requests_per_day":  4340743,
+                          "failed":  0,
+                          "gemini_mode":  "stubbed",
+                          "high_risk_alerts_created_by_stub":  1250,
+                          "posting_to_stub_alert_creation_ms":  {
+                                                                    "max":  440.834,
+                                                                    "p50":  248.122,
+                                                                    "p95":  399.845,
+                                                                    "p99":  423.275
+                                                                },
+                          "request_latency_ms":  {
+                                                     "max":  501.317,
+                                                     "p50":  280.746,
+                                                     "p95":  438.105,
+                                                     "p99":  469.149
+                                                 },
+                          "requests":  1250,
+                          "risk_score_range":  {
+                                                   "max":  100.0,
+                                                   "min":  100.0
+                                               },
+                          "throughput_requests_per_second":  50.24
+                      }
+                  ],
+    "service_scope":  {
+                          "api":  "in-process FastAPI ASGI transport; no network listener",
+                          "gemini":  "disabled failure path and deterministic local stub; no external requests",
+                          "live_data_or_services":  false,
+                          "persistence":  "all Supabase transaction reads/writes and alert creation replaced with in-memory stubs",
+                          "websocket":  "no connected clients; publication remains in-process and has no delivery-network cost"
+                      },
+    "harness_sha256":  "2edd3b80a119719728c6aa448dcab25f8a94deeb7724d00fbb47866619f7d7c3",
+    "git_commit":  "8365692"
+}

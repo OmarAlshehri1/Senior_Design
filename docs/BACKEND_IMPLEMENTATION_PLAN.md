@@ -554,15 +554,17 @@ Phase 22 complete on `main`: PR #36 (`2a713a1`, merge `6eb63d3`). The owner conf
 
 Omar mapping: sections 13–14; dependency: Phases 13–22.
 
-- [ ] Obtain the official rubric and map each applicable specification/integrated specification/constraint to wording, owner, test, artifact, and unresolved gaps.
-- [ ] Package rule/schema/eligibility/coverage/model/combined-score evidence with versions, dates, dataset scope, and reproducible commands.
-- [ ] Run actual throughput and alert-latency benchmarks; distinguish accepted, fully processed, and failed transactions.
+- [ ] Obtain the official rubric and map each applicable specification/integrated specification/constraint to wording, owner, test, artifact, and unresolved gaps. The owner authorized measuring recorded project targets only on 2026-10-04; formal rubric wording remains unavailable and unchecked.
+- [x] Package rule/schema/eligibility/coverage/model/combined-score evidence with versions, dates, dataset scope, and reproducible commands; preserve historical/live uncertainty.
+- [x] Run a reproducible local FastAPI/scoring-path throughput and alert-creation benchmark with accepted, completed, failed, and latency counts; hosted persistence and delivery remain unverified.
 
 Acceptance criteria:
 
-- Report evidence for all five rules, coverage >= 95%, detection >= 85%, false positives <= 10%, combined 60/40 scoring, latency <= 5 seconds, throughput >= 10,000 transactions/day, and automatic daily reports as recorded project targets; confirm grading interpretation against the rubric.
-- Benchmarks record environment, concurrency, duration, error rate, latency distribution, and Gemini-enabled/disabled behavior. Dataset row count is not throughput evidence, and one historical latency observation is not a load guarantee.
-- Each claim distinguishes historical evidence from a current rerun. Missing rubric wording or failing targets remain unresolved, not marked complete.
+- Report source-backed evidence against all five recorded rules, historical coverage and held-out model metrics, 60/40 scoring, daily reports, and current benchmark results. These are project targets; formal rubric interpretation remains unresolved.
+- Local benchmark records environment, concurrency, duration, error rate, latency distribution, and Gemini disabled/stubbed behavior. Its in-memory persistence and alert stub do not prove hosted throughput, persisted-alert latency, or WebSocket delivery.
+- Each claim distinguishes historical evidence from the Phase 23 local rerun. Dataset row count is not throughput evidence, and historical or mocked-path results are not production guarantees.
+
+Project-target evidence is packaged in [PERFORMANCE_BENCHMARKS.md](PERFORMANCE_BENCHMARKS.md) with its machine-readable result. The owner did not provide an official rubric for formal mapping; this remains an explicit unresolved item, not an inferred requirement.
 
 ## Phase 24 — Approved deployment and final three-role E2E
 
@@ -647,4 +649,4 @@ These are historical implementation estimates retained from Phases 0–12, not c
 
 ## Next action
 
-Phases 13A/13B and 14-22 are merged on `main`. Phase 22 merged as PR #36 (`2a713a1`, merge `6eb63d3`); main verification passed backend 221 tests, 30 isolated PGlite tests, frontend 227 tests, lint, production build, and `git diff --check`. The project owner reported migrations 013-021 applied successfully; this was not independently queried. Phase 23 (performance and requirements evidence) is next. The user requirements change in `backend/requirements.txt` and backup stash remain preserved and excluded from phase commits.
+Phases 13A/13B and 14-22 are merged on `main`. Phase 22 merged as PR #36 (`2a713a1`, merge `6eb63d3`); main verification passed backend 221 tests, 30 isolated PGlite tests, frontend 227 tests, lint, production build, and `git diff --check`. The project owner reported migrations 013-021 applied successfully; this was not independently queried. Phase 23 packages project-target evidence and local benchmark results; formal rubric mapping remains pending because no official rubric was supplied. The user requirements change in `backend/requirements.txt` and backup stash remain preserved and excluded from phase commits.
