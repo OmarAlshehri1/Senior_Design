@@ -820,7 +820,7 @@ The reusable overlay architecture is implemented in `accessibility/useOverlayFoc
 | User/role management, unlock users, Settings management | No | No | Yes |
 | Manage vendor blocks/remove watchlist | No | No | Yes |
 
-This table describes frontend presentation/UX enforcement in `auth/roles.js` and `auth/routeAccess.js`. Authoritative security requires backend authentication and RBAC. The current backend does not provide connected frontend authentication, so Role Preview is development-only context and not a real user identity.
+This table describes frontend presentation/UX enforcement in `auth/roles.js` and `auth/routeAccess.js`. Authoritative security is enforced by backend authentication and RBAC. Role Preview remains development-only context and is not a real user identity; it cannot grant the Settings edit control.
 
 ## Authentication UX
 
@@ -872,11 +872,11 @@ Active backend domain integrations include Transactions, Alerts, Reports, Cases,
 - Backend `missing_fields` maps to `dataQuality.missingFields` and is authoritative whenever an array is supplied.
 - Risk and rule-status filters remain current-page frontend filters; UI wording does not claim global coverage.
 
-Auth, Users, Access Requests, Reviews, Audit Log, Teams, Assignments, Notifications, and paginated alert catch-up are connected to backend Phases 14-17 on `main`. The owner reported migrations 013-019 applied successfully in Supabase; there was no independent live-schema query. Rejected access requests remain visible in Admin request/audit records and do not generate an in-app notification until a safe delivery channel is selected.
+Auth, Users, Access Requests, Reviews, Audit Log, Teams, Assignments, Notifications, and paginated alert catch-up are connected to backend Phases 14-17 on `main`. The owner reported migrations 013-020 applied successfully in Supabase; there was no independent live-schema query. Rejected access requests remain visible in Admin request/audit records and do not generate an in-app notification until a safe delivery channel is selected.
 
-Alerts and Reports are connected after PR #22; earlier phase descriptions retain their historical preview status. PR #30 completes Notifications and paginated REST catch-up, PR #31 connects cases/SLA, PR #32 connects vendor workflows, and PR #33 connects dashboard summaries, audit-rule definitions, and authoritative analytics. Migration application is owner-reported, not independently verified. Evidence storage/scanning configuration remains a prerequisite for uploads. Vercel Production deployments triggered by prior PR merges do not complete approved-origin, backend-topology, or final E2E work in Phase 24.
+Alerts and Reports are connected after PR #22; earlier phase descriptions retain their historical preview status. PR #30 completes Notifications and paginated REST catch-up, PR #31 connects cases/SLA, PR #32 connects vendor workflows, PR #33 connects dashboard summaries, audit-rule definitions, and authoritative analytics, and PR #34 connects organization settings. Migration application is owner-reported, not independently verified. Evidence storage/scanning configuration remains a prerequisite for uploads. Vercel Production deployments triggered by prior PR merges do not complete approved-origin, backend-topology, or final E2E work in Phase 24.
 
-Dashboard summary, the audit-rule catalog, and coverage/trend analytics are connected to backend Phase 20 endpoints on `main`. Backend remains authoritative for counts, coverage, rule definitions, and risk trends.
+Dashboard summary, the audit-rule catalog, and coverage/trend analytics are connected to backend Phase 20 endpoints on `main`. Phase 21 connects settings reads to active project roles and organization-name updates to real authenticated Admins; other settings remain read-only. Backend remains authoritative for counts, coverage, rule definitions, risk trends, and persisted organization name.
 
 ## Frontend service boundaries
 
@@ -895,7 +895,7 @@ Dashboard summary, the audit-rule catalog, and coverage/trend analytics are conn
 | Cases | Yes | Yes | Yes | Connected on `main`; private storage/scanner deployment configuration remains pending |
 | Vendors | Yes | Yes | Yes | Connected on `main` after PR #32; migration 018 owner-reported applied |
 | Analytics | Yes | Yes | Yes | Connected on `main` after PR #33; migration 019 owner-reported applied |
-| Settings | Yes | Yes | No | Read-only preview / unavailable persistence |
+| Settings | Yes | Yes | Yes | Organization Name is persisted and Admin-editable; remaining settings are read-only |
 
 ## Test and validation history
 
@@ -990,7 +990,7 @@ No frontend claim is made for the five audit-rule implementations, Isolation For
 - [x] Cases, discussion, closure, escalation, and SLA persistence (Phase 18); private evidence storage/scanning deployment configuration remains pending.
 - [x] Vendor profiles, watchlists, blocked-vendor workflows, and monitoring persistence (Phase 19).
 - [x] Audit-coverage and risk-trend analytics integration (Phase 20).
-- [ ] Settings persistence.
+- [x] Persisted Organization Name with Admin-only edit; other settings remain read-only (Phase 21, PR #34).
 - [x] Core Alerts and Reports integration activated in PR #22; historical local live verification recorded above.
 - [x] Authenticated Alerts/Reports/CSV integration and reconnect catch-up (Phases 14 and 17); final deployed three-role E2E remains pending Phase 24.
 - [ ] Deployment configuration, CORS, identity/security review, and full frontend-to-FastAPI-to-Supabase end-to-end testing.
@@ -1042,7 +1042,8 @@ No frontend claim is made for the five audit-rule implementations, Isolation For
 | 2026-10-03 | Phase 18 integration | Connected case workflows and SLA | PR #31; merge `6efb157`; owner confirmed migration 017 applied |
 | 2026-10-03 | Phase 19 integration | Connected vendor monitoring workflows | PR #32; merge `c3c3516`; owner confirmed migration 018 applied |
 | 2026-10-04 | Phase 20 integration | Connected authoritative dashboard, audit-rule catalog, coverage, and trends | PR #33; merge `45e3588`; owner confirmed migration 019 applied |
+| 2026-10-04 | Phase 21 integration | Connected Admin-managed Organization Name settings | PR #34; merge `37d9ac0`; owner confirmed migration 020 applied |
 
 ## Next action
 
-Preserve the existing frontend design, services, and adapters. Phases 17-20 are connected on `main`; the owner reported migrations 016-019 applied, without independent live-schema inspection. Phase 21 on `feature/settings-persistence` persists Organization Name for Admin editing only; other settings remain read-only. Evidence upload stays unavailable until private storage and antivirus scanning are configured. Deployment and final three-role E2E remain in Phase 24.
+Preserve the existing frontend design, services, and adapters. Phases 17-21 are connected on `main`; the owner reported migrations 016-020 applied, without independent live-schema inspection. Phase 21 persists Organization Name for Admin editing only; other settings remain read-only. Daily automatic reports are Phase 22. Evidence upload stays unavailable until private storage and antivirus scanning are configured. Deployment and final three-role E2E remain in Phase 24.
