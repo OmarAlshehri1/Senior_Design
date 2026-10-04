@@ -2970,6 +2970,35 @@ table.data-table {
   font-size: 11.5px;
 }
 
+.workspace-event-list {
+  display: grid;
+  gap: 8px;
+  max-height: 210px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.workspace-event-list li {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  background: var(--surface-subtle);
+  border-radius: var(--radius-md);
+}
+
+.workspace-event-name {
+  color: var(--text-primary);
+  font-size: 11.5px;
+  font-weight: 650;
+}
+
+.workspace-event-meta {
+  color: var(--text-muted);
+  font-size: 10.5px;
+}
+
 .workspace-neutral p {
   max-width: none;
   margin-top: 4px;

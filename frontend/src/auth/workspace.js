@@ -34,13 +34,13 @@ const WORKSPACE_DEFINITIONS = Object.freeze({
     roleLabel: ROLE_DEFINITIONS[ROLE_KEYS.ADMIN].displayName,
     contextLabel: 'Administrator Workspace',
     metricDefinitions: Object.freeze([
-      Object.freeze({ key: 'activeUsers', label: 'Active Users', description: 'Identity metrics are not available yet.', to: '/users' }),
-      Object.freeze({ key: 'lockedAccounts', label: 'Locked Accounts', description: 'Account security data is not available yet.', to: '/users' }),
-      Object.freeze({ key: 'failedLoginsToday', label: 'Failed Logins Today', description: 'Sign-in activity is not available yet.' }),
+      Object.freeze({ key: 'activeUsers', label: 'Active Users', description: 'Accounts currently allowed to sign in.', to: '/users' }),
+      Object.freeze({ key: 'lockedAccounts', label: 'Locked Accounts', description: 'Accounts temporarily blocked from signing in.', to: '/users' }),
+      Object.freeze({ key: 'failedLoginsToday', label: 'Failed Logins Today', description: 'Failed sign-ins recorded today (UTC).', to: '/audit-log' }),
     ]),
     sections: Object.freeze([
-      Object.freeze({ key: 'systemActivity', title: 'System Activity', source: 'AUDIT_EVENTS', emptyMessage: 'Security activity is not available yet.' }),
-      Object.freeze({ key: 'recentAuditLog', title: 'Recent Audit Log', to: '/audit-log', source: 'AUDIT_EVENTS', emptyMessage: 'Audit log activity is not available yet.' }),
+      Object.freeze({ key: 'systemActivity', title: 'System Activity', source: 'AUDIT_EVENTS', emptyMessage: 'No recent account security activity.' }),
+      Object.freeze({ key: 'recentAuditLog', title: 'Recent Audit Log', to: '/audit-log', source: 'AUDIT_EVENTS', emptyMessage: 'No recent audit events.' }),
     ]),
   }),
 });
@@ -58,11 +58,17 @@ export function getWorkspaceDefinition(role) {
   return WORKSPACE_DEFINITIONS[role] ?? null;
 }
 
-export function deriveWorkspaceData(role, { transactions = [] } = {}) {
+export function deriveWorkspaceData(role, { transactions = [], adminData = null } = {}) {
   const definition = getWorkspaceDefinition(role);
   if (!definition) return NEUTRAL_WORKSPACE;
 
-  const values = role === ROLE_KEYS.AUDITOR
+  const values = role === ROLE_KEYS.ADMIN && adminData
+    ? {
+      activeUsers: adminData.activeUsers,
+      lockedAccounts: adminData.lockedAccounts,
+      failedLoginsToday: adminData.failedLoginsToday,
+    }
+    : role === ROLE_KEYS.AUDITOR
     ? { transactionsNeedingReview: transactions.filter((item) => item?.ruleStatus === 'Review').length }
     : {};
 
@@ -71,7 +77,12 @@ export function deriveWorkspaceData(role, { transactions = [] } = {}) {
   ));
   const sections = definition.sections.map((section) => Object.freeze({
     ...section,
-    items: Object.freeze([]),
+    items: Object.freeze(
+      role === ROLE_KEYS.ADMIN && adminData
+        ? (adminData[section.key] ?? [])
+        : []
+    ),
+    error: adminData?.errors?.[section.key] ?? null,
   }));
 
   return Object.freeze({
@@ -80,6 +91,7 @@ export function deriveWorkspaceData(role, { transactions = [] } = {}) {
     contextLabel: definition.contextLabel,
     metrics: Object.freeze(metrics),
     sections: Object.freeze(sections),
+    metricErrors: adminData?.errors ?? Object.freeze({}),
     message: null,
   });
 }

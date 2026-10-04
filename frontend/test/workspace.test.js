@@ -76,10 +76,26 @@ test('workspace definitions contain no fake users or activity records', () => {
   }
 });
 
-test('Administrator security metrics remain unavailable without security services', () => {
-  const workspace = deriveWorkspaceData(ROLE_KEYS.ADMIN);
-  assert.ok(workspace.metrics.every((metric) => metric.value === null));
-  assert.ok(workspace.sections.every((section) => section.items.length === 0));
+test('Administrator workspace maps live user, login, and audit data', () => {
+  const securityEvent = { id: 'security-1', action: 'LOGIN_FAILED' };
+  const auditEvent = { id: 'audit-1', action: 'USER_ROLE_CHANGED' };
+  const workspace = deriveWorkspaceData(ROLE_KEYS.ADMIN, {
+    adminData: {
+      activeUsers: 3,
+      lockedAccounts: 1,
+      failedLoginsToday: 2,
+      systemActivity: [securityEvent],
+      recentAuditLog: [auditEvent],
+    },
+  });
+
+  assert.deepEqual(Object.fromEntries(workspace.metrics.map(({ key, value }) => [key, value])), {
+    activeUsers: 3,
+    lockedAccounts: 1,
+    failedLoginsToday: 2,
+  });
+  assert.deepEqual(workspace.sections[0].items, [securityEvent]);
+  assert.deepEqual(workspace.sections[1].items, [auditEvent]);
 });
 
 test('Supervisor team metrics remain unavailable without team relationships', () => {
