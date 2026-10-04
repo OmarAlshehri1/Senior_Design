@@ -130,6 +130,46 @@ def test_get_daily_audit_summary(
     assert request["headers"]["apikey"] == "sb_secret_test"
 
 
+def test_get_latest_transaction_period(
+    monkeypatch: pytest.MonkeyPatch,
+    supabase_environment: None,
+) -> None:
+    request: dict[str, Any] = {}
+
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> list[dict[str, str]]:
+            return [{"transaction_timestamp": "2026-07-01T07:54:00+00:00"}]
+
+    class FakeClient:
+        def __init__(self, timeout: float) -> None:
+            pass
+
+        def __enter__(self) -> "FakeClient":
+            return self
+
+        def __exit__(self, exc_type: object, exc_value: object, traceback: object) -> None:
+            return None
+
+        def get(self, endpoint: str, *, headers: dict[str, str], params: dict[str, str]) -> FakeResponse:
+            request.update(endpoint=endpoint, params=params)
+            return FakeResponse()
+
+    monkeypatch.setattr(repository.httpx, "Client", FakeClient)
+    assert repository.get_latest_transaction_period() == (
+        datetime(2026, 7, 1, tzinfo=timezone.utc),
+        datetime(2026, 7, 2, tzinfo=timezone.utc),
+    )
+    assert request["params"] == {
+        "select": "transaction_timestamp",
+        "transaction_timestamp": "not.is.null",
+        "order": "transaction_timestamp.desc",
+        "limit": "1",
+    }
+
+
 def test_persist_completed_report(
     monkeypatch: pytest.MonkeyPatch,
     supabase_environment: None,
@@ -205,7 +245,7 @@ def test_persist_completed_report(
         "select": repository.REPORT_COLUMNS,
     }
     assert request["headers"]["Prefer"] == (
-        "resolution=ignore-duplicates,return=representation"
+        "resolution=merge-duplicates,return=representation"
     )
     assert request["json"]["id"] == "RPT-2026-10-03"
     assert request["json"]["report_type"] == "DAILY"
@@ -213,11 +253,11 @@ def test_persist_completed_report(
     assert isinstance(request["json"]["completed_at"], str)
 
 
-def test_persist_completed_report_does_not_replace_an_existing_daily_report(
+def test_persist_completed_report_replaces_an_existing_daily_report(
     monkeypatch: pytest.MonkeyPatch,
     supabase_environment: None,
 ) -> None:
-    requests: list[str] = []
+    request: dict[str, Any] = {}
     report_row = build_report_row()
 
     class FakeResponse:
@@ -225,7 +265,7 @@ def test_persist_completed_report_does_not_replace_an_existing_daily_report(
             return None
 
         def json(self) -> list[dict[str, Any]]:
-            return [] if requests[-1] == "POST" else [report_row]
+            return [report_row]
 
     class FakeClient:
         def __init__(self, timeout: float) -> None:
@@ -237,13 +277,8 @@ def test_persist_completed_report_does_not_replace_an_existing_daily_report(
         def __exit__(self, exc_type: object, exc_value: object, traceback: object) -> None:
             return None
 
-        def post(self, endpoint: str, **_kwargs: Any) -> FakeResponse:
-            requests.append("POST")
-            return FakeResponse()
-
-        def get(self, endpoint: str, *, headers: dict[str, str], params: dict[str, str]) -> FakeResponse:
-            requests.append("GET")
-            assert params["id"] == "eq.RPT-2026-10-03"
+        def post(self, endpoint: str, *, headers: dict[str, str], **_kwargs: Any) -> FakeResponse:
+            request["prefer"] = headers["Prefer"]
             return FakeResponse()
 
     monkeypatch.setattr(repository.httpx, "Client", FakeClient)
@@ -252,8 +287,8 @@ def test_persist_completed_report_does_not_replace_an_existing_daily_report(
         summary={"daily_summary": {"transaction_count": 999}},
     )
 
-    assert requests == ["POST", "GET"]
-    assert original["summary"]["daily_summary"]["transaction_count"] == 3
+    assert request["prefer"] == "resolution=merge-duplicates,return=representation"
+    assert original["id"] == "RPT-2026-10-03"
 
 
 def test_list_reports_maps_rows_and_total(

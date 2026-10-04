@@ -34,22 +34,6 @@ function formatReportTimestamp(timestamp) {
   }).format(new Date(timestamp));
 }
 
-function buildTodayUtcPeriod(now = new Date()) {
-  const periodStart = new Date(Date.UTC(
-    now.getUTCFullYear(),
-    now.getUTCMonth(),
-    now.getUTCDate()
-  ));
-  const periodEnd = new Date(periodStart);
-  periodEnd.setUTCDate(periodEnd.getUTCDate() + 1);
-
-  return {
-    type: 'DAILY',
-    period_start: periodStart.toISOString(),
-    period_end: periodEnd.toISOString(),
-  };
-}
-
 function ReportRequestState({
   title,
   message,
@@ -164,9 +148,7 @@ export default function Reports() {
     setError(null);
 
     try {
-      const generated = await reportsService.generate(
-        buildTodayUtcPeriod()
-      );
+      const generated = await reportsService.generateLatest();
 
       if (!generated?.id) {
         throw new Error(
@@ -374,7 +356,7 @@ export default function Reports() {
                 />
                 {generating
                   ? 'Generating…'
-                  : 'Generate Today'}
+                  : 'Generate Latest Activity'}
               </button>
 
               {downloadUrl && report.status === 'COMPLETED' && (

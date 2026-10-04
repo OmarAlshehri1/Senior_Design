@@ -164,16 +164,19 @@ test('reports service adapts list and generation responses', async () => {
     period_start: payload.period_start,
     period_end: payload.period_end,
   });
+  const latest = await service.generateLatest();
   const downloaded = await service.download(payload.id);
 
   assert.equal(listed.items[0].id, payload.id);
   assert.equal(generated.id, payload.id);
+  assert.equal(latest.id, payload.id);
   assert.equal(await downloaded.text(), 'report');
   assert.deepEqual(
     requests.map(({ method, path }) => ({ method, path })),
     [
       { method: 'GET', path: '/reports' },
       { method: 'POST', path: '/reports' },
+      { method: 'POST', path: '/reports/latest' },
       { method: 'FILE', path: '/reports/RPT-2026-10-03/download' },
     ]
   );

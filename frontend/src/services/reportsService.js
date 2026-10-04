@@ -17,6 +17,9 @@ export function createReportsService(
     generate: async (reportRequest, options = {}) => adaptReport(
       await client.post('/reports', reportRequest, options)
     ),
+    generateLatest: async (options = {}) => adaptReport(
+      await client.post('/reports/latest', {}, options)
+    ),
     getDownloadUrl(reportId) {
       if (
         !normalizedBaseUrl

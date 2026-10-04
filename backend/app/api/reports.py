@@ -30,6 +30,7 @@ from app.repositories.supabase_transactions import (
 from app.services.audit_reports import (
     build_report_csv,
     generate_daily_report,
+    generate_latest_activity_report,
 )
 
 
@@ -95,6 +96,27 @@ async def create_report(
             period_start=request.period_start,
             period_end=request.period_end,
         )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc),
+        ) from exc
+    except SupabaseConfigurationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Report storage is not configured.",
+        ) from exc
+    except SupabasePersistenceError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Report could not be generated.",
+        ) from exc
+
+
+@router.post("/latest", status_code=status.HTTP_201_CREATED)
+async def create_latest_activity_report() -> dict[str, object]:
+    try:
+        return await run_in_threadpool(generate_latest_activity_report)
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,

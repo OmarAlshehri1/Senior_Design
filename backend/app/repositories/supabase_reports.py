@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import httpx
@@ -108,6 +108,60 @@ def get_daily_audit_summary(
     return payload
 
 
+def get_latest_transaction_period() -> tuple[datetime, datetime]:
+    """Return the UTC day containing the latest dated transaction."""
+    url, _ = _get_configuration()
+    endpoint = f"{url}/rest/v1/transactions"
+
+    try:
+        with httpx.Client(timeout=REQUEST_TIMEOUT_SECONDS) as client:
+            response = client.get(
+                endpoint,
+                headers=_get_headers(),
+                params={
+                    "select": "transaction_timestamp",
+                    "transaction_timestamp": "not.is.null",
+                    "order": "transaction_timestamp.desc",
+                    "limit": "1",
+                },
+            )
+            response.raise_for_status()
+            rows = response.json()
+    except (httpx.HTTPError, ValueError) as exc:
+        raise SupabasePersistenceError(
+            "Failed to find the latest transaction date."
+        ) from exc
+
+    if (
+        not isinstance(rows, list)
+        or not rows
+        or not isinstance(rows[0], dict)
+    ):
+        raise SupabasePersistenceError(
+            "No dated transactions are available for a report."
+        )
+
+    raw_timestamp = rows[0].get("transaction_timestamp")
+    if not isinstance(raw_timestamp, str):
+        raise SupabasePersistenceError(
+            "The latest transaction has no valid timestamp."
+        )
+
+    try:
+        timestamp = datetime.fromisoformat(raw_timestamp.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise SupabasePersistenceError(
+            "The latest transaction has an invalid timestamp."
+        ) from exc
+
+    if timestamp.tzinfo is None:
+        timestamp = timestamp.replace(tzinfo=timezone.utc)
+    start = timestamp.astimezone(timezone.utc).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    return start, start + timedelta(days=1)
+
+
 def persist_completed_report(
     *,
     report_id: str,
@@ -119,7 +173,7 @@ def persist_completed_report(
     endpoint = f"{url}/rest/v1/audit_reports"
 
     headers = _get_headers()
-    headers["Prefer"] = "resolution=ignore-duplicates,return=representation"
+    headers["Prefer"] = "resolution=merge-duplicates,return=representation"
 
     payload = {
         "id": report_id,
@@ -152,12 +206,6 @@ def persist_completed_report(
             "Failed to persist the audit report."
         ) from exc
 
-    if isinstance(rows, list) and not rows:
-        # A daily report is immutable once completed. Concurrent or manual
-        # regeneration returns the canonical stored record instead of replacing it.
-        existing = get_report_by_id(report_id)
-        if existing is not None and existing.get("status") == "COMPLETED":
-            return existing
     if not isinstance(rows, list) or not rows or not isinstance(rows[0], dict):
         raise SupabasePersistenceError(
             "Supabase returned an invalid report response."

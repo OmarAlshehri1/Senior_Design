@@ -7,6 +7,7 @@ from typing import Any
 
 from app.repositories.supabase_reports import (
     get_daily_audit_summary,
+    get_latest_transaction_period,
     persist_completed_report,
 )
 
@@ -79,6 +80,15 @@ def generate_daily_report(
         period_start=normalized_start,
         period_end=normalized_end,
         summary=summary,
+    )
+
+
+def generate_latest_activity_report() -> dict[str, Any]:
+    """Generate a daily report for the day with the latest dated transaction."""
+    period_start, period_end = get_latest_transaction_period()
+    return generate_daily_report(
+        period_start=period_start,
+        period_end=period_end,
     )
 
 

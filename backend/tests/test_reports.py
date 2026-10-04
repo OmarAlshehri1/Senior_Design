@@ -112,6 +112,18 @@ def test_create_daily_report(
     )
 
 
+def test_create_latest_activity_report(monkeypatch: pytest.MonkeyPatch) -> None:
+    report = build_report()
+    monkeypatch.setattr(
+        reports_api,
+        "generate_latest_activity_report",
+        lambda: report,
+    )
+    response = client.post("/api/v1/reports/latest", json={})
+    assert response.status_code == 201
+    assert response.json() == report
+
+
 def test_create_report_rejects_invalid_period(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
