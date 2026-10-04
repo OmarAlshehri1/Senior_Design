@@ -530,7 +530,7 @@ Acceptance criteria:
 
 Phase 21 complete: PR #34 (`d8ec2b2`, merge `37d9ac0`). Main verification passed backend `214 passed` (one known Starlette TestClient warning), isolated PGlite `29 passed`, frontend `227 passed`, lint, production build, and `git diff --check`. The owner confirmed Migration 020 applied; this was not independently queried. Vercel Preview checks passed. No live data was used for testing.
 
-## Phase 22 — Automatic daily reports (CURRENT)
+## Phase 22 — Automatic daily reports (implemented and locally verified; runtime activation deferred)
 
 Omar mapping: section 9, sections 11–14; dependency: Phases 13B–14 and completed report integration.
 
@@ -545,10 +545,12 @@ Acceptance criteria:
 - With no browser open, a scheduled run generates the intended half-open UTC daily period and records success/failure.
 - Tests cover restart, missed runs, repeated/concurrent runs, and partial failure without losing prior report history; document report regeneration/version semantics.
 - Authorized list/generation/download still work; CSV stays available. PDF has separate acceptance evidence only if required.
-- [ ] Repeated manual or scheduled generation cannot replace an existing completed period; report-version changes require an explicit versioned migration or new report period.
+- [x] Repeated manual or scheduled generation cannot replace an existing completed period; report-version changes require an explicit versioned migration or new report period.
 - Scheduling infrastructure that creates an external service is explained and approved before creation; deployed scheduling is verified in Phase 24.
 
-## Phase 23 — Performance and requirements evidence
+Phase 22 complete on `main`: PR #36 (`2a713a1`, merge `6eb63d3`). The owner confirmed Migration 021 applied successfully; this is owner-reported and was not independently queried. Main verification passed backend `221 passed` (one known Starlette TestClient warning), isolated PGlite `30 passed`, frontend `227 passed`, lint, production build, and `git diff --check`. The scheduler remains disabled by default; enabling and verifying it in the selected hosting topology remains Phase 24 work. No PDF requirement has been confirmed.
+
+## Phase 23 — Performance and requirements evidence (CURRENT)
 
 Omar mapping: sections 13–14; dependency: Phases 13–22.
 
@@ -641,7 +643,8 @@ These are historical implementation estimates retained from Phases 0–12, not c
 | 2026-10-03 | Added vendor monitoring workflows and governed watchlist/block requests | PR #32; `b9a9072`, merge `c3c3516`; owner confirmed migration 018 applied |
 | 2026-10-04 | Added authoritative dashboard, audit-rule catalog, and evaluation analytics | PR #33; `5437085`, merge `45e3588`; owner confirmed migration 019 applied |
 | 2026-10-04 | Added Admin-managed Organization Name settings with immutable audit history | PR #34; `d8ec2b2`, merge `37d9ac0`; owner confirmed migration 020 applied |
+| 2026-10-04 | Added opt-in durable automatic daily report scheduling, retries, catch-up, and immutable per-period results | PR #36; `2a713a1`, merge `6eb63d3`; owner confirmed migration 021 applied |
 
 ## Next action
 
-Phases 13A/13B and 14-21 are merged on `main`. Phase 21 merged as PR #34 (`d8ec2b2`, merge `37d9ac0`); main verification passed backend 214 tests, 29 isolated PGlite tests, frontend 227 tests, lint/build, and `git diff --check`. The project owner reported migrations 013-020 applied successfully; this was not independently queried. Phase 22 (automatic daily reports) is current on `feature/daily-report-scheduling`. The user requirements change in `backend/requirements.txt` and backup stash remain preserved and excluded from phase commits.
+Phases 13A/13B and 14-22 are merged on `main`. Phase 22 merged as PR #36 (`2a713a1`, merge `6eb63d3`); main verification passed backend 221 tests, 30 isolated PGlite tests, frontend 227 tests, lint, production build, and `git diff --check`. The project owner reported migrations 013-021 applied successfully; this was not independently queried. Phase 23 (performance and requirements evidence) is next. The user requirements change in `backend/requirements.txt` and backup stash remain preserved and excluded from phase commits.
