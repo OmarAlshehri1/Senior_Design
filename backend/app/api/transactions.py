@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
 
-from app.repositories.supabase_alerts import create_high_risk_alert
+from app.repositories.supabase_alerts import create_risk_alert
 from app.repositories.supabase_transactions import (
     SupabaseConfigurationError,
     SupabasePersistenceError,
@@ -405,11 +405,12 @@ async def create_transaction(
                 ),
             ) from exc
 
-    if risk_level == "HIGH" and risk_score is not None:
+    if risk_level in {"MEDIUM", "HIGH"} and risk_score is not None:
         try:
             alert = await run_in_threadpool(
-                create_high_risk_alert,
+                create_risk_alert,
                 transaction_id=transaction_data["id"],
+                severity=risk_level,
                 risk_score=risk_score,
                 risk_scoring_version=RISK_SCORING_VERSION,
                 request_received_at=request_received_at,

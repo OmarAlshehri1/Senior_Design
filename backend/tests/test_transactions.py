@@ -636,8 +636,14 @@ def test_create_transaction_persists_risk_score(
         }
     ]
 
-def test_high_risk_transaction_creates_and_publishes_alert(
+@pytest.mark.parametrize(
+    ("risk_level", "risk_score"),
+    [("HIGH", 80.0), ("MEDIUM", 60.0)],
+)
+def test_medium_and_high_risk_transactions_create_and_publish_alerts(
     monkeypatch: pytest.MonkeyPatch,
+    risk_level: str,
+    risk_score: float,
 ) -> None:
     created_alerts: list[dict[str, Any]] = []
     published_alerts: list[dict[str, Any]] = []
@@ -645,6 +651,7 @@ def test_high_risk_transaction_creates_and_publishes_alert(
     def capture_alert(
         *,
         transaction_id: str,
+        severity: str,
         risk_score: float,
         risk_scoring_version: str,
         request_received_at: Any,
@@ -653,14 +660,14 @@ def test_high_risk_transaction_creates_and_publishes_alert(
             "id": "AL-HIGH-001",
             "transaction_id": transaction_id,
             "created_at": request_received_at.isoformat(),
-            "severity": "HIGH",
-            "title": "High-risk transaction detected",
+            "severity": severity,
+            "title": f"{severity.title()}-risk transaction detected",
             "description": (
                 "The transaction requires auditor review."
             ),
             "reason": (
                 "Rule and anomaly results exceeded the "
-                "high-risk threshold."
+                f"{severity.lower()}-risk threshold."
             ),
             "status": "ACTIVE",
             "reviewed_at": None,
@@ -678,14 +685,14 @@ def test_high_risk_transaction_creates_and_publishes_alert(
 
     monkeypatch.setattr(
         "app.api.transactions.calculate_risk_score",
-        lambda rule_score, ai_score: 80.0,
+        lambda rule_score, ai_score: risk_score,
     )
     monkeypatch.setattr(
         "app.api.transactions.classify_risk_level",
-        lambda risk_score: "HIGH",
+        lambda score: risk_level,
     )
     monkeypatch.setattr(
-        "app.api.transactions.create_high_risk_alert",
+        "app.api.transactions.create_risk_alert",
         capture_alert,
     )
     monkeypatch.setattr(
@@ -699,11 +706,11 @@ def test_high_risk_transaction_creates_and_publishes_alert(
     response = client.post(
         "/api/v1/transactions",
         json={
-            "id": "TX-HIGH-ALERT-001",
+            "id": f"TX-{risk_level}-ALERT-001",
             "timestamp": "2026-10-03T03:00:00Z",
             "vendor_id": "VND-101",
             "vendor_name": "Almarai Dairy Co.",
-            "invoice_number": "INV-HIGH-ALERT-001",
+            "invoice_number": f"INV-{risk_level}-ALERT-001",
             "category": "Inventory",
             "amount": 500,
             "currency": "SAR",
@@ -715,9 +722,10 @@ def test_high_risk_transaction_creates_and_publishes_alert(
     )
 
     assert response.status_code == 201
-    assert response.json()["risk_score"] == 80.0
-    assert response.json()["risk_level"] == "HIGH"
+    assert response.json()["risk_score"] == risk_score
+    assert response.json()["risk_level"] == risk_level
     assert len(created_alerts) == 1
+    assert created_alerts[0]["severity"] == risk_level
     assert created_alerts[0]["latency_ms"] <= 5000
     assert published_alerts == created_alerts
 

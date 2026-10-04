@@ -79,13 +79,17 @@ def _parse_total(
         return returned_rows
 
 
-def create_high_risk_alert(
+def create_risk_alert(
     *,
     transaction_id: str,
+    severity: str,
     risk_score: float,
     risk_scoring_version: str,
     request_received_at: datetime,
 ) -> dict[str, Any]:
+    if severity not in {"MEDIUM", "HIGH"}:
+        raise ValueError("Risk alerts support MEDIUM or HIGH severity.")
+
     url, _ = _get_configuration()
     endpoint = f"{url}/rest/v1/alerts"
 
@@ -94,14 +98,20 @@ def create_high_risk_alert(
 
     payload = {
         "transaction_id": transaction_id,
-        "severity": "HIGH",
-        "title": "High-risk transaction detected",
+        "severity": severity,
+        "title": (
+            "High-risk transaction detected"
+            if severity == "HIGH"
+            else "Medium-risk transaction detected"
+        ),
         "description": (
             "The transaction requires auditor review."
+            if severity == "HIGH"
+            else "The transaction should be reviewed according to policy."
         ),
         "reason": (
             "Rule and anomaly results exceeded the "
-            "high-risk threshold."
+            f"{severity.lower()}-risk threshold."
         ),
         "status": "ACTIVE",
         "risk_score": risk_score,
@@ -136,6 +146,23 @@ def create_high_risk_alert(
         )
 
     return _map_alert(rows[0])
+
+
+def create_high_risk_alert(
+    *,
+    transaction_id: str,
+    risk_score: float,
+    risk_scoring_version: str,
+    request_received_at: datetime,
+) -> dict[str, Any]:
+    """Backward-compatible wrapper for existing high-risk callers."""
+    return create_risk_alert(
+        transaction_id=transaction_id,
+        severity="HIGH",
+        risk_score=risk_score,
+        risk_scoring_version=risk_scoring_version,
+        request_received_at=request_received_at,
+    )
 
 
 def list_alerts(

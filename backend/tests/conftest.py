@@ -149,9 +149,10 @@ def mock_transaction_persistence(
         fake_persist_transaction_risk_scores,
     )
 
-    def fake_create_high_risk_alert(
+    def fake_create_risk_alert(
         *,
         transaction_id: str,
+        severity: str,
         risk_score: float,
         risk_scoring_version: str,
         request_received_at: Any,
@@ -160,14 +161,14 @@ def mock_transaction_persistence(
             "id": "AL-TEST-001",
             "transaction_id": transaction_id,
             "created_at": request_received_at.isoformat(),
-            "severity": "HIGH",
-            "title": "High-risk transaction detected",
+            "severity": severity,
+            "title": f"{severity.title()}-risk transaction detected",
             "description": (
                 "The transaction requires auditor review."
             ),
             "reason": (
                 "Rule and anomaly results exceeded the "
-                "high-risk threshold."
+                f"{severity.lower()}-risk threshold."
             ),
             "status": "ACTIVE",
             "reviewed_at": None,
@@ -179,9 +180,9 @@ def mock_transaction_persistence(
     monkeypatch.setattr(
         (
             "app.api.transactions."
-            "create_high_risk_alert"
+            "create_risk_alert"
         ),
-        fake_create_high_risk_alert,
+        fake_create_risk_alert,
     )
 
     def unavailable_gemini_explanation(
