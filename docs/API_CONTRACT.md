@@ -417,7 +417,7 @@ Returns a completed report as `text/csv` with an attachment filename. Returns `4
 
 ### `POST /api/v1/reports`
 
-Generates and persists a completed daily report from authoritative stored results. Repeating the same UTC period safely updates the same deterministic report.
+Generates and persists a completed daily report from authoritative stored results. Repeating the same UTC period returns the existing canonical report without replacing its summary or history.
 
 Request:
 
@@ -428,6 +428,10 @@ Request:
   "period_end": "2026-09-21T00:00:00Z"
 }
 ```
+
+### `GET /api/v1/reports/schedule` (Admin)
+
+Returns whether the backend scheduler is enabled, the next UTC period to process, and up to 50 recent attempt records. The worker runs in the FastAPI lifespan when `DAILY_REPORT_SCHEDULER_ENABLED=true`; it targets the previous full UTC day, catches up missed periods sequentially, and retries failures with bounded backoff. It is disabled by default and must be enabled in the approved backend runtime during Phase 24.
 
 ## WebSocket contract
 

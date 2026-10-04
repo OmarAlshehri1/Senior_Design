@@ -6,6 +6,7 @@ from typing import Any
 import httpx
 from fastapi.encoders import jsonable_encoder
 
+from app.repositories import identity
 from app.repositories.supabase_transactions import (
     REQUEST_TIMEOUT_SECONDS,
     SupabasePersistenceError,
@@ -118,9 +119,7 @@ def persist_completed_report(
     endpoint = f"{url}/rest/v1/audit_reports"
 
     headers = _get_headers()
-    headers["Prefer"] = (
-        "resolution=merge-duplicates,return=representation"
-    )
+    headers["Prefer"] = "resolution=ignore-duplicates,return=representation"
 
     payload = {
         "id": report_id,
@@ -153,16 +152,56 @@ def persist_completed_report(
             "Failed to persist the audit report."
         ) from exc
 
-    if (
-        not isinstance(rows, list)
-        or not rows
-        or not isinstance(rows[0], dict)
-    ):
+    if isinstance(rows, list) and not rows:
+        # A daily report is immutable once completed. Concurrent or manual
+        # regeneration returns the canonical stored record instead of replacing it.
+        existing = get_report_by_id(report_id)
+        if existing is not None and existing.get("status") == "COMPLETED":
+            return existing
+    if not isinstance(rows, list) or not rows or not isinstance(rows[0], dict):
         raise SupabasePersistenceError(
             "Supabase returned an invalid report response."
         )
 
     return _map_report(rows[0])
+
+
+def claim_scheduled_daily_report() -> dict[str, Any] | None:
+    result = identity.rpc("claim_daily_audit_report")
+    if result is None:
+        return None
+    if not isinstance(result, dict) or not result.get("run_id") or not result.get("lease_token"):
+        raise identity.IdentityError("REPORT_SCHEDULE_UNAVAILABLE")
+    return result
+
+
+def complete_scheduled_daily_report(*, run_id: str, lease_token: str, summary: dict[str, Any]) -> dict[str, Any]:
+    result = identity.rpc(
+        "complete_daily_audit_report",
+        p_run_id=run_id,
+        p_lease_token=lease_token,
+        p_summary=summary,
+    )
+    if not isinstance(result, dict) or not result.get("report_id"):
+        raise identity.IdentityError("REPORT_SCHEDULE_UNAVAILABLE")
+    return result
+
+
+def fail_scheduled_daily_report(*, run_id: str, lease_token: str, error_code: str) -> bool:
+    result = identity.rpc(
+        "fail_daily_audit_report",
+        p_run_id=run_id,
+        p_lease_token=lease_token,
+        p_error_code=error_code,
+    )
+    return result is True
+
+
+def get_daily_report_schedule_status(*, actor_id: str) -> dict[str, Any]:
+    result = identity.rpc("get_daily_report_schedule_status", p_actor=actor_id)
+    if not isinstance(result, dict) or not isinstance(result.get("runs"), list):
+        raise identity.IdentityError("REPORT_SCHEDULE_UNAVAILABLE")
+    return result
 
 
 def list_reports(

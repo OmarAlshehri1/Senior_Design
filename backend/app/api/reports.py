@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from datetime import datetime
 from typing import Literal
 
@@ -13,12 +14,15 @@ from fastapi import (
 from pydantic import BaseModel
 from fastapi import Depends
 from app.services.identity import require_roles
+from app.services.identity import get_current_user
 from starlette.concurrency import run_in_threadpool
 
 from app.repositories.supabase_reports import (
+    get_daily_report_schedule_status,
     get_report_by_id,
     list_reports as repository_list_reports,
 )
+from app.repositories import identity
 from app.repositories.supabase_transactions import (
     SupabaseConfigurationError,
     SupabasePersistenceError,
@@ -34,6 +38,15 @@ router = APIRouter(
     tags=["reports"],
     dependencies=[Depends(require_roles("SUPERVISOR", "ADMIN"))],
 )
+
+
+@router.get("/schedule", dependencies=[Depends(require_roles("ADMIN"))])
+async def get_report_schedule(user: dict = Depends(get_current_user)) -> dict[str, object]:
+    try:
+        schedule = await run_in_threadpool(get_daily_report_schedule_status, actor_id=user["id"])
+    except identity.IdentityError as exc:
+        raise HTTPException(status_code=exc.status, detail=exc.code) from exc
+    return {"enabled": os.getenv("DAILY_REPORT_SCHEDULER_ENABLED", "false").lower() == "true", **schedule}
 
 
 class ReportGenerationRequest(BaseModel):
