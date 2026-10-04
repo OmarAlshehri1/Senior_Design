@@ -324,21 +324,21 @@ Targets:
 
 - [x] Activate the API data source with the frontend implementation.
 - [x] Configure `VITE_API_BASE_URL` and `VITE_WS_URL` for local integration.
-- [ ] Configure the deployed frontend API and WebSocket environment variables.
-- [ ] Configure backend CORS for the approved Vercel origin.
+- [x] Configure the deployed frontend API and WebSocket environment variables (owner-reported working on Vercel).
+- [x] Configure backend CORS for the Vercel origin (deployed preflights/API requests appear in Render logs with successful responses; owner-reported).
 - [x] Map backend `missing_fields` into `dataQuality.missingFields`.
 - [x] Display transaction and alert date/time values from authoritative timestamps.
 - [x] Map authoritative rule, AI, combined-risk, and Gemini explanation fields.
 - [x] Remove automatic mock transaction and alert fallback from API mode.
 - [x] Integrate durable alert listing, review updates, and `alert.created` WebSocket delivery.
 - [x] Integrate persisted daily report listing, generation, summaries, and CSV download.
-- [ ] Deploy FastAPI to the selected backend host.
-- [ ] Store secrets only in backend host environment variables.
+- [x] Deploy FastAPI to Render and the frontend to Vercel (owner-reported live deployment).
+- [x] Keep Supabase service credentials in backend/runtime environment variables; no credentials are recorded here (owner-reported working authenticated API).
 - [x] Run a local end-to-end test: frontend -> FastAPI -> Supabase -> frontend. Live verification loaded persisted alerts, changed an alert from `ACTIVE` to `REVIEWED`, received a newly generated high-risk alert through WebSocket without refreshing, generated `RPT-2026-10-03`, and downloaded its CSV.
 - [x] Commit and merge live frontend API integration (PR #22).
-- [ ] Configure deployed frontend and backend environments, approved CORS origins, and production secrets (deferred to Phase 24).
+- [x] Configure deployed frontend and backend environments and production API origins (owner-reported live operation; values have not been independently inspected).
 
-Deployment items above remain incomplete. Render backend and Vercel frontend are selected; the Render free/paid plan is undecided. Complete Phase 12 deployment work in Phase 24 after approval. The recorded local E2E covers the core integration, not the final three-role workflow.
+Deployment is live on Vercel (`senior-design-gold.vercel.app`) and Render (`Senior_Design`); the owner opened the site and confirmed the Render health endpoint returned `{"status":"ok","service":"continuous-auditing-api"}`. This is owner-provided smoke-test evidence, not an independent environment or security inspection. The final three-role workflow remains open in Phase 24.
 
 ## Phase 13 — Transaction integrity
 
@@ -530,7 +530,7 @@ Acceptance criteria:
 
 Phase 21 complete: PR #34 (`d8ec2b2`, merge `37d9ac0`). Main verification passed backend `214 passed` (one known Starlette TestClient warning), isolated PGlite `29 passed`, frontend `227 passed`, lint, production build, and `git diff --check`. The owner confirmed Migration 020 applied; this was not independently queried. Vercel Preview checks passed. No live data was used for testing.
 
-## Phase 22 — Automatic daily reports (implemented and locally verified; runtime activation deferred)
+## Phase 22 — Automatic daily reports (implemented; hosted scheduler activation unverified)
 
 Omar mapping: section 9, sections 11–14; dependency: Phases 13B–14 and completed report integration.
 
@@ -538,17 +538,18 @@ Omar mapping: section 9, sections 11–14; dependency: Phases 13B–14 and compl
 - [ ] Add PDF only if the official rubric or an explicit project decision confirms it is required.
 - [ ] Preserve Gemini after authoritative scoring and its optional-failure behavior.
 
-Implementation boundary: use a FastAPI lifespan worker controlled by `DAILY_REPORT_SCHEDULER_ENABLED` (default `false`), with a database lease/state row so multiple API instances cannot commit duplicate work. The worker targets the previous completed UTC calendar day, advances one day after success, and catches up missing days sequentially after restart. Persist each attempt and generic error code; retry with bounded exponential backoff. A completed report is canonical and immutable for its period: manual/scheduled regeneration returns the existing report instead of overwriting it. The worker creates no external service; Phase 24 configures and verifies it in the selected backend runtime. Admin-only status exposes whether the worker is enabled and recent execution history.
+Implementation boundary: use a FastAPI lifespan worker controlled by `DAILY_REPORT_SCHEDULER_ENABLED` (default `false`), with a database lease/state row so multiple API instances cannot commit duplicate work. The worker targets the previous completed UTC calendar day, advances one day after success, and catches up missing days sequentially after restart. Persist each attempt and generic error code; retry with bounded exponential backoff. Scheduled completion keeps the existing completed period when one already exists. Manual `POST /reports` regeneration upserts the current authoritative summary for that period. `POST /reports/latest` finds the latest non-null transaction timestamp, generates the summary for that UTC day, and upserts the report; this handles historical demo datasets that have no transactions dated today. The worker creates no external service; its live setting and execution history remain to be checked in Phase 24. Admin-only status exposes whether the worker is enabled and recent execution history.
 
 Acceptance criteria:
 
 - With no browser open, a scheduled run generates the intended half-open UTC daily period and records success/failure.
 - Tests cover restart, missed runs, repeated/concurrent runs, and partial failure without losing prior report history; document report regeneration/version semantics.
 - Authorized list/generation/download still work; CSV stays available. PDF has separate acceptance evidence only if required.
-- [x] Repeated manual or scheduled generation cannot replace an existing completed period; report-version changes require an explicit versioned migration or new report period.
+- [x] Manual regeneration refreshes the persisted summary for the same UTC period; scheduled completion remains idempotent and does not replace an existing completed report.
+- [x] The Reports UI can generate a report for the latest dated transaction activity rather than silently showing a zero-only current-day report for historical data.
 - Scheduling infrastructure that creates an external service is explained and approved before creation; deployed scheduling is verified in Phase 24.
 
-Phase 22 complete on `main`: PR #36 (`2a713a1`, merge `6eb63d3`). The owner confirmed Migration 021 applied successfully; this is owner-reported and was not independently queried. Main verification passed backend `221 passed` (one known Starlette TestClient warning), isolated PGlite `30 passed`, frontend `227 passed`, lint, production build, and `git diff --check`. The scheduler remains disabled by default; enabling and verifying it in the selected hosting topology remains Phase 24 work. No PDF requirement has been confirmed.
+Phase 22 is complete on `main`: PR #36 (`2a713a1`, merge `6eb63d3`) added scheduling, and commit `be7a052` added latest-activity report generation and manual refresh. The owner confirmed Migration 021 was applied (not independently queried). Before `be7a052`, the focused report tests passed (221 backend tests at the Phase 22 baseline); the latest report fix passed 20 focused backend tests and 3 frontend report integration tests locally. The Vite production build could not be run in the current restricted environment (`spawn EPERM`). The scheduler remains disabled by default; its deployed flag and execution history are unverified. No PDF requirement has been confirmed.
 
 ## Phase 23 — Performance and requirements evidence (project-target package complete; official rubric mapping unresolved)
 
@@ -568,19 +569,22 @@ Project-target evidence is packaged in [PERFORMANCE_BENCHMARKS.md](PERFORMANCE_B
 
 Phase 23 project-target package is complete on `main`: PR #38 (`0c18f54`, merge `04eaab3`). Main verification passed backend `221 passed` (one known Starlette TestClient warning), frontend `227 passed`, lint, production build, and `git diff --check`. The local synthetic benchmark processed 10,000/10,000 generated requests with zero failed responses; its persistence and alert stubs do not verify hosted throughput or delivery. Formal rubric mapping and production performance remain unresolved.
 
-## Phase 24 — Approved deployment and final three-role E2E (CURRENT — local preparation only; hosting plan and deployment approval pending)
+## Phase 24 — Production verification and final three-role E2E (CURRENT — live smoke-tested; end-to-end checks remain)
 
 Omar mapping: sections 2, 11–15; dependency: Phases 13–23 and explicit deployment approval.
 
-- [ ] Complete the unfinished Phase 12 hosting/env/CORS items on Render and Vercel after selecting and approving the Render plan.
-- [ ] Explain and obtain approval for live migrations, deployment, and external services; configure approved origins and backend-only secrets without committing `.env` or `dist`.
+- [x] Deploy the Vercel frontend and Render API; verify the public health endpoint and live authenticated page/API responses (owner-reported; independent checks remain outstanding).
+- [x] Select the M004 production Supabase project for the live application (owner-reported).
+- [ ] Verify deployed secret names/origin allowlists without exposing values, plus Render/Vercel runtime settings and the live scheduler flag.
+- [ ] After the latest application deployment completes, generate a Latest Activity report and verify it contains non-zero data for its displayed UTC period and that CSV download matches.
+- [ ] Verify Migration 022 (analytics optimization) and Migration 023 (medium-risk alert/notification handling) against the live schema; owner reports Migration 022 succeeded and the medium-alert demo created 574 alerts, but these are not independent schema checks.
 - [ ] Document the chosen worker/instance topology and WebSocket delivery/recovery design; an in-process manager does not broadcast across workers/instances.
-- [ ] Run deployed E2E for Auditor, Supervisor, and Admin, including direct URLs and denied backend actions.
+- [ ] Run deployed E2E for Auditor, Supervisor, and Admin, including direct URLs and denied backend actions. The owner reports the three role accounts are working; the complete role-by-role workflow has not been recorded.
 
 Acceptance criteria:
 
 - Verify login/role -> dashboard/transactions -> rules/AI/risk -> alerts/review/assignment -> case/evidence/discussion/closure -> vendor workflow -> audit log/notifications -> reports/analytics for each permitted role.
-- Production Authorization/CORS, authenticated CSV/WebSocket, reconnect catch-up, restart behavior, deployed scheduling, and relevant performance targets pass on the selected hosting topology.
+- Verify Production Authorization/CORS, authenticated CSV/WebSocket, reconnect catch-up, restart behavior, and deployed scheduling on the selected hosting topology. Current logs show successful frontend API calls and health checks, but do not prove all these acceptance paths.
 - Verify approved migrations and actual environment configuration; do not infer them from local files. Final handoff lists endpoints, migrations, env names without secrets, results/evidence, and remaining gaps.
 
 ## Specification verification checklist
@@ -649,7 +653,10 @@ These are historical implementation estimates retained from Phases 0–12, not c
 | 2026-10-04 | Added Admin-managed Organization Name settings with immutable audit history | PR #34; `d8ec2b2`, merge `37d9ac0`; owner confirmed migration 020 applied |
 | 2026-10-04 | Added opt-in durable automatic daily report scheduling, retries, catch-up, and immutable per-period results | PR #36; `2a713a1`, merge `6eb63d3`; owner confirmed migration 021 applied |
 | 2026-10-04 | Packaged versioned scoring/coverage evidence and a reproducible 10,000-request local synthetic benchmark; formal rubric and hosted performance remain unresolved | PR #38; `0c18f54`, merge `04eaab3` |
+| 2026-10-04 | Optimized authoritative analytics query plans | Migration 022; owner reports successful application in M004 Supabase SQL Editor; independent schema verification pending |
+| 2026-10-04 | Added medium-risk alerts and notification delivery; demo script created 574 alerts | PR/commit `f29ee5b`; Migration 023 owner-reported applied; demo data is synthetic |
+| 2026-10-04 | Fixed report generation for historical datasets by reporting on the latest dated transaction day and refreshing manual same-period reports | Commit `be7a052`, pushed to `main`; local focused tests passed; hosted deployment verification pending |
 
 ## Next action
 
-Phases 13A/13B and 14-23 are merged on `main`. Phase 23 merged as PR #38 (`0c18f54`, merge `04eaab3`); main verification passed backend 221 tests, frontend 227 tests, lint, production build, and `git diff --check`. The owner authorized measuring recorded project targets only; formal rubric mapping remains pending because no official rubric was supplied. Phase 24 local preparation is next. The Render plan and production deployment require a separate decision and approval. The user requirements change in `backend/requirements.txt` and backup stash remain preserved and excluded from phase commits.
+Phases 13A/13B and 14–23 are merged on `main`; subsequent production hardening was pushed in `f29ee5b` (medium-risk alerts) and `be7a052` (latest-activity reports). Owner-reported live evidence: Vercel/Render are serving the app, health returns OK, Migration 022 succeeded, and the medium-alert demo created 574 alerts. The owner also reports 10,011 stored transactions and a demo evaluation mix of 9,007 complete, 800 partial, 201 not evaluated among eligible rows; three alert-linked transactions were excluded from that demo update. These demo changes are synthetic and do not represent company policy or untouched source data. Formal rubric mapping and hosted performance remain unresolved. Next: verify the new report after deployment, finish the three-role workflow and hosted worker/reconnect checks, and independently verify the reported live migrations where access permits. Existing uncommitted `backend/requirements.txt` and other demo artifacts remain outside this documentation update.
