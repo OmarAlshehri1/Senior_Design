@@ -550,7 +550,7 @@ Acceptance criteria:
 
 Phase 22 complete on `main`: PR #36 (`2a713a1`, merge `6eb63d3`). The owner confirmed Migration 021 applied successfully; this is owner-reported and was not independently queried. Main verification passed backend `221 passed` (one known Starlette TestClient warning), isolated PGlite `30 passed`, frontend `227 passed`, lint, production build, and `git diff --check`. The scheduler remains disabled by default; enabling and verifying it in the selected hosting topology remains Phase 24 work. No PDF requirement has been confirmed.
 
-## Phase 23 — Performance and requirements evidence (CURRENT)
+## Phase 23 — Performance and requirements evidence (project-target package complete; official rubric mapping unresolved)
 
 Omar mapping: sections 13–14; dependency: Phases 13–22.
 
@@ -566,7 +566,9 @@ Acceptance criteria:
 
 Project-target evidence is packaged in [PERFORMANCE_BENCHMARKS.md](PERFORMANCE_BENCHMARKS.md) with its machine-readable result. The owner did not provide an official rubric for formal mapping; this remains an explicit unresolved item, not an inferred requirement.
 
-## Phase 24 — Approved deployment and final three-role E2E
+Phase 23 project-target package is complete on `main`: PR #38 (`0c18f54`, merge `04eaab3`). Main verification passed backend `221 passed` (one known Starlette TestClient warning), frontend `227 passed`, lint, production build, and `git diff --check`. The local synthetic benchmark processed 10,000/10,000 generated requests with zero failed responses; its persistence and alert stubs do not verify hosted throughput or delivery. Formal rubric mapping and production performance remain unresolved.
+
+## Phase 24 — Approved deployment and final three-role E2E (CURRENT — local preparation only; hosting plan and deployment approval pending)
 
 Omar mapping: sections 2, 11–15; dependency: Phases 13–23 and explicit deployment approval.
 
@@ -646,7 +648,8 @@ These are historical implementation estimates retained from Phases 0–12, not c
 | 2026-10-04 | Added authoritative dashboard, audit-rule catalog, and evaluation analytics | PR #33; `5437085`, merge `45e3588`; owner confirmed migration 019 applied |
 | 2026-10-04 | Added Admin-managed Organization Name settings with immutable audit history | PR #34; `d8ec2b2`, merge `37d9ac0`; owner confirmed migration 020 applied |
 | 2026-10-04 | Added opt-in durable automatic daily report scheduling, retries, catch-up, and immutable per-period results | PR #36; `2a713a1`, merge `6eb63d3`; owner confirmed migration 021 applied |
+| 2026-10-04 | Packaged versioned scoring/coverage evidence and a reproducible 10,000-request local synthetic benchmark; formal rubric and hosted performance remain unresolved | PR #38; `0c18f54`, merge `04eaab3` |
 
 ## Next action
 
-Phases 13A/13B and 14-22 are merged on `main`. Phase 22 merged as PR #36 (`2a713a1`, merge `6eb63d3`); main verification passed backend 221 tests, 30 isolated PGlite tests, frontend 227 tests, lint, production build, and `git diff --check`. The project owner reported migrations 013-021 applied successfully; this was not independently queried. Phase 23 packages project-target evidence and local benchmark results; formal rubric mapping remains pending because no official rubric was supplied. The user requirements change in `backend/requirements.txt` and backup stash remain preserved and excluded from phase commits.
+Phases 13A/13B and 14-23 are merged on `main`. Phase 23 merged as PR #38 (`0c18f54`, merge `04eaab3`); main verification passed backend 221 tests, frontend 227 tests, lint, production build, and `git diff --check`. The owner authorized measuring recorded project targets only; formal rubric mapping remains pending because no official rubric was supplied. Phase 24 local preparation is next. The Render plan and production deployment require a separate decision and approval. The user requirements change in `backend/requirements.txt` and backup stash remain preserved and excluded from phase commits.
