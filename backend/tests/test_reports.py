@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 
 from app.api import reports as reports_api
 from app.main import app
+from app.services.identity import get_current_user
 
 
 client = TestClient(app)
@@ -218,3 +219,20 @@ def test_download_incomplete_report(
     assert response.json()["detail"] == (
         "Report is not ready for download."
     )
+
+
+def test_report_schedule_status_is_admin_only_and_reports_runtime_flag(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(reports_api, "get_daily_report_schedule_status", lambda *, actor_id: {
+        "next_period_start": "2026-10-04", "runs": []})
+    app.dependency_overrides[get_current_user] = lambda: {
+        "id": "admin-1", "role": "ADMIN", "account_status": "ACTIVE"}
+    monkeypatch.setenv("DAILY_REPORT_SCHEDULER_ENABLED", "true")
+    try:
+        response = client.get("/api/v1/reports/schedule")
+        assert response.status_code == 200
+        assert response.json() == {"enabled": True, "next_period_start": "2026-10-04", "runs": []}
+        app.dependency_overrides[get_current_user] = lambda: {
+            "id": "supervisor-1", "role": "SUPERVISOR", "account_status": "ACTIVE"}
+        assert client.get("/api/v1/reports/schedule").status_code == 403
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)

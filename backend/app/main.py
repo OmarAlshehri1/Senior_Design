@@ -47,9 +47,12 @@ def get_allowed_origins() -> list[str]:
 async def lifespan(app: FastAPI):
     from app.services.transaction_processing import enabled, recovery_loop
     from app.services.case_sla import escalation_loop
+    from app.services.daily_report_scheduler import daily_report_loop
     task = asyncio.create_task(recovery_loop()) if enabled() else None
     sla_enabled = os.getenv("CASE_SLA_ESCALATION_ENABLED", "false").lower() == "true"
     sla_task = asyncio.create_task(escalation_loop()) if sla_enabled else None
+    reports_enabled = os.getenv("DAILY_REPORT_SCHEDULER_ENABLED", "false").lower() == "true"
+    report_task = asyncio.create_task(daily_report_loop()) if reports_enabled else None
     try:
         yield
     finally:
@@ -61,6 +64,10 @@ async def lifespan(app: FastAPI):
             sla_task.cancel()
             with suppress(asyncio.CancelledError):
                 await sla_task
+        if report_task is not None:
+            report_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await report_task
 
 
 app = FastAPI(

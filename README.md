@@ -4,7 +4,7 @@ Senior Design project for team **M004**.
 
 This repository is a monorepo containing the React frontend, FastAPI backend, and shared API contract. The system monitors standardized retail transactions, evaluates audit rules and anomalous behavior, produces a unified risk assessment, and delivers high-risk alerts.
 
-Main at `37d9ac0` includes PR #22 and PRs #26-34: transaction/audit/report integration, Auth/RBAC, reviews/audit history, team-scoped assignments, notifications, case/SLA workflows, vendor monitoring, authoritative analytics, and Admin-managed organization settings. The project owner reports Supabase migrations 012-020 applied successfully; this was not independently queried.
+Main includes PR #22 and PRs #26-35: transaction/audit/report integration, Auth/RBAC, reviews/audit history, team-scoped assignments, notifications, case/SLA workflows, vendor monitoring, authoritative analytics, and Admin-managed organization settings. The project owner reports Supabase migrations 012-020 applied successfully; this was not independently queried.
 
 Phases 17-21 are merged. Automatic report scheduling and performance evidence remain Phases 22-23. Private evidence storage/scanner configuration, approved deployment settings, and final three-role E2E remain in Phase 24. Phase 13A separates insert-only runtime creation (`409` on duplicate ID) from offline seed upsert. `TRANSACTION_RECOVERY_ENABLED` remains false; the legacy processing path while disabled still uses separate persistence steps. See [the recovery design](docs/TRANSACTION_RECOVERY_DESIGN.md).
 
@@ -95,7 +95,7 @@ Verify service health at:
 GET http://localhost:8000/api/v1/health
 ```
 
-Implemented routes include health; authenticated transaction, alert, report, identity, review, team, notification, case, vendor, analytics, and settings APIs; and `/ws/alerts`. Routes enforce backend Auth/RBAC according to role and object scope. Only Admins can update the persisted organization name; other settings are read-only. Daily report scheduling remains future work. See [API_CONTRACT.md](docs/API_CONTRACT.md) for endpoint details and remaining boundaries.
+Implemented routes include health; authenticated transaction, alert, report, identity, review, team, notification, case, vendor, analytics, and settings APIs; Admin-only report schedule status; and `/ws/alerts`. Routes enforce backend Auth/RBAC according to role and object scope. Only Admins can update the persisted organization name; other settings are read-only. The scheduled report worker is opt-in through `DAILY_REPORT_SCHEDULER_ENABLED` and deployment activation remains in Phase 24. See [API_CONTRACT.md](docs/API_CONTRACT.md) for endpoint details and remaining boundaries.
 
 ## Verification baseline
 
@@ -107,7 +107,7 @@ Main verification after PR #33 on 2026-10-04: backend `213 passed` with one know
 
 Main verification after PR #34 on 2026-10-04: backend `214 passed` with one known Starlette TestClient deprecation warning, 29 isolated PGlite tests passed, frontend `227 passed`, lint and production build passed. The owner reported Migration 020 applied; this was not independently queried. These results do not prove deployed end-to-end behavior.
 
-Migration files 001–020 are present. The project owner reported migrations 012–020 applied successfully; this was not independently queried. Stored model metrics report held-out detection 87.04% and false positives 3.45%; training was not rerun. Historical coverage/latency measurements are retained in the backend plan. A 10,000-row dataset does not prove throughput, and manual report generation does not prove automatic daily scheduling.
+Migration files 001–021 are present. The project owner reported migrations 012–020 applied successfully; this was not independently queried. Migration 021 is the Phase 22 report scheduler schema and remains pending owner application before merge. Stored model metrics report held-out detection 87.04% and false positives 3.45%; training was not rerun. Historical coverage/latency measurements are retained in the backend plan. A 10,000-row dataset does not prove throughput.
 
 ## Technology stack
 

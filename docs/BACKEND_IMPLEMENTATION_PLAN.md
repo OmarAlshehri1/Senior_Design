@@ -34,7 +34,7 @@ Each phase (and each Phase 13 subphase) uses an independent branch and PR. Befor
 
 ## API implementation boundaries
 
-Implemented REST routes: health; authenticated transaction list/detail/create; alert list/review; report list/generation/CSV download; identity/session/access-request/user management; review history/audit-event reads; team and assignment operations; durable notifications; cases/evidence/SLA; vendor monitoring; authoritative analytics; and Admin-managed organization settings. `/ws/alerts` authenticates bearer tokens after connection. Automatic report scheduling remains Phase 22 work.
+Implemented REST routes: health; authenticated transaction list/detail/create; alert list/review; report list/generation/CSV download; identity/session/access-request/user management; review history/audit-event reads; team and assignment operations; durable notifications; cases/evidence/SLA; vendor monitoring; authoritative analytics; Admin-managed organization settings; and Admin-only report schedule status. `/ws/alerts` authenticates bearer tokens after connection. Phase 22 adds the opt-in worker and durable execution history.
 
 - `GET /api/v1/dashboard/summary`, `GET /api/v1/audit-rules`, and `GET /api/v1/analytics`: implemented and merged by PR #33; owner confirmed Migration 019 applied, without independent live-schema inspection.
 - Evaluation coverage: Phase 20 exposes authoritative latest-snapshot coverage, per-rule denominators, and explicit non-evaluation reasons through `/api/v1/analytics`.
@@ -538,11 +538,14 @@ Omar mapping: section 9, sections 11–14; dependency: Phases 13B–14 and compl
 - [ ] Add PDF only if the official rubric or an explicit project decision confirms it is required.
 - [ ] Preserve Gemini after authoritative scoring and its optional-failure behavior.
 
+Implementation boundary: use a FastAPI lifespan worker controlled by `DAILY_REPORT_SCHEDULER_ENABLED` (default `false`), with a database lease/state row so multiple API instances cannot commit duplicate work. The worker targets the previous completed UTC calendar day, advances one day after success, and catches up missing days sequentially after restart. Persist each attempt and generic error code; retry with bounded exponential backoff. A completed report is canonical and immutable for its period: manual/scheduled regeneration returns the existing report instead of overwriting it. The worker creates no external service; Phase 24 configures and verifies it in the selected backend runtime. Admin-only status exposes whether the worker is enabled and recent execution history.
+
 Acceptance criteria:
 
 - With no browser open, a scheduled run generates the intended half-open UTC daily period and records success/failure.
 - Tests cover restart, missed runs, repeated/concurrent runs, and partial failure without losing prior report history; document report regeneration/version semantics.
 - Authorized list/generation/download still work; CSV stays available. PDF has separate acceptance evidence only if required.
+- [ ] Repeated manual or scheduled generation cannot replace an existing completed period; report-version changes require an explicit versioned migration or new report period.
 - Scheduling infrastructure that creates an external service is explained and approved before creation; deployed scheduling is verified in Phase 24.
 
 ## Phase 23 — Performance and requirements evidence

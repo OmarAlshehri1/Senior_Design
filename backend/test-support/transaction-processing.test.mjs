@@ -645,4 +645,88 @@ test('organization settings are Admin-editable, validated, atomic with immutable
   assert.deepEqual(privileges, { anon_read: false, auth_update: false, service_update: true, auth_table_read: false });
 });
 
+test('daily report scheduler catches up by UTC day, serializes workers, retries failures, and preserves report history', async () => {
+  await prepareTeams();
+  const dueThrough = new Date();
+  dueThrough.setUTCHours(0, 0, 0, 0);
+  dueThrough.setUTCDate(dueThrough.getUTCDate() - 1);
+  const firstDay = new Date(dueThrough);
+  firstDay.setUTCDate(firstDay.getUTCDate() - 2);
+  const day = value => value.toISOString().slice(0, 10);
+  await db.query('update public.daily_report_schedule_state set next_period_start=$1::date,attempt_count=0,available_at=now(),lease_token=null,lease_until=null,active_run_id=null', [day(firstDay)]);
+
+  const claim = async () => (await db.query('select public.claim_daily_audit_report() as job')).rows[0].job;
+  const complete = (job, summary = { daily_summary: { total_transactions: 0 } }) => db.query(
+    'select public.complete_daily_audit_report($1::uuid,$2::uuid,$3::jsonb)',
+    [job.run_id, job.lease_token, JSON.stringify(summary)]);
+  const fail = (job, code = 'REPORT_STORAGE_ERROR') => db.query(
+    'select public.fail_daily_audit_report($1::uuid,$2::uuid,$3)',
+    [job.run_id, job.lease_token, code]);
+
+  const dayOneAttemptOne = await claim();
+  assert.equal(dayOneAttemptOne.period_start.slice(0, 10), day(firstDay));
+  const competingClaims = await Promise.all([claim(), claim()]);
+  assert.deepEqual(competingClaims, [null, null]);
+  const restored = new PGlite({ loadDataDir: await db.dumpDataDir(), extensions: { pgcrypto } });
+  try {
+    const saved = (await restored.query('select next_period_start, active_run_id from public.daily_report_schedule_state')).rows[0];
+    assert.equal(saved.next_period_start.toISOString().slice(0, 10), day(firstDay));
+    assert.equal(saved.active_run_id, dayOneAttemptOne.run_id);
+    assert.equal((await restored.query('select public.claim_daily_audit_report() as job')).rows[0].job, null);
+    await restored.query('update public.daily_report_schedule_state set lease_until=now()-interval \'1 second\'');
+    const recovered = (await restored.query('select public.claim_daily_audit_report() as job')).rows[0].job;
+    assert.equal(recovered.attempt_number, 2);
+    assert.equal((await restored.query('select status,error_code from public.daily_report_runs where id=$1', [dayOneAttemptOne.run_id])).rows[0].error_code, 'WORKER_LEASE_EXPIRED');
+  } finally { await restored.close(); }
+  await db.query('update public.daily_report_schedule_state set lease_until=now()-interval \'1 second\'');
+  const dayOne = await claim();
+  assert.equal(dayOne.attempt_number, 2);
+  await assert.rejects(complete(dayOneAttemptOne), /lease is no longer valid/);
+  await complete(dayOne);
+
+  const secondDay = new Date(firstDay);
+  secondDay.setUTCDate(secondDay.getUTCDate() + 1);
+  const dayTwoAttemptOne = await claim();
+  assert.equal(dayTwoAttemptOne.period_start.slice(0, 10), day(secondDay));
+  await db.exec(`create trigger fail_scheduled_report before insert on public.audit_reports for each row when (new.id='RPT-${day(secondDay)}') execute function public.test_fail();`);
+  try { await assert.rejects(complete(dayTwoAttemptOne), /injected isolated failure/); }
+  finally { await db.exec('drop trigger fail_scheduled_report on public.audit_reports'); }
+  assert.equal(Number((await db.query('select count(*) as n from public.audit_reports where id=$1', [`RPT-${day(secondDay)}`])).rows[0].n), 0);
+  assert.equal(Number((await db.query('select count(*) as n from public.audit_reports where id=$1', [`RPT-${day(firstDay)}`])).rows[0].n), 1);
+  assert.equal((await fail(dayTwoAttemptOne)).rows[0].fail_daily_audit_report, true);
+  const retryWindow = Number((await db.query('select extract(epoch from (available_at-now())) as seconds from public.daily_report_schedule_state')).rows[0].seconds);
+  assert.ok(retryWindow >= 29 && retryWindow <= 30, `unexpected initial retry delay: ${retryWindow}`);
+  await db.query('update public.daily_report_schedule_state set available_at=now()-interval \'1 second\'');
+  const dayTwo = await claim();
+  assert.equal(dayTwo.attempt_number, 2);
+  await complete(dayTwo);
+
+  const thirdDay = new Date(secondDay);
+  thirdDay.setUTCDate(thirdDay.getUTCDate() + 1);
+  const dayThree = await claim();
+  assert.equal(dayThree.period_start.slice(0, 10), day(thirdDay));
+  await complete(dayThree, { daily_summary: { total_transactions: 2 }, report_version: '1.0.0' });
+  assert.equal(await claim(), null);
+
+  const runs = (await db.query('select period_start,attempt_number,status,error_code from public.daily_report_runs order by period_start,attempt_number')).rows;
+  assert.deepEqual(runs.map(run => [run.period_start.toISOString().slice(0, 10), run.attempt_number, run.status, run.error_code]), [
+    [day(firstDay), 1, 'FAILED', 'WORKER_LEASE_EXPIRED'],
+    [day(firstDay), 2, 'COMPLETED', null],
+    [day(secondDay), 1, 'FAILED', 'REPORT_STORAGE_ERROR'],
+    [day(secondDay), 2, 'COMPLETED', null],
+    [day(thirdDay), 1, 'COMPLETED', null],
+  ]);
+  const stored = (await db.query('select id,period_start,summary from public.audit_reports where id=$1', [`RPT-${day(thirdDay)}`])).rows[0];
+  assert.equal(stored.summary.report_version, '1.0.0');
+  assert.equal(stored.period_start.toISOString(), `${day(thirdDay)}T00:00:00.000Z`);
+  const status = (await db.query('select public.get_daily_report_schedule_status($1) as value', [teamUsers.admin])).rows[0].value;
+  assert.equal(status.runs.length, 5);
+  await assert.rejects(db.query('select public.get_daily_report_schedule_status($1)', [teamUsers.auditorA]), /Report schedule access denied/);
+  const privileges = (await db.query(`select has_function_privilege('anon','public.claim_daily_audit_report()','execute') as anon_claim,
+    has_function_privilege('authenticated','public.complete_daily_audit_report(uuid,uuid,jsonb)','execute') as auth_complete,
+    has_function_privilege('service_role','public.fail_daily_audit_report(uuid,uuid,text)','execute') as service_fail,
+    has_table_privilege('authenticated','public.daily_report_runs','select') as auth_history`)).rows[0];
+  assert.deepEqual(privileges, { anon_claim: false, auth_complete: false, service_fail: true, auth_history: false });
+});
+
 test.after(async () => { await db.close(); });
