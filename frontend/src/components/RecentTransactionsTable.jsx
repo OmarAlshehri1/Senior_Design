@@ -42,9 +42,7 @@ export default function RecentTransactionsTable({ transactions, highlightId }) {
                 onClick={() => openTransaction(transaction.id)}
                 onKeyDown={(event) => handleRowKeyDown(event, transaction.id)}
               >
-                <td className="transaction-id-cell" data-label="Transaction ID" title={transaction.id}>
-                  {transaction.id}
-                </td>
+                <td data-label="Transaction ID">{transaction.id}</td>
                 <td className="vendor-cell" data-label="Vendor" title={transaction.vendor}>
                   {transaction.vendor}
                 </td>

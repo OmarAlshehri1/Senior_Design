@@ -65,11 +65,6 @@ def generate_daily_report(
         normalize_daily_period(period_start, period_end)
     )
 
-    if normalized_end > datetime.now(timezone.utc):
-        raise ValueError(
-            "Daily reports can only be generated after their UTC period has ended."
-        )
-
     summary = get_daily_audit_summary(
         period_start=normalized_start,
         period_end=normalized_end,
@@ -89,7 +84,7 @@ def generate_daily_report(
 
 
 def generate_latest_activity_report() -> dict[str, Any]:
-    """Generate a report for the latest closed UTC day with activity."""
+    """Generate a daily report for the day with the latest dated transaction."""
     period_start, period_end = get_latest_transaction_period()
     return generate_daily_report(
         period_start=period_start,

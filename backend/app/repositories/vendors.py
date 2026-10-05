@@ -10,11 +10,9 @@ def _rpc(name: str, **values):
     return result
 
 
-def list_vendors(*, actor_id: str, page: int, page_size: int, status: str | None,
-                 search: str | None = None, risk: str | None = None):
+def list_vendors(*, actor_id: str, page: int, page_size: int, status: str | None):
     return _rpc("list_vendor_monitoring", p_actor=actor_id, p_page=page,
-                p_page_size=page_size, p_status=status, p_search=search,
-                p_risk=risk)
+                p_page_size=page_size, p_status=status)
 
 
 def get_vendor(*, actor_id: str, vendor_id: str):

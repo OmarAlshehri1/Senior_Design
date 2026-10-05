@@ -133,8 +133,3 @@ export function adaptReportCollection(payload) {
     pageSize: nullableNumber(payload.page_size),
   };
 }
-
-export function selectPersistedReport(reports, reportId, fallback = null) {
-  if (!Array.isArray(reports)) return fallback;
-  return reports.find((report) => report?.id === reportId) ?? fallback;
-}

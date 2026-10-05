@@ -162,10 +162,12 @@ def test_get_latest_transaction_period(
         datetime(2026, 7, 1, tzinfo=timezone.utc),
         datetime(2026, 7, 2, tzinfo=timezone.utc),
     )
-    assert request["params"]["select"] == "transaction_timestamp"
-    assert request["params"]["order"] == "transaction_timestamp.desc"
-    assert request["params"]["limit"] == "1"
-    assert request["params"]["transaction_timestamp"].startswith("lt.")
+    assert request["params"] == {
+        "select": "transaction_timestamp",
+        "transaction_timestamp": "not.is.null",
+        "order": "transaction_timestamp.desc",
+        "limit": "1",
+    }
 
 
 def test_persist_completed_report(

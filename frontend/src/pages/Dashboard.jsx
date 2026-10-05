@@ -25,8 +25,6 @@ export default function Dashboard() {
   const {
     transactions,
     alerts,
-    alertsLoading,
-    alertsError,
     simulateNewTransaction,
     simulating,
     lastSimulatedTransactionId,
@@ -57,7 +55,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      {currentSummary && <SummaryCards summary={currentSummary} highRiskPercentage={currentOverview.high} />}
+      {currentSummary && <><SummaryCards summary={currentSummary} highRiskPercentage={currentOverview.high} /><p className="dashboard-active-alerts">{currentSummary.activeAlerts} active alerts in your authorized scope.</p></>}
       {summaryError && <div className="request-state request-state-error" role="alert">{summaryError}</div>}
 
       <div className="dashboard-section-heading">
@@ -92,19 +90,7 @@ export default function Dashboard() {
           <h2 id="recent-alerts-heading">Recent Alerts</h2>
           <Link className="card-header-link" to="/alerts">View All Alerts</Link>
         </div>
-        {alertsLoading ? (
-          <div className="dashboard-alert-state" role="status">Loading recent alerts…</div>
-        ) : alertsError ? (
-          <div className="dashboard-alert-state dashboard-alert-state-error" role="alert">
-            Recent alerts are unavailable. {alertsError}
-          </div>
-        ) : recentAlerts.length > 0 ? (
-          <AlertsList alerts={recentAlerts} variant="dashboard" />
-        ) : (
-          <div className="dashboard-alert-state" role="status">
-            No recent alerts in your authorized scope.
-          </div>
-        )}
+        <AlertsList alerts={recentAlerts} variant="dashboard" />
       </section>
 
       {PRESENTATION_FEATURES.assuranceAnalytics && <AuditAnalytics />}

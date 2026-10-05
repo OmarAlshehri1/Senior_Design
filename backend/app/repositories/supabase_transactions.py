@@ -1134,8 +1134,6 @@ def list_transactions(
     page: int = 1,
     page_size: int = 25,
     search: str | None = None,
-    risk_level: str | None = None,
-    rule_status: str | None = None,
     sort_by: str = "newest",
 ) -> tuple[list[dict[str, Any]], int]:
     if page < 1 or page_size < 1:
@@ -1143,12 +1141,6 @@ def list_transactions(
 
     if sort_by not in TRANSACTION_SORT_ORDERS:
         raise ValueError("Unsupported transaction sort option.")
-
-    if risk_level not in {None, "LOW", "MEDIUM", "HIGH"}:
-        raise ValueError("Unsupported transaction risk level.")
-
-    if rule_status not in {None, "PASSED", "REVIEW"}:
-        raise ValueError("Unsupported transaction rule status.")
 
     search_term = " ".join((search or "").split())
 
@@ -1161,22 +1153,30 @@ def list_transactions(
     search_term = " ".join(search_term.split())
 
     url, _ = _get_configuration()
-    endpoint = f"{url}/rest/v1/rpc/list_transactions_authoritative"
-    request_body = {
-        "p_page": page,
-        "p_page_size": page_size,
-        "p_search": search_term or None,
-        "p_risk_level": risk_level,
-        "p_rule_status": rule_status,
-        "p_sort_by": sort_by,
+    offset = (page - 1) * page_size
+
+    endpoint = f"{url}/rest/v1/transactions"
+    params = {
+    "select": TRANSACTION_COLUMNS,
+    "order": TRANSACTION_SORT_ORDERS[sort_by],
+    "offset": str(offset),
+    "limit": str(page_size),
     }
+
+    if search_term:
+        search_pattern = f"*{search_term}*"
+        params["or"] = (
+            f"(id.ilike.{search_pattern},"
+            f"vendor_name.ilike.{search_pattern},"
+            f"category.ilike.{search_pattern})"
+        )
 
     try:
         with httpx.Client(timeout=REQUEST_TIMEOUT_SECONDS) as client:
-            response = client.post(
+            response = client.get(
                 endpoint,
-                headers=_get_headers(),
-                json=request_body,
+                headers=_get_headers(include_count=True),
+                params=params,
             )
             response.raise_for_status()
             payload = response.json()
@@ -1185,22 +1185,14 @@ def list_transactions(
             "Failed to read transactions from Supabase."
         ) from exc
 
-    if isinstance(payload, list) and len(payload) == 1:
-        payload = payload[0]
-
-    if not isinstance(payload, dict) or not isinstance(payload.get("items"), list):
+    if not isinstance(payload, list):
         raise SupabasePersistenceError(
             "Supabase returned an invalid transaction collection."
         )
 
-    rows = payload["items"]
-    total_value = payload.get("total")
-    if isinstance(total_value, bool) or not isinstance(total_value, int) or total_value < 0:
-        raise SupabasePersistenceError("Supabase returned an invalid transaction total.")
-
     transaction_ids = [
         row["id"]
-        for row in rows
+        for row in payload
         if (
             isinstance(row, dict)
             and isinstance(row.get("id"), str)
@@ -1251,7 +1243,7 @@ def list_transactions(
 
     transactions: list[dict[str, Any]] = []
 
-    for row in rows:
+    for row in payload:
         if not isinstance(row, dict):
             continue
 
@@ -1313,7 +1305,12 @@ def list_transactions(
             )
         )
 
-    return transactions, total_value
+    total = _parse_total(
+        response.headers.get("content-range"),
+        len(transactions),
+    )
+
+    return transactions, total
 
 
 def get_transaction_by_id(

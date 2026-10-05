@@ -82,8 +82,6 @@ async def get_transactions(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=25, ge=1, le=100),
     search: str | None = Query(default=None, max_length=100),
-    risk_level: Literal["LOW", "MEDIUM", "HIGH"] | None = Query(default=None),
-    rule_status: Literal["PASSED", "REVIEW"] | None = Query(default=None),
     sort_by: Literal[
         "newest",
         "oldest",
@@ -97,8 +95,6 @@ async def get_transactions(
             page=page,
             page_size=page_size,
             search=search,
-            risk_level=risk_level,
-            rule_status=rule_status,
             sort_by=sort_by,
         )
     except SupabaseConfigurationError as exc:

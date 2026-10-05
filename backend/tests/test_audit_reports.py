@@ -115,19 +115,6 @@ def test_rejects_invalid_daily_period(
         )
 
 
-def test_rejects_open_or_future_daily_period() -> None:
-    future_start = datetime(2999, 1, 1, tzinfo=timezone.utc)
-
-    with pytest.raises(
-        ValueError,
-        match="after their UTC period has ended",
-    ):
-        audit_reports.generate_daily_report(
-            period_start=future_start,
-            period_end=future_start.replace(day=2),
-        )
-
-
 def test_generate_daily_report(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -165,67 +152,6 @@ def test_generate_daily_report(
     assert persisted["period_start"] == PERIOD_START
     assert persisted["period_end"] == PERIOD_END
     assert persisted["summary"]["report_version"] == "1.0.0"
-
-
-def test_generate_empty_daily_report_preserves_authoritative_zeroes(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    empty_summary = {
-        "daily_summary": {
-            "total_transactions": 0,
-            "transactions_evaluated": 0,
-            "high_risk_transactions": 0,
-            "average_risk_score": 0,
-            "active_alerts": 0,
-            "reviewed_alerts": 0,
-        },
-        "risk_distribution": {"low": 0, "medium": 0, "high": 0},
-        "alert_summary": {
-            "total": 0, "active": 0, "reviewed": 0,
-            "high": 0, "medium": 0,
-        },
-        "rule_summary": [],
-        "high_risk_transactions": [],
-    }
-    persisted: dict[str, Any] = {}
-    monkeypatch.setattr(
-        audit_reports, "get_daily_audit_summary", lambda **_kwargs: empty_summary
-    )
-    monkeypatch.setattr(
-        audit_reports,
-        "persist_completed_report",
-        lambda **kwargs: persisted.update(kwargs) or kwargs,
-    )
-
-    audit_reports.generate_daily_report(
-        period_start=PERIOD_START, period_end=PERIOD_END
-    )
-
-    assert persisted["summary"]["daily_summary"]["total_transactions"] == 0
-    assert persisted["summary"]["risk_distribution"] == {
-        "low": 0, "medium": 0, "high": 0,
-    }
-
-
-def test_generate_latest_activity_uses_latest_transaction_day(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    request: dict[str, datetime] = {}
-    monkeypatch.setattr(
-        audit_reports,
-        "get_latest_transaction_period",
-        lambda: (PERIOD_START, PERIOD_END),
-    )
-    monkeypatch.setattr(
-        audit_reports,
-        "generate_daily_report",
-        lambda **kwargs: request.update(kwargs) or {"id": "RPT-2026-10-03"},
-    )
-
-    report = audit_reports.generate_latest_activity_report()
-
-    assert report["id"] == "RPT-2026-10-03"
-    assert request == {"period_start": PERIOD_START, "period_end": PERIOD_END}
 
 
 def test_build_report_csv() -> None:

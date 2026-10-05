@@ -61,15 +61,6 @@ async def get_alerts(
         "ACTIVE",
         "REVIEWED",
     ] | None = Query(default=None, alias="status"),
-    search: str | None = Query(default=None, max_length=100),
-    risk: Literal["MEDIUM", "HIGH"] | None = None,
-    alert_type: str | None = Query(default=None, max_length=100),
-    sort: Literal[
-        "newest",
-        "oldest",
-        "highest-risk",
-        "lowest-risk",
-    ] = "newest",
     user: dict = Depends(get_current_user),
 ) -> dict[str, object]:
     try:
@@ -79,10 +70,6 @@ async def get_alerts(
             page=page,
             page_size=page_size,
             status_filter=status_filter,
-            search=search,
-            risk=risk,
-            alert_type=alert_type,
-            sort=sort,
         )
     except SupabaseConfigurationError as exc:
         raise HTTPException(

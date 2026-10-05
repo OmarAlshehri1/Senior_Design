@@ -71,8 +71,6 @@ export function AppProvider({ children }) {
   const [transactionsPageSize, setTransactionsPageSize] = useState(DEFAULT_TRANSACTIONS_PAGE_SIZE);
   const [transactionsSearch, setTransactionsSearch] = useState('');
   const [transactionsSortBy, setTransactionsSortBy] = useState('newest');
-  const [transactionsRiskLevel, setTransactionsRiskLevel] = useState(null);
-  const [transactionsRuleStatus, setTransactionsRuleStatus] = useState(null);
   const [alerts, setAlerts] = useState(initialAlerts);
   const [alertsLoading, setAlertsLoading] = useState(true);
   const [alertsError, setAlertsError] = useState(null);
@@ -201,8 +199,6 @@ export function AppProvider({ children }) {
             page: transactionsPage,
             page_size: transactionsPageSize,
             search: transactionsSearch || undefined,
-            risk_level: transactionsRiskLevel || undefined,
-            rule_status: transactionsRuleStatus || undefined,
             sort_by: transactionsSortBy,
           },
           signal: controller.signal,
@@ -241,8 +237,6 @@ export function AppProvider({ children }) {
     transactionsPageSize,
     transactionsSearch,
     transactionsSortBy,
-    transactionsRiskLevel,
-    transactionsRuleStatus,
   ]);
 
   useEffect(() => {
@@ -263,10 +257,7 @@ export function AppProvider({ children }) {
         setAlertsLoading(true);
         setAlertsError(null);
         try {
-          const result = await alertsService.list({
-            signal: controller.signal,
-            query: { page: 1, page_size: 100 },
-          });
+          const result = await alertsService.listAll({ signal: controller.signal });
           if (!active) return;
           // Replace the snapshot: this also removes alerts that are no longer
           // visible after a role, team, or assignment change.
@@ -443,10 +434,6 @@ export function AppProvider({ children }) {
       setTransactionsSearch,
       transactionsSortBy,
       setTransactionsSortBy,
-      transactionsRiskLevel,
-      setTransactionsRiskLevel,
-      transactionsRuleStatus,
-      setTransactionsRuleStatus,
       alerts,
       alertsLoading,
       alertsError,
@@ -480,8 +467,6 @@ export function AppProvider({ children }) {
       transactionsPageSize,
       transactionsSearch,
       transactionsSortBy,
-      transactionsRiskLevel,
-      transactionsRuleStatus,
       alerts,
       alertsLoading,
       alertsError,

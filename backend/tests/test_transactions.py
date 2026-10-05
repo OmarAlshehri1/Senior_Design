@@ -48,15 +48,11 @@ def test_list_transactions(
         page: int,
         page_size: int,
         search: str | None,
-        risk_level: str | None,
-        rule_status: str | None,
         sort_by: str,
     ) -> tuple[list[dict[str, Any]], int]:
         received["page"] = page
         received["page_size"] = page_size
         received["search"] = search
-        received["risk_level"] = risk_level
-        received["rule_status"] = rule_status
         received["sort_by"] = sort_by
         return [make_api_transaction()], 10_000
 
@@ -71,8 +67,6 @@ def test_list_transactions(
             "page": 2,
             "page_size": 25,
             "search": "Almarai",
-            "risk_level": "MEDIUM",
-            "rule_status": "REVIEW",
             "sort_by": "highest-amount",
         },
     )
@@ -91,22 +85,8 @@ def test_list_transactions(
         "page": 2,
         "page_size": 25,
         "search": "Almarai",
-        "risk_level": "MEDIUM",
-        "rule_status": "REVIEW",
         "sort_by": "highest-amount",
     }
-
-
-@pytest.mark.parametrize(
-    ("parameter", "value"),
-    [("risk_level", "CRITICAL"), ("rule_status", "FAILED")],
-)
-def test_list_transactions_rejects_invalid_authoritative_filter(
-    parameter: str,
-    value: str,
-) -> None:
-    response = client.get("/api/v1/transactions", params={parameter: value})
-    assert response.status_code == 422
 
 
 def test_get_transaction_and_not_found(

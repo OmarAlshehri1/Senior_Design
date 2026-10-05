@@ -49,7 +49,6 @@ def _map_alert(row: dict[str, Any]) -> dict[str, Any]:
             "risk_scoring_version"
         ),
         "latency_ms": row.get("latency_ms"),
-        "vendor_name": row.get("vendor_name"),
     }
     if "assignment" in row:
         assignment = row.get("assignment")
@@ -172,15 +171,9 @@ def list_alerts(
     page: int = 1,
     page_size: int = 25,
     status_filter: str | None = None,
-    search: str | None = None,
-    risk: str | None = None,
-    alert_type: str | None = None,
-    sort: str = "newest",
 ) -> tuple[list[dict[str, Any]], int]:
     result = identity.rpc("list_accessible_alerts", p_actor=actor_id, p_page=page,
-                          p_page_size=page_size, p_status=status_filter,
-                          p_search=search, p_severity=risk,
-                          p_alert_type=alert_type, p_sort=sort)
+                          p_page_size=page_size, p_status=status_filter)
     if not isinstance(result, dict) or not isinstance(result.get("items"), list):
         raise SupabasePersistenceError(
             "Supabase returned an invalid alerts response."

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import useApp from '../context/useApp';
 import TransactionsTable from '../components/TransactionsTable';
@@ -6,20 +6,21 @@ import Pagination from '../components/Pagination.jsx';
 import { SearchIcon } from '../components/icons';
 import {
   TRANSACTION_SORT_OPTIONS,
+  filterAndSortTransactions,
   getRiskFilterFromQuery,
 } from '../utils/transactions';
 import { getPageSizeChange, getTotalPages } from '../utils/pagination.js';
 
 const riskFilters = ['All', 'Low', 'Medium', 'High'];
 
-function EmptyTransactionsState({ filtersActive, hasSearch }) {
+function EmptyTransactionsState({ hasTransactions, hasSearch }) {
   let title = 'No transactions available.';
   let guidance = 'Evaluated transactions will appear here when they are available.';
 
-  if (hasSearch) {
+  if (hasTransactions && hasSearch) {
     title = 'No transactions found.';
     guidance = 'Try a different transaction ID, vendor, or category, or clear the filters.';
-  } else if (filtersActive) {
+  } else if (hasTransactions) {
     title = 'No transactions match the selected filters.';
     guidance = 'Try adjusting your filters or clearing them.';
   }
@@ -45,31 +46,11 @@ export default function Transactions() {
     setTransactionsSearch,
     transactionsSortBy,
     setTransactionsSortBy,
-    transactionsRiskLevel,
-    setTransactionsRiskLevel,
-    transactionsRuleStatus,
-    setTransactionsRuleStatus,
   } = useApp();
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get('vendor') || '');
-  const ruleFilter = transactionsRuleStatus === 'PASSED'
-    ? 'Passed'
-    : transactionsRuleStatus === 'REVIEW' ? 'Review' : 'All';
+  const [ruleFilter, setRuleFilter] = useState('All');
   const riskFilter = getRiskFilterFromQuery(searchParams.get('risk'));
-  useEffect(() => {
-    const nextRiskLevel = riskFilter === 'All'
-      ? null
-      : riskFilter.toUpperCase();
-    if (transactionsRiskLevel !== nextRiskLevel) {
-      setTransactionsRiskLevel(nextRiskLevel);
-      setTransactionsPage(1);
-    }
-  }, [
-    riskFilter,
-    setTransactionsPage,
-    setTransactionsRiskLevel,
-    transactionsRiskLevel,
-  ]);
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setTransactionsSearch(search.trim());
@@ -101,14 +82,35 @@ export default function Transactions() {
     transactionsTotal
   );
 
-  const authoritativeFiltersActive = (
+  const evaluatedTransactions = useMemo(
+    () => transactions.filter((transaction) => !transaction?.processing),
+    [transactions]
+  );
+  const loadedTransactionCount = transactions.length;
+
+  const filtered = useMemo(
+    () => filterAndSortTransactions(transactions, {
+      search: '',
+      riskFilter,
+      ruleFilter,
+      sortBy: transactionsSortBy,
+    }),
+    [
+      transactions,
+      riskFilter,
+      ruleFilter,
+      transactionsSortBy,
+    ]
+  );
+
+  const clientFiltersActive = (
     riskFilter !== 'All'
     || ruleFilter !== 'All'
   );
 
   const filtersActive = (
     Boolean(search.trim())
-    || authoritativeFiltersActive
+    || clientFiltersActive
   );
 
   let resultLabel = transactionsLoading
@@ -118,6 +120,13 @@ export default function Transactions() {
       + `${lastTransactionNumber.toLocaleString('en-US')} of `
       + `${transactionsTotal.toLocaleString('en-US')} Transactions`
     );
+
+  if (!transactionsLoading && clientFiltersActive) {
+    resultLabel = (
+      `${filtered.length} of ${loadedTransactionCount} Transactions `
+      + `on Page ${transactionsPage}`
+    );
+  }
 
   const changePage = (nextPage) => {
     if (
@@ -147,7 +156,6 @@ export default function Transactions() {
     if (filter === 'All') nextParams.delete('risk');
     else nextParams.set('risk', filter.toLowerCase());
     setSearchParams(nextParams);
-    setTransactionsRiskLevel(filter === 'All' ? null : filter.toUpperCase());
     setTransactionsPage(1);
   };
 
@@ -156,8 +164,7 @@ export default function Transactions() {
     setTransactionsSearch('');
     setTransactionsSortBy(TRANSACTION_SORT_OPTIONS.NEWEST);
     setTransactionsPage(1);
-    setTransactionsRiskLevel(null);
-    setTransactionsRuleStatus(null);
+    setRuleFilter('All');
 
     const nextParams = new URLSearchParams(searchParams);
     nextParams.delete('risk');
@@ -219,10 +226,7 @@ export default function Transactions() {
               className="select-input"
               value={ruleFilter}
               onChange={(event) => {
-                const nextStatus = event.target.value === 'All'
-                  ? null
-                  : event.target.value.toUpperCase();
-                setTransactionsRuleStatus(nextStatus);
+                setRuleFilter(event.target.value);
                 setTransactionsPage(1);
               }}
             >
@@ -273,11 +277,11 @@ onChange={(event) => {
             <h3>Transactions are unavailable.</h3>
             <p>{transactionsError}</p>
           </div>
-        ) : transactions.length > 0 ? (
-          <TransactionsTable transactions={transactions} />
+        ) : filtered.length > 0 ? (
+          <TransactionsTable transactions={filtered} />
         ) : (
           <EmptyTransactionsState
-            filtersActive={filtersActive}
+            hasTransactions={evaluatedTransactions.length > 0}
             hasSearch={Boolean(search.trim())}
           />
         )}

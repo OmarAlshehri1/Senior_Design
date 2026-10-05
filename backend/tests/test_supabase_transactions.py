@@ -339,8 +339,8 @@ def test_list_transactions_maps_rows_and_total(
         def raise_for_status(self) -> None:
             return None
 
-        def json(self) -> dict[str, Any]:
-            return {"items": [database_row], "total": 10_000}
+        def json(self) -> list[dict[str, Any]]:
+            return [database_row]
 
     class FakeClient:
         def __init__(self, timeout: float) -> None:
@@ -357,18 +357,18 @@ def test_list_transactions_maps_rows_and_total(
         ) -> None:
             return None
 
-        def post(
+        def get(
             self,
             endpoint: str,
             *,
             headers: dict[str, str],
-            json: dict[str, Any],
+            params: dict[str, str],
         ) -> FakeResponse:
             request.update(
                 {
                     "endpoint": endpoint,
                     "headers": headers,
-                    "json": json,
+                    "params": params,
                 }
             )
             return FakeResponse()
@@ -466,8 +466,6 @@ def test_list_transactions_maps_rows_and_total(
         page=2,
         page_size=25,
         search="Test Vendor",
-        risk_level="MEDIUM",
-        rule_status="REVIEW",
         sort_by="highest-amount",
     )
 
@@ -510,17 +508,18 @@ def test_list_transactions_maps_rows_and_total(
     assert transaction["ai_score"] == 87.5
     assert "ground_truth" not in transaction
 
-    assert request["endpoint"].endswith(
-        "/rest/v1/rpc/list_transactions_authoritative"
+    assert request["params"]["offset"] == "25"
+    assert request["params"]["limit"] == "25"
+    assert request["params"]["order"] == (
+    "amount.desc.nullslast,id.asc"
     )
-    assert request["json"] == {
-        "p_page": 2,
-        "p_page_size": 25,
-        "p_search": "Test Vendor",
-        "p_risk_level": "MEDIUM",
-        "p_rule_status": "REVIEW",
-        "p_sort_by": "highest-amount",
-    }
+    assert request["params"]["or"] == (
+        "(id.ilike.*Test Vendor*,"
+        "vendor_name.ilike.*Test Vendor*,"
+        "category.ilike.*Test Vendor*)"
+    )
+    assert "ground_truth" not in request["params"]["select"]
+    assert request["headers"]["Prefer"] == "count=exact"
     assert request["headers"]["apikey"] == "sb_secret_test"
     assert "Authorization" not in request["headers"]
 

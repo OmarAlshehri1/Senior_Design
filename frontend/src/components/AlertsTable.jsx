@@ -83,7 +83,7 @@ export default function AlertsTable({ alerts, onMarkReviewed, canAssign = false,
                     </span>
                     <span className="alert-type-copy">
                       <strong>{displayValue(alert?.title)}</strong>
-                      <span>{displayValue(alert?.description ?? alert?.reason)}</span>
+                      <span>{displayValue(alert?.reasonText)}</span>
                     </span>
                   </div>
                 </td>
@@ -126,7 +126,7 @@ export default function AlertsTable({ alerts, onMarkReviewed, canAssign = false,
                         aria-label={`Mark alert ${displayValue(alert?.id)} as reviewed`}
                         onClick={(event) => {
                           event.stopPropagation();
-                          onMarkReviewed(alert);
+                          onMarkReviewed(alert.transactionId);
                         }}
                         onKeyDown={(event) => event.stopPropagation()}
                       >

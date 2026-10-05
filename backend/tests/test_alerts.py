@@ -43,10 +43,6 @@ def test_list_alerts(
         page: int,
         page_size: int,
         status_filter: str | None,
-        search: str | None,
-        risk: str | None,
-        alert_type: str | None,
-        sort: str,
     ) -> tuple[list[dict[str, Any]], int]:
         received.update(
             {
@@ -54,10 +50,6 @@ def test_list_alerts(
                 "actor_id": actor_id,
                 "page_size": page_size,
                 "status_filter": status_filter,
-                "search": search,
-                "risk": risk,
-                "alert_type": alert_type,
-                "sort": sort,
             }
         )
         return [build_alert()], 1
@@ -68,7 +60,7 @@ def test_list_alerts(
     )
 
     response = client.get(
-        "/api/v1/alerts?page=2&page_size=10&status=ACTIVE&search=vendor&risk=HIGH&alert_type=Ghost%20Vendor&sort=highest-risk"
+        "/api/v1/alerts?page=2&page_size=10&status=ACTIVE"
     )
 
     assert response.status_code == 200
@@ -79,10 +71,6 @@ def test_list_alerts(
     assert body["page_size"] == 10
     assert received["status_filter"] == "ACTIVE"
     assert received["actor_id"] == "00000000-0000-0000-0000-000000000001"
-    assert received["search"] == "vendor"
-    assert received["risk"] == "HIGH"
-    assert received["alert_type"] == "Ghost Vendor"
-    assert received["sort"] == "highest-risk"
 
 
 def test_review_alert(

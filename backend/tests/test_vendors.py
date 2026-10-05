@@ -9,13 +9,11 @@ def test_vendor_endpoints_bind_authenticated_actor_and_filters(monkeypatch):
     monkeypatch.setattr(vendors, "list_vendors", lambda **kwargs: {"items": [], "total": 0, **kwargs})
     monkeypatch.setattr(vendors, "get_vendor", lambda **kwargs: {"vendor": {"id": kwargs["vendor_id"]}})
     client = TestClient(app)
-    page = client.get("/api/v1/vendors?page=2&page_size=10&status=WATCHLISTED&search=acme&risk=HIGH")
+    page = client.get("/api/v1/vendors?page=2&page_size=10&status=WATCHLISTED")
     assert page.status_code == 200
     assert page.json()["actor_id"] == "00000000-0000-0000-0000-000000000001"
     assert page.json()["page"] == 2
     assert page.json()["status"] == "WATCHLISTED"
-    assert page.json()["search"] == "acme"
-    assert page.json()["risk"] == "HIGH"
     assert client.get("/api/v1/vendors/V-1").json()["vendor"]["id"] == "V-1"
 
 
