@@ -39,9 +39,12 @@ async def _call(operation, **values):
 async def list_vendors(
     page: int = Query(default=1, ge=1), page_size: int = Query(default=25, ge=1, le=100),
     status: Literal["NORMAL", "WATCHLISTED", "BLOCKED"] | None = None,
+    search: str | None = Query(default=None, max_length=100),
+    risk: Literal["LOW", "MEDIUM", "HIGH"] | None = None,
     user: dict = Depends(get_current_user),
 ):
-    return await _call(vendors.list_vendors, actor_id=user["id"], page=page, page_size=page_size, status=status)
+    return await _call(vendors.list_vendors, actor_id=user["id"], page=page,
+                       page_size=page_size, status=status, search=search, risk=risk)
 
 
 @router.get("/{vendor_id}", dependencies=[Depends(require_roles("AUDITOR", "SUPERVISOR", "ADMIN"))])

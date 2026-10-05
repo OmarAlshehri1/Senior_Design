@@ -12,6 +12,18 @@ test('test-transaction control is gated by the Vite development flag', async () 
   assert.doesNotMatch(source, /import\.meta\.env\.(?:MODE|PROD)/);
 });
 
+test('dashboard removes redundant scope count and provides explicit alert states', async () => {
+  const source = await readFile(
+    new URL('../src/pages/Dashboard.jsx', import.meta.url),
+    'utf8'
+  );
+
+  assert.doesNotMatch(source, /active alerts in your authorized scope/);
+  assert.match(source, /Loading recent alerts/);
+  assert.match(source, /No recent alerts in your authorized scope/);
+  assert.match(source, /Recent alerts are unavailable/);
+});
+
 test('vendor profile renders authoritative records, decisions, and monitoring history', async () => {
   const source = await readFile(
     new URL('../src/pages/VendorProfile.jsx', import.meta.url),

@@ -8,6 +8,8 @@ export const ALERT_SORT_OPTIONS = Object.freeze({
 });
 
 export const ALERT_TYPE_OPTIONS = Object.freeze([
+  'High-risk transaction detected',
+  'Medium-risk transaction detected',
   'Segregation of Duties',
   'Approval Limit',
   'Duplicate Payment',

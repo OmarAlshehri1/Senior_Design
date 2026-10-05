@@ -8,6 +8,7 @@ import {
   getTotalPages,
   normalizePageSize,
   PAGE_SIZE_OPTIONS,
+  shouldShowPageNavigation,
 } from '../src/utils/pagination.js';
 
 test('page-size options are the supported server page sizes', () => {
@@ -19,6 +20,12 @@ test('page-size options are the supported server page sizes', () => {
 
 test('changing page size always resets server pagination to page one', () => {
   assert.deepEqual(getPageSizeChange('100'), { pageSize: 100, page: 1 });
+});
+
+test('page navigation is hidden for one-page results and shown for multiple pages', () => {
+  assert.equal(shouldShowPageNavigation(1), false);
+  assert.equal(shouldShowPageNavigation(2), true);
+  assert.equal(shouldShowPageNavigation(1002), true);
 });
 
 test('total-page calculation is safe for empty and malformed values', () => {

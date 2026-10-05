@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   adaptReport,
   adaptReportCollection,
+  selectPersistedReport,
 } from '../src/adapters/reportAdapter.js';
 import {
   createReportsService,
@@ -94,9 +95,40 @@ test('report adapter maps the authoritative backend report', () => {
     report.ruleSummary[0].violationCount,
     2
   );
+  assert.deepEqual(report.alertSummary, {
+    total: 3,
+    active: 1,
+    reviewed: 2,
+    high: 3,
+    medium: 0,
+  });
   assert.equal(
     report.highRiskTransactions[0].riskScore,
     88
+  );
+});
+
+test('persisted report selection returns one complete snapshot', () => {
+  const first = adaptReport(buildPayload());
+  const second = adaptReport({
+    ...buildPayload(),
+    id: 'RPT-2026-10-04',
+    summary: {
+      ...buildPayload().summary,
+      daily_summary: {
+        ...buildPayload().summary.daily_summary,
+        total_transactions: 0,
+      },
+    },
+  });
+
+  assert.equal(
+    selectPersistedReport([first, second], second.id, first),
+    second
+  );
+  assert.equal(
+    selectPersistedReport([first, second], 'missing', first),
+    first
   );
 });
 

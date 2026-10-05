@@ -25,6 +25,10 @@ export function getPageSizeChange(value) {
   });
 }
 
+export function shouldShowPageNavigation(totalPages) {
+  return Math.max(1, Math.trunc(Number(totalPages)) || 1) > 1;
+}
+
 export function getPaginationState(currentPage, totalPages) {
   const safeTotal = Math.max(1, Math.trunc(Number(totalPages)) || 1);
   const safeCurrent = Math.min(

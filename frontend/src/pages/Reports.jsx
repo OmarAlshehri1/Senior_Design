@@ -14,6 +14,7 @@ import {
 } from '../components/statusUtils';
 import useApp from '../context/useApp';
 import { reportsService } from '../services/reportsService';
+import { selectPersistedReport } from '../adapters/reportAdapter';
 
 function formatReportDate(timestamp) {
   if (!timestamp) return 'Not available';
@@ -119,6 +120,9 @@ export default function Reports() {
   }, [reloadKey]);
 
   const report = selectedReport;
+  const hasTransactionActivity = Boolean(
+    report?.dailySummary.totalTransactions
+  );
   const downloadUrl = useMemo(
     () => reportsService.getDownloadUrl(selectedReport?.id),
     [selectedReport?.id]
@@ -285,10 +289,11 @@ export default function Reports() {
                       className="select-input"
                       value={report.id}
                       onChange={(event) => {
-                        const selected = reports.find(
-                          (item) => item.id === event.target.value
-                        );
-                        setSelectedReport(selected ?? report);
+                        setSelectedReport(selectPersistedReport(
+                          reports,
+                          event.target.value,
+                          report
+                        ));
                       }}
                     >
                       {reports.map((item) => (
@@ -385,6 +390,12 @@ export default function Reports() {
                 </h2>
               </div>
             </div>
+
+            {!hasTransactionActivity && (
+              <div className="report-period-empty" role="status">
+                No transaction activity was recorded for this report period.
+              </div>
+            )}
 
             <div className="report-summary-grid">
               {summaryItems.map(([label, value, tone]) => (
@@ -576,8 +587,8 @@ export default function Reports() {
                   No high-risk transactions in this report.
                 </h3>
                 <p>
-                  High-risk transactions will appear after the next
-                  authoritative report generation.
+                  No transactions in this report period were classified
+                  as high risk.
                 </p>
               </div>
             )}

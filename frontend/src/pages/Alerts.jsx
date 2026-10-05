@@ -1,12 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import useApp from '../context/useApp';
 import AlertsTable from '../components/AlertsTable';
 import { SearchIcon } from '../components/icons';
 import {
   ALERT_SORT_OPTIONS,
   ALERT_TYPE_OPTIONS,
-  deriveAlertSummary,
-  filterAndSortAlerts,
 } from '../utils/alerts';
 import AssignmentDialog from '../components/AssignmentDialog.jsx';
 import useAuthorization from '../auth/useAuthorization.js';
@@ -15,28 +13,31 @@ import { assignmentService } from '../assignments/assignmentService.js';
 import { casesService } from '../services/casesService.js';
 import CaseCreateDialog from '../components/CaseCreateDialog.jsx';
 import { useNavigate } from 'react-router-dom';
+import { alertsService } from '../services/alertsService.js';
+import Pagination from '../components/Pagination.jsx';
+import { getPageSizeChange, getTotalPages } from '../utils/pagination.js';
 
 function EmptyAlertsState({
-  alertCount,
   search,
   statusFilter,
   riskFilter,
   typeFilter,
+  filtersActive,
 }) {
   let title = 'No alerts available.';
   let guidance = 'Alerts requiring audit attention will appear here when available.';
   const statusIsOnlyFilter = riskFilter === 'All' && typeFilter === 'All';
 
-  if (alertCount > 0 && search.trim()) {
+  if (filtersActive && search.trim()) {
     title = 'No alerts found.';
     guidance = 'Try a different alert ID, transaction ID, vendor, or alert type.';
-  } else if (alertCount > 0 && statusFilter === 'Active' && statusIsOnlyFilter) {
+  } else if (filtersActive && statusFilter === 'Active' && statusIsOnlyFilter) {
     title = 'No active alerts require review.';
     guidance = 'Clear the filters to review other alerts.';
-  } else if (alertCount > 0 && statusFilter === 'Reviewed' && statusIsOnlyFilter) {
+  } else if (filtersActive && statusFilter === 'Reviewed' && statusIsOnlyFilter) {
     title = 'No reviewed alerts match the selected filters.';
     guidance = 'Try adjusting or clearing the filters.';
-  } else if (alertCount > 0) {
+  } else if (filtersActive) {
     title = 'No alerts match the selected filters.';
     guidance = 'Try adjusting your search or clearing the filters.';
   }
@@ -53,20 +54,22 @@ export default function Alerts() {
   const navigate = useNavigate();
   const { effectiveRole } = useAuthorization();
   const {
-    alerts,
-    alertsLoading,
-    alertsError,
-    transactions,
-    markAlertReviewed,
     showNotification,
     setAlertAssignment,
     refreshNotifications,
   } = useApp();
   const [search, setSearch] = useState('');
+  const [querySearch, setQuerySearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [riskFilter, setRiskFilter] = useState('All');
   const [typeFilter, setTypeFilter] = useState('All');
   const [sortBy, setSortBy] = useState(ALERT_SORT_OPTIONS.NEWEST);
+  const [result, setResult] = useState({ items: [], total: 0 });
+  const [alertsLoading, setAlertsLoading] = useState(true);
+  const [alertsError, setAlertsError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [loadVersion, setLoadVersion] = useState(0);
   const [assignmentAlert, setAssignmentAlert] = useState(null);
   const [assignmentData, setAssignmentData] = useState({ alertId: null, assignment: null, history: [], eligibleUsers: [] });
   const [assignmentBusy, setAssignmentBusy] = useState(false);
@@ -75,6 +78,46 @@ export default function Alerts() {
   const [caseAlert, setCaseAlert] = useState(null);
   const canAssignAlerts = hasPermission(effectiveRole, PERMISSIONS.ASSIGN_ALERTS);
   const canEscalateToCase = hasPermission(effectiveRole, PERMISSIONS.CREATE_CASE);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setQuerySearch(search.trim());
+      setPage(1);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [search]);
+
+  const loadAlerts = useCallback(async (signal) => {
+    setAlertsLoading(true);
+    setAlertsError(null);
+    try {
+      const response = await alertsService.list({
+        signal,
+        query: {
+          page,
+          page_size: pageSize,
+          search: querySearch || undefined,
+          status: statusFilter === 'All' ? undefined : statusFilter.toUpperCase(),
+          risk: riskFilter === 'All' ? undefined : riskFilter.toUpperCase(),
+          alert_type: typeFilter === 'All' ? undefined : typeFilter,
+          sort: sortBy,
+        },
+      });
+      setResult(response);
+    } catch (error) {
+      if (signal.aborted) return;
+      setResult({ items: [], total: 0 });
+      setAlertsError(error instanceof Error ? error.message : 'Alerts could not be loaded.');
+    } finally {
+      if (!signal.aborted) setAlertsLoading(false);
+    }
+  }, [page, pageSize, querySearch, statusFilter, riskFilter, typeFilter, sortBy, loadVersion]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    loadAlerts(controller.signal);
+    return () => controller.abort();
+  }, [loadAlerts]);
 
   const createCaseFromAlert = (alert) => setCaseAlert(alert);
   const saveCaseFromAlert = async (input) => {
@@ -116,6 +159,7 @@ export default function Alerts() {
       setAssignmentData((previous) => ({ ...previous, alertId: assignmentAlert.id, assignment: result.assignment }));
       showNotification('Alert assignment saved.', 'success');
       setAssignmentAlert(null);
+      setLoadVersion((value) => value + 1);
     } catch (error) {
       setAssignmentError(error instanceof Error ? error.message : 'Alert assignment could not be saved.');
     } finally { setAssignmentBusy(false); }
@@ -131,30 +175,22 @@ export default function Alerts() {
       setAssignmentData((previous) => ({ ...previous, alertId: assignmentAlert.id, assignment: result.assignment }));
       showNotification('Alert returned to the team queue.', 'success');
       setAssignmentAlert(null);
+      setLoadVersion((value) => value + 1);
     } catch (error) {
       setAssignmentError(error instanceof Error ? error.message : 'Alert could not be unassigned.');
     } finally { setAssignmentBusy(false); }
   };
 
-  const summary = useMemo(() => deriveAlertSummary(alerts), [alerts]);
-  const filteredAlerts = useMemo(
-    () => filterAndSortAlerts(alerts, transactions, {
-      search,
-      statusFilter,
-      riskFilter,
-      typeFilter,
-      sortBy,
-    }),
-    [alerts, transactions, search, statusFilter, riskFilter, typeFilter, sortBy]
-  );
-
   const filtersActive = Boolean(search.trim())
     || statusFilter !== 'All'
     || riskFilter !== 'All'
     || typeFilter !== 'All';
+  const totalPages = getTotalPages(result.total, pageSize);
+  const firstAlert = result.total === 0 ? 0 : ((page - 1) * pageSize) + 1;
+  const lastAlert = Math.min(page * pageSize, result.total);
   const resultLabel = filtersActive
-    ? `${filteredAlerts.length} of ${alerts.length} Alerts`
-    : `${alerts.length} Alerts`;
+    ? `${result.total.toLocaleString('en-US')} Filtered Alerts`
+    : `${result.total.toLocaleString('en-US')} Alerts`;
 
   const clearFilters = () => {
     setSearch('');
@@ -162,11 +198,13 @@ export default function Alerts() {
     setRiskFilter('All');
     setTypeFilter('All');
     setSortBy(ALERT_SORT_OPTIONS.NEWEST);
+    setPage(1);
   };
 
-  const handleMarkReviewed = async (transactionId) => {
+  const handleMarkReviewed = async (alert) => {
     try {
-      await markAlertReviewed(transactionId);
+      await alertsService.updateReview(alert.id, 'REVIEWED');
+      setLoadVersion((value) => value + 1);
       showNotification(
         'Alert marked as reviewed.',
         'success'
@@ -181,13 +219,6 @@ export default function Alerts() {
     }
   };
 
-  const summaryItems = [
-    ['Active Alerts', summary.active, 'active'],
-    ['Reviewed Alerts', summary.reviewed, 'reviewed'],
-    ['High-Risk Alerts', summary.high, 'high'],
-    ['Medium-Risk Alerts', summary.medium, 'medium'],
-  ];
-
   return (
     <>
       <div className="page-header alerts-page-header">
@@ -197,15 +228,6 @@ export default function Alerts() {
         </div>
         <span className="alerts-result-count" aria-live="polite">{resultLabel}</span>
       </div>
-
-      <section className="alerts-summary-grid" aria-label="Alert summary">
-        {summaryItems.map(([label, value, tone]) => (
-          <div className={`alert-summary-item summary-${tone}`} key={label}>
-            <span>{label}</span>
-            <strong>{value}</strong>
-          </div>
-        ))}
-      </section>
 
       <div className="alerts-toolbar" aria-label="Alert search and filters">
         <label className="alerts-search">
@@ -225,7 +247,7 @@ export default function Alerts() {
           <select
             className="select-input"
             value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value)}
+              onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }}
           >
             <option value="All">All Statuses</option>
             <option value="Active">Active</option>
@@ -238,7 +260,7 @@ export default function Alerts() {
           <select
             className="select-input"
             value={riskFilter}
-            onChange={(event) => setRiskFilter(event.target.value)}
+              onChange={(event) => { setRiskFilter(event.target.value); setPage(1); }}
           >
             <option value="All">All Risks</option>
             <option value="Medium">Medium</option>
@@ -251,7 +273,7 @@ export default function Alerts() {
           <select
             className="select-input"
             value={typeFilter}
-            onChange={(event) => setTypeFilter(event.target.value)}
+              onChange={(event) => { setTypeFilter(event.target.value); setPage(1); }}
           >
             <option value="All">All Types</option>
             {ALERT_TYPE_OPTIONS.map((type) => (
@@ -265,7 +287,7 @@ export default function Alerts() {
           <select
             className="select-input"
             value={sortBy}
-            onChange={(event) => setSortBy(event.target.value)}
+              onChange={(event) => { setSortBy(event.target.value); setPage(1); }}
           >
             <option value={ALERT_SORT_OPTIONS.NEWEST}>Newest</option>
             <option value={ALERT_SORT_OPTIONS.OLDEST}>Oldest</option>
@@ -295,16 +317,23 @@ export default function Alerts() {
             <h3>Alerts could not be loaded.</h3>
             <p>{alertsError}</p>
           </div>
-        ) : filteredAlerts.length > 0 ? (
-          <>{caseBusy && <p role="status">Creating case…</p>}<AlertsTable alerts={filteredAlerts} onMarkReviewed={handleMarkReviewed} canAssign={canAssignAlerts} onAssign={setAssignmentAlert} canEscalateToCase={canEscalateToCase} onCreateCase={createCaseFromAlert} /></>
+        ) : result.items.length > 0 ? (
+          <>{caseBusy && <p role="status">Creating case…</p>}<AlertsTable alerts={result.items} onMarkReviewed={handleMarkReviewed} canAssign={canAssignAlerts} onAssign={setAssignmentAlert} canEscalateToCase={canEscalateToCase} onCreateCase={createCaseFromAlert} /></>
         ) : (
           <EmptyAlertsState
-            alertCount={alerts.length}
             search={search}
             statusFilter={statusFilter}
             riskFilter={riskFilter}
             typeFilter={typeFilter}
+            filtersActive={filtersActive}
           />
+        )}
+        {!alertsLoading && !alertsError && (
+          <Pagination currentPage={page} totalPages={totalPages} pageSize={pageSize}
+            firstItem={firstAlert} lastItem={lastAlert} totalItems={result.total} itemLabel="alerts"
+            onPageChange={setPage} onPageSizeChange={(value) => {
+              const next = getPageSizeChange(value); setPageSize(next.pageSize); setPage(next.page);
+            }} />
         )}
       </section>
       <AssignmentDialog alert={assignmentAlert}

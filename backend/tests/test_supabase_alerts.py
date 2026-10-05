@@ -134,13 +134,19 @@ def test_list_alerts(
         page=2,
         page_size=25,
         status_filter="ACTIVE",
+        search="vendor",
+        risk="HIGH",
+        alert_type="Ghost Vendor",
+        sort="highest-risk",
     )
 
     assert total == 52
     assert len(alerts) == 1
     assert alerts[0]["transaction_id"] == "TX-HIGH-001"
     assert request == {"name": "list_accessible_alerts", "p_actor": "actor-1", "p_page": 2,
-                       "p_page_size": 25, "p_status": "ACTIVE"}
+                       "p_page_size": 25, "p_status": "ACTIVE", "p_search": "vendor",
+                       "p_severity": "HIGH", "p_alert_type": "Ghost Vendor",
+                       "p_sort": "highest-risk"}
 
 
 def test_mark_alert_reviewed(

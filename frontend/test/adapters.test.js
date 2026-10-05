@@ -97,6 +97,7 @@ test('alert adapter maps expected fields and nullable values safely', () => {
     reason: 'Recorded evidence requires review.',
     status: 'Active',
     reviewedAt: null,
+    vendor: null,
     assignment: null,
   });
 });

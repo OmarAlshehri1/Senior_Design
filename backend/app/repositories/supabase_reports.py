@@ -109,9 +109,12 @@ def get_daily_audit_summary(
 
 
 def get_latest_transaction_period() -> tuple[datetime, datetime]:
-    """Return the UTC day containing the latest dated transaction."""
+    """Return the latest closed UTC day containing a dated transaction."""
     url, _ = _get_configuration()
     endpoint = f"{url}/rest/v1/transactions"
+    current_day_start = datetime.now(timezone.utc).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
 
     try:
         with httpx.Client(timeout=REQUEST_TIMEOUT_SECONDS) as client:
@@ -120,7 +123,9 @@ def get_latest_transaction_period() -> tuple[datetime, datetime]:
                 headers=_get_headers(),
                 params={
                     "select": "transaction_timestamp",
-                    "transaction_timestamp": "not.is.null",
+                    "transaction_timestamp": (
+                        f"lt.{current_day_start.isoformat()}"
+                    ),
                     "order": "transaction_timestamp.desc",
                     "limit": "1",
                 },

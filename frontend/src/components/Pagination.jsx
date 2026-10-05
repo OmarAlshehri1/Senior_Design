@@ -2,6 +2,7 @@ import {
   getPaginationItems,
   getPaginationState,
   PAGE_SIZE_OPTIONS,
+  shouldShowPageNavigation,
 } from '../utils/pagination.js';
 
 export default function Pagination({
@@ -18,6 +19,7 @@ export default function Pagination({
 }) {
   const items = getPaginationItems(currentPage, totalPages);
   const { previousDisabled, nextDisabled } = getPaginationState(currentPage, totalPages);
+  const showPageNavigation = shouldShowPageNavigation(totalPages);
 
   return (
     <div className="pagination-bar">
@@ -26,7 +28,7 @@ export default function Pagination({
         {totalItems.toLocaleString('en-US')} {itemLabel}
       </p>
 
-      <nav className="pagination-pages" aria-label={`${itemLabel} pages`}>
+      {showPageNavigation && <nav className="pagination-pages" aria-label={`${itemLabel} pages`}>
         <button
           type="button"
           className="pagination-button pagination-direction"
@@ -64,7 +66,7 @@ export default function Pagination({
         >
           Next
         </button>
-      </nav>
+      </nav>}
 
       <label className="pagination-page-size">
         <span>Rows per page</span>

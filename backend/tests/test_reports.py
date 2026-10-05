@@ -161,6 +161,7 @@ def test_download_completed_report(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     report = build_report()
+    downloaded: dict[str, Any] = {}
 
     monkeypatch.setattr(
         reports_api,
@@ -170,7 +171,9 @@ def test_download_completed_report(
     monkeypatch.setattr(
         reports_api,
         "build_report_csv",
-        lambda selected_report: (
+        lambda selected_report: downloaded.update(
+            {"report": selected_report}
+        ) or (
             "section,metric,value\n"
             "daily_summary,transaction_count,3\n"
         ),
@@ -191,6 +194,7 @@ def test_download_completed_report(
         "daily_summary,transaction_count,3"
         in response.text
     )
+    assert downloaded["report"] is report
 
 
 def test_download_missing_report(
