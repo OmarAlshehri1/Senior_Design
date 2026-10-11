@@ -193,6 +193,19 @@ def test_download_completed_report(
     )
 
 
+def test_download_completed_report_as_excel(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(reports_api, "get_report_by_id", lambda report_id: build_report())
+    response = client.get("/api/v1/reports/RPT-2026-10-03/download/xlsx")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith(
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    assert response.headers["content-disposition"] == (
+        'attachment; filename="RPT-2026-10-03.xlsx"'
+    )
+    assert response.content.startswith(b"PK")
+
+
 def test_download_missing_report(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

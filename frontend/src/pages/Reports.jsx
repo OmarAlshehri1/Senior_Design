@@ -124,14 +124,16 @@ export default function Reports() {
     [selectedReport?.id]
   );
 
-  const downloadReport = async () => {
+  const downloadReport = async (format = 'csv') => {
     if (!report?.id) return;
     try {
-      const content = await reportsService.download(report.id);
+      const content = format === 'xlsx'
+        ? await reportsService.downloadExcel(report.id)
+        : await reportsService.download(report.id);
       const url = URL.createObjectURL(content);
       const anchor = document.createElement('a');
       anchor.href = url;
-      anchor.download = `${report.id}.csv`;
+      anchor.download = `${report.id}.${format}`;
       anchor.click();
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (downloadError) {
@@ -360,9 +362,14 @@ export default function Reports() {
               </button>
 
               {downloadUrl && report.status === 'COMPLETED' && (
-                <button type="button" className="btn btn-secondary" onClick={downloadReport}>
-                  Download CSV
-                </button>
+                <>
+                  <button type="button" className="btn btn-secondary" onClick={() => downloadReport('xlsx')}>
+                    Download Excel
+                  </button>
+                  <button type="button" className="btn btn-secondary" onClick={() => downloadReport('csv')}>
+                    Download CSV
+                  </button>
+                </>
               )}
 
               {error && (

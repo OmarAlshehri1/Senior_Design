@@ -32,6 +32,7 @@ from app.services.audit_reports import (
     generate_daily_report,
     generate_latest_activity_report,
 )
+from app.services.report_workbook import build_report_workbook
 
 
 router = APIRouter(
@@ -134,8 +135,7 @@ async def create_latest_activity_report() -> dict[str, object]:
         ) from exc
 
 
-@router.get("/{report_id}/download")
-async def download_report(report_id: str) -> Response:
+async def _completed_report(report_id: str) -> dict[str, object]:
     try:
         report = await run_in_threadpool(
             get_report_by_id,
@@ -164,6 +164,12 @@ async def download_report(report_id: str) -> Response:
             detail="Report is not ready for download.",
         )
 
+    return report
+
+
+@router.get("/{report_id}/download")
+async def download_report(report_id: str) -> Response:
+    report = await _completed_report(report_id)
     try:
         content = build_report_csv(report)
     except ValueError as exc:
@@ -180,4 +186,22 @@ async def download_report(report_id: str) -> Response:
                 f'attachment; filename="{report_id}.csv"'
             )
         },
+    )
+
+
+@router.get("/{report_id}/download/xlsx")
+async def download_report_excel(report_id: str) -> Response:
+    report = await _completed_report(report_id)
+    try:
+        content = await run_in_threadpool(build_report_workbook, report)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    return Response(
+        content=content,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{report_id}.xlsx"'},
     )
