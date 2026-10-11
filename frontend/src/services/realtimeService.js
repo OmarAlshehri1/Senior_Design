@@ -30,8 +30,10 @@ export function createRealtimeClient(options = {}) {
     url = environment.websocketUrl,
     webSocketFactory = (socketUrl) => new WebSocket(socketUrl),
     getToken = getAccessToken,
-    maxReconnectAttempts = 3,
+    maxReconnectAttempts = Number.POSITIVE_INFINITY,
     reconnectDelayMs = 1000,
+    maxReconnectDelayMs = 30000,
+    authenticationTimeoutMs = 10000,
     schedule = (callback, delay) => setTimeout(callback, delay),
     cancelSchedule = (timerId) => clearTimeout(timerId),
   } = options;
@@ -40,6 +42,7 @@ export function createRealtimeClient(options = {}) {
   let state = REALTIME_STATES.IDLE;
   let reconnectAttempts = 0;
   let reconnectTimer = null;
+  let authenticationTimer = null;
   let intentionallyDisconnected = false;
   let connectionGeneration = 0;
   let authenticated = false;
@@ -52,6 +55,10 @@ export function createRealtimeClient(options = {}) {
   };
 
   const detachSocket = () => {
+    if (authenticationTimer !== null) {
+      cancelSchedule(authenticationTimer);
+      authenticationTimer = null;
+    }
     if (!socket) return;
     socket.onopen = null;
     socket.onmessage = null;
@@ -88,12 +95,20 @@ export function createRealtimeClient(options = {}) {
         return;
       }
       socket.send(JSON.stringify({ type: 'auth', access_token: accessToken }));
+      authenticationTimer = schedule(() => {
+        authenticationTimer = null;
+        if (generation === connectionGeneration && !authenticated) socket?.close();
+      }, authenticationTimeoutMs);
     };
     socket.onmessage = (message) => {
       if (generation !== connectionGeneration) return;
       let event;
       try { event = JSON.parse(message?.data); } catch { return; }
       if (event?.type === 'auth.ready') {
+        if (authenticationTimer !== null) {
+          cancelSchedule(authenticationTimer);
+          authenticationTimer = null;
+        }
         authenticated = true;
         reconnectAttempts = 0;
         setState(REALTIME_STATES.CONNECTED);
@@ -107,13 +122,18 @@ export function createRealtimeClient(options = {}) {
     socket.onerror = () => {
       if (generation === connectionGeneration) setState(REALTIME_STATES.ERROR);
     };
-    socket.onclose = () => {
+    socket.onclose = (event) => {
       if (generation !== connectionGeneration) return;
       detachSocket();
       socket = null;
       authenticated = false;
 
       if (intentionallyDisconnected) {
+        setState(REALTIME_STATES.DISCONNECTED);
+        return;
+      }
+
+      if (event?.code === 1008) {
         setState(REALTIME_STATES.DISCONNECTED);
         return;
       }
@@ -128,7 +148,7 @@ export function createRealtimeClient(options = {}) {
       reconnectTimer = schedule(() => {
         reconnectTimer = null;
         connect();
-      }, reconnectDelayMs * reconnectAttempts);
+      }, Math.min(reconnectDelayMs * reconnectAttempts, maxReconnectDelayMs));
     };
 
     return true;

@@ -110,9 +110,9 @@ test('unexpected closure uses bounded reconnect state and backoff scheduling', (
   sockets[0].onopen();
   sockets[0].onclose();
   assert.equal(client.getState(), REALTIME_STATES.RECONNECTING);
-  assert.equal(scheduled[0].delay, 250);
+  assert.equal(scheduled.at(-1).delay, 250);
 
-  scheduled[0].callback();
+  scheduled.at(-1).callback();
   assert.equal(sockets.length, 2);
   sockets[1].onclose();
   assert.equal(client.getState(), REALTIME_STATES.DISCONNECTED);
@@ -133,12 +133,56 @@ test('every authenticated reconnection requests an alert catch-up', () => {
   sockets[0].onopen();
   sockets[0].onmessage({ data: JSON.stringify({ type: 'auth.ready' }) });
   sockets[0].onclose();
-  scheduled[0]();
+  scheduled.at(-1)();
   sockets[1].onopen();
   sockets[1].onmessage({ data: JSON.stringify({ type: 'auth.ready' }) });
 
   assert.equal(caughtUp.length, 2);
   client.disconnect();
+});
+
+test('missing authentication acknowledgement closes the socket and retries', () => {
+  const sockets = [];
+  const scheduled = [];
+  const client = createRealtimeClient({
+    url: 'ws://localhost/ws/alerts', getToken: () => 'token',
+    authenticationTimeoutMs: 500,
+    webSocketFactory: () => { const socket = new FakeSocket(); sockets.push(socket); return socket; },
+    schedule: (callback, delay) => { scheduled.push({ callback, delay }); return scheduled.length; },
+  });
+
+  client.connect();
+  sockets[0].onopen();
+  assert.equal(scheduled[0].delay, 500);
+  scheduled[0].callback();
+  assert.equal(sockets[0].closeCalls, 1);
+  sockets[0].onclose({ code: 1000 });
+  assert.equal(client.getState(), REALTIME_STATES.RECONNECTING);
+  scheduled[1].callback();
+  assert.equal(sockets.length, 2);
+  client.disconnect();
+});
+
+test('transient failures keep retrying with capped delay, but policy closure stops', () => {
+  const sockets = [];
+  const scheduled = [];
+  const client = createRealtimeClient({
+    url: 'ws://localhost/ws/alerts', getToken: () => 'token',
+    reconnectDelayMs: 1000, maxReconnectDelayMs: 2000,
+    webSocketFactory: () => { const socket = new FakeSocket(); sockets.push(socket); return socket; },
+    schedule: (callback, delay) => { scheduled.push({ callback, delay }); return scheduled.length; },
+  });
+
+  client.connect();
+  for (let index = 0; index < 4; index += 1) {
+    sockets[index].onclose({ code: 1006 });
+    assert.equal(client.getState(), REALTIME_STATES.RECONNECTING);
+    scheduled[index].callback();
+  }
+  assert.deepEqual(scheduled.map(({ delay }) => delay), [1000, 2000, 2000, 2000]);
+  sockets[4].onclose({ code: 1008 });
+  assert.equal(client.getState(), REALTIME_STATES.DISCONNECTED);
+  assert.equal(scheduled.length, 4);
 });
 
 test('cleanup prevents stale socket callbacks and removes message listeners', () => {
