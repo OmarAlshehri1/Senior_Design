@@ -25,12 +25,15 @@ class AlertConnectionManager:
         self,
         alert: dict[str, Any],
     ) -> None:
+        await self.publish_changed(occurred_at=alert.get("created_at"))
+
+    async def publish_changed(self, *, occurred_at: str | None = None) -> None:
         event = {
             # The stream is an invalidation signal. Alert rows are always loaded
             # through the actor-scoped REST endpoint so a socket cannot bypass
             # team and assignment visibility rules.
             "type": "alerts.changed",
-            "occurred_at": alert.get("created_at"),
+            "occurred_at": occurred_at,
         }
 
         connections = list(self._connections)

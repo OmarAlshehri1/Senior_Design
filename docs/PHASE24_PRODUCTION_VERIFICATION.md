@@ -24,11 +24,15 @@ Owner-run follow-up SQL returned `function_exists = true` and `service_role_allo
 
 Owner reported on 2026-10-11 that `TRANSACTION_RECOVERY_ENABLED=true` was saved in Render and the service returned to Live. Runtime flag visibility and a new transaction through the durable path remain to be verified; the pre-activation job count was zero.
 
+The owner later ran `printenv TRANSACTION_RECOVERY_ENABLED` in the Render Shell and received `true`. This confirms the flag is present in that running shell environment; an end-to-end transaction through the durable job path remains unverified.
+
 Owner-run production SQL check for case-SLA escalation on 2026-10-11 returned `escalation_function_exists = true` for `public.escalate_overdue_cases(integer)` and `service_role_allowed = true`. The function is present and callable by the backend role. The current number of due cases and live worker execution have not yet been checked.
 
 Owner-run case-count query returned `total_cases = 0` and `overdue_to_escalate = 0`. Enabling the case-SLA worker would not immediately alter existing cases; a future real case is required to verify timed escalation and notifications end to end.
 
 Owner reported on 2026-10-11 that `CASE_SLA_ESCALATION_ENABLED=true` was saved in Render and the service returned to Live. With no cases in the database, there is no live escalation outcome to inspect yet; the runtime flag value and future-case behavior remain unverified independently.
+
+The owner later ran `printenv CASE_SLA_ESCALATION_ENABLED` in the Render Shell and received `true`. This confirms the flag is present in that running shell environment. A live overdue-case escalation remains unverified; the newly created case has not reached its SLA due date.
 
 Owner-run, read-only SQL check on 2026-10-11 returned `schedule_table_exists = true` for `public.daily_report_schedule_state` and `scheduler_function_exists = true` for `public.claim_daily_audit_report()`. This confirms the required scheduler objects exist, but does not show their current state or prove the loop has run. The Render scheduler flag was absent at this point and was added later (see below).
 
@@ -37,6 +41,8 @@ Owner-run scheduler-state query on 2026-10-11 returned `next_period_start = 2026
 Owner-run `audit_reports` query for UTC periods beginning 2026-10-04 through 2026-10-10 returned only `RPT-2026-10-04`, status `COMPLETED`, covering October 4–5 UTC. No reports for October 5–10 were returned. If enabled, the scheduler should reuse the October 4 report and attempt to generate the remaining six daily reports; completion and accuracy still require live verification.
 
 Owner reported on 2026-10-11 that `DAILY_REPORT_SCHEDULER_ENABLED=true` was saved in Render and the service returned to Live. This is an owner-reported configuration change; scheduler execution and completion have not yet been verified.
+
+The owner later ran `printenv DAILY_REPORT_SCHEDULER_ENABLED` in the Render Shell and received `true`. Together with the completed daily-report runs recorded below, this confirms the scheduler flag is present in the running shell environment and that the scheduler has executed. Its next automatic run remains to be checked after the next UTC day becomes due.
 
 Owner-run query of `public.daily_report_runs` on 2026-10-11 returned one row: period start 2026-10-04, status `COMPLETED`, attempt 1, report ID `RPT-2026-10-04`, no error. This proves the scheduler executed and reused the existing completed report for that day; it does not yet prove generation of a new report for October 5–10.
 
@@ -84,7 +90,17 @@ Owner report on 2026-10-11: after deployment, the Excel report download succeede
 
 As an Admin after the current deployment, generate a **Latest Activity** report from the Reports page. Record its report ID and UTC period. Confirm its transaction count is non-zero, its risk/alert counts agree with the page, and its authenticated Excel download contains the same report totals. Confirm `GET /api/v1/reports/schedule` reflects the actual scheduler flag and recent runs. A completed report for an older day with all-zero totals does not satisfy this check.
 
+An owner-provided production Reports screenshot after the latest-activity step shows `RPT-2026-10-03` as `COMPLETED`, covering 2026-10-03 through 2026-10-04 UTC (exclusive), completed on 2026-10-11 at 6:06 PM UTC. The displayed summary has 9 total/evaluated transactions, 3 high-risk transactions, average risk score 48.79, 4 active alerts, and 1 reviewed alert; the visible risk distribution is low 4, medium 2, high 3. This is a populated persisted report for the latest transaction day. The screenshot does not establish the exact button interaction or the newly downloaded workbook contents, so those remain to be verified separately.
+
+The `Generate Latest Activity` action deliberately selects the UTC date of the newest non-null `transactions.transaction_timestamp`, not the calendar date when the button is pressed. Thus the report was completed on October 11 but covers October 3, the latest dated transaction day shown. The separate automatic scheduler generates completed UTC days only: a report for October 11 UTC becomes due after 00:00 UTC on October 12 (03:00 in Riyadh), and would contain zero transactions if none were posted with an October 11 UTC timestamp. The 199 transactions with null timestamps cannot select a latest-activity period.
+
+The owner confirmed downloading the Excel workbook for the newly displayed latest-activity report and checking that its values all match the Reports page. This is owner-reported verification; no copy of that new download or comparison screenshot was provided in this step. The earlier October 3 workbook had already been inspected locally against a prior page screenshot.
+
 For a newly processed medium-risk transaction, confirm the persisted alert, appropriate notification, actor-scoped REST visibility, WebSocket invalidation, and catch-up after disconnect/reconnect. Separately verify the behavior after a Render restart. Existing historical medium alerts demonstrate backfill, but do not prove the new-event or real-time path.
+
+An owner-provided Chrome Network screenshot on 2026-10-11, while Admin Badr was on `/alerts`, shows two `alerts` requests of type `websocket` with status `101`. One completed after about 1.18 seconds and the other remained `Pending`. This confirms the WebSocket upgrade occurred and a connection was open at capture time. The owner subsequently confirmed that an incoming `auth.ready` frame appeared on the pending connection, establishing authenticated WebSocket readiness without sharing an access token. An `alerts.changed` event and reconnect/catch-up behavior remain unverified.
+
+Local fix prepared after this check: successful alert assignment, reassignment, unassignment, review, and reopening now publish the existing `alerts.changed` invalidation. The client already reacts by refetching actor-scoped alerts and notifications. This change has passed the focused backend tests locally but has not yet been deployed or verified in production. The live stream still uses process-local connections; the one-instance/one-worker production configuration is required for reliable fan-out without shared pub/sub.
 
 ## Three-role workflow
 
@@ -157,6 +173,10 @@ An owner-provided Admin screenshot of `/audit-log` shows 59 global records, incl
 The owner ran migration 024 in the production Supabase SQL Editor and reported `Success. No rows returned`. This indicates the replacement function was accepted. Omar's scoped audit results still need a live retest; the frontend audit-action changes remain local and have not been deployed.
 
 The owner then refreshed Omar's `/audit-log`. The scoped total rose from 14 to 17 records, and both `Case Comment Added` and `Case Created` for case UUID `5957d7cc-40be-4df7-bde3-6d2ea084329e` are now visible. This verifies the production migration restored the Supervisor's case-event scope, including historical records. The third added record is consistent with the `CASE_STATUS_CHANGED` event that the currently deployed frontend filters out; its appearance still requires deployment and a fresh UI check. The page retains the old static Supervisor scope badge because the frontend update is not deployed.
+
+After commit `1a983f1` was pushed to `main`, an owner-provided screenshot of Omar's production `/audit-log` shows all three case events (`Case Comment Added`, `Case Status Changed`, `Case Created`) for UUID `5957d7cc-40be-4df7-bde3-6d2ea084329e`, attributed to Ali with `Success` outcomes. The badge now reads `Your activity and available team events`. This verifies the database scope fix and deployed frontend action handling together for this case. The live Vercel deployment ID was not separately recorded.
+
+The `17 records` counter did not rise after the frontend deployment because the API had already counted all 17 scoped database rows after migration 024. The old frontend discarded `CASE_STATUS_CHANGED` during normalization, so only 16 rows were rendered; the new frontend renders that previously counted row. The counter is the API total, not a count of rendered rows.
 
 For each of Auditor, Supervisor, and Admin, record the deployed commit and walk through sign-in, dashboard, transactions, rule/AI/risk detail, alerts, review/assignment, case/evidence/discussion/closure, vendors, notifications, audit log, reports, and analytics **where permitted**. Check direct URLs as well as navigation. For a forbidden operation, record the backend HTTP response (normally `403`), not just a hidden button. Repeat the authenticated Excel download and WebSocket checks with a permitted role and a denied role. Include a session-expiry and reconnect check.
 

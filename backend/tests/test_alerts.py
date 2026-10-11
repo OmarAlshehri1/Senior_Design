@@ -76,6 +76,10 @@ def test_list_alerts(
 def test_review_alert(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    published = []
+    async def publish_changed(*, occurred_at=None):
+        published.append(occurred_at)
+    monkeypatch.setattr("app.api.alerts.alert_manager.publish_changed", publish_changed)
     reviewed_alert = {
         **build_alert(),
         "status": "REVIEWED",
@@ -95,11 +99,16 @@ def test_review_alert(
     assert response.status_code == 200
     assert response.json()["status"] == "REVIEWED"
     assert response.json()["reviewed_at"] is not None
+    assert published == [None]
 
 
 def test_review_missing_alert(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    published = []
+    async def publish_changed(*, occurred_at=None):
+        published.append(occurred_at)
+    monkeypatch.setattr("app.api.alerts.alert_manager.publish_changed", publish_changed)
     monkeypatch.setattr(
         "app.api.alerts.accountability.record_review",
         lambda **kwargs: (_ for _ in ()).throw(IdentityError("NOT_FOUND", 404)),
@@ -112,6 +121,7 @@ def test_review_missing_alert(
 
     assert response.status_code == 404
     assert response.json()["detail"] == "NOT_FOUND"
+    assert published == []
 
 
 def test_reopening_alert_preserves_alert_response_contract(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -131,6 +141,10 @@ def test_reopening_alert_preserves_alert_response_contract(monkeypatch: pytest.M
 
 def test_assignment_api_uses_authenticated_actor_and_database_history(monkeypatch: pytest.MonkeyPatch) -> None:
     received = {}
+    published = []
+    async def publish_changed(*, occurred_at=None):
+        published.append(occurred_at)
+    monkeypatch.setattr("app.api.alerts.alert_manager.publish_changed", publish_changed)
     monkeypatch.setattr("app.api.alerts.identity.rpc", lambda name, **kwargs: received.update({"name": name, **kwargs}) or {
         "assignment": {"alertId": "AL-001", "assigneeId": "auditor-2"}, "history": [], "eligible_users": []})
     bundle = client.get("/api/v1/alerts/AL-001/assignment")
@@ -144,6 +158,7 @@ def test_assignment_api_uses_authenticated_actor_and_database_history(monkeypatc
     assert response.status_code == 200
     assert received == {"name": "record_alert_assignment", "p_actor": "00000000-0000-0000-0000-000000000001",
                         "p_alert_id": "AL-001", "p_action": "ASSIGNED", "p_assignee_id": "auditor-2", "p_note": "Queue triage"}
+    assert published == [None]
 
 
 def test_auditor_cannot_call_assignment_mutation(monkeypatch: pytest.MonkeyPatch) -> None:

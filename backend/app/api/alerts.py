@@ -107,11 +107,13 @@ async def update_alert_assignment(alert_id: str, request: AlertAssignmentRequest
     if user.get("role") not in ("SUPERVISOR", "ADMIN"):
         raise HTTPException(status_code=403, detail="FORBIDDEN")
     try:
-        return await run_in_threadpool(identity.rpc, "record_alert_assignment",
+        result = await run_in_threadpool(identity.rpc, "record_alert_assignment",
             p_actor=user["id"], p_alert_id=alert_id, p_action=request.action,
             p_assignee_id=request.assignee_id, p_note=request.note)
     except IdentityError as exc:
         raise HTTPException(status_code=exc.status, detail=exc.code) from exc
+    await alert_manager.publish_changed()
+    return result
 
 
 @router.patch("/{alert_id}/review")
@@ -133,6 +135,7 @@ async def review_alert(
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                             detail="Alert storage is not configured.") from exc
 
+    await alert_manager.publish_changed()
     return result["alert"]
 
 

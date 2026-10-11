@@ -45,3 +45,16 @@ def test_publish_created_alert_event() -> None:
     ]
 
     manager.disconnect(websocket)
+
+
+def test_publish_changed_sends_only_invalidation() -> None:
+    manager = AlertConnectionManager()
+    websocket = FakeWebSocket()
+
+    async def exercise() -> None:
+        await manager.connect(websocket)
+        await manager.publish_changed()
+
+    asyncio.run(exercise())
+
+    assert websocket.messages == [{"type": "alerts.changed", "occurred_at": None}]
