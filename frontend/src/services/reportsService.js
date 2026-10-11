@@ -34,15 +34,6 @@ export function createReportsService(
         + `${encodeURIComponent(reportId)}/download`
       );
     },
-    download(reportId, options = {}) {
-      if (typeof reportId !== 'string' || !reportId.trim()) {
-        throw new TypeError('A report ID is required.');
-      }
-      if (typeof client.getFile !== 'function') {
-        throw new TypeError('Authenticated file downloads are unavailable.');
-      }
-      return client.getFile(`/reports/${encodeURIComponent(reportId)}/download`, options);
-    },
     downloadExcel(reportId, options = {}) {
       if (typeof reportId !== 'string' || !reportId.trim()) {
         throw new TypeError('A report ID is required.');
@@ -50,7 +41,7 @@ export function createReportsService(
       if (typeof client.getFile !== 'function') {
         throw new TypeError('Authenticated file downloads are unavailable.');
       }
-      return client.getFile(`/reports/${encodeURIComponent(reportId)}/download/xlsx`, options);
+      return client.getFile(`/reports/${encodeURIComponent(reportId)}/download`, options);
     },
   });
 }

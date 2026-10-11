@@ -34,7 +34,7 @@ Each phase (and each Phase 13 subphase) uses an independent branch and PR. Befor
 
 ## API implementation boundaries
 
-Implemented REST routes: health; authenticated transaction list/detail/create; alert list/review; report list/generation/CSV download; identity/session/access-request/user management; review history/audit-event reads; team and assignment operations; durable notifications; cases/evidence/SLA; vendor monitoring; authoritative analytics; Admin-managed organization settings; and Admin-only report schedule status. `/ws/alerts` authenticates bearer tokens after connection. Phase 22 adds the opt-in worker and durable execution history.
+Implemented REST routes: health; authenticated transaction list/detail/create; alert list/review; report list/generation/Excel download; identity/session/access-request/user management; review history/audit-event reads; team and assignment operations; durable notifications; cases/evidence/SLA; vendor monitoring; authoritative analytics; Admin-managed organization settings; and Admin-only report schedule status. `/ws/alerts` authenticates bearer tokens after connection. Phase 22 adds the opt-in worker and durable execution history.
 
 - `GET /api/v1/dashboard/summary`, `GET /api/v1/audit-rules`, and `GET /api/v1/analytics`: implemented and merged by PR #33; owner confirmed Migration 019 applied, without independent live-schema inspection.
 - Evaluation coverage: Phase 20 exposes authoritative latest-snapshot coverage, per-rule denominators, and explicit non-evaluation reasons through `/api/v1/analytics`.
@@ -331,10 +331,10 @@ Targets:
 - [x] Map authoritative rule, AI, combined-risk, and Gemini explanation fields.
 - [x] Remove automatic mock transaction and alert fallback from API mode.
 - [x] Integrate durable alert listing, review updates, and `alert.created` WebSocket delivery.
-- [x] Integrate persisted daily report listing, generation, summaries, and CSV download.
+- [x] Integrate persisted daily report listing, generation, summaries, and Excel download.
 - [x] Deploy FastAPI to Render and the frontend to Vercel (owner-reported live deployment).
 - [x] Keep Supabase service credentials in backend/runtime environment variables; no credentials are recorded here (owner-reported working authenticated API).
-- [x] Run a local end-to-end test: frontend -> FastAPI -> Supabase -> frontend. Live verification loaded persisted alerts, changed an alert from `ACTIVE` to `REVIEWED`, received a newly generated high-risk alert through WebSocket without refreshing, generated `RPT-2026-10-03`, and downloaded its CSV.
+- [x] Run a local end-to-end test: frontend -> FastAPI -> Supabase -> frontend. Live verification loaded persisted alerts, changed an alert from `ACTIVE` to `REVIEWED`, received a newly generated high-risk alert through WebSocket without refreshing, generated `RPT-2026-10-03`, and downloaded its report.
 - [x] Commit and merge live frontend API integration (PR #22).
 - [x] Configure deployed frontend and backend environments and production API origins (owner-reported live operation; values have not been independently inspected).
 
@@ -396,7 +396,7 @@ Acceptance criteria:
 - Missing/invalid/expired JWTs, locked/disabled accounts, prohibited roles, and unauthorized object access are rejected by the backend, including direct URLs and sockets.
 - Tests verify role changes, access-request decisions, account transitions, login history/lockout, and reset/session behavior; UI visibility is not authorization evidence.
 - Allowed local-origin preflight accepts authenticated requests; unknown origins remain disallowed. Supabase privileged keys remain backend-only.
-- CSV download retains its UI behavior while using authenticated transport. Document contracts and local migration evidence without assuming live application.
+- Report download uses authenticated transport. Document contracts and local migration evidence without assuming live application.
 - Three consecutive failed sign-ins lock an account; no direct Admin unlock is available without a provider-verified pending account-owner request, and only an active Admin may decide that request.
 - `POST /transactions` is allowed to active Supervisor/Admin users only. Every new Auth profile is disabled; initial Admin provisioning follows [IDENTITY_BOOTSTRAP.md](IDENTITY_BOOTSTRAP.md) and requires the Supabase database owner.
 
@@ -534,7 +534,7 @@ Phase 21 complete: PR #34 (`d8ec2b2`, merge `37d9ac0`). Main verification passed
 
 Omar mapping: section 9, sections 11–14; dependency: Phases 13B–14 and completed report integration.
 
-- [ ] Add server-side daily scheduling, execution history, retry/catch-up, and duplicate-run handling while preserving stored authoritative summaries and CSV.
+- [ ] Add server-side daily scheduling, execution history, retry/catch-up, and duplicate-run handling while preserving stored authoritative summaries and Excel download.
 - [ ] Add PDF only if the official rubric or an explicit project decision confirms it is required.
 - [ ] Preserve Gemini after authoritative scoring and its optional-failure behavior.
 
@@ -544,7 +544,7 @@ Acceptance criteria:
 
 - With no browser open, a scheduled run generates the intended half-open UTC daily period and records success/failure.
 - Tests cover restart, missed runs, repeated/concurrent runs, and partial failure without losing prior report history; document report regeneration/version semantics.
-- Authorized list/generation/download still work; CSV stays available. PDF has separate acceptance evidence only if required.
+- Authorized list/generation/download still work; Excel download stays available. PDF has separate acceptance evidence only if required.
 - [x] Manual regeneration refreshes the persisted summary for the same UTC period; scheduled completion remains idempotent and does not replace an existing completed report.
 - [x] The Reports UI can generate a report for the latest dated transaction activity rather than silently showing a zero-only current-day report for historical data.
 - Scheduling infrastructure that creates an external service is explained and approved before creation; deployed scheduling is verified in Phase 24.
@@ -576,7 +576,7 @@ Omar mapping: sections 2, 11–15; dependency: Phases 13–23 and explicit deplo
 - [x] Deploy the Vercel frontend and Render API; verify the public health endpoint and live authenticated page/API responses (owner-reported; independent checks remain outstanding).
 - [x] Select the M004 production Supabase project for the live application (owner-reported).
 - [ ] Verify deployed secret names/origin allowlists without exposing values, plus Render/Vercel runtime settings and the live scheduler flag.
-- [ ] After the latest application deployment completes, generate a Latest Activity report and verify it contains non-zero data for its displayed UTC period and that CSV download matches.
+- [ ] After the latest application deployment completes, generate a Latest Activity report and verify it contains non-zero data for its displayed UTC period and that Excel download matches.
 - [ ] Verify Migration 022 (analytics optimization) and Migration 023 (medium-risk alert/notification handling) against the live schema; owner reports Migration 022 succeeded and the medium-alert demo created 574 alerts, but these are not independent schema checks.
 - [ ] Document the chosen worker/instance topology and WebSocket delivery/recovery design; an in-process manager does not broadcast across workers/instances.
 - [ ] Run deployed E2E for Auditor, Supervisor, and Admin, including direct URLs and denied backend actions. The owner reports the three role accounts are working; the complete role-by-role workflow has not been recorded.
@@ -584,7 +584,7 @@ Omar mapping: sections 2, 11–15; dependency: Phases 13–23 and explicit deplo
 Acceptance criteria:
 
 - Verify login/role -> dashboard/transactions -> rules/AI/risk -> alerts/review/assignment -> case/evidence/discussion/closure -> vendor workflow -> audit log/notifications -> reports/analytics for each permitted role.
-- Verify Production Authorization/CORS, authenticated CSV/WebSocket, reconnect catch-up, restart behavior, and deployed scheduling on the selected hosting topology. Current logs show successful frontend API calls and health checks, but do not prove all these acceptance paths.
+- Verify Production Authorization/CORS, authenticated Excel/WebSocket, reconnect catch-up, restart behavior, and deployed scheduling on the selected hosting topology. Current logs show successful frontend API calls and health checks, but do not prove all these acceptance paths.
 - Verify approved migrations and actual environment configuration; do not infer them from local files. Final handoff lists endpoints, migrations, env names without secrets, results/evidence, and remaining gaps.
 
 ## Specification verification checklist

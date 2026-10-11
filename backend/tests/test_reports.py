@@ -157,45 +157,9 @@ def test_create_report_rejects_invalid_period(
     )
 
 
-def test_download_completed_report(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    report = build_report()
-
-    monkeypatch.setattr(
-        reports_api,
-        "get_report_by_id",
-        lambda report_id: report,
-    )
-    monkeypatch.setattr(
-        reports_api,
-        "build_report_csv",
-        lambda selected_report: (
-            "section,metric,value\n"
-            "daily_summary,transaction_count,3\n"
-        ),
-    )
-
-    response = client.get(
-        "/api/v1/reports/RPT-2026-10-03/download"
-    )
-
-    assert response.status_code == 200
-    assert response.headers["content-type"].startswith(
-        "text/csv"
-    )
-    assert response.headers["content-disposition"] == (
-        'attachment; filename="RPT-2026-10-03.csv"'
-    )
-    assert (
-        "daily_summary,transaction_count,3"
-        in response.text
-    )
-
-
 def test_download_completed_report_as_excel(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(reports_api, "get_report_by_id", lambda report_id: build_report())
-    response = client.get("/api/v1/reports/RPT-2026-10-03/download/xlsx")
+    response = client.get("/api/v1/reports/RPT-2026-10-03/download")
     assert response.status_code == 200
     assert response.headers["content-type"].startswith(
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"

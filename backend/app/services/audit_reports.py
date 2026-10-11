@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import csv
 from datetime import datetime, timedelta, timezone
-from io import StringIO
 from typing import Any
 
 from app.repositories.supabase_reports import (
@@ -13,19 +11,6 @@ from app.repositories.supabase_reports import (
 
 
 REPORT_VERSION = "1.0.0"
-CSV_COLUMNS = [
-    "section",
-    "key",
-    "label",
-    "value",
-    "transaction_id",
-    "timestamp",
-    "vendor_name",
-    "amount",
-    "currency",
-    "risk_score",
-    "risk_level",
-]
 
 
 def normalize_daily_period(
@@ -90,86 +75,3 @@ def generate_latest_activity_report() -> dict[str, Any]:
         period_start=period_start,
         period_end=period_end,
     )
-
-
-def build_report_csv(report: dict[str, Any]) -> str:
-    summary = report.get("summary")
-
-    if not isinstance(summary, dict):
-        raise ValueError(
-            "Completed report summary is unavailable."
-        )
-
-    output = StringIO(newline="")
-    writer = csv.DictWriter(
-        output,
-        fieldnames=CSV_COLUMNS,
-        extrasaction="ignore",
-    )
-    writer.writeheader()
-
-    for section_name in (
-        "daily_summary",
-        "risk_distribution",
-        "alert_summary",
-    ):
-        section = summary.get(section_name, {})
-
-        if not isinstance(section, dict):
-            continue
-
-        for key, value in section.items():
-            writer.writerow(
-                {
-                    "section": section_name,
-                    "key": key,
-                    "value": value,
-                }
-            )
-
-    rule_summary = summary.get("rule_summary", [])
-
-    if isinstance(rule_summary, list):
-        for rule in rule_summary:
-            if not isinstance(rule, dict):
-                continue
-
-            writer.writerow(
-                {
-                    "section": "rule_summary",
-                    "key": rule.get("rule_key"),
-                    "label": rule.get("rule_name"),
-                    "value": rule.get("violation_count"),
-                }
-            )
-
-    high_risk_transactions = summary.get(
-        "high_risk_transactions",
-        [],
-    )
-
-    if isinstance(high_risk_transactions, list):
-        for transaction in high_risk_transactions:
-            if not isinstance(transaction, dict):
-                continue
-
-            writer.writerow(
-                {
-                    "section": "high_risk_transactions",
-                    "transaction_id": transaction.get("id"),
-                    "timestamp": transaction.get("timestamp"),
-                    "vendor_name": transaction.get(
-                        "vendor_name"
-                    ),
-                    "amount": transaction.get("amount"),
-                    "currency": transaction.get("currency"),
-                    "risk_score": transaction.get(
-                        "risk_score"
-                    ),
-                    "risk_level": transaction.get(
-                        "risk_level"
-                    ),
-                }
-            )
-
-    return output.getvalue()

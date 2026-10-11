@@ -73,7 +73,7 @@ export function createApiClient({ baseUrl, fetchImpl = globalThis.fetch, getToke
   }
 
   async function send(method, path, options, file = false) {
-    const headers = { Accept: file ? 'text/csv' : 'application/json', ...options.headers };
+    const headers = { Accept: file ? '*/*' : 'application/json', ...options.headers };
     const accessToken = getToken?.();
     if (accessToken && !headers.Authorization) headers.Authorization = `Bearer ${accessToken}`;
     const requestOptions = { method, headers, signal: options.signal };

@@ -28,7 +28,6 @@ from app.repositories.supabase_transactions import (
     SupabasePersistenceError,
 )
 from app.services.audit_reports import (
-    build_report_csv,
     generate_daily_report,
     generate_latest_activity_report,
 )
@@ -168,28 +167,6 @@ async def _completed_report(report_id: str) -> dict[str, object]:
 
 
 @router.get("/{report_id}/download")
-async def download_report(report_id: str) -> Response:
-    report = await _completed_report(report_id)
-    try:
-        content = build_report_csv(report)
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=str(exc),
-        ) from exc
-
-    return Response(
-        content=content,
-        media_type="text/csv",
-        headers={
-            "Content-Disposition": (
-                f'attachment; filename="{report_id}.csv"'
-            )
-        },
-    )
-
-
-@router.get("/{report_id}/download/xlsx")
 async def download_report_excel(report_id: str) -> Response:
     report = await _completed_report(report_id)
     try:

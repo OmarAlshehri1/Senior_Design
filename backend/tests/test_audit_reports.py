@@ -152,19 +152,3 @@ def test_generate_daily_report(
     assert persisted["period_start"] == PERIOD_START
     assert persisted["period_end"] == PERIOD_END
     assert persisted["summary"]["report_version"] == "1.0.0"
-
-
-def test_build_report_csv() -> None:
-    content = audit_reports.build_report_csv(
-        {
-            "id": "RPT-2026-10-03",
-            "status": "COMPLETED",
-            "summary": build_summary(),
-        }
-    )
-
-    assert "daily_summary,total_transactions,,3" in content
-    assert "rule_summary,ghost_vendors,Ghost Vendors,1" in content
-    assert "TX-HIGH-001" in content
-    assert "Test Vendor" in content
-    assert "88" in content

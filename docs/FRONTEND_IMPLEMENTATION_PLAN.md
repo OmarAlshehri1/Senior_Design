@@ -712,7 +712,7 @@ Implemented:
 - Authoritative transaction data-quality, rule-score, AI-score, combined-risk, and persisted Gemini explanation presentation.
 - Durable alert loading through `GET /api/v1/alerts`, review updates through `PATCH /api/v1/alerts/{alert_id}/review`, and live `alert.created` delivery through `/ws/alerts`.
 - API mode starts without mock alerts; WebSocket events are adapted and deduplicated by persisted alert ID.
-- Persisted daily report listing, generation, authoritative summary adaptation, report selection, and CSV download.
+- Persisted daily report listing, generation, authoritative summary adaptation, report selection, and Excel download.
 - Loading, error, empty, and unavailable states for alert and report integration.
 - Desktop alert-table handling for long persisted alert and transaction identifiers.
 
@@ -722,7 +722,7 @@ Validation:
 - Live alert verification loaded two persisted alerts, reviewed the active alert through the UI, and confirmed the stored `REVIEWED` state through REST.
 - Live WebSocket verification added `TX-LIVE-HIGH-*` without refreshing the page and updated the page to three alerts: one active and two reviewed.
 - Live report verification generated `RPT-2026-10-03` with 9 evaluated transactions, average risk score 45.69, 6 LOW and 3 HIGH transactions, and 3 HIGH alerts split between 1 active and 2 reviewed.
-- CSV download was exposed through the completed persisted report.
+- Report download was exposed through the completed persisted report.
 
 Evidence:
 
@@ -884,7 +884,7 @@ Dashboard summary, the audit-rule catalog, and coverage/trend analytics are conn
 | --- | --- | --- | --- | --- |
 | Transactions | Yes | Yes | Yes | Connected: list and detail |
 | Alerts | Yes | Yes | Yes | Connected: REST listing/review and live WebSocket delivery |
-| Reports | Yes | Yes | Yes | Connected: persisted generation, listing, and CSV download |
+| Reports | Yes | Yes | Yes | Connected: persisted generation, listing, and Excel download |
 | Auth | Yes | Yes | Yes | Phase 14 API integration on `main`; owner confirmed migration 013 applied |
 | Users | Yes | Yes | Yes | Phase 14 admin/access-request integration on `main`; owner confirmed migration 013 applied |
 | Audit Log | Yes | Yes | Yes | Connected: immutable actor-attributed history and team-scoped reads (Phases 15-16) |
@@ -957,7 +957,7 @@ No frontend claim is made for the five audit-rule implementations, Isolation For
 | Transaction Detail | Direct lookup, rule/risk/data-quality presentation, not-found/error separation | `/transactions/:id` |
 | Alerts | Connected on `main`: persisted listing/review, assignment history, scoped access, data-free WebSocket invalidation, and paginated reconnect catch-up | `/alerts` |
 | Audit Rules | Five named rule definitions and accessible disclosures; execution is backend-owned | `/audit-rules` |
-| Reports | Connected persisted listing/generation, authoritative summaries, and CSV download; automatic scheduling remains pending | `/reports` |
+| Reports | Connected persisted listing/generation, authoritative summaries, and Excel download; automatic scheduling remains pending | `/reports` |
 | Role Preview | Development-only Auditor/Supervisor/Admin presentation | Application shell in development |
 | Login UX | Supabase Auth session lifecycle and account-state routes; owner confirmed migration 013 applied | `/login` and auth routes |
 | User Management | Authenticated access-request, profile, and account lifecycle APIs; owner confirmed migration 013 applied | `/users` |
@@ -992,7 +992,7 @@ No frontend claim is made for the five audit-rule implementations, Isolation For
 - [x] Audit-coverage and risk-trend analytics integration (Phase 20).
 - [x] Persisted Organization Name with Admin-only edit; other settings remain read-only (Phase 21, PR #34).
 - [x] Core Alerts and Reports integration activated in PR #22; historical local live verification recorded above.
-- [x] Authenticated Alerts/Reports/CSV integration and reconnect catch-up (Phases 14 and 17); final deployed three-role E2E remains pending Phase 24.
+- [x] Authenticated Alerts/Reports/download integration and reconnect catch-up (Phases 14 and 17); final deployed three-role E2E remains pending Phase 24.
 - [ ] Deployment configuration, CORS, identity/security review, and full frontend-to-FastAPI-to-Supabase end-to-end testing.
 
 ## Current frontend status
@@ -1005,7 +1005,7 @@ No frontend claim is made for the five audit-rule implementations, Isolation For
 | Transaction Detail | Connected | FastAPI detail endpoint | Yes |
 | Alerts | Connected | FastAPI/Supabase alert REST and WebSocket APIs | Yes |
 | Audit Rules | Connected authoritative definitions | FastAPI read-only rule catalog; rule execution remains backend-owned | Yes |
-| Reports | Connected | FastAPI/Supabase report and CSV endpoints | Yes |
+| Reports | Connected | FastAPI/Supabase report and Excel endpoint | Yes |
 | Auth and roles | Completed UX/contracts | Authentication and RBAC | Frontend-only |
 | Accountability/management | Completed architecture | Identity and persistence | Frontend-only |
 | Cases/vendors/analytics | Connected integrations | FastAPI/Supabase workflows; evidence storage/scanner configuration and deployment E2E remain | Yes, with documented evidence limitation |

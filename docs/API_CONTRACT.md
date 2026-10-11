@@ -2,7 +2,7 @@
 
 This document is the preliminary contract between the React frontend and FastAPI backend. It defines planned field names and payload shapes so frontend and backend development can proceed independently.
 
-The documented health, transaction, alert, report, CSV-download, identity, team, accountability, notification, alert WebSocket, case, vendor, analytics, and settings endpoints are implemented on `main`. The owner reported migrations 012-023 applied to M004 Supabase; this was not independently inspected. Migration 022 success and Migration 023's 574-alert demo result are owner-reported. Shapes may be extended through team agreement, but existing names should not be changed without coordinating both branches.
+The documented health, transaction, alert, report, Excel-download, identity, team, accountability, notification, alert WebSocket, case, vendor, analytics, and settings endpoints are implemented on `main`. The owner reported migrations 012-023 applied to M004 Supabase; this was not independently inspected. Migration 022 success and Migration 023's 574-alert demo result are owner-reported. Shapes may be extended through team agreement, but existing names should not be changed without coordinating both branches.
 
 Implementation status: runtime transaction creation is insert-only and returns `409` for an existing ID without overwriting it; offline seed upsert remains separate. The owner reports migrations 012-023 are applied in M004 Supabase; this has not been independently queried. `TRANSACTION_RECOVERY_ENABLED` remains disabled. Phase 14 adds API identity, bearer authentication, role checks, authenticated report download and WebSocket subscriptions, plus local `Authorization` CORS support. The owner confirmed `POST /transactions` is Supervisor/Admin-only; account lockout follows three consecutive failed sign-ins, and an active Admin may unlock only after the account owner verifies their email and submits an unlock request. Initial Admin provisioning is manual by the Supabase database owner as documented in [IDENTITY_BOOTSTRAP.md](IDENTITY_BOOTSTRAP.md). Phase 15 adds actor-attributed reviews and immutable audit events through migration 014. Phase 16 adds persisted teams and assignments, team-scoped alert/review/audit visibility, and team activity. Phase 17 adds durable private notifications and paginated alert catch-up; Migration 023 adds medium-risk alert notifications. Phase 18 implements cases/evidence/closure/SLA, Phase 19 implements vendor monitoring workflows, Phase 20 implements dashboard summaries, the read-only audit-rule catalog, and authoritative analytics, and Phase 21 adds Admin-managed Organization Name settings. Phase 22 adds opt-in automatic report scheduling and manual latest-activity report generation. The owner reports the Vercel frontend and Render backend are live and the health endpoint responds successfully; full production role, CORS, worker, and multi-instance verification remains open. Live database and performance observations below remain owner-reported or historical, not independently verified.
 
@@ -403,7 +403,7 @@ Implemented in Phase 20; the owner reported Migration 019 applied, without indep
 
 ### `GET /api/v1/reports`
 
-Returns paginated persisted `Report` records with `items`, `total`, `page`, and `page_size`. Completed reports include a CSV `download_url`.
+Returns paginated persisted `Report` records with `items`, `total`, `page`, and `page_size`. Completed reports include an Excel `download_url`.
 
 ```json
 {
@@ -413,7 +413,7 @@ Returns paginated persisted `Report` records with `items`, `total`, `page`, and 
 
 ### `GET /api/v1/reports/{report_id}/download`
 
-Returns a completed report as `text/csv` with an attachment filename. Returns `404` when the report does not exist and `409` when it is not completed.
+Returns a completed report as a formatted `.xlsx` workbook with an attachment filename. Returns `404` when the report does not exist and `409` when it is not completed.
 
 ### `POST /api/v1/reports`
 

@@ -73,12 +73,13 @@ test('API client adds bearer auth and supports authenticated file downloads', as
     getToken: () => 'private-test-token',
     fetchImpl: async (...args) => {
       calls.push(args);
-      return { ok: true, status: 200, blob: async () => new Blob(['id,score\\n1,90']) };
+      return { ok: true, status: 200, blob: async () => new Blob(['workbook']) };
     },
   });
   const file = await client.getFile('/reports/R-1/download');
   assert.equal(calls[0][1].headers.Authorization, 'Bearer private-test-token');
-  assert.equal(await file.text(), 'id,score\\n1,90');
+  assert.equal(calls[0][1].headers.Accept, '*/*');
+  assert.equal(await file.text(), 'workbook');
 });
 
 test('API client preserves backend authorization error codes from detail', async () => {
