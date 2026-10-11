@@ -38,8 +38,10 @@ test('audit action definitions contain the stable accountability actions', () =>
     'ACCOUNT_DISABLED', 'ACCOUNT_ENABLED', 'TRANSACTION_REVIEWED', 'TRANSACTION_REOPENED',
     'REVIEW_NOTE_ADDED', 'ALERT_REVIEWED', 'ALERT_REOPENED', 'ACCOUNT_UNLOCK_REJECTED', 'ALERT_ASSIGNED', 'ALERT_REASSIGNED',
     'ACCESS_REQUEST_APPROVED', 'ACCESS_REQUEST_REJECTED', 'USER_ROLE_CHANGED',
-    'CASE_CREATED', 'CASE_ASSIGNED', 'CASE_ESCALATED', 'CASE_CLOSURE_REQUESTED',
-    'CASE_CLOSED', 'EVIDENCE_ADDED', 'CASE_COMMENT_ADDED', 'VENDOR_WATCHLIST_REQUESTED',
+    'CASE_CREATED', 'CASE_ASSIGNED', 'CASE_REASSIGNED', 'CASE_STATUS_CHANGED',
+    'CASE_ESCALATED', 'CASE_CLOSURE_REQUESTED', 'CASE_CLOSURE_APPROVED',
+    'CASE_CLOSURE_REJECTED', 'CASE_CLOSED', 'EVIDENCE_ADDED', 'EVIDENCE_REJECTED',
+    'CASE_COMMENT_ADDED', 'SLA_OVERDUE', 'VENDOR_WATCHLIST_REQUESTED',
     'VENDOR_WATCHLIST_APPROVED', 'VENDOR_BLOCKED', 'VENDOR_UNBLOCKED',
   ]);
 });
@@ -106,6 +108,22 @@ test('Audit Log filters by outcome', () => {
 test('unknown audit action is rejected safely', () => {
   assert.equal(normalizeAuditEvent({ action: 'UNKNOWN', outcome: AUDIT_OUTCOMES.SUCCESS, resourceType: AUDIT_RESOURCE_TYPES.ACCOUNT }), null);
   assert.deepEqual(filterAuditEvents(events, { action: 'UNKNOWN' }), []);
+});
+
+test('case status audit event remains visible after normalization', () => {
+  const event = normalizeAuditEvent({
+    id: 42,
+    actor_name: 'Ali',
+    actor_role: 'AUDITOR',
+    action: 'CASE_STATUS_CHANGED',
+    resource_type: 'CASE',
+    resource_id: 'case-1',
+    outcome: 'SUCCESS',
+    created_at: '2026-10-11T17:28:48Z',
+    details: { status: 'INVESTIGATING' },
+  });
+  assert.equal(event.action, 'CASE_STATUS_CHANGED');
+  assert.equal(event.resourceId, 'case-1');
 });
 
 test('Review History accepts empty history', () => {

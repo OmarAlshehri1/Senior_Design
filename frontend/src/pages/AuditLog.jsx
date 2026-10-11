@@ -52,7 +52,7 @@ export default function AuditLog() {
           <h1>Audit Log</h1>
           <p>Review recorded system and user activity.</p>
         </div>
-        {scope && <span className="audit-scope-badge">{scope === 'TEAM' ? 'Your activity until team scope is available' : 'All activity'}</span>}
+        {scope && <span className="audit-scope-badge">{scope === 'TEAM' ? 'Your activity and available team events' : 'All activity'}</span>}
       </div>
 
       <section className="audit-log-controls" aria-label="Audit log filters">
