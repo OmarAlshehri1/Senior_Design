@@ -44,6 +44,7 @@ test('audit action definitions contain the stable accountability actions', () =>
     'CASE_COMMENT_ADDED', 'SLA_OVERDUE', 'WATCHLIST_REQUESTED',
     'WATCHLIST_APPROVED', 'WATCHLIST_REJECTED', 'WATCHLIST_REMOVED',
     'BLOCK_REQUESTED', 'BLOCK_APPROVED', 'BLOCK_REJECTED', 'UNBLOCKED',
+    'ORGANIZATION_SETTINGS_UPDATED',
   ]);
 });
 
@@ -52,7 +53,7 @@ test('audit outcomes are exactly success, failed, and denied', () => {
 });
 
 test('audit resource types cover the approved accountable resources', () => {
-  assert.deepEqual(Object.values(AUDIT_RESOURCE_TYPES), ['ACCOUNT', 'TRANSACTION', 'ALERT', 'ACCESS_REQUEST', 'USER', 'CASE', 'VENDOR', 'EVIDENCE']);
+  assert.deepEqual(Object.values(AUDIT_RESOURCE_TYPES), ['ACCOUNT', 'TRANSACTION', 'ALERT', 'ACCESS_REQUEST', 'USER', 'CASE', 'VENDOR', 'EVIDENCE', 'SETTINGS']);
 });
 
 test('ReviewRecord normalization preserves immutable supported history fields', () => {
@@ -163,6 +164,48 @@ test('AuditService preserves the five vendor workflow events returned by a filte
     assert.equal(event.actorRole, rows[index].actor_role);
     assert.equal(event.timestamp, rows[index].created_at);
     assert.deepEqual(event.details, rows[index].details);
+  }
+  assert.deepEqual(response, snapshot);
+});
+
+test('AuditService preserves organization rename and restore events with their previous and new values', async () => {
+  const items = [
+    { id: 88, created_at: '2026-10-19T10:24:42Z', old_value: 'Retail Store Operations E2E', new_value: 'Retail Store Operations' },
+    { id: 87, created_at: '2026-10-19T10:24:02Z', old_value: 'Retail Store Operations', new_value: 'Retail Store Operations E2E' },
+  ].map(({ id, created_at, old_value, new_value }) => ({
+    id, created_at, action: 'ORGANIZATION_SETTINGS_UPDATED',
+    actor_id: 'admin-1', actor_name: 'Admin', actor_role: 'ADMIN',
+    resource_id: 'organization', resource_type: 'SETTINGS', outcome: 'SUCCESS',
+    details: { setting: 'organization_name', old_value, new_value },
+  }));
+  const response = { page: 1, items, total: 2, page_size: 25 };
+  const snapshot = structuredClone(response);
+  const query = { search: 'ORGANIZATION_SETTINGS_UPDATED', resource_type: 'SETTINGS' };
+  const service = createAuditService({
+    get: async (path, options) => {
+      assert.equal(path, '/audit-events');
+      assert.deepEqual(options.query, query);
+      return response;
+    },
+  });
+
+  const page = await service.getAuditEvents(query);
+
+  assert.equal(page.items.length, 2);
+  assert.equal(page.total, 2);
+  assert.equal(page.page, 1);
+  assert.equal(page.page_size, 25);
+  for (const [index, event] of page.items.entries()) {
+    assert.equal(event.id, items[index].id);
+    assert.equal(event.action, 'ORGANIZATION_SETTINGS_UPDATED');
+    assert.equal(event.resourceType, 'SETTINGS');
+    assert.equal(event.resourceId, 'organization');
+    assert.equal(event.actorName, 'Admin');
+    assert.equal(event.actorRole, 'ADMIN');
+    assert.equal(event.outcome, 'SUCCESS');
+    assert.equal(event.timestamp, items[index].created_at);
+    assert.deepEqual(event.details, items[index].details);
+    assert.ok(Object.isFrozen(event.details));
   }
   assert.deepEqual(response, snapshot);
 });
