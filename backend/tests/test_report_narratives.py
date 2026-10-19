@@ -86,6 +86,32 @@ def test_gemini_only_enriches_commentary_and_prompt_excludes_identifiers_and_raw
     assert 'authoritative' in request['json']['systemInstruction']['parts'][0]['text']
 
 
+def test_prompt_supplies_specific_review_guidance_without_private_evidence(monkeypatch):
+    doc = document()
+    calls = install_client(monkeypatch,envelope(response_items(doc)))
+    service.enrich_findings(doc)
+    request = calls[0][1]['json']
+    facts = json.loads(request['contents'][0]['parts'][0]['text'])
+    guides = {f['title']:f['review_guide'] for f in facts['findings']}
+    assert 'invoices and approval records' in guides['Risk priorities']
+    assert all(f['review_guide']==service.baseline_analysis(original)['recommended_review']
+               for f,original in zip(facts['findings'],doc['findings']))
+    instruction = request['systemInstruction']['parts'][0]['text']
+    assert 'plain English' in instruction
+    assert 'what to compare' in instruction
+    assert 'not evidence that documents exist' in instruction
+
+
+@pytest.mark.parametrize('title',[
+    'Risk priorities','Segregation of Duties','Approval Limits','Duplicate Payments',
+    'Invoice Splitting','Ghost Vendors','Follow-up at the evidence extraction date',
+    'Evaluation coverage and data limitations',
+])
+def test_review_templates_pass_existing_safety_guards(title):
+    analysis = service.baseline_analysis({'title':title})
+    assert service.FindingCommentary.model_validate({'finding_id':'F1',**analysis})
+
+
 @pytest.mark.parametrize('mode,status',[
     ('disabled','DISABLED'),('not_requested','DISABLED'),('missing_key','NOT_CONFIGURED'),('empty','EMPTY_PERIOD'),
 ])

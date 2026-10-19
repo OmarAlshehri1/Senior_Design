@@ -14,7 +14,7 @@ from pydantic_core import PydanticCustomError
 
 from app.services.gemini_explanations import get_gemini_model_name
 
-PROMPT_VERSION = 'business-findings-1.0.1'
+PROMPT_VERSION = 'business-findings-1.0.2'
 PROVIDER_TIMEOUT = httpx.Timeout(connect=10.0, read=90.0, write=10.0, pool=10.0)
 MAX_RESPONSE_BYTES = 60000
 logger = logging.getLogger(__name__)
@@ -30,6 +30,17 @@ SYSTEM_INSTRUCTION = (
     'and cover every supplied finding ID exactly once. Each commentary field should contain a substantive '
     'plain-text explanation in concise sentences. Explain the significance, a possible business implication, '
     'specific proposed verification steps, and limits on what can be concluded. '
+    'Write for a busy manager in plain English. Use short sentences, active verbs and familiar words. '
+    'Avoid terms such as stratification, composite scoring, analytical concern, prioritized scrutiny, '
+    'triage efficiency and governance objectives. Say risk scores, review first and check approval records instead. '
+    'Interpretation: explain what the recorded result means for this finding, without repeating the table. '
+    'Business implication: describe a specific possible consequence, using may or could; do not invent an actual event. '
+    'Recommended review: give concrete proposed checks, name the records to request, what to compare and '
+    'what the reviewer should document. Do not stop at generic advice to validate parameters or align with governance. '
+    'Use the supplied review_guide as writing guidance, not evidence that documents exist or checks were done. '
+    'Tailor it to the supplied facts; do not imply that an absent alert or case exists. '
+    'Limitations: explain what remains unverified for this finding, without repeating the same disclaimer everywhere. '
+    'If the context is DEMONSTRATION, explicitly limit conclusions to the demonstration data. '
     'Do not repeat or introduce any quantities, numeric words, numbers, percentages, amounts, dates, scores, '
     'currencies, identifiers, policy limits or deadlines in commentary; these already appear in the facts and tables. '
     'Do not claim a proven cause, fraud, actual loss, policy violation adjudication, control effectiveness, '
@@ -80,30 +91,30 @@ class CommentaryResponse(BaseModel):
 def baseline_analysis(finding: dict) -> dict:
     title = finding['title']
     reviews = {
-        'Segregation of Duties': ('The stored exception indicates that recorded creator and approver identities do not provide the separation expected by this rule.',
-            'If independent authorization was absent, inappropriate transactions could be harder to prevent or detect.',
-            'Inspect approval logs, delegated authority and supporting documents; determine whether independent review occurred.'),
-        'Approval Limits': ('The stored exception indicates that an evaluated transaction exceeded the recorded approval limit used by the rule.',
-            'If authority was insufficient, management may need to review authorization controls and escalation procedures.',
-            'Verify the approver authority effective for the transaction and inspect the approval evidence before reaching a conclusion.'),
+        'Segregation of Duties': ('The rule flagged recorded creator and approver identities that need a check for independent approval.',
+            'Without independent approval, an incorrect payment could be harder to prevent or detect.',
+            'Request the approval log and compare creator and approver identities. Check delegated authority and record whether an independent approval is supported.'),
+        'Approval Limits': ('The rule flagged transactions above the approval limit recorded for the check.',
+            'Payments may need further approval if the recorded authority did not cover them.',
+            'Compare each flagged amount with the approver authority effective at the transaction date. Request any additional approval and record unresolved differences.'),
         'Duplicate Payments': ('Matching vendor, invoice and amount characteristics triggered the duplicate-payment indicator.',
             'The matching pattern could reflect a repeated payment or a legitimate accounting event; supporting records are needed to distinguish them.',
-            'Trace matching invoices, payment references, reversals and credit notes; confirm whether distinct obligations were settled.'),
+            'Compare the matching invoices and payment references. Check reversals and credit notes, then record whether payments relate to separate obligations.'),
         'Invoice Splitting': ('Related transactions met the stored rule conditions for possible splitting around a recorded approval limit.',
             'If related purchases bypassed the intended authorization process, management oversight could be weakened.',
-            'Inspect related invoices, timing, purchasing purpose and approval documentation; establish whether the transactions form a common obligation.'),
+            'Compare related invoices, purchase orders and payment dates. Check whether they relate to the same purchase and record the approval evidence for that purchase.'),
         'Ghost Vendors': ('The stored rule indicates an absent or inactive vendor registration in the reference registry used for evaluation.',
             'An incomplete registry or unsupported vendor relationship could require additional supplier-validation work.',
-            'Reconcile supplier onboarding and registry records and inspect supporting invoices before deciding whether the vendor relationship is valid.'),
-        'Risk priorities': ('Stored risk classifications identify records to prioritize for human review; they are not adjudicated audit outcomes.',
-            'Prioritization can direct review effort toward records with stronger stored risk indicators while retaining attention to incomplete assessments.',
-            'Inspect the linked transaction and rule evidence, obtain supporting documents and record the investigation outcome.'),
+            'Compare the vendor registration used by the rule with supplier onboarding records. Request supporting invoices and record whether the supplier relationship can be verified.'),
+        'Risk priorities': ('Risk scores help reviewers decide which transactions to check first. A high score alone does not establish wrongdoing.',
+            'Reviewing higher-risk records first may help the team focus its work. Lower-risk and unscored records can still need review.',
+            'Start with the linked higher-risk transactions and inspect their failed-rule evidence. Request the relevant invoices and approval records, compare them with the flagged issue and record the review outcome.'),
         'Follow-up at the evidence extraction date': ('The captured alert and case states show authorized follow-up at extraction, rather than reconstructed period-end activity.',
             'Outstanding work may require coordination, while reviewed or closed records still require interpretation in light of their documented outcomes.',
-            'Confirm assignment, review notes and case decisions and check that any proposed remediation has supporting evidence.'),
-        'Evaluation coverage and data limitations': ('Transaction-level evaluation does not establish that every configured rule had sufficient input and context to execute.',
-            'Unavailable fields or context can limit the conclusions that management can draw from automated checks.',
-            'Inspect per-rule coverage and exclusion reasons and reconcile missing inputs with the responsible data owner.'),
+            'For any listed alerts or cases, check the assigned reviewer, review notes and closure evidence. Record outstanding work separately from completed checks.'),
+        'Evaluation coverage and data limitations': ('A transaction may have passed through an executed rule while other checks could not run.',
+            'Missing inputs can leave gaps in the checks and limit the conclusions drawn from the report.',
+            'Use the rule-coverage appendix to identify checks that did not run and their missing inputs. Ask the data owner to reconcile those inputs and record the remaining gaps.'),
     }
     interpretation, implication, review = reviews.get(title, reviews['Risk priorities'])
     return {'interpretation': interpretation, 'business_implication': implication,
@@ -119,7 +130,8 @@ def _safe_facts(document: dict) -> dict:
         'data_context': document['data_context'], 'scope': document['scope'],
         'coverage_definition': 'A transaction is evaluated when at least one rule executed; not all configured rules necessarily executed.',
         'workflow_basis': 'Current states at evidence extraction, not period-end states.',
-        'findings': [{'finding_id': f['id'], 'title': f['title'], 'facts': f['text']} for f in document['findings']],
+        'findings': [{'finding_id': f['id'], 'title': f['title'], 'facts': f['text'],
+                      'review_guide': baseline_analysis(f)['recommended_review']} for f in document['findings']],
     }
 
 

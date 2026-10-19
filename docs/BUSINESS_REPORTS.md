@@ -162,8 +162,8 @@ with model output.
 
 One request (90-second read timeout; 10-second connect/write/pool timeouts,
 no retry/redirect, bounded output)
-sends only the canonical finding facts, finding IDs, scope/data-context enums
-and methodology definitions. No organization/vendor/user names, transaction IDs,
+sends only the canonical finding facts, finding IDs, scope/data-context enums,
+methodology definitions and fixed server-authored review guidance. No organization/vendor/user names, transaction IDs,
 recipient/sender labels, free-form notes or raw evidence are sent. Report generation
 may take longer while waiting for this optional request; httpx timeout is a
 per-operation timeout, not a guaranteed total wall-clock deadline.
@@ -202,6 +202,16 @@ The 34 isolated migration tests above remain the unchanged database baseline;
 the commentary integration adds JSON fields and does not change migration 025.
 
 ## Local verification record
+
+Prompt `business-findings-1.0.2` improves readability after the owner reviewed a
+generated finding: plain English, active verbs and concrete checks of named
+record types, with comparisons and documented outcomes. Each finding receives
+server-authored review guidance from its rule-specific fallback template. These
+are proposed checks, not claims that documents exist or have been inspected.
+Fallback review steps are also more specific. Risk scores, evidence, canonical
+recommendations, thinking level and validation guards are unchanged. Saved drafts
+remain immutable; improved Gemini wording requires a new generation and human
+review. Local tests use mocked Gemini responses, not a live writing-quality test.
 
 Owner-supplied `COMMENTARY_ASSERTION` evidence confirms that the production prose
 matched the conservative unsupported-assertion guard, but not whether the match
