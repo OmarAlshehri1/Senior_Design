@@ -664,8 +664,11 @@ Business report verification update, 2026-10-19: the
 documents inspected Admin PDF/XLSX and Supervisor PDF exports, Auditor GET denials,
 Supervisor denial of an Admin revision, provider fallback/retries and an attributable
 creation audit event. This is a tested subset, not completion of Phase 24.
-Next: test Auditor create denial and denied XLSX access, then approved cross-team
-and changed-assignment access cases. Current hosted scheduler/recovery/SLA,
+Auditor create/XLSX 403 and Supervisor-to-Admin XLSX 404 were subsequently
+owner-confirmed. Four isolated PostgreSQL tests cover cross-team and changed-assignment
+access; live verification remains pending because only one Supervisor is available.
+Next: arrange an approved isolated live test setup or retain that explicit gap;
+review session expiry/refresh and empty/no-high-risk baseline wording. Hosted scheduler/recovery/SLA,
 WebSocket, complete live-function comparison and rubric evidence remain separate.
 The prior next-action paragraph below is historical context.
 

@@ -1053,8 +1053,10 @@ Download Business Report requests `format=pdf`; the separate print button is rem
 Admin retains a separate legacy-summary view; Supervisor uses team
 business reports. Selected live role checks and downloaded-file comparisons are
 recorded in the [production evidence record](evidence/business_reports_production_verification_2026-10-19.md).
-Remaining checks include Auditor create/XLSX denial, cross-team access and revoked
-access. Do not mark the entire three-role E2E complete. The older status table and
+Auditor create/XLSX denial and Supervisor-to-Admin XLSX denial were owner-confirmed.
+Cross-team/revoked access passed isolated SQL tests but remain unverified live;
+the current production screenshot shows only one Supervisor.
+Do not mark the entire three-role E2E complete. The older status table and
 next-action paragraph below remain historical.
 
 Preserve the existing frontend design, services, and adapters. Phases 17-21 are connected on `main`; the owner reported migrations 016-020 applied, without independent live-schema inspection. Phase 21 persists Organization Name for Admin editing only; other settings remain read-only. Daily automatic reports are Phase 22. Evidence upload stays unavailable until private storage and antivirus scanning are configured. Deployment and final three-role E2E remain in Phase 24.

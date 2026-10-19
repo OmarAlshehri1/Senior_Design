@@ -34,25 +34,51 @@ fraud, financial loss or control effectiveness. These checks do not complete Pha
 | Supervisor latest-in-scope report and PDF | Observed nonempty cohort | Omar's revision `20951686-caac-4e1f-bd93-0af67ebde460` selects UTC day 2026-05-15, team scope, one transaction (`EXP-2026-009209`), two failed rules, one active alert, no cases and medium score 61.92. The 10-page PDF opens. Gemini returned HTTP 503 after three attempts. Team membership/source ownership was not independently queried. |
 | Auditor page denial | Passed in owner session | Ali's direct `/reports` navigation displayed Access Denied. This alone does not establish API authorization. |
 | Auditor API list/read/PDF denial | Passed for tested routes | A browser diagnostic verified `/auth/me` returned role `AUDITOR`, then reported HTTP 403 for `GET /reports/business`, the known Admin revision read, and its `download?format=pdf` route. The owner supplied the console screenshot. |
+| Auditor API create/XLSX denial | Owner-reported pass | A follow-up diagnostic verified the Auditor role, submitted a valid demonstration-period POST with `use_gemini:false`, then requested the known Admin revision's XLSX. The owner supplied `Create HTTP: 403` and `Excel HTTP: 403` as text. No report creation was reported. |
 | Supervisor cannot read Admin revision | Passed for tested revision | A browser diagnostic verified `/auth/me` returned role `SUPERVISOR`, then got HTTP 404 for `GET /reports/business/cc993d5c-fde2-46c8-8174-4f3d7d36a607`. That revision was known from the Admin export. HTTP 404 intentionally hides inaccessible reports. |
 | Supervisor cannot download Admin PDF | Passed for tested revision | The same Supervisor session got HTTP 404 for that revision's `download?format=pdf` route. This does not test a different Supervisor's team report. |
+| Supervisor cannot download Admin XLSX | Owner-confirmed result | The owner confirmed the expected `Excel download HTTP: 404` after running the role-checked diagnostic against the same Admin revision. No screenshot/raw response was supplied for this follow-up. |
 | Attributable creation audit event | Observed | Admin Audit Log shows Omar, `SUPERVISOR`, `BUSINESS_REPORT_CREATED`, `SUCCESS`, resource `20951686-caac-4e1f-bd93-0af67ebde460`, timestamp `2026-10-19T14:10:38.816954+00:00`, scope `TEAM`, and period `[2026-05-15, 2026-05-16)` UTC. The PDF metadata matches the actor, resource and period. No approval is inferred from successful creation. |
+
+## Isolated verification and available production accounts
+
+The owner supplied an Admin User Management screenshot showing three active
+accounts: Badr (Admin), Omar (Supervisor) and Ali (Auditor). Omar is the only
+Supervisor shown. No second production test account/team was provisioned, and
+existing roles or assignments were not changed during this check.
+
+The agent ran `node --test business-reports.test.mjs` from `backend/test-support`:
+four tests passed in isolated in-memory PGlite. The suite loads the local migration
+directory, including the existing untracked migration 022; this is evidence for
+the current local workspace, not a comparison with the live deployed functions.
+It uses fictional test users/teams and never reads credentials or connects to the
+production database. The assertions cover:
+
+- Source transactions and workflow evidence confined to the supervised team.
+- A second Supervisor unable to list/read another team's saved report.
+- Saved evidence remaining immutable after a source field changes.
+- The original Supervisor losing list/read access when an evidence assignment
+  moves to the other team, while Admin access remains available.
+- Denial after disabling the Supervisor or deactivating the team.
+- Database grants, atomic creation/audit rollback and UTC day boundaries.
+
+This supplements the live role checks; it does not establish deployed cross-team
+or reassignment behavior. The direct live cross-team/revocation tests remain
+unperformed pending an appropriate approved test setup.
 
 ## Remaining checks
 
-1. Test Auditor POST/create denial and denied XLSX download directly at the API.
-   The live checks above cover GET list/read/PDF, not all HTTP methods/formats.
-2. Use an approved second team/actor to verify denial of another team's report,
+1. Use an approved second team/actor to verify denial of another team's report,
    and independently reconcile source transactions against current authorized
    assignments/cases. Do not modify real team assignments solely for a casual test.
-3. Verify access revocation after an approved assignment/team change, and continued
+2. Verify access revocation after an approved assignment/team change, and continued
    access to older immutable revisions where still authorized.
-4. Check session expiry/refresh and report access after revocation. Earlier transient
+3. Check session expiry/refresh and report access after revocation. Earlier transient
    AUTH_UNAVAILABLE screenshots do not establish the precise root cause or resolution.
-5. Confirm fresh Gemini success with prompt 1.0.2 when the provider is available;
+4. Confirm fresh Gemini success with prompt 1.0.2 when the provider is available;
    inspect writing quality and consistency across formats. Do not mark a baseline
    report as successful AI generation.
-6. Refine generic baseline risk guidance for empty/no-high-risk cohorts; the inspected
+5. Refine generic baseline risk guidance for empty/no-high-risk cohorts; the inspected
    reports can still suggest starting with higher-risk transactions when none are
    present. This is a content-quality gap, not evidence of an unauthorized data leak.
 
