@@ -41,8 +41,9 @@ test('audit action definitions contain the stable accountability actions', () =>
     'CASE_CREATED', 'CASE_ASSIGNED', 'CASE_REASSIGNED', 'CASE_STATUS_CHANGED',
     'CASE_ESCALATED', 'CASE_CLOSURE_REQUESTED', 'CASE_CLOSURE_APPROVED',
     'CASE_CLOSURE_REJECTED', 'CASE_CLOSED', 'EVIDENCE_ADDED', 'EVIDENCE_REJECTED',
-    'CASE_COMMENT_ADDED', 'SLA_OVERDUE', 'VENDOR_WATCHLIST_REQUESTED',
-    'VENDOR_WATCHLIST_APPROVED', 'VENDOR_BLOCKED', 'VENDOR_UNBLOCKED',
+    'CASE_COMMENT_ADDED', 'SLA_OVERDUE', 'WATCHLIST_REQUESTED',
+    'WATCHLIST_APPROVED', 'WATCHLIST_REJECTED', 'WATCHLIST_REMOVED',
+    'BLOCK_REQUESTED', 'BLOCK_APPROVED', 'BLOCK_REJECTED', 'UNBLOCKED',
   ]);
 });
 
@@ -124,6 +125,55 @@ test('case status audit event remains visible after normalization', () => {
   });
   assert.equal(event.action, 'CASE_STATUS_CHANGED');
   assert.equal(event.resourceId, 'case-1');
+});
+
+test('AuditService preserves the five vendor workflow events returned by a filtered API page', async () => {
+  const rows = [
+    { id: 86, action: 'UNBLOCKED', actor_name: 'Admin', actor_role: 'ADMIN', details: { previous_status: 'BLOCKED', new_status: 'NORMAL' } },
+    { id: 85, action: 'BLOCK_APPROVED', actor_name: 'Admin', actor_role: 'ADMIN', details: { approved: true, previous_status: 'WATCHLISTED', new_status: 'BLOCKED' } },
+    { id: 83, action: 'BLOCK_REQUESTED', actor_name: 'Supervisor', actor_role: 'SUPERVISOR', details: { request_type: 'BLOCK', monitoring_status: 'WATCHLISTED' } },
+    { id: 82, action: 'WATCHLIST_APPROVED', actor_name: 'Supervisor', actor_role: 'SUPERVISOR', details: { approved: true, previous_status: 'NORMAL', new_status: 'WATCHLISTED' } },
+    { id: 81, action: 'WATCHLIST_REQUESTED', actor_name: 'Auditor', actor_role: 'AUDITOR', details: { request_type: 'WATCHLIST', monitoring_status: 'NORMAL' } },
+  ].map((row) => ({
+    ...row, actor_id: `actor-${row.actor_role}`, resource_id: 'VND-106',
+    resource_type: 'VENDOR', outcome: 'SUCCESS', created_at: '2026-10-19T09:55:38Z',
+  }));
+  const response = { page: 1, items: rows, total: 5, page_size: 25 };
+  const snapshot = structuredClone(response);
+  const service = createAuditService({
+    get: async (path, options) => {
+      assert.equal(path, '/audit-events');
+      assert.deepEqual(options.query, { search: 'VND-106', page: 1 });
+      return response;
+    },
+  });
+
+  const page = await service.getAuditEvents({ search: 'VND-106', page: 1 });
+
+  assert.equal(page.items.length, 5);
+  assert.equal(page.total, 5);
+  assert.equal(page.page, 1);
+  assert.equal(page.page_size, 25);
+  assert.deepEqual(page.items.map((event) => event.action), rows.map((row) => row.action));
+  for (const [index, event] of page.items.entries()) {
+    assert.equal(event.id, rows[index].id);
+    assert.equal(event.resourceId, 'VND-106');
+    assert.equal(event.resourceType, 'VENDOR');
+    assert.equal(event.actorName, rows[index].actor_name);
+    assert.equal(event.actorRole, rows[index].actor_role);
+    assert.equal(event.timestamp, rows[index].created_at);
+    assert.deepEqual(event.details, rows[index].details);
+  }
+  assert.deepEqual(response, snapshot);
+});
+
+test('vendor rejection and watchlist removal audit events remain visible', () => {
+  for (const action of ['WATCHLIST_REJECTED', 'BLOCK_REJECTED', 'WATCHLIST_REMOVED']) {
+    const event = normalizeAuditEvent({
+      action, resource_type: 'VENDOR', resource_id: 'VND-106', outcome: 'SUCCESS',
+    });
+    assert.equal(event?.action, action);
+  }
 });
 
 test('Review History accepts empty history', () => {
