@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 from app.services.gemini_explanations import get_gemini_model_name
 
 PROMPT_VERSION = 'business-findings-1.0.0'
-TIMEOUT_SECONDS = 20.0
+PROVIDER_TIMEOUT = httpx.Timeout(connect=10.0, read=90.0, write=10.0, pool=10.0)
 MAX_RESPONSE_BYTES = 60000
 logger = logging.getLogger(__name__)
 FIELDS = ('interpretation', 'business_implication', 'recommended_review', 'limitations')
@@ -174,8 +174,12 @@ def enrich_findings(document: dict, *, requested: bool = True) -> dict:
         'generationConfig': {'temperature':0.1,'maxOutputTokens':6000,
                              'responseMimeType':'application/json','responseJsonSchema':schema},
     }
+    if model.startswith('gemini-3'):
+        # Gemini 3 uses thinking levels; deprecated sampling parameters are omitted.
+        request['generationConfig'].pop('temperature')
+        request['generationConfig']['thinkingConfig'] = {'thinkingLevel': 'low'}
     try:
-        with httpx.Client(timeout=TIMEOUT_SECONDS,follow_redirects=False) as client:
+        with httpx.Client(timeout=PROVIDER_TIMEOUT,follow_redirects=False) as client:
             response = client.post(f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
                                    headers={'Content-Type':'application/json','x-goog-api-key':key},json=request)
             response.raise_for_status()

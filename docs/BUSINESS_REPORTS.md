@@ -160,7 +160,8 @@ rule-specific standard explanations. The authoritative finding `text`, metrics,
 evidence, recommendations, conclusion and review fields are never overwritten
 with model output.
 
-One bounded request (20-second httpx timeout, no retry/redirect, bounded output)
+One request (90-second read timeout; 10-second connect/write/pool timeouts,
+no retry/redirect, bounded output)
 sends only the canonical finding facts, finding IDs, scope/data-context enums
 and methodology definitions. No organization/vendor/user names, transaction IDs,
 recipient/sender labels, free-form notes or raw evidence are sent. Report generation
@@ -201,6 +202,16 @@ The 34 isolated migration tests above remain the unchanged database baseline;
 the commentary integration adds JSON fields and does not change migration 025.
 
 ## Local verification record
+
+Following owner-supplied production evidence of `TIMEOUT` with
+`gemini-3.8-flash`, the provider read timeout was increased from 20 to 90 seconds;
+connect/write/pool remain bounded at 10 seconds. Gemini 3 requests use
+`thinkingConfig.thinkingLevel=low` and omit the deprecated `temperature` sampling
+parameter, following Google's Gemini 3.8 Generate Content guide:
+https://ai.google.dev/gemini-api/docs/generate-content/whats-new-gemini-3.8
+The model ID is unchanged. The frontend API client has no independent request
+timeout to extend. No retry is added; failed requests still save baseline drafts.
+These changes do not prove that the production provider call will succeed.
 
 2026-10-19 troubleshooting: new drafts record `attempted_model` and a bounded
 `failure_code` for Gemini transport failures (`HTTP_<status>`, `TIMEOUT`, or

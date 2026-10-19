@@ -43,7 +43,11 @@ def install_client(monkeypatch,payload,status=200,error=None):
     calls = []
     class FakeClient:
         def __init__(self,**kwargs):
-            assert kwargs=={'timeout':20.0,'follow_redirects':False}
+            assert kwargs['follow_redirects'] is False
+            assert kwargs['timeout'].connect == 10.0
+            assert kwargs['timeout'].read == 90.0
+            assert kwargs['timeout'].write == 10.0
+            assert kwargs['timeout'].pool == 10.0
         def __enter__(self): return self
         def __exit__(self,*args): pass
         def post(self,url,**kwargs):
@@ -73,6 +77,8 @@ def test_gemini_only_enriches_commentary_and_prompt_excludes_identifiers_and_raw
     assert url.endswith('/gemini-3.8-flash:generateContent')
     assert request['headers']['x-goog-api-key']=='test-only-key'
     assert request['json']['generationConfig']['responseMimeType']=='application/json'
+    assert request['json']['generationConfig']['thinkingConfig']=={'thinkingLevel':'low'}
+    assert 'temperature' not in request['json']['generationConfig']
     prompt = request['json']['contents'][0]['parts'][0]['text']
     for forbidden in ['Private recipient','Private sender','<Org','<script>','TX-0','admin','actor_id','ground_truth','vendor_name','approval_limit']:
         assert forbidden not in prompt
@@ -126,6 +132,16 @@ def test_duplicate_json_keys_are_rejected():
     payload={'candidates':[{'finishReason':'STOP','content':{'parts':[{'text':'{"findings":[],"findings":[]}'}]}}]}
     with pytest.raises(ValueError,match='Duplicate'):
         service._parse_response(payload,['F1'])
+
+
+def test_non_gemini_three_override_keeps_compatible_generation_config(monkeypatch):
+    monkeypatch.setenv('GEMINI_MODEL','gemini-2.5-flash')
+    doc = document()
+    calls = install_client(monkeypatch,envelope(response_items(doc)))
+    assert service.enrich_findings(doc)['narrative']['status']=='GENERATED'
+    config = calls[0][1]['json']['generationConfig']
+    assert 'thinkingConfig' not in config
+    assert config['temperature']==0.1
 
 
 @pytest.mark.parametrize('status,error,code',[
