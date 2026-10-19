@@ -58,3 +58,31 @@ def test_publish_changed_sends_only_invalidation() -> None:
     asyncio.run(exercise())
 
     assert websocket.messages == [{"type": "alerts.changed", "occurred_at": None}]
+
+
+def test_auth_failure_after_peer_disconnect_does_not_escape(monkeypatch):
+    from app.api.alerts import alert_stream
+    from app.repositories.identity import IdentityError
+    from fastapi import WebSocketDisconnect
+
+    class DisconnectedPeer:
+        headers = {}
+        close_codes = []
+
+        async def accept(self):
+            pass
+
+        async def receive_text(self):
+            return '{"type":"auth","access_token":"test-token"}'
+
+        async def close(self, code):
+            self.close_codes.append(code)
+            raise WebSocketDisconnect(code=1006)
+
+    def unavailable(_token):
+        raise IdentityError("AUTH_UNAVAILABLE")
+
+    monkeypatch.setattr("app.api.alerts.authenticate_token", unavailable)
+    peer = DisconnectedPeer()
+    asyncio.run(alert_stream(peer))
+    assert peer.close_codes == [1008]

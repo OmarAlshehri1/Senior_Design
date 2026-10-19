@@ -202,6 +202,14 @@ the commentary integration adds JSON fields and does not change migration 025.
 
 ## Local verification record
 
+2026-10-19 troubleshooting: new drafts record `attempted_model` and a bounded
+`failure_code` for Gemini transport failures (`HTTP_<status>`, `TIMEOUT`, or
+`NETWORK_ERROR`). These appear in HTML metadata and the Excel Memorandum sheet.
+Only the failure code is logged; exception text, headers, provider response bodies
+and report contents are excluded. Existing immutable drafts are unchanged. No
+model, timeout or retry policy was changed. The focused report, narrative,
+identity and alert-stream suites passed 63 tests. Live Gemini success is pending.
+
 2026-10-19: backend 239 tests passed (one pre-existing Starlette TestClient
 deprecation warning), frontend 243 tests passed, isolated PGlite 34 tests passed,
 lint and production build passed, and `git diff --check` passed. The report UI

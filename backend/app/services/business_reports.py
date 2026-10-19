@@ -251,6 +251,7 @@ def render_business_html(report: dict) -> str:
             ['Preparation','Automated reporting service'],['Generation status',d['generation_status']],['Approval status',d['approval_status']],
             ['Commentary provider',narrative.get('provider')],['Commentary status',narrative.get('status')],
             ['Commentary model',narrative.get('model')],['Commentary prompt version',narrative.get('prompt_version')],
+            ['Commentary attempted model',narrative.get('attempted_model')],['Commentary failure code',narrative.get('failure_code')],
             ['Commentary generated at',narrative.get('generated_at')]]))
     return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' + \
         '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; base-uri \'none\'; form-action \'none\'">' + \

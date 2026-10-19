@@ -128,14 +128,30 @@ def test_duplicate_json_keys_are_rejected():
         service._parse_response(payload,['F1'])
 
 
-@pytest.mark.parametrize('status,error',[(429,None),(503,None),(200,httpx.ReadTimeout('private error must not be saved'))])
-def test_provider_errors_are_generic_and_do_not_stop_report(monkeypatch,status,error):
+@pytest.mark.parametrize('status,error,code',[
+    (400,None,'HTTP_400'),(403,None,'HTTP_403'),(404,None,'HTTP_404'),
+    (429,None,'HTTP_429'),(503,None,'HTTP_503'),
+    (200,httpx.ReadTimeout('private error must not be saved'),'TIMEOUT'),
+    (200,httpx.ConnectError('private error must not be saved'),'NETWORK_ERROR'),
+])
+def test_provider_errors_are_generic_and_do_not_stop_report(monkeypatch,status,error,code,caplog):
     doc = document()
     install_client(monkeypatch,{'error':{'message':'private provider detail'}},status,error)
     result = service.enrich_findings(doc)
     assert result['narrative']['status']=='UNAVAILABLE'
     assert 'private' not in json.dumps(result['narrative'])
     assert result['narrative']['model'] is None
+    assert result['narrative']['attempted_model']=='gemini-3.8-flash'
+    assert result['narrative']['failure_code']==code
+    assert code in caplog.text
+    for secret in ['private', 'test-only-key', 'generativelanguage.googleapis.com', 'Private recipient']:
+        assert secret not in caplog.text
+    saved={'id':REPORT_ID,'created_at':'2026-10-19T10:31:00Z','document':result}
+    html = business_reports.render_business_html(saved)
+    assert 'Commentary failure code' in html and code in html
+    assert 'gemini-3.8-flash' in html
+    book = load_workbook(BytesIO(business_reports.build_business_workbook(saved)))
+    assert ('Commentary failure_code', code) in list(book['Memorandum'].values)
 
 
 def test_saved_commentary_is_shared_by_html_and_excel_without_regeneration(monkeypatch):

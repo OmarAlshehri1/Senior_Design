@@ -4,6 +4,7 @@ from __future__ import annotations
 from copy import deepcopy
 from datetime import datetime, timezone
 import json
+import logging
 import os
 import re
 
@@ -15,6 +16,7 @@ from app.services.gemini_explanations import get_gemini_model_name
 PROMPT_VERSION = 'business-findings-1.0.0'
 TIMEOUT_SECONDS = 20.0
 MAX_RESPONSE_BYTES = 60000
+logger = logging.getLogger(__name__)
 FIELDS = ('interpretation', 'business_implication', 'recommended_review', 'limitations')
 QUANTITIES = re.compile(r'\b(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|million|billion|dozen|percent|percentage|double|triple|majority|minority)\b', re.I)
 UNSUPPORTED_CLAIMS = re.compile(
@@ -163,6 +165,7 @@ def enrich_findings(document: dict, *, requested: bool = True) -> dict:
         status['status'] = 'NOT_CONFIGURED'
         return result
     model = get_gemini_model_name()
+    status['attempted_model'] = model
     schema = CommentaryResponse.model_json_schema()
     schema['$defs']['FindingCommentary']['properties']['finding_id']['enum'] = [f['id'] for f in document['findings']]
     request = {
@@ -180,8 +183,16 @@ def enrich_findings(document: dict, *, requested: bool = True) -> dict:
             if len(response.content)>MAX_RESPONSE_BYTES:
                 raise ValueError('Oversized response envelope.')
             analysis = _parse_response(response.json(),[f['id'] for f in document['findings']])
-    except httpx.HTTPError:
-        status['status'] = 'UNAVAILABLE'
+    except httpx.HTTPError as exc:
+        # Never log exception text, URLs, headers, prompts or provider bodies.
+        if isinstance(exc, httpx.HTTPStatusError):
+            failure_code = f'HTTP_{exc.response.status_code}'
+        elif isinstance(exc, httpx.TimeoutException):
+            failure_code = 'TIMEOUT'
+        else:
+            failure_code = 'NETWORK_ERROR'
+        status.update(status='UNAVAILABLE', failure_code=failure_code)
+        logger.warning('Business report Gemini unavailable: %s', failure_code)
         return result
     except (ValueError, ValidationError, TypeError, KeyError):
         status['status'] = 'REJECTED'

@@ -139,13 +139,21 @@ async def review_alert(
     return result["alert"]
 
 
+async def close_denied_stream(websocket: WebSocket) -> None:
+    try:
+        await websocket.close(code=1008)
+    except WebSocketDisconnect:
+        # The peer may disconnect while provider validation is still running.
+        pass
+
+
 @websocket_router.websocket("/alerts")
 async def alert_stream(websocket: WebSocket) -> None:
     origin = websocket.headers.get("origin")
     configured = os.getenv("FRONTEND_ORIGINS") or os.getenv("FRONTEND_ORIGIN", "")
     allowed = [x.strip().rstrip("/") for x in configured.split(",") if x.strip()] if configured.strip() else ["http://localhost:5173", "http://127.0.0.1:5173"]
     if origin is not None and origin not in allowed:
-        await websocket.close(code=1008)
+        await close_denied_stream(websocket)
         return
     await websocket.accept()
     connection = None
@@ -166,7 +174,7 @@ async def alert_stream(websocket: WebSocket) -> None:
                     # Check again before delivery: revocation/account changes cannot leak a later event.
                     await run_in_threadpool(authenticate_token, token)
                 except (IdentityError, SupabaseConfigurationError):
-                    await websocket.close(code=1008)
+                    await close_denied_stream(websocket)
                     raise
                 await websocket.send_json(event)
 
@@ -182,7 +190,7 @@ async def alert_stream(websocket: WebSocket) -> None:
     except WebSocketDisconnect:
         pass
     except (IdentityError, SupabaseConfigurationError, ValueError, asyncio.TimeoutError):
-        await websocket.close(code=1008)
+        await close_denied_stream(websocket)
     finally:
         if connection is not None:
             alert_manager.disconnect(connection)
