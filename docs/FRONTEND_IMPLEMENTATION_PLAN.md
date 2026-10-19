@@ -1046,13 +1046,15 @@ No frontend claim is made for the five audit-rule implementations, Isolation For
 
 ## Next action
 
-Local addition on 2026-10-19, not deployed: Reports now defaults to the Business
+Update on 2026-10-19: Reports now defaults to the Business
 Audit Memorandum workflow, with UTC-day/latest-in-scope selection, declared data
 context, saved draft pagination, sandboxed HTML preview and direct PDF/Excel downloads.
 Download Business Report requests `format=pdf`; the separate print button is removed.
 Admin retains a separate legacy-summary view; Supervisor uses team
-business reports. See [BUSINESS_REPORTS.md](BUSINESS_REPORTS.md). Requires approved
-migration 025 and backend/frontend activation. The older status table and
-next-action paragraph below remain historical and do not verify this feature.
+business reports. Selected live role checks and downloaded-file comparisons are
+recorded in the [production evidence record](evidence/business_reports_production_verification_2026-10-19.md).
+Remaining checks include Auditor create/XLSX denial, cross-team access and revoked
+access. Do not mark the entire three-role E2E complete. The older status table and
+next-action paragraph below remain historical.
 
 Preserve the existing frontend design, services, and adapters. Phases 17-21 are connected on `main`; the owner reported migrations 016-020 applied, without independent live-schema inspection. Phase 21 persists Organization Name for Admin editing only; other settings remain read-only. Daily automatic reports are Phase 22. Evidence upload stays unavailable until private storage and antivirus scanning are configured. Deployment and final three-role E2E remain in Phase 24.

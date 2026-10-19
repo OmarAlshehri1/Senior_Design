@@ -5,8 +5,9 @@ Senior Design project for team **M004**.
 Business report feature (2026-10-19): [Business Audit Memoranda](docs/BUSINESS_REPORTS.md)
 adds scoped immutable management reports, HTML preview, direct PDF downloads and
 Excel appendices. The owner supplied live evidence of saved reports and accepted
-Gemini commentary after migration 025; direct PDF download is a new change pending
-deployment verification. Existing daily summaries/scheduling remain
+Gemini commentary after migration 025. Downloaded PDF/Excel comparisons and selected
+role denials are documented in the [production evidence record](docs/evidence/business_reports_production_verification_2026-10-19.md);
+remaining checks are explicit. Existing daily summaries/scheduling remain
 separate. The Business Reports change restricts legacy global reports to Admin.
 
 This repository is a monorepo containing the React frontend, FastAPI backend, and shared API contract. The system monitors standardized retail transactions, evaluates audit rules and anomalous behavior, produces a unified risk assessment, and delivers high-risk alerts.

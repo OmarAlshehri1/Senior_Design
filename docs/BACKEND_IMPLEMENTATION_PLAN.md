@@ -659,12 +659,14 @@ These are historical implementation estimates retained from Phases 0–12, not c
 
 ## Next action
 
-Local addition on 2026-10-19, not deployed: the owner approved implementation of
-Business Audit Memoranda after reviewing the design. [BUSINESS_REPORTS.md](BUSINESS_REPORTS.md)
-records schema `2.0.0`, immutable draft revisions, actor/team-scoped evidence,
-deterministic narrative, HTML/Excel rendering, migration 025, tests and activation
-boundaries. Existing Phase 24 records and local changes are retained. Do not mark
-this feature production-verified before approved migration/deployment and E2E.
+Business report verification update, 2026-10-19: the
+[production evidence record](evidence/business_reports_production_verification_2026-10-19.md)
+documents inspected Admin PDF/XLSX and Supervisor PDF exports, Auditor GET denials,
+Supervisor denial of an Admin revision, provider fallback/retries and an attributable
+creation audit event. This is a tested subset, not completion of Phase 24.
+Next: test Auditor create denial and denied XLSX access, then approved cross-team
+and changed-assignment access cases. Current hosted scheduler/recovery/SLA,
+WebSocket, complete live-function comparison and rubric evidence remain separate.
 The prior next-action paragraph below is historical context.
 
 Phases 13A/13B and 14–23 are merged on `main`; subsequent production hardening was pushed in `f29ee5b` (medium-risk alerts) and `be7a052` (latest-activity reports). Owner-reported live evidence: Vercel/Render are serving the app, health returns OK, Migration 022 succeeded, and the medium-alert demo created 574 alerts. The owner also reports 10,011 stored transactions and a demo evaluation mix of 9,007 complete, 800 partial, 201 not evaluated among eligible rows; three alert-linked transactions were excluded from that demo update. These demo changes are synthetic and do not represent company policy or untouched source data. Formal rubric mapping and hosted performance remain unresolved. Next: verify the new report after deployment, finish the three-role workflow and hosted worker/reconnect checks, and independently verify the reported live migrations where access permits. Existing uncommitted `backend/requirements.txt` and other demo artifacts remain outside this documentation update.

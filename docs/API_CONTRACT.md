@@ -1,6 +1,8 @@
 # Shared API Contract
 
-Feature update, 2026-10-19 (direct PDF deployment verification pending): Business Memorandum schema `2.0.0`
+Feature update, 2026-10-19: selected production report checks and their limits are
+recorded in [the evidence record](evidence/business_reports_production_verification_2026-10-19.md).
+Business Memorandum schema `2.0.0`
 adds immutable scoped drafts at `/api/v1/reports/business`, direct PDF/Excel downloads
 and HTML preview. `GET /api/v1/reports/business/{uuid}/download?format=pdf` returns
 an `application/pdf` attachment after rechecking actor access, with `Cache-Control: no-store`.

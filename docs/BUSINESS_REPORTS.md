@@ -6,7 +6,8 @@ also supplied downloaded PDF/XLSX pairs for revisions `cc993d5c-fde2-46c8-8174-4
 and `d66f1954-b1e4-4d21-bf67-0b56827e5489`; local inspection confirmed matching
 finding facts, commentary, conclusion and recommendations across these exports.
 The latter uses prompt `1.0.2` with baseline commentary after HTTP 503. Live retry
-behavior still awaits deployment verification.
+behavior is documented with its limits in the
+[production verification record](evidence/business_reports_production_verification_2026-10-19.md).
 The owner reported applying
 migration 025 successfully to M004 Supabase on 2026-10-19 and supplied a read-only
 result with all six checks true: table/source/save/read presence, service-role save
