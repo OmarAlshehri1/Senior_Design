@@ -203,6 +203,14 @@ the commentary integration adds JSON fields and does not change migration 025.
 
 ## Local verification record
 
+After owner-supplied production evidence changed from `TIMEOUT` to `REJECTED`,
+validation failures now also persist/log fixed safe classifications: output token
+limit, invalid JSON, response structure/size, schema mismatch, finding-reference
+mismatch, quantities, prose format or unsupported assertions. Validation rules,
+model, thinking level and timeout remain unchanged in this diagnostic update.
+No provider prose, validation inputs, error messages or credentials are logged.
+The specific live rejection cause remains unknown until a new draft records it.
+
 Following owner-supplied production evidence of `TIMEOUT` with
 `gemini-3.8-flash`, the provider read timeout was increased from 20 to 90 seconds;
 connect/write/pool remain bounded at 10 seconds. Gemini 3 requests use

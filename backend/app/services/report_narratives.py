@@ -10,6 +10,7 @@ import re
 
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic_core import PydanticCustomError
 
 from app.services.gemini_explanations import get_gemini_model_name
 
@@ -53,11 +54,11 @@ class FindingCommentary(BaseModel):
     def bounded_prose(cls, value):
         value = ' '.join(value.split())
         if len(value)<30 or any(c.isdigit() for c in value) or QUANTITIES.search(value):
-            raise ValueError('Commentary must not introduce quantities.')
+            raise PydanticCustomError('COMMENTARY_QUANTITIES', 'Commentary must not introduce quantities.')
         if any(c in value for c in '<>{}`') or re.search(r'https?://|www\.', value, re.I):
-            raise ValueError('Plain prose required.')
+            raise PydanticCustomError('COMMENTARY_FORMAT', 'Plain prose required.')
         if UNSUPPORTED_CLAIMS.search(value):
-            raise ValueError('Unsupported assertion.')
+            raise PydanticCustomError('COMMENTARY_ASSERTION', 'Unsupported assertion.')
         return value
 
 
@@ -112,37 +113,45 @@ def _safe_facts(document: dict) -> dict:
     }
 
 
+class RejectedCommentary(ValueError):
+    def __init__(self, code, message=None):
+        super().__init__(message or code)
+        self.code = code
+
+
 def _unique_object(pairs):
     result = {}
     for key,value in pairs:
         if key in result:
-            raise ValueError('Duplicate JSON field.')
+            raise RejectedCommentary('DUPLICATE_JSON_FIELD', 'Duplicate JSON field.')
         result[key] = value
     return result
 
 
 def _parse_response(payload, expected_ids):
     if not isinstance(payload,dict):
-        raise ValueError('Invalid provider response.')
+        raise RejectedCommentary('INVALID_RESPONSE_ENVELOPE')
     candidates = payload.get('candidates')
     if not isinstance(candidates,list) or len(candidates)!=1:
-        raise ValueError('Expected a complete candidate.')
+        raise RejectedCommentary('MISSING_OR_MULTIPLE_CANDIDATES')
     candidate = candidates[0]
     if not isinstance(candidate,dict) or candidate.get('finishReason')!='STOP':
-        raise ValueError('Incomplete provider response.')
+        reason = candidate.get('finishReason') if isinstance(candidate,dict) else None
+        code = 'OUTPUT_TOKEN_LIMIT' if reason=='MAX_TOKENS' else 'INCOMPLETE_RESPONSE'
+        raise RejectedCommentary(code)
     content = candidate.get('content')
     parts = content.get('parts') if isinstance(content,dict) else None
     if not isinstance(parts,list) or not parts:
-        raise ValueError('Missing response content.')
+        raise RejectedCommentary('MISSING_RESPONSE_CONTENT')
     if any(not isinstance(p,dict) or not isinstance(p.get('text'),str) or p.get('thought') for p in parts):
-        raise ValueError('Unexpected response content.')
+        raise RejectedCommentary('UNEXPECTED_RESPONSE_CONTENT')
     text = ''.join(p['text'] for p in parts)
     if len(text.encode('utf-8'))>MAX_RESPONSE_BYTES:
-        raise ValueError('Oversized response.')
+        raise RejectedCommentary('RESPONSE_TOO_LARGE')
     response = CommentaryResponse.model_validate(json.loads(text,object_pairs_hook=_unique_object))
     ids = [f.finding_id for f in response.findings]
     if len(ids)!=len(set(ids)) or set(ids)!=set(expected_ids):
-        raise ValueError('Finding references must match exactly.')
+        raise RejectedCommentary('FINDING_REFERENCE_MISMATCH')
     return {f.finding_id: f.model_dump(exclude={'finding_id'}) for f in response.findings}
 
 
@@ -185,7 +194,7 @@ def enrich_findings(document: dict, *, requested: bool = True) -> dict:
             response.raise_for_status()
             # Bound the provider envelope before parsing it; never save raw responses/errors.
             if len(response.content)>MAX_RESPONSE_BYTES:
-                raise ValueError('Oversized response envelope.')
+                raise RejectedCommentary('RESPONSE_TOO_LARGE')
             analysis = _parse_response(response.json(),[f['id'] for f in document['findings']])
     except httpx.HTTPError as exc:
         # Never log exception text, URLs, headers, prompts or provider bodies.
@@ -198,8 +207,18 @@ def enrich_findings(document: dict, *, requested: bool = True) -> dict:
         status.update(status='UNAVAILABLE', failure_code=failure_code)
         logger.warning('Business report Gemini unavailable: %s', failure_code)
         return result
-    except (ValueError, ValidationError, TypeError, KeyError):
-        status['status'] = 'REJECTED'
+    except (ValueError, ValidationError, TypeError, KeyError) as exc:
+        # Only fixed classifications escape validation; never save/log raw output.
+        code = 'INVALID_RESPONSE_STRUCTURE'
+        if isinstance(exc, RejectedCommentary):
+            code = exc.code
+        elif isinstance(exc, json.JSONDecodeError):
+            code = 'INVALID_RESPONSE_JSON'
+        elif isinstance(exc, ValidationError):
+            kinds = {e['type'] for e in exc.errors(include_input=False, include_context=False, include_url=False)}
+            code = next((c for c in ('COMMENTARY_QUANTITIES', 'COMMENTARY_FORMAT', 'COMMENTARY_ASSERTION') if c in kinds), 'SCHEMA_VALIDATION_ERROR')
+        status.update(status='REJECTED', failure_code=code)
+        logger.warning('Business report Gemini rejected: %s', code)
         return result
     for finding in result['findings']:
         finding['analysis'] = analysis[finding['id']]

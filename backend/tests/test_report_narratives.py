@@ -103,7 +103,7 @@ def test_no_provider_call_when_disabled_unconfigured_or_empty(monkeypatch,mode,s
     'missing_finding','duplicate_finding','unknown_finding','extra_field','numeric_claim','numeric_word',
     'markup','link','unsupported_cause','incomplete','missing_candidate','oversized','blank',
 ])
-def test_bad_provider_output_falls_back_for_entire_report(monkeypatch,change):
+def test_bad_provider_output_falls_back_for_entire_report(monkeypatch,change,caplog):
     doc = document()
     value = response_items(doc)
     item = value['findings'][0]
@@ -124,6 +124,22 @@ def test_bad_provider_output_falls_back_for_entire_report(monkeypatch,change):
     result = service.enrich_findings(doc)
     assert result['narrative']['status']=='REJECTED'
     assert result['narrative']['provider']=='BASELINE'
+    codes = {
+        'missing_finding':'FINDING_REFERENCE_MISMATCH',
+        'duplicate_finding':'FINDING_REFERENCE_MISMATCH',
+        'unknown_finding':'FINDING_REFERENCE_MISMATCH',
+        'extra_field':'SCHEMA_VALIDATION_ERROR',
+        'numeric_claim':'COMMENTARY_QUANTITIES', 'numeric_word':'COMMENTARY_QUANTITIES',
+        'markup':'COMMENTARY_FORMAT', 'link':'COMMENTARY_FORMAT',
+        'unsupported_cause':'COMMENTARY_ASSERTION', 'incomplete':'OUTPUT_TOKEN_LIMIT',
+        'missing_candidate':'MISSING_OR_MULTIPLE_CANDIDATES',
+        'oversized':'RESPONSE_TOO_LARGE', 'blank':'COMMENTARY_QUANTITIES',
+    }
+    assert result['narrative']['failure_code']==codes[change]
+    assert codes[change] in caplog.text
+    assert 'test-only-key' not in caplog.text
+    assert '<script>' not in caplog.text
+    assert 'financial loss' not in caplog.text
     assert result['metrics']==doc['metrics']
     assert all(f['analysis_source']=='BASELINE' for f in result['findings'])
 
@@ -132,6 +148,15 @@ def test_duplicate_json_keys_are_rejected():
     payload={'candidates':[{'finishReason':'STOP','content':{'parts':[{'text':'{"findings":[],"findings":[]}'}]}}]}
     with pytest.raises(ValueError,match='Duplicate'):
         service._parse_response(payload,['F1'])
+
+
+def test_invalid_provider_json_gets_safe_code(monkeypatch,caplog):
+    payload={'candidates':[{'finishReason':'STOP','content':{'parts':[{'text':'private invalid JSON'}]}}]}
+    install_client(monkeypatch,payload)
+    result = service.enrich_findings(document())
+    assert result['narrative']['status']=='REJECTED'
+    assert result['narrative']['failure_code']=='INVALID_RESPONSE_JSON'
+    assert 'private' not in caplog.text
 
 
 def test_non_gemini_three_override_keeps_compatible_generation_config(monkeypatch):
