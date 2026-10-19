@@ -16,6 +16,7 @@ def isolated_provider(monkeypatch):
     monkeypatch.setenv('REPORT_GEMINI_ENABLED','true')
     monkeypatch.setenv('GEMINI_API_KEY','test-only-key')
     monkeypatch.setenv('GEMINI_MODEL','gemini-3.8-flash')
+    monkeypatch.setattr(service,'sleep',lambda _seconds: None)
     def no_network(*args,**kwargs):
         pytest.fail('Unexpected external request; provider tests must install a fake client.')
     monkeypatch.setattr(service.httpx,'Client',no_network)
@@ -39,7 +40,7 @@ def envelope(value,finish='STOP'):
     return {'candidates':[{'finishReason':finish,'content':{'parts':[{'text':json.dumps(value)}]}}]}
 
 
-def install_client(monkeypatch,payload,status=200,error=None):
+def install_client(monkeypatch,payload,status=200,error=None,responses=None):
     calls = []
     class FakeClient:
         def __init__(self,**kwargs):
@@ -53,7 +54,8 @@ def install_client(monkeypatch,payload,status=200,error=None):
         def post(self,url,**kwargs):
             calls.append((url,kwargs))
             if error: raise error
-            return httpx.Response(status,json=payload,request=httpx.Request('POST',url))
+            code,body,headers = responses[min(len(calls)-1,len(responses)-1)] if responses else (status,payload,{})
+            return httpx.Response(code,json=body,headers=headers,request=httpx.Request('POST',url))
     monkeypatch.setattr(service.httpx,'Client',FakeClient)
     return calls
 
@@ -220,13 +222,14 @@ def test_non_gemini_three_override_keeps_compatible_generation_config(monkeypatc
 ])
 def test_provider_errors_are_generic_and_do_not_stop_report(monkeypatch,status,error,code,caplog):
     doc = document()
-    install_client(monkeypatch,{'error':{'message':'private provider detail'}},status,error)
+    calls = install_client(monkeypatch,{'error':{'message':'private provider detail'}},status,error)
     result = service.enrich_findings(doc)
     assert result['narrative']['status']=='UNAVAILABLE'
     assert 'private' not in json.dumps(result['narrative'])
     assert result['narrative']['model'] is None
     assert result['narrative']['attempted_model']=='gemini-3.8-flash'
     assert result['narrative']['failure_code']==code
+    assert result['narrative']['attempts'] == len(calls) == (3 if status==503 else 1)
     assert code in caplog.text
     for secret in ['private', 'test-only-key', 'generativelanguage.googleapis.com', 'Private recipient']:
         assert secret not in caplog.text
@@ -236,6 +239,56 @@ def test_provider_errors_are_generic_and_do_not_stop_report(monkeypatch,status,e
     assert 'gemini-3.8-flash' in html
     book = load_workbook(BytesIO(business_reports.build_business_workbook(saved)))
     assert ('Commentary failure_code', code) in list(book['Memorandum'].values)
+
+
+@pytest.mark.parametrize('temporary_status',[502,503,504])
+def test_transient_errors_retry_with_backoff_and_save_only_final_narrative(monkeypatch,temporary_status):
+    doc = document()
+    pauses = []
+    monkeypatch.setattr(service,'sleep',pauses.append)
+    calls = install_client(monkeypatch,None,responses=[
+        (temporary_status,{'error':{'message':'private response'}},{}),
+        (temporary_status,{},{}), (200,envelope(response_items(doc)),{}),
+    ])
+    writes = []
+    def rpc(name,**kwargs):
+        if name=='get_business_report_source': return source()
+        writes.append(deepcopy(kwargs['p_document']))
+        return {'id':REPORT_ID,'document':kwargs['p_document']}
+    monkeypatch.setattr(business_reports.identity,'rpc',rpc)
+    saved = business_reports.generate_business_report(actor_id='admin',data_context='DEMONSTRATION')
+    assert len(calls)==3 and pauses==[1,2]
+    assert len(writes)==1
+    assert saved['document']['narrative']['status']=='GENERATED'
+    assert saved['document']['narrative']['attempts']==3
+    assert saved['document']['metrics']==doc['metrics']
+    assert all(call[1]['json']==calls[0][1]['json'] for call in calls)
+    assert 'failure_code' not in saved['document']['narrative']
+    rendered = dict(saved, created_at='2026-10-19T10:31:00Z')
+    assert 'Commentary attempts' in business_reports.render_business_html(rendered)
+
+
+def test_provider_retry_after_is_respected_or_retry_is_skipped(monkeypatch):
+    pauses = []
+    monkeypatch.setattr(service,'sleep',pauses.append)
+    doc = document()
+    calls=install_client(monkeypatch,None,responses=[(503,{}, {'Retry-After':'3'}),(200,envelope(response_items(doc)),{})])
+    assert service.enrich_findings(doc)['narrative']['status']=='GENERATED'
+    assert len(calls)==2 and pauses==[3]
+    pauses.clear()
+    calls=install_client(monkeypatch,None,responses=[(503,{}, {'Retry-After':'3600'})])
+    result = service.enrich_findings(doc)
+    assert len(calls)==1 and pauses==[]
+    assert result['narrative']['failure_code']=='HTTP_503'
+
+
+def test_retry_does_not_start_when_window_is_exhausted(monkeypatch):
+    clock = iter([0,0,89])
+    monkeypatch.setattr(service,'monotonic',lambda: next(clock))
+    calls=install_client(monkeypatch,{},status=503)
+    result=service.enrich_findings(document())
+    assert len(calls)==1
+    assert result['narrative']['failure_code']=='HTTP_503'
 
 
 def test_saved_commentary_is_shared_by_html_and_excel_without_regeneration(monkeypatch):

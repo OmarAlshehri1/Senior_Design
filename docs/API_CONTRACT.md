@@ -14,7 +14,9 @@ do not establish deployment of this change.
 Business report creation additionally accepts optional `use_gemini` (default
 `true`). AI commentary is stored separately as each finding's `analysis` and
 `analysis_source`; authoritative finding facts remain unchanged. A saved `narrative`
-object records provider/status/prompt version and successful model/time. Failed or
+object records provider/status/prompt version, successful model/time and request
+`attempts`. Explicit transient HTTP 502/503/504 errors can be retried up to three
+attempts within a bounded retry window; authoritative report saves are not retried. Failed or
 disabled provider calls fall back to detailed standard explanations. Downloads use
 the saved prose and never call Gemini. See the optional commentary section in
 BUSINESS_REPORTS.md for privacy, validation and configuration.

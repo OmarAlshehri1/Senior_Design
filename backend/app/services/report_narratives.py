@@ -3,10 +3,12 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 import json
 import logging
 import os
 import re
+from time import monotonic, sleep
 
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
@@ -16,6 +18,8 @@ from app.services.gemini_explanations import get_gemini_model_name
 
 PROMPT_VERSION = 'business-findings-1.0.2'
 PROVIDER_TIMEOUT = httpx.Timeout(connect=10.0, read=90.0, write=10.0, pool=10.0)
+MAX_PROVIDER_ATTEMPTS = 3
+RETRY_WINDOW_SECONDS = 90.0
 MAX_RESPONSE_BYTES = 60000
 logger = logging.getLogger(__name__)
 FIELDS = ('interpretation', 'business_implication', 'recommended_review', 'limitations')
@@ -177,13 +181,26 @@ def _parse_response(payload, expected_ids):
     return {f.finding_id: f.model_dump(exclude={'finding_id'}) for f in response.findings}
 
 
+def _retry_delay(response, attempt):
+    delay = float(2 ** (attempt - 1))
+    retry_after = response.headers.get('Retry-After', '').strip()
+    if retry_after:
+        try:
+            provider_delay = (float(retry_after) if retry_after.isdigit() else
+                              (parsedate_to_datetime(retry_after) - datetime.now(timezone.utc)).total_seconds())
+            delay = max(delay, provider_delay)
+        except (ValueError, TypeError, OverflowError):
+            pass
+    return delay
+
+
 def enrich_findings(document: dict, *, requested: bool = True) -> dict:
     result = deepcopy(document)
     for finding in result['findings']:
         finding['analysis'] = baseline_analysis(finding)
         finding['analysis_source'] = 'BASELINE'
     status = {'provider':'BASELINE','status':'NOT_REQUESTED','prompt_version':PROMPT_VERSION,
-              'model':None,'generated_at':None,'human_review_required':True}
+              'model':None,'generated_at':None,'human_review_required':True,'attempts':0}
     result['narrative'] = status
     if not requested or os.getenv('REPORT_GEMINI_ENABLED','true').lower()!='true':
         status['status'] = 'DISABLED'
@@ -211,8 +228,25 @@ def enrich_findings(document: dict, *, requested: bool = True) -> dict:
         request['generationConfig']['thinkingConfig'] = {'thinkingLevel': 'low'}
     try:
         with httpx.Client(timeout=PROVIDER_TIMEOUT,follow_redirects=False) as client:
-            response = client.post(f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
-                                   headers={'Content-Type':'application/json','x-goog-api-key':key},json=request)
+            deadline = monotonic() + RETRY_WINDOW_SECONDS
+            for attempt in range(1, MAX_PROVIDER_ATTEMPTS + 1):
+                remaining = max(0.1, deadline - monotonic())
+                status['attempts'] = attempt
+                response = client.post(f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
+                                       headers={'Content-Type':'application/json','x-goog-api-key':key},json=request,
+                                       timeout=httpx.Timeout(connect=min(10.0, remaining), read=remaining,
+                                                             write=min(10.0, remaining), pool=min(10.0, remaining)))
+                # Retry only explicit transient service errors, never a rejected
+                # narrative, credentials/quota errors or an ambiguous timeout.
+                if response.status_code not in (502, 503, 504) or attempt == MAX_PROVIDER_ATTEMPTS:
+                    break
+                delay = _retry_delay(response, attempt)
+                if delay > 5 or deadline - monotonic() <= delay + 10:
+                    break
+                logger.warning('Business report Gemini transient error: HTTP_%s; retrying attempt %s',
+                               response.status_code, attempt + 1)
+                response.close()
+                sleep(delay)
             response.raise_for_status()
             # Bound the provider envelope before parsing it; never save raw responses/errors.
             if len(response.content)>MAX_RESPONSE_BYTES:
