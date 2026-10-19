@@ -1,0 +1,13 @@
+.business-reports { display: grid; gap: 24px; }
+.business-report-controls { padding: 24px; }
+.business-report-controls h2 { margin-bottom: 12px; }
+.business-report-controls p { margin-bottom: 16px; line-height: 1.6; }
+.business-report-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-bottom: 20px; }
+.business-report-controls label { display: grid; gap: 8px; font-weight: 600; }
+.business-report-controls input, .business-report-controls select { width: 100%; min-width: 0; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; background: white; color: #172536; }
+.business-report-controls small { font-weight: normal; color: #52657b; line-height: 1.5; }
+.business-report-controls .business-report-ai-option { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.business-report-controls .business-report-ai-option input { width: auto; }
+.business-report-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 18px; }
+.business-report-preview { width: 100%; min-height: 1100px; border: 1px solid #d9e2ed; border-radius: 12px; background: white; }
+@media (max-width: 720px) { .business-report-fields { grid-template-columns: 1fr; } .business-report-controls { padding: 16px; } }

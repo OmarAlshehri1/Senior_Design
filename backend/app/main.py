@@ -19,6 +19,7 @@ from app.api.cases import router as cases_router
 from app.api.vendors import router as vendors_router
 from app.api.analytics import router as analytics_router
 from app.api.settings import router as settings_router
+from app.api.business_reports import router as business_reports_router
 
 
 LOCAL_FRONTEND_ORIGINS = (
@@ -107,6 +108,7 @@ app.include_router(
     reports_router,
     prefix="/api/v1",
 )
+app.include_router(business_reports_router, prefix="/api/v1")
 app.include_router(alerts_websocket_router)
 app.include_router(identity_router, prefix="/api/v1")
 app.include_router(accountability_router, prefix="/api/v1")

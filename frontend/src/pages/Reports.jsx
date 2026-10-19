@@ -2,6 +2,8 @@ import {
   useEffect,
   useMemo,
   useState,
+  lazy,
+  Suspense,
 } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -14,6 +16,9 @@ import {
 } from '../components/statusUtils';
 import useApp from '../context/useApp';
 import { reportsService } from '../services/reportsService';
+import useAuthorization from '../auth/useAuthorization.js';
+
+const BusinessReports = lazy(() => import('../components/BusinessReports.jsx'));
 
 function formatReportDate(timestamp) {
   if (!timestamp) return 'Not available';
@@ -58,6 +63,15 @@ function ReportRequestState({
 }
 
 export default function Reports() {
+  const { effectiveRole } = useAuthorization();
+  const [legacy, setLegacy] = useState(false);
+  return <>
+    {effectiveRole === 'ADMIN' && <div className="business-report-actions"><button type="button" className="btn btn-secondary" onClick={() => setLegacy((value) => !value)}>{legacy ? 'Open Business Reports' : 'Open Legacy Daily Summaries'}</button></div>}
+    {legacy && effectiveRole === 'ADMIN' ? <LegacyReports /> : <Suspense fallback={<p role="status">Loading business reports…</p>}><BusinessReports /></Suspense>}
+  </>;
+}
+
+function LegacyReports() {
   const { showNotification } = useApp();
   const [reports, setReports] = useState([]);
   const [selectedReport, setSelectedReport] = useState(null);

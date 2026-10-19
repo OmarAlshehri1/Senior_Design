@@ -1,5 +1,21 @@
 # Shared API Contract
 
+Local feature update, 2026-10-19 (not deployed): Business Memorandum schema `2.0.0`
+adds immutable scoped drafts at `/api/v1/reports/business`, HTML/Excel downloads
+and browser printing. It requires migration 025. See [BUSINESS_REPORTS.md](BUSINESS_REPORTS.md)
+for payloads, permissions and activation. In this implementation the old global
+`/reports`, `/reports/latest` and legacy download routes become Admin-only;
+Supervisors use team-scoped business reports. Historical status statements below
+do not establish deployment of this change.
+
+Business report creation additionally accepts optional `use_gemini` (default
+`true`). AI commentary is stored separately as each finding's `analysis` and
+`analysis_source`; authoritative finding facts remain unchanged. A saved `narrative`
+object records provider/status/prompt version and successful model/time. Failed or
+disabled provider calls fall back to detailed standard explanations. Downloads use
+the saved prose and never call Gemini. See the optional commentary section in
+BUSINESS_REPORTS.md for privacy, validation and configuration.
+
 This document is the preliminary contract between the React frontend and FastAPI backend. It defines planned field names and payload shapes so frontend and backend development can proceed independently.
 
 The documented health, transaction, alert, report, Excel-download, identity, team, accountability, notification, alert WebSocket, case, vendor, analytics, and settings endpoints are implemented on `main`. The owner reported migrations 012-023 applied to M004 Supabase; this was not independently inspected. Migration 022 success and Migration 023's 574-alert demo result are owner-reported. Shapes may be extended through team agreement, but existing names should not be changed without coordinating both branches.
@@ -217,7 +233,7 @@ All routes below are implemented in this branch. Protected routes require `Autho
 
 Login, refresh, exchange, access-request, password-reset, and unlock-request bodies use the frontend's established form fields. Login returns `{access_token, refresh_token, expires_in, user}`. Access-request approval requires a pending row and an already-created Auth profile with a matching email; the provider invitation is issued by the backend. Reset, invitation, and unlock-verification links use server-configured `SUPABASE_AUTH_REDIRECT_URL` (the local example is `/auth/callback`); the chosen URL must also be allowlisted in Supabase Auth. Configure the production URL in Phase 24. Three consecutive failed sign-ins lock an active account; only an active Admin can decide the account owner's provider-verified pending unlock request. The project owner confirmed identity migration 013 is applied in the live database; this is owner-reported, not independently queried.
 
-Protected role policy grants transaction reads and alert review to active Auditor/Supervisor/Admin users, report operations and `POST /transactions` to Supervisor/Admin, and user administration to Admin. `GET /alerts` is team-scoped: Auditors see only their current assignments, Supervisors see their active team's alerts plus unclaimed alerts, and Admins see all alerts. A Supervisor may assign only to an active Auditor or Supervisor from that same team; Admin may assign across teams. All authorization is enforced by the backend; frontend visibility alone does not grant access.
+Protected role policy grants transaction reads and alert review to active Auditor/Supervisor/Admin users, business-report operations and `POST /transactions` to Supervisor/Admin, and user administration to Admin. Legacy global report operations are Admin-only in the local Business Reports implementation described above. `GET /alerts` is team-scoped: Auditors see only their current assignments, Supervisors see their active team's alerts plus unclaimed alerts, and Admins see all alerts. A Supervisor may assign only to an active Auditor or Supervisor from that same team; Admin may assign across teams. All authorization is enforced by the backend; frontend visibility alone does not grant access.
 
 ### `GET /api/v1/dashboard/summary`
 

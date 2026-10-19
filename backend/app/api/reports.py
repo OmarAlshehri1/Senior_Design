@@ -37,7 +37,8 @@ from app.services.report_workbook import build_report_workbook
 router = APIRouter(
     prefix="/reports",
     tags=["reports"],
-    dependencies=[Depends(require_roles("SUPERVISOR", "ADMIN"))],
+    # Legacy summaries are organization-wide; team reports use /reports/business.
+    dependencies=[Depends(require_roles("ADMIN"))],
 )
 
 

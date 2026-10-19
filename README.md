@@ -2,6 +2,12 @@
 
 Senior Design project for team **M004**.
 
+Local feature under review (2026-10-19): [Business Audit Memoranda](docs/BUSINESS_REPORTS.md)
+adds scoped immutable management reports, HTML preview/download, printing and
+Excel appendices. Requires approved migration 025 and coordinated deployment;
+it is not yet available in production. Existing daily summaries/scheduling remain
+separate. The Business Reports change restricts legacy global reports to Admin.
+
 This repository is a monorepo containing the React frontend, FastAPI backend, and shared API contract. The system monitors standardized retail transactions, evaluates audit rules and anomalous behavior, produces a unified risk assessment, and delivers high-risk alerts.
 
 Main includes PR #22 and PRs #26-35: transaction/audit/report integration, Auth/RBAC, reviews/audit history, team-scoped assignments, notifications, case/SLA workflows, vendor monitoring, authoritative analytics, and Admin-managed organization settings. The project owner reports Supabase migrations 012-020 applied successfully; this was not independently queried.

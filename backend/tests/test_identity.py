@@ -196,7 +196,7 @@ def test_admin_routes_reject_other_active_roles(identity_client):
     assert response.status_code == 403
 
 
-def test_reports_reject_auditors_and_accept_supervisors(identity_client, monkeypatch):
+def test_legacy_global_reports_reject_auditors_and_supervisors(identity_client, monkeypatch):
     app.dependency_overrides[get_current_user] = lambda: {
         "id": "auditor", "role": "AUDITOR", "account_status": "ACTIVE"
     }
@@ -206,6 +206,11 @@ def test_reports_reject_auditors_and_accept_supervisors(identity_client, monkeyp
         "id": "supervisor", "role": "SUPERVISOR", "account_status": "ACTIVE"
     }
     monkeypatch.setattr("app.api.reports.repository_list_reports", lambda **_kwargs: ([], 0))
+    response = identity_client.get("/api/v1/reports")
+    assert response.status_code == 403
+    app.dependency_overrides[get_current_user] = lambda: {
+        "id": "admin", "role": "ADMIN", "account_status": "ACTIVE"
+    }
     response = identity_client.get("/api/v1/reports")
     assert response.status_code == 200
     assert response.json()["total"] == 0
