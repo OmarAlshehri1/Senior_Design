@@ -1,3 +1,4 @@
 -r requirements.txt
 pytest
 openpyxl
+pypdf==6.21.1

@@ -26,7 +26,7 @@ export function createBusinessReportsService(client = apiClient) {
     create: (input, options = {}) => client.post('/reports/business', businessReportRequest(input), options),
     get: (id, options = {}) => client.get(path(id), options),
     download: (id, format = 'html', options = {}) => {
-      if (!['html', 'xlsx'].includes(format)) throw new TypeError('Unsupported report format.');
+      if (!['html', 'xlsx', 'pdf'].includes(format)) throw new TypeError('Unsupported report format.');
       return client.getFile(`${path(id)}/download`, { ...options, query: { format } });
     },
   });

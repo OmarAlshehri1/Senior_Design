@@ -1048,8 +1048,9 @@ No frontend claim is made for the five audit-rule implementations, Isolation For
 
 Local addition on 2026-10-19, not deployed: Reports now defaults to the Business
 Audit Memorandum workflow, with UTC-day/latest-in-scope selection, declared data
-context, saved draft pagination, sandboxed HTML preview, HTML/Excel download and
-printing. Admin retains a separate legacy-summary view; Supervisor uses team
+context, saved draft pagination, sandboxed HTML preview and direct PDF/Excel downloads.
+Download Business Report requests `format=pdf`; the separate print button is removed.
+Admin retains a separate legacy-summary view; Supervisor uses team
 business reports. See [BUSINESS_REPORTS.md](BUSINESS_REPORTS.md). Requires approved
 migration 025 and backend/frontend activation. The older status table and
 next-action paragraph below remain historical and do not verify this feature.

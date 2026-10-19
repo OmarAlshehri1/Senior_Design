@@ -164,16 +164,20 @@ def test_read_and_download_reauthorize_and_do_not_accept_arbitrary_ids(monkeypat
         return report()
     monkeypatch.setattr(api, 'read_business_reports', read)
     client = TestClient(app)
-    for format in ['html','xlsx']:
+    for format in ['html','xlsx','pdf']:
         response = client.get(f'/api/v1/reports/business/{REPORT_ID}/download?format={format}')
         assert response.status_code == 200
         assert response.headers['cache-control'] == 'no-store'
         assert format in response.headers['content-disposition']
+        if format == 'pdf':
+            assert response.headers['content-type'] == 'application/pdf'
+            assert response.content.startswith(b'%PDF-')
     assert all(call['actor_id'] and call['report_id']==UUID(REPORT_ID) for call in calls)
     assert client.get('/api/v1/reports/business/invalid/download').status_code == 422
-    assert client.get(f'/api/v1/reports/business/{REPORT_ID}/download?format=pdf').status_code == 422
+    assert client.get(f'/api/v1/reports/business/{REPORT_ID}/download?format=exe').status_code == 422
     monkeypatch.setattr(api, 'read_business_reports', lambda **kwargs: None)
     assert client.get(f'/api/v1/reports/business/{REPORT_ID}/download').status_code == 404
+    assert client.get(f'/api/v1/reports/business/{REPORT_ID}/download?format=pdf').status_code == 404
 
 
 def test_schema_unavailable_fails_without_creating_a_fake_report(monkeypatch):

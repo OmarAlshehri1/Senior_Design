@@ -27,12 +27,15 @@ test('business report creation, scoped pagination, preview and both downloads us
   assert.equal(await service.get('report-1'),source);
   assert.equal(await (await service.download('report-1','html')).text(),'saved snapshot');
   await service.download('report-1','xlsx');
+  await service.download('report-1','pdf');
   assert.deepEqual(calls.map(([method,path])=>[method,path]),[
     ['POST','/reports/business'],['GET','/reports/business'],['GET','/reports/business/report-1'],
     ['FILE','/reports/business/report-1/download'],['FILE','/reports/business/report-1/download'],
+    ['FILE','/reports/business/report-1/download'],
   ]);
   assert.deepEqual(calls[3][2].query,{format:'html'});
   assert.deepEqual(calls[4][2].query,{format:'xlsx'});
-  assert.throws(()=>service.download('report-1','pdf'),/Unsupported/);
+  assert.deepEqual(calls[5][2].query,{format:'pdf'});
+  assert.throws(()=>service.download('report-1','exe'),/Unsupported/);
   assert.throws(()=>service.get(''),/Select/);
 });

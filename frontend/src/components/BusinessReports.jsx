@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { businessReportsService } from '../services/businessReportsService.js';
 import '../businessReports.css';
 
@@ -19,7 +19,6 @@ export default function BusinessReports() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [error, setError] = useState('');
   const [previewError, setPreviewError] = useState('');
-  const frame = useRef(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -103,10 +102,10 @@ export default function BusinessReports() {
         <div className="business-report-actions"><button className="btn btn-secondary" disabled={page <= 1 || busy} onClick={() => setPage((p) => p - 1)}>Previous</button><span>Page {page} · {result.total} drafts</span><button className="btn btn-secondary" disabled={page * 10 >= result.total || busy} onClick={() => setPage((p) => p + 1)}>Next</button><button className="btn btn-secondary" onClick={() => setReload((r) => r + 1)} disabled={busy}>Refresh</button></div>
       </>}
       {selected && <p>Evidence for {selected.period_start?.slice(0, 10)} to {selected.period_end?.slice(0, 10)} UTC (exclusive) · {selected.scope} · Draft, not approved.</p>}
-      {selectedId && <div className="business-report-actions"><button className="btn btn-secondary" disabled={busy || !previewReady} onClick={() => download('html')}>Download Business Report</button><button className="btn btn-secondary" disabled={busy || !previewReady} onClick={() => download('xlsx')}>Download Excel Appendix</button><button className="btn btn-primary" disabled={!previewReady} onClick={() => frame.current?.contentWindow?.print()}>Print / Save as PDF</button></div>}
+      {selectedId && <div className="business-report-actions"><button className="btn btn-secondary" disabled={busy || !previewReady} onClick={() => download('pdf')}>Download Business Report</button><button className="btn btn-secondary" disabled={busy || !previewReady} onClick={() => download('xlsx')}>Download Excel Appendix</button></div>}
     </section>
     {previewLoading && <p role="status">Loading memorandum…</p>}
     {previewError && <p role="alert" className="integration-error">{previewError}</p>}
-    {previewReady && <iframe ref={frame} className="business-report-preview" title="Business audit memorandum preview" sandbox="allow-same-origin allow-modals" srcDoc={html} />}
+    {previewReady && <iframe className="business-report-preview" title="Business audit memorandum preview" sandbox="allow-same-origin" srcDoc={html} />}
   </div>;
 }

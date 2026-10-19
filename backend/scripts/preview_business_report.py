@@ -3,6 +3,7 @@ import argparse
 from pathlib import Path
 
 from app.services.business_reports import build_document, render_business_html, build_business_workbook
+from app.services.business_report_pdf import build_business_pdf
 
 
 def demonstration_source():
@@ -47,11 +48,14 @@ def main():
     args.output_directory.mkdir(parents=True,exist_ok=True)
     html_path = args.output_directory/'business_report_preview.html'
     excel_path = args.output_directory/'business_report_preview.xlsx'
+    pdf_path = args.output_directory/'business_report_preview.pdf'
     html_path.write_text(render_business_html(report),encoding='utf-8')
     excel_path.write_bytes(build_business_workbook(report))
+    pdf_path.write_bytes(build_business_pdf(report))
     print('Created offline DEMONSTRATION preview (3 illustrative records, not production evidence).')
     print(html_path)
     print(excel_path)
+    print(pdf_path)
 
 
 if __name__=='__main__':

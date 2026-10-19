@@ -1,8 +1,11 @@
 # Shared API Contract
 
-Local feature update, 2026-10-19 (not deployed): Business Memorandum schema `2.0.0`
-adds immutable scoped drafts at `/api/v1/reports/business`, HTML/Excel downloads
-and browser printing. It requires migration 025. See [BUSINESS_REPORTS.md](BUSINESS_REPORTS.md)
+Feature update, 2026-10-19 (direct PDF deployment verification pending): Business Memorandum schema `2.0.0`
+adds immutable scoped drafts at `/api/v1/reports/business`, direct PDF/Excel downloads
+and HTML preview. `GET /api/v1/reports/business/{uuid}/download?format=pdf` returns
+an `application/pdf` attachment after rechecking actor access, with `Cache-Control: no-store`.
+HTML and XLSX formats remain supported. No AI regeneration occurs during download.
+It requires migration 025. See [BUSINESS_REPORTS.md](BUSINESS_REPORTS.md)
 for payloads, permissions and activation. In this implementation the old global
 `/reports`, `/reports/latest` and legacy download routes become Admin-only;
 Supervisors use team-scoped business reports. Historical status statements below

@@ -12,6 +12,7 @@ from app.services.identity import get_current_user, require_roles
 from app.services.business_reports import (
     generate_business_report, read_business_reports, render_business_html, build_business_workbook,
 )
+from app.services.business_report_pdf import build_business_pdf
 
 router = APIRouter(prefix='/reports/business', tags=['business reports'],
                    dependencies=[Depends(require_roles('ADMIN', 'SUPERVISOR'))])
@@ -76,12 +77,13 @@ async def get_business_report(report_id: UUID, user: dict = Depends(get_current_
 
 
 @router.get('/{report_id}/download')
-async def download_business_report(report_id: UUID, format: Literal['html', 'xlsx'] = 'html',
+async def download_business_report(report_id: UUID, format: Literal['html', 'xlsx', 'pdf'] = 'html',
                                     user: dict = Depends(get_current_user)):
     report = await _report(report_id, user)
-    renderer = render_business_html if format=='html' else build_business_workbook
+    renderer = {'html': render_business_html, 'xlsx': build_business_workbook, 'pdf': build_business_pdf}[format]
     content = await run_in_threadpool(renderer, report)
     return Response(content=content,
-        media_type='text/html' if format=='html' else 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        media_type={'html': 'text/html', 'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'pdf': 'application/pdf'}[format],
         headers={'Content-Disposition': f'attachment; filename="BR-{report_id}.{format}"',
                  'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'})
