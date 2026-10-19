@@ -203,6 +203,14 @@ the commentary integration adds JSON fields and does not change migration 025.
 
 ## Local verification record
 
+Owner-supplied `COMMENTARY_ASSERTION` evidence confirms that the production prose
+matched the conservative unsupported-assertion guard, but not whether the match
+was affirmative or negated: raw provider output is deliberately not retained.
+Prompt version `business-findings-1.0.1` explicitly tells the model which phrases
+the lexical guard rejects, including inside negation, and provides a checked
+alternative disclaimer. The guard itself is unchanged; no rejected prose is
+rewritten or accepted by the server. Live success still requires a new draft.
+
 After owner-supplied production evidence changed from `TIMEOUT` to `REJECTED`,
 validation failures now also persist/log fixed safe classifications: output token
 limit, invalid JSON, response structure/size, schema mismatch, finding-reference

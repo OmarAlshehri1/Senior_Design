@@ -150,6 +150,23 @@ def test_duplicate_json_keys_are_rejected():
         service._parse_response(payload,['F1'])
 
 
+def test_prompt_example_passes_guard_but_unsafe_and_negated_trigger_text_stays_rejected():
+    import re
+    # The suggested disclaimer must pass the same production prose checks.
+    example = re.search(r'An acceptable limitations sentence is: "([^"]+)"', service.SYSTEM_INSTRUCTION).group(1)
+    values = response_items(document())['findings'][0]
+    values['limitations'] = example
+    assert service.FindingCommentary.model_validate(values).limitations == example
+    assert 'EVEN inside a negation' in service.SYSTEM_INSTRUCTION
+    for phrase in ('confirmed fraud', 'fraudulent', 'caused by', 'fully compliant'):
+        assert f'"{phrase}"' in service.SYSTEM_INSTRUCTION
+        for text in (f'The recorded transaction is {phrase} according to this review.',
+                     f'This information does not establish {phrase} according to this review.'):
+            values['limitations'] = text
+            with pytest.raises(service.ValidationError):
+                service.FindingCommentary.model_validate(values)
+
+
 def test_invalid_provider_json_gets_safe_code(monkeypatch,caplog):
     payload={'candidates':[{'finishReason':'STOP','content':{'parts':[{'text':'private invalid JSON'}]}}]}
     install_client(monkeypatch,payload)
