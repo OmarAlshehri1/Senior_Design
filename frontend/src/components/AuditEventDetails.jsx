@@ -1,3 +1,4 @@
+import DateTime from './DateTime.jsx';
 import { useEffect, useRef } from 'react';
 
 const displayDetails = (details) => {
@@ -25,9 +26,9 @@ export default function AuditEventDetails({ event, onClose }) {
         <div><dt>Role</dt><dd>{event.actorRole ?? 'Not available'}</dd></div>
         <div><dt>Action</dt><dd>{event.action ?? 'Not available'}</dd></div>
         <div><dt>Resource</dt><dd>{event.resourceId ?? 'Not available'}</dd></div>
-        <div><dt>Timestamp</dt><dd>{event.timestamp ?? 'Not available'}</dd></div>
+        <div><dt>Timestamp</dt><dd><DateTime value={event.timestamp} /></dd></div>
         <div><dt>Outcome</dt><dd>{event.outcome ?? 'Not available'}</dd></div>
-        <div><dt>Details</dt><dd>{displayDetails(event.details)}</dd></div>
+        <div><dt>Recorded details (raw)</dt><dd>{displayDetails(event.details)}</dd></div>
       </dl>
     </aside>
   );

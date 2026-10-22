@@ -1,3 +1,4 @@
+import DateTime from './DateTime.jsx';
 import { useNavigate } from 'react-router-dom';
 import { getAlertPresentation } from './alertUtils';
 
@@ -22,7 +23,7 @@ export default function AlertsList({ alerts, variant = 'default' }) {
             <div className="alert-body">
               <div className="alert-title-row">
                 <span className="alert-title">{alert.title}</span>
-                <span className="alert-time">{alert.time}</span>
+                <span className="alert-time"><DateTime value={alert.timestamp} /></span>
               </div>
               <div className="alert-desc">{alert.description}</div>
               <span className={`severity-pill severity-${alert.severity}`}>{alert.severity} Risk</span>

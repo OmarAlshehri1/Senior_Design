@@ -21,15 +21,15 @@ export function getSettingsOverview() {
     },
     realTimeAlerts: {
       threshold: `${RISK_THRESHOLDS.HIGH.label} (${RISK_THRESHOLDS.HIGH.min}–${RISK_THRESHOLDS.HIGH.max})`,
-      delivery: 'System notifications',
+      delivery: 'WebSocket updates and in-app notifications',
       targetLatency: '≤ 5 seconds',
-      status: 'Planned',
+      status: 'Implemented; runtime health not checked',
     },
     integration: {
-      transactionSource: 'Current Dataset',
-      apiIntegration: 'Not available',
-      realTimeConnection: 'Not available',
-      persistence: 'Not available',
+      transactionSource: 'Transaction API',
+      apiIntegration: 'Implemented API integration',
+      realTimeConnection: 'Implemented WebSocket integration',
+      persistence: 'Backend persistence implemented',
     },
     system: {
       frontend: 'Continuous Auditing System',

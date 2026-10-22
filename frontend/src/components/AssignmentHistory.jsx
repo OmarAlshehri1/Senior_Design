@@ -1,3 +1,4 @@
+import DateTime from './DateTime.jsx';
 export default function AssignmentHistory({ records = [] }) {
   if (!Array.isArray(records) || records.length === 0) {
     return <p className="assignment-history-empty">No assignment history is available yet.</p>;
@@ -10,7 +11,7 @@ export default function AssignmentHistory({ records = [] }) {
           <strong>{record.assigneeName ?? 'Not available'}</strong>
           <span>{record.status}</span>
           <span>Assigned by {record.assignedByName ?? 'Not available'}</span>
-          <time dateTime={record.assignedAt}>{record.assignedAt}</time>
+          <DateTime value={record.assignedAt} />
         </li>
       ))}
     </ol>

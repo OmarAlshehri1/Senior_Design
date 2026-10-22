@@ -1,3 +1,4 @@
+import DateTime from './DateTime.jsx';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ROLE_KEYS } from '../auth/roles.js';
@@ -14,16 +15,6 @@ function eventLabel(action) {
   return (action ?? 'System event').toLowerCase().split('_').map((part) => (
     part.charAt(0).toUpperCase() + part.slice(1)
   )).join(' ');
-}
-
-function eventTime(timestamp) {
-  if (!timestamp) return '';
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) return '';
-  return new Intl.DateTimeFormat('en-US', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(date);
 }
 
 function WorkspaceEvents({ section, loading }) {
@@ -44,7 +35,7 @@ function WorkspaceEvents({ section, loading }) {
           <span className="workspace-event-meta">
             {event.actorName || 'System'}
             {event.actorRole ? ` · ${event.actorRole}` : ''}
-            {eventTime(event.timestamp) ? ` · ${eventTime(event.timestamp)}` : ''}
+            {event.timestamp && <> · <DateTime value={event.timestamp} /></>}
           </span>
         </li>
       ))}

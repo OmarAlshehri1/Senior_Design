@@ -1,3 +1,4 @@
+import DateTime from './DateTime.jsx';
 import { AUDIT_OUTCOMES } from '../audit/auditEvents.js';
 
 export default function LoginHistory({ records = [] }) {
@@ -10,7 +11,7 @@ export default function LoginHistory({ records = [] }) {
       {records.map((record) => (
         <li key={record.id}>
           <span>{record.outcome === AUDIT_OUTCOMES.SUCCESS ? 'Successful sign-in' : 'Failed sign-in'}</span>
-          <time dateTime={record.timestamp}>{record.timestamp}</time>
+          <DateTime value={record.timestamp} />
         </li>
       ))}
     </ol>

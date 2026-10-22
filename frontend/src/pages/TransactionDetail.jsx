@@ -1,3 +1,5 @@
+import DateTime from '../components/DateTime.jsx';
+import { formatDate, formatTime } from '../utils/dateTime.js';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import useApp from '../context/useApp';
@@ -171,9 +173,6 @@ export default function TransactionDetail() {
     .sort((left, right) => Date.parse(right.timestamp) - Date.parse(left.timestamp));
   const reviewState = accountability.reviewedAt ? 'Reviewed' : 'Not Reviewed';
   const alertReviewState = alert?.status === 'Reviewed' ? 'Reviewed' : 'Not Reviewed';
-  const timestamp = [transaction.date, transaction.time]
-    .filter((value) => value !== null && value !== undefined && String(value).trim())
-    .join(' · ');
   const hasVendor = typeof transaction.vendor === 'string' && transaction.vendor.trim();
   const hasVendorId = transaction.vendorId !== null
     && transaction.vendorId !== undefined
@@ -252,7 +251,7 @@ export default function TransactionDetail() {
           </div>
           <p className="transaction-detail-vendor">{hasVendorId ? <Link to={`/vendors/${transaction.vendorId}`}>{displayValue(transaction.vendor)}</Link> : displayValue(transaction.vendor)} <VendorMonitoringIndicator status={transaction.vendorMonitoringStatus} /></p>
         </div>
-        {timestamp && <time className="transaction-detail-time">{timestamp}</time>}
+        <DateTime className="transaction-detail-time" value={transaction.timestamp} />
       </header>
 
       <section className="card risk-summary-card" aria-labelledby="risk-summary-heading">
@@ -296,8 +295,8 @@ export default function TransactionDetail() {
           <DetailField label="Category" value={transaction.category} />
           <DetailField label="Amount" value={formatAmount(transaction.amount, transaction.currency)} />
           <DetailField label="Currency" value={transaction.currency} />
-          <DetailField label="Date" value={transaction.date} />
-          <DetailField label="Time" value={transaction.time} />
+          <DetailField label="Date" value={formatDate(transaction.timestamp)} />
+          <DetailField label="Time" value={formatTime(transaction.timestamp)} />
         </dl>
       </section>
 
@@ -418,7 +417,7 @@ export default function TransactionDetail() {
               <h3 id="accountability-heading">Accountability</h3>
               <dl>
                 <div><dt>Reviewed By</dt><dd>{accountability.reviewedBy ?? <span aria-label="Unavailable">—</span>}</dd></div>
-                <div><dt>Reviewed At</dt><dd>{accountability.reviewedAt ?? <span aria-label="Unavailable">—</span>}</dd></div>
+                <div><dt>Reviewed At</dt><dd><DateTime value={accountability.reviewedAt} /></dd></div>
               </dl>
             </section>
 
@@ -454,7 +453,7 @@ export default function TransactionDetail() {
             <dl className="related-alert-list">
               <DetailField label="Alert Type" value={alert.title} />
               <DetailField label="Risk Level" value={alertRiskLevel} />
-              <DetailField label="Time" value={alert.time} />
+              <DetailField label="Time" value={<DateTime value={alert.timestamp} />} />
               <DetailField label="Review State" value={alertReviewState} />
             </dl>
           </section>

@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react';
+import DateTime from './DateTime.jsx';
+import { useEffect, useRef, useState } from 'react';
 import { getUnreadNotificationCount, isNotificationUnread, NOTIFICATION_TYPES } from '../notifications/notifications.js';
 
 const SECURITY_TYPES = new Set([
@@ -11,6 +12,16 @@ export default function NotificationCenter({ open, notifications = [], onClose, 
   loading = false, error = null, unreadCount: unreadCountProp = null, onMarkRead, onMarkAllRead }) {
   const panelRef = useRef(null);
   const headingRef = useRef(null);
+  const pendingRef = useRef(new Set());
+  const [pending, setPending] = useState(new Set());
+  const [actionError, setActionError] = useState('');
+  const markRead = async (id = 'all') => {
+    if (pendingRef.current.has(id) || pendingRef.current.has('all') || (id === 'all' && pendingRef.current.size)) return;
+    pendingRef.current.add(id); setPending(new Set(pendingRef.current)); setActionError('');
+    try { if (id === 'all') await onMarkAllRead?.(); else await onMarkRead?.(id); }
+    catch (reason) { setActionError(reason?.message || 'Notification could not be updated.'); }
+    finally { pendingRef.current.delete(id); setPending(new Set(pendingRef.current)); }
+  };
   const unreadCount = Number.isFinite(unreadCountProp)
     ? unreadCountProp : getUnreadNotificationCount(notifications);
 
@@ -40,8 +51,10 @@ export default function NotificationCenter({ open, notifications = [], onClose, 
     <section ref={panelRef} id="notification-center" className="notification-center" aria-labelledby="notification-center-heading">
       <header>
         <div><h2 id="notification-center-heading" ref={headingRef} tabIndex="-1">Notifications</h2>{unreadCount > 0 && <p>{unreadCount} unread</p>}</div>
-        <button type="button" className="notification-mark-all" onClick={onMarkAllRead} disabled={loading || unreadCount === 0}>Mark All as Read</button>
+        <button type="button" className="notification-mark-all" onClick={() => markRead()} aria-busy={pending.has('all')} disabled={loading || unreadCount === 0 || pending.size > 0 || !onMarkAllRead}>{pending.has('all') ? 'Marking…' : 'Mark All as Read'}</button>
       </header>
+      {actionError && <p role="alert">{actionError}</p>}
+      {loading && notifications.length > 0 && <p role="status">Refreshing notifications… Previous results are shown until the request completes.</p>}
       {loading && notifications.length === 0 ? (
         <div className="notification-center-empty" role="status"><p>Loading notifications…</p></div>
       ) : error ? (
@@ -54,8 +67,8 @@ export default function NotificationCenter({ open, notifications = [], onClose, 
             <li className={`${isNotificationUnread(notification) ? 'is-unread' : 'is-read'}${SECURITY_TYPES.has(notification.type) ? ' is-security' : ''}`} key={notification.id}>
               <div><strong>{notification.title}</strong><span>{notification.priority}</span></div>
               <p>{notification.message}</p>
-              <time dateTime={notification.timestamp}>{notification.timestamp}</time>
-              {isNotificationUnread(notification) && <button type="button" onClick={() => onMarkRead?.(notification.id)}>Mark as Read</button>}
+              <DateTime value={notification.timestamp} />
+              {isNotificationUnread(notification) && <button type="button" onClick={() => markRead(notification.id)} aria-busy={pending.has(notification.id)} disabled={loading || pending.has(notification.id) || pending.has('all') || !onMarkRead}>{pending.has(notification.id) ? 'Marking…' : 'Mark as Read'}</button>}
             </li>
           ))}
         </ol>

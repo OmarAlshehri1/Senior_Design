@@ -1,3 +1,5 @@
+import DateTime from './DateTime.jsx';
+import { DISPLAY_TIME_ZONE_LABEL } from '../utils/dateTime.js';
 import { useNavigate } from 'react-router-dom';
 import { getAlertPresentation } from './alertUtils';
 import {
@@ -41,7 +43,7 @@ export default function AlertsTable({ alerts, onMarkReviewed, canAssign = false,
             <th>Transaction ID</th>
             <th>Vendor</th>
             <th>Alert Type</th>
-            <th>Time</th>
+            <th>Time ({DISPLAY_TIME_ZONE_LABEL})</th>
             <th>Risk Score</th>
             <th>Risk Level</th>
             <th>Review Status</th>
@@ -87,7 +89,7 @@ export default function AlertsTable({ alerts, onMarkReviewed, canAssign = false,
                     </span>
                   </div>
                 </td>
-                <td data-label="Time">{displayValue(alert?.time)}</td>
+                <td data-label={`Time (${DISPLAY_TIME_ZONE_LABEL})`}><DateTime value={alert?.timestamp} compact showZone={false} /></td>
                 <td data-label="Risk Score">{formatScore(alert?.riskScore)}</td>
                 <td data-label="Risk Level">
                   <span className={riskStatusPillClass(riskLevel)}>{riskLevel}</span>

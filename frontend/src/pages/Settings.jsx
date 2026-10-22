@@ -157,7 +157,7 @@ export default function Settings() {
                 ['Alert Threshold', settings.realTimeAlerts.threshold],
                 ['Delivery', settings.realTimeAlerts.delivery],
                 ['Target Alert Latency', settings.realTimeAlerts.targetLatency],
-                ['Status', settings.realTimeAlerts.status, 'planned'],
+                ['Status', settings.realTimeAlerts.status, 'defined'],
               ]} />
             </article>
           </div>
@@ -171,13 +171,14 @@ export default function Settings() {
           <div className="settings-group-grid settings-system-grid">
             <article className="settings-panel" aria-labelledby="integration-settings-heading">
               <div className="settings-panel-header">
-                <h3 id="integration-settings-heading">Data Availability</h3>
+                <h3 id="integration-settings-heading">Integration Capabilities</h3>
+                <p>Implementation reference; runtime health is not checked here.</p>
               </div>
               <SettingsList items={[
                 ['Transaction Source', settings.integration.transactionSource],
-                ['Transaction Service', settings.integration.apiIntegration, 'pending'],
-                ['Live Updates', settings.integration.realTimeConnection, 'pending'],
-                ['Saved Changes', settings.integration.persistence, 'pending'],
+                ['Transaction Service', settings.integration.apiIntegration],
+                ['Live Updates', settings.integration.realTimeConnection],
+                ['Saved Changes', settings.integration.persistence],
               ]} />
             </article>
 

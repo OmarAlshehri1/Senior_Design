@@ -10,4 +10,13 @@
 .business-report-controls .business-report-ai-option input { width: auto; }
 .business-report-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 18px; }
 .business-report-preview { width: 100%; min-height: 1100px; border: 1px solid #d9e2ed; border-radius: 12px; background: white; }
+.business-reports > *, .business-report-actions > * { min-width: 0; }
+.business-generate-button, .business-export-button {
+  min-height: 40px;
+  min-width: min(100%, 230px);
+  max-width: 100%;
+  justify-content: center;
+  white-space: normal;
+}
 @media (max-width: 720px) { .business-report-fields { grid-template-columns: 1fr; } .business-report-controls { padding: 16px; } }
+@media (max-width: 480px) { .business-report-actions .business-export-button { flex: 1 1 100%; } }

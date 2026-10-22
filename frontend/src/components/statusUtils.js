@@ -1,10 +1,6 @@
-export function formatSAR(amount) {
-  return formatAmount(amount, 'SAR');
-}
-
 export function formatAmount(amount, currency) {
   if (!Number.isFinite(amount)) return 'Not available';
-  const formattedAmount = amount.toLocaleString('en-US');
+  const formattedAmount = amount.toLocaleString('en-US', { maximumFractionDigits: 20 });
   const formattedCurrency = displayValue(currency, '');
   return formattedCurrency ? `${formattedAmount} ${formattedCurrency}` : formattedAmount;
 }

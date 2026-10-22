@@ -1,0 +1,7 @@
+.date-time-compact {
+  display: inline-grid;
+  gap: 2px;
+  max-width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+.date-time-compact > span { display: block; }

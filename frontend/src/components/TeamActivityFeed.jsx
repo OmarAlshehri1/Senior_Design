@@ -1,3 +1,4 @@
+import DateTime from './DateTime.jsx';
 import ManagementEmptyState from './ManagementEmptyState.jsx';
 
 export default function TeamActivityFeed({ events = [] }) {
@@ -12,7 +13,7 @@ export default function TeamActivityFeed({ events = [] }) {
           <div><strong>{event.actorName ?? 'Not available'}</strong><span>{event.actorRole ?? 'Not available'}</span></div>
           <p>{event.action ?? 'Not available'}</p>
           <span>{event.resourceId ?? 'Not available'}</span>
-          <time dateTime={event.timestamp}>{event.timestamp ?? 'Not available'}</time>
+          <DateTime value={event.timestamp} />
         </li>
       ))}
     </ol>

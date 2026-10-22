@@ -1,7 +1,9 @@
+import DateTime from './DateTime.jsx';
+import { DISPLAY_TIME_ZONE_LABEL } from '../utils/dateTime.js';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   displayValue,
-  formatSAR,
+  formatAmount,
   formatScore,
   ruleStatusPillClass,
   riskStatusPillClass,
@@ -12,9 +14,13 @@ import VendorMonitoringIndicator from './VendorMonitoringIndicator.jsx';
 export default function TransactionsTable({ transactions, highlightId }) {
   const navigate = useNavigate();
 
-  const openTransaction = (id) => navigate(`/transactions/${id}`);
+  return <TransactionsTableView transactions={transactions} highlightId={highlightId} onOpenTransaction={(id) => navigate(`/transactions/${id}`)} />;
+}
+
+export function TransactionsTableView({ transactions, highlightId, onOpenTransaction: openTransaction }) {
 
   const handleRowKeyDown = (event, id) => {
+    if (event.target !== event.currentTarget || event.defaultPrevented) return;
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       openTransaction(id);
@@ -30,7 +36,7 @@ export default function TransactionsTable({ transactions, highlightId }) {
             <th>Vendor</th>
             <th>Category</th>
             <th>Amount</th>
-            <th>Time</th>
+            <th>Time ({DISPLAY_TIME_ZONE_LABEL})</th>
             <th>Rule Status</th>
             <th>AI Score</th>
             <th>Risk Score</th>
@@ -62,8 +68,8 @@ export default function TransactionsTable({ transactions, highlightId }) {
                 <td data-label="Transaction ID">{transactionId}</td>
                 <td className="vendor-cell" data-label="Vendor" title={vendor}><span className="vendor-cell-content">{transaction?.vendorId ? <Link to={`/vendors/${transaction.vendorId}`} onClick={(event) => event.stopPropagation()}>{vendor}</Link> : vendor}<VendorMonitoringIndicator status={transaction?.vendorMonitoringStatus} /></span></td>
                 <td data-label="Category">{displayValue(transaction?.category)}</td>
-                <td data-label="Amount">{formatSAR(transaction?.amount)}</td>
-                <td data-label="Time">{displayValue(transaction?.time)}</td>
+                <td data-label="Amount">{formatAmount(transaction?.amount, transaction?.currency)}</td>
+                <td data-label={`Time (${DISPLAY_TIME_ZONE_LABEL})`}><DateTime value={transaction?.timestamp} compact showZone={false} /></td>
                 <td data-label="Rule Status">
                   <span className={ruleStatusPillClass(transaction?.ruleStatus)}>
                     {displayValue(transaction?.ruleStatus)}

@@ -82,7 +82,7 @@ export function AppProvider({ children }) {
   const notificationsGeneration = useRef(0);
   const notificationsLoadSequence = useRef(0);
   const [simulating, setSimulating] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState(() => new Date().toISOString());
+  const [lastUpdated, setLastUpdated] = useState(null);
   const [lastSimulatedTransactionId, setLastSimulatedTransactionId] = useState(null);
 
   const showNotification = useCallback((message, type = 'success') => {

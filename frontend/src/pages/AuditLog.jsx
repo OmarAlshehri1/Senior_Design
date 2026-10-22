@@ -1,3 +1,5 @@
+import DateTime from '../components/DateTime.jsx';
+import { DISPLAY_TIME_ZONE_LABEL } from '../utils/dateTime.js';
 import { useEffect, useState } from 'react';
 import { AUDIT_ACTIONS, AUDIT_OUTCOMES, AUDIT_RESOURCE_TYPES } from '../audit/auditEvents.js';
 import { AUDIT_LOG_SORTS, DEFAULT_AUDIT_FILTERS, DEFAULT_AUDIT_PAGINATION, getAuditLogScope } from '../audit/auditLog.js';
@@ -61,7 +63,7 @@ export default function AuditLog() {
         <label className="audit-filter"><span>Action</span><select value={filters.action} onChange={updateFilter('action')}><option value="">All actions</option>{Object.values(AUDIT_ACTIONS).map((action) => <option value={action} key={action}>{titleCase(action)}</option>)}</select></label>
         <label className="audit-filter"><span>Resource</span><select value={filters.resourceType} onChange={updateFilter('resourceType')}><option value="">All resources</option>{Object.values(AUDIT_RESOURCE_TYPES).map((resource) => <option value={resource} key={resource}>{titleCase(resource)}</option>)}</select></label>
         <label className="audit-filter"><span>Outcome</span><select value={filters.outcome} onChange={updateFilter('outcome')}><option value="">All outcomes</option>{Object.values(AUDIT_OUTCOMES).map((outcome) => <option value={outcome} key={outcome}>{titleCase(outcome)}</option>)}</select></label>
-        <label className="audit-filter"><span>Date</span><input type="date" value={filters.date} onChange={updateFilter('date')} /></label>
+        <label className="audit-filter"><span>Date (UTC)</span><input type="date" value={filters.date} onChange={updateFilter('date')} /></label>
         <label className="audit-filter audit-sort-control"><span>Order</span><select value={sort} onChange={(event) => setSort(event.target.value)}><option value={AUDIT_LOG_SORTS.NEWEST}>Newest</option><option value={AUDIT_LOG_SORTS.OLDEST}>Oldest</option></select></label>
       </section>
 
@@ -70,9 +72,9 @@ export default function AuditLog() {
         {error && <p role="alert" className="integration-error">{error}</p>}
         <div className="audit-log-table-wrap">
           <table className="audit-log-table"><caption className="sr-only">Recorded audit activity</caption>
-            <thead><tr><th>Time</th><th>User</th><th>Role</th><th>Action</th><th>Resource</th><th>Outcome</th><th><span className="sr-only">Details</span></th></tr></thead>
+            <thead><tr><th>Time ({DISPLAY_TIME_ZONE_LABEL})</th><th>User</th><th>Role</th><th>Action</th><th>Resource</th><th>Outcome</th><th><span className="sr-only">Details</span></th></tr></thead>
             <tbody>{result.items.map((event) => <tr key={event.id}>
-              <td data-label="Time">{event.timestamp}</td><td data-label="User">{event.actorName}</td><td data-label="Role">{event.actorRole}</td>
+              <td data-label={`Time (${DISPLAY_TIME_ZONE_LABEL})`}><DateTime value={event.timestamp} compact showZone={false} /></td><td data-label="User">{event.actorName}</td><td data-label="Role">{event.actorRole}</td>
               <td data-label="Action">{titleCase(event.action)}</td><td data-label="Resource">{event.resourceId}</td><td data-label="Outcome">{titleCase(event.outcome)}</td>
               <td data-label="Details"><button type="button" className="audit-details-button" onClick={() => setSelectedEvent(event)}>Details</button></td>
             </tr>)}</tbody>

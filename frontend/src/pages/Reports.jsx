@@ -1,5 +1,6 @@
+import DateTime from '../components/DateTime.jsx';
+import { formatUtcDate } from '../utils/dateTime.js';
 import {
-  useEffect,
   useMemo,
   useState,
   lazy,
@@ -10,34 +11,17 @@ import { Link } from 'react-router-dom';
 import { DocIcon } from '../components/icons';
 import {
   displayValue,
-  formatSAR,
+  formatAmount,
   formatScore,
   riskStatusPillClass,
 } from '../components/statusUtils';
+import usePagedResource from '../hooks/usePagedResource.js';
+import CollectionPagination from '../components/CollectionPagination.jsx';
 import useApp from '../context/useApp';
 import { reportsService } from '../services/reportsService';
 import useAuthorization from '../auth/useAuthorization.js';
 
 const BusinessReports = lazy(() => import('../components/BusinessReports.jsx'));
-
-function formatReportDate(timestamp) {
-  if (!timestamp) return 'Not available';
-
-  return new Intl.DateTimeFormat('en-US', {
-    dateStyle: 'long',
-    timeZone: 'UTC',
-  }).format(new Date(timestamp));
-}
-
-function formatReportTimestamp(timestamp) {
-  if (!timestamp) return 'Not available';
-
-  return new Intl.DateTimeFormat('en-US', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone: 'UTC',
-  }).format(new Date(timestamp));
-}
 
 function ReportRequestState({
   title,
@@ -73,64 +57,16 @@ export default function Reports() {
 
 function LegacyReports() {
   const { showNotification } = useApp();
-  const [reports, setReports] = useState([]);
-  const [selectedReport, setSelectedReport] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const collection = usePagedResource(reportsService.list);
+  const reports = collection.items;
+  const [selection, setSelection] = useState(null);
+  const generatedOnThisPage = selection?.generated && selection.page === collection.query.page && selection.pageSize === collection.query.page_size;
+  const selectedReport = reports.find((item) => item.id === selection?.report.id)
+    ?? (generatedOnThisPage ? selection.report : reports[0]) ?? null;
+  const loading = collection.status === 'loading';
   const [generating, setGenerating] = useState(false);
-  const [error, setError] = useState(null);
-  const [reloadKey, setReloadKey] = useState(0);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    let active = true;
-
-    async function loadReports() {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const result = await reportsService.list({
-          query: {
-            page: 1,
-            page_size: 25,
-          },
-          signal: controller.signal,
-        });
-
-        if (!active) return;
-
-        setReports(result.items);
-        setSelectedReport((current) => (
-          result.items.find(
-            (report) => report.id === current?.id
-          )
-          ?? result.items[0]
-          ?? null
-        ));
-      } catch (loadError) {
-        if (!active || controller.signal.aborted) return;
-
-        setReports([]);
-        setSelectedReport(null);
-        setError(
-          loadError instanceof Error
-            ? loadError.message
-            : 'Reports could not be loaded.'
-        );
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadReports();
-
-    return () => {
-      active = false;
-      controller.abort();
-    };
-  }, [reloadKey]);
+  const [actionError, setError] = useState(null);
+  const error = collection.error || actionError;
 
   const report = selectedReport;
   const downloadUrl = useMemo(
@@ -170,13 +106,8 @@ function LegacyReports() {
         );
       }
 
-      setReports((previous) => [
-        generated,
-        ...previous.filter(
-          (report) => report.id !== generated.id
-        ),
-      ]);
-      setSelectedReport(generated);
+      setSelection({ report: generated, generated: true, page: 1, pageSize: collection.query.page_size });
+      await collection.resource.setPage(1);
       showNotification(
         'Daily audit report generated successfully.',
         'success'
@@ -257,6 +188,8 @@ function LegacyReports() {
         </span>
       </div>
 
+      <CollectionPagination collection={collection} itemLabel="saved daily summaries" disabled={generating} />
+
       {loading ? (
         <ReportRequestState
           title="Loading reports…"
@@ -267,16 +200,14 @@ function LegacyReports() {
           title="Reports could not be loaded."
           message={error}
           actionLabel="Try Again"
-          onAction={() => setReloadKey((value) => value + 1)}
+          onAction={() => { setError(null); collection.resource.load(); }}
         />
       ) : !report ? (
         <ReportRequestState
-          title="No persisted reports are available."
-          message="Generate today's UTC audit report to begin."
-          actionLabel={
-            generating ? 'Generating…' : 'Generate Report'
-          }
-          onAction={generateReport}
+          title={collection.total > 0 ? 'No reports on this page.' : 'No persisted reports are available.'}
+          message={collection.total > 0 ? 'Refresh or browse another saved reports page.' : 'Generate a report for the latest dated transaction day to begin.'}
+          actionLabel={collection.total > 0 ? 'Refresh' : generating ? 'Generating…' : 'Generate Report'}
+          onAction={collection.total > 0 ? () => collection.resource.load() : generateReport}
         />
       ) : (
         <>
@@ -302,9 +233,10 @@ function LegacyReports() {
                         const selected = reports.find(
                           (item) => item.id === event.target.value
                         );
-                        setSelectedReport(selected ?? report);
+                        setSelection({ report: selected ?? report });
                       }}
                     >
+                      {!reports.some((item) => item.id === report.id) && <option value={report.id}>{report.id} (generated; outside this saved page)</option>}
                       {reports.map((item) => (
                         <option value={item.id} key={item.id}>
                           {item.id}
@@ -327,19 +259,19 @@ function LegacyReports() {
                 </div>
                 <div>
                   <dt>Period Start</dt>
-                  <dd>{formatReportDate(report.periodStart)} UTC</dd>
+                  <dd>{formatUtcDate(report.periodStart)} UTC</dd>
                 </div>
                 <div>
                   <dt>Period End</dt>
                   <dd>
-                    {formatReportDate(report.periodEnd)} UTC
+                    {formatUtcDate(report.periodEnd)} UTC
                     {' (exclusive)'}
                   </dd>
                 </div>
                 <div>
                   <dt>Completed</dt>
                   <dd>
-                    {formatReportTimestamp(report.completedAt)} UTC
+                    <DateTime value={report.completedAt} utc />
                   </dd>
                 </div>
                 <div>
@@ -538,52 +470,7 @@ function LegacyReports() {
             </div>
 
             {report.highRiskTransactions.length > 0 ? (
-              <div className="report-transactions-wrap">
-                <table className="data-table report-transactions-table">
-                  <thead>
-                    <tr>
-                      <th>Transaction ID</th>
-                      <th>Vendor</th>
-                      <th>Amount</th>
-                      <th>Risk Score</th>
-                      <th>Risk Level</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {report.highRiskTransactions.map(
-                      (transaction) => (
-                        <tr key={transaction.id}>
-                          <td data-label="Transaction ID">
-                            <Link
-                              to={`/transactions/${transaction.id}`}
-                            >
-                              {displayValue(transaction.id)}
-                            </Link>
-                          </td>
-                          <td data-label="Vendor">
-                            {displayValue(transaction.vendor)}
-                          </td>
-                          <td data-label="Amount">
-                            {formatSAR(transaction.amount)}
-                          </td>
-                          <td data-label="Risk Score">
-                            {formatScore(transaction.riskScore)}
-                          </td>
-                          <td data-label="Risk Level">
-                            <span
-                              className={riskStatusPillClass(
-                                'High Risk'
-                              )}
-                            >
-                              High Risk
-                            </span>
-                          </td>
-                        </tr>
-                      )
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <LegacyReportTransactions transactions={report.highRiskTransactions} />
             ) : (
               <div className="report-empty-state" role="status">
                 <h3>
@@ -599,5 +486,56 @@ function LegacyReports() {
         </>
       )}
     </>
+  );
+}
+
+export function LegacyReportTransactions({ transactions }) {
+  return (
+    <div className="report-transactions-wrap">
+      <table className="data-table report-transactions-table">
+        <thead>
+          <tr>
+            <th>Transaction ID</th>
+            <th>Vendor</th>
+            <th>Amount</th>
+            <th>Risk Score</th>
+            <th>Risk Level</th>
+          </tr>
+        </thead>
+        <tbody>
+          {transactions.map(
+            (transaction) => (
+              <tr key={transaction.id}>
+                <td data-label="Transaction ID">
+                  <Link
+                    to={`/transactions/${transaction.id}`}
+                  >
+                    {displayValue(transaction.id)}
+                  </Link>
+                </td>
+                <td data-label="Vendor">
+                  {displayValue(transaction.vendor)}
+                </td>
+                <td data-label="Amount">
+                  {formatAmount(transaction.amount, transaction.currency)}
+                </td>
+                <td data-label="Risk Score">
+                  {formatScore(transaction.riskScore)}
+                </td>
+                <td data-label="Risk Level">
+                  <span
+                    className={riskStatusPillClass(
+                      'High Risk'
+                    )}
+                  >
+                    High Risk
+                  </span>
+                </td>
+              </tr>
+            )
+          )}
+        </tbody>
+      </table>
+    </div>
   );
 }

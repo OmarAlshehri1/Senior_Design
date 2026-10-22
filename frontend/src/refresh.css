@@ -903,8 +903,9 @@ select:focus-visible,
 }
 
 .topbar-icon-btn {
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
 }
@@ -4014,7 +4015,10 @@ table.data-table {
 
 .notification-mark-all,
 .notification-list button {
-  padding: 2px 0;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 6px 8px;
   background: transparent;
   border: 0;
   color: var(--blue-dark);
@@ -6330,4 +6334,64 @@ body {
     white-space: normal;
     overflow-wrap: anywhere;
   }
+}
+
+/* Phase 3: existing actions retain their visual hierarchy with usable targets. */
+.topbar-left, .topbar-context { min-width: 0; }
+.topbar-left { flex: 1 1 auto; }
+.topbar-title { overflow-wrap: anywhere; }
+.topbar-sign-out {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-height: 44px;
+  width: 104px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+}
+.topbar-sign-out:hover:not(:disabled) { background: var(--surface-subtle); color: var(--blue-dark); }
+.topbar-sign-out:active:not(:disabled) { background: #e8eef5; }
+.topbar-sign-out:focus-visible { outline: 2px solid #2e73c4; outline-offset: 3px; }
+.topbar-sign-out:disabled { opacity: .6; cursor: wait; }
+.management-row-action, .audit-details-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 6px 8px;
+}
+.operations-table button {
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--blue-dark);
+  font: inherit;
+}
+.operations-table button:hover:not(:disabled) { background: var(--surface-subtle); }
+.operations-table button:disabled { opacity: .55; cursor: not-allowed; }
+.notification-center > header { flex-wrap: wrap; }
+.notification-list button { min-width: 100px; }
+.notification-mark-all { min-width: 120px; justify-content: center; }
+@media (max-width: 1100px) {
+  .topbar .updated-time, .topbar .topbar-organization { display: none; }
+  .topbar-identity strong, .topbar-identity span { max-width: 130px; }
+}
+@media (max-width: 700px) {
+  .notification-mark-all, .notification-list button,
+  .management-row-action, .audit-details-button, .operations-table button { min-height: 44px; }
+  .sidebar-close-btn { width: 44px; height: 44px; }
+}
+@media (max-width: 600px) {
+  .operations-table td { min-width: 0; overflow-wrap: anywhere; flex-wrap: wrap; }
+  .operations-table td::before { flex: 0 0 40%; max-width: 45%; white-space: normal; }
+  .operations-table td[data-label='Actions'], .operations-table td[data-label='Decision'] { gap: 8px; }
 }

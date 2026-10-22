@@ -5,7 +5,9 @@ import SummaryCards from '../components/SummaryCards';
 import DonutChart from '../components/DonutChart';
 import RecentTransactionsTable from '../components/RecentTransactionsTable';
 import AlertsList from '../components/AlertsList';
-import { getRecentTransactions } from '../utils/dashboard';
+import usePagedResource from '../hooks/usePagedResource.js';
+import { dashboardRecentService } from '../services/dashboardRecentService.js';
+import RecentCollectionState from '../components/RecentCollectionState.jsx';
 import { sortNewestFirst } from '../utils/transactions';
 import RoleWorkspace from '../components/RoleWorkspace';
 import useAuthorization from '../auth/useAuthorization.js';
@@ -25,6 +27,8 @@ export default function Dashboard() {
   const {
     transactions,
     alerts,
+    alertsLoading,
+    alertsError,
     simulateNewTransaction,
     simulating,
     lastSimulatedTransactionId,
@@ -33,7 +37,8 @@ export default function Dashboard() {
   const currentCounts = authoritative?.riskCounts;
   const currentOverview = authoritative?.riskOverview;
 
-  const recentTransactions = getRecentTransactions(transactions);
+  const recent = usePagedResource(dashboardRecentService.list, { page: 1, page_size: 6 });
+  const recentTransactions = recent.items;
   const recentAlerts = sortNewestFirst(alerts).slice(0, 3);
 
   return (
@@ -78,10 +83,10 @@ export default function Dashboard() {
             <h2 id="recent-transactions-heading">Recent Transactions</h2>
             <Link className="btn btn-secondary" to="/transactions">View All Transactions</Link>
           </div>
-          <RecentTransactionsTable
-            transactions={recentTransactions}
-            highlightId={lastSimulatedTransactionId}
-          />
+          <RecentCollectionState loading={recent.status === 'loading'} error={recent.error}
+            empty={recentTransactions.length === 0} label="recent transactions" onRetry={() => recent.resource.load()}>
+            <RecentTransactionsTable transactions={recentTransactions} highlightId={lastSimulatedTransactionId} />
+          </RecentCollectionState>
         </section>
       </div>
 
@@ -90,7 +95,9 @@ export default function Dashboard() {
           <h2 id="recent-alerts-heading">Recent Alerts</h2>
           <Link className="card-header-link" to="/alerts">View All Alerts</Link>
         </div>
-        <AlertsList alerts={recentAlerts} variant="dashboard" />
+        <RecentCollectionState loading={alertsLoading} error={alertsError} empty={recentAlerts.length === 0} label="recent alerts">
+          <AlertsList alerts={recentAlerts} variant="dashboard" />
+        </RecentCollectionState>
       </section>
 
       {PRESENTATION_FEATURES.assuranceAnalytics && <AuditAnalytics />}

@@ -1,3 +1,4 @@
+import DateTime from './DateTime.jsx';
 import { useCallback, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BellIcon, MenuIcon } from './icons';
@@ -9,14 +10,6 @@ import { APPLICATION_ROUTES } from '../auth/routeAccess.js';
 import NotificationCenter from './NotificationCenter.jsx';
 import { authService } from '../auth/authService.js';
 import { AUTH_ROUTES } from '../auth/authRoutes.js';
-
-function formatUpdatedTime(timestamp) {
-  return new Intl.DateTimeFormat('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    second: '2-digit',
-  }).format(new Date(timestamp));
-}
 
 export default function Topbar({ mobileNavOpen, onMenuToggle, menuButtonRef, identity = null }) {
   const { lastUpdated, notifications, unreadNotificationCount, notificationsLoading,
@@ -31,6 +24,8 @@ export default function Topbar({ mobileNavOpen, onMenuToggle, menuButtonRef, ide
     : null;
   const authenticatedRole = getRoleDefinition(user?.role);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const signOutPending = useRef(false);
   const notificationButtonRef = useRef(null);
   const closeNotifications = useCallback(() => setNotificationsOpen(false), []);
   const unreadCount = unreadNotificationCount;
@@ -41,6 +36,9 @@ export default function Topbar({ mobileNavOpen, onMenuToggle, menuButtonRef, ide
   };
 
   const handleSignOut = async () => {
+    if (signOutPending.current) return;
+    signOutPending.current = true;
+    setSigningOut(true);
     try { await authService.signOut(); } catch { /* Local credentials are cleared by the service. */ }
     navigate(AUTH_ROUTES.LOGIN, { replace: true });
   };
@@ -85,10 +83,10 @@ export default function Topbar({ mobileNavOpen, onMenuToggle, menuButtonRef, ide
             {authenticatedRole && <span>{authenticatedRole.displayName}</span>}
           </div>
         )}
-        {user && <button type="button" className="topbar-profile-preview-link" onClick={handleSignOut}>Sign out</button>}
+        {user && <button type="button" className="topbar-sign-out" disabled={signingOut} aria-busy={signingOut} onClick={handleSignOut}>{signingOut ? 'Signing out…' : 'Sign out'}</button>}
         <span className="updated-time">
           <span>Data updated</span>
-          <strong>{formatUpdatedTime(lastUpdated)}</strong>
+          <strong><DateTime value={lastUpdated} timeOnly /></strong>
         </span>
         <div className="notification-center-anchor">
           <button ref={notificationButtonRef} type="button" className="topbar-icon-btn notification-center-trigger" aria-label="Open notifications" aria-controls="notification-center" aria-expanded={notificationsOpen} onClick={toggleNotifications}>

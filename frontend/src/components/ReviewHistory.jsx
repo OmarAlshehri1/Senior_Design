@@ -1,3 +1,4 @@
+import DateTime from './DateTime.jsx';
 export default function ReviewHistory({ records = [] }) {
   if (!Array.isArray(records) || records.length === 0) {
     return (
@@ -17,7 +18,7 @@ export default function ReviewHistory({ records = [] }) {
             <span>{record.reviewerRole}</span>
           </div>
           <p>{record.action}</p>
-          <time dateTime={record.timestamp}>{record.timestamp}</time>
+          <DateTime value={record.timestamp} />
           {record.note && <blockquote>{record.note}</blockquote>}
         </li>
       ))}

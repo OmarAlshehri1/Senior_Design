@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { displayValue, formatSAR, formatScore } from '../src/components/statusUtils.js';
+import { displayValue, formatAmount, formatScore } from '../src/components/statusUtils.js';
 import { initialTransactions } from '../src/data/mockData.js';
 import {
   AUDIT_RULE_DEFINITIONS,
@@ -79,7 +79,7 @@ test('missing optional values are safe and expose data-quality state', () => {
 
   assert.doesNotThrow(() => filterAndSortTransactions([partiallyComplete], { search: 'missing' }));
   assert.equal(displayValue(null), 'Not available');
-  assert.equal(formatSAR(undefined), 'Not available');
+  assert.equal(formatAmount(undefined), 'Not available');
   assert.equal(formatScore(null), 'Not available');
   assert.deepEqual(getTransactionDataQuality(partiallyComplete), {
     status: 'Partially Complete',

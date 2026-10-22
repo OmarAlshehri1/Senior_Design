@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { formatSAR, ruleStatusPillClass, riskStatusPillClass } from './statusUtils';
+import { formatAmount, ruleStatusPillClass, riskStatusPillClass } from './statusUtils';
 import { getTransactionRiskLevel } from '../utils/risk';
 
 export default function RecentTransactionsTable({ transactions, highlightId }) {
@@ -46,7 +46,7 @@ export default function RecentTransactionsTable({ transactions, highlightId }) {
                 <td className="vendor-cell" data-label="Vendor" title={transaction.vendor}>
                   {transaction.vendor}
                 </td>
-                <td data-label="Amount">{formatSAR(transaction.amount)}</td>
+                <td data-label="Amount">{formatAmount(transaction.amount, transaction.currency)}</td>
                 <td data-label="Rule Status">
                   <span className={ruleStatusPillClass(transaction.ruleStatus)}>
                     {transaction.ruleStatus}

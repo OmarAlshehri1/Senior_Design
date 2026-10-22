@@ -1,3 +1,4 @@
+import DateTime from '../components/DateTime.jsx';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { APPLICATION_ROUTES } from '../auth/routeAccess.js';
@@ -50,7 +51,7 @@ export default function UserDetail() {
       <div className="user-detail-grid">
         <section className="management-detail-card"><h2>Identity</h2><dl className="management-definition-grid"><Field label="Name" value={user?.name} /><Field label="Email" value={user?.email} /><Field label="Role" value={user?.role} /><Field label="Account Status" value={user?.accountStatus} /></dl></section>
         <section className="management-detail-card"><h2>Access</h2><dl className="management-definition-grid"><Field label="Role" value={user?.role} /><Field label="Team" value={user?.teamId} /><Field label="Supervisor" value={user?.supervisorId} /></dl></section>
-        <section className="management-detail-card"><h2>Security</h2><dl className="management-definition-grid"><Field label="Last Login" value={user?.lastLoginAt} /><Field label="Failed Sign-In Attempts" value={user?.failedSignInAttempts} /><Field label="Account Status" value={user?.accountStatus} /><Field label="Status Reason" value={user?.lockReason} /></dl></section>
+        <section className="management-detail-card"><h2>Security</h2><dl className="management-definition-grid"><Field label="Last Login" value={<DateTime value={user?.lastLoginAt} />} /><Field label="Failed Sign-In Attempts" value={user?.failedSignInAttempts} /><Field label="Account Status" value={user?.accountStatus} /><Field label="Status Reason" value={user?.lockReason} /></dl></section>
         <section className="management-detail-card"><h2>Sign-In History</h2><LoginHistory records={history} /></section>
         <UserAdministrativeActions user={user} onAction={(action) => runAction(action)} onRoleChange={(role) => runAction('role', role)} />
       </div>

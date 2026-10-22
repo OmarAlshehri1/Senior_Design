@@ -40,16 +40,16 @@ test('reporting configuration is an accurate read-only reference', () => {
   });
 });
 
-test('real-time alert configuration describes the planned delivery state', () => {
+test('real-time alert configuration describes implemented delivery without claiming runtime health', () => {
   assert.deepEqual(getSettingsOverview().realTimeAlerts, {
     threshold: 'High Risk (75–100)',
-    delivery: 'System notifications',
+    delivery: 'WebSocket updates and in-app notifications',
     targetLatency: '≤ 5 seconds',
-    status: 'Planned',
+    status: 'Implemented; runtime health not checked',
   });
 });
 
-test('integration reference does not claim unavailable services are operational', () => {
+test('integration reference distinguishes implementation capability from runtime health', () => {
   const settings = getSettingsOverview();
   const integrationText = JSON.stringify({
     realTimeAlerts: settings.realTimeAlerts,
@@ -58,10 +58,10 @@ test('integration reference does not claim unavailable services are operational'
 
   assert.doesNotMatch(integrationText, /"(Connected|Active|Running)"/i);
   assert.deepEqual(settings.integration, {
-    transactionSource: 'Current Dataset',
-    apiIntegration: 'Not available',
-    realTimeConnection: 'Not available',
-    persistence: 'Not available',
+    transactionSource: 'Transaction API',
+    apiIntegration: 'Implemented API integration',
+    realTimeConnection: 'Implemented WebSocket integration',
+    persistence: 'Backend persistence implemented',
   });
 });
 

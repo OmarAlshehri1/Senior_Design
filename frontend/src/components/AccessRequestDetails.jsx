@@ -1,3 +1,4 @@
+import DateTime from './DateTime.jsx';
 import { useEffect, useState } from 'react';
 import { ROLE_DEFINITIONS, ROLE_KEYS } from '../auth/roles.js';
 import { ACCESS_REQUEST_STATUSES } from '../auth/accessRequest.js';
@@ -33,7 +34,7 @@ export default function AccessRequestDetails({ request, onClose, onDecision }) {
         <div><dt>Work Email</dt><dd>{show(request.email)}</dd></div>
         <div><dt>Department</dt><dd>{show(request.department)}</dd></div>
         <div><dt>Employee ID</dt><dd>{show(request.employeeId)}</dd></div>
-        <div><dt>Requested At</dt><dd>{show(request.requestedAt)}</dd></div>
+        <div><dt>Requested At</dt><dd><DateTime value={request.requestedAt} /></dd></div>
         <div><dt>Status</dt><dd>{show(request.status)}</dd></div>
         <div className="definition-wide"><dt>Reason</dt><dd>{show(request.reason)}</dd></div>
       </dl>
