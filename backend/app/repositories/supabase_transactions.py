@@ -23,6 +23,22 @@ load_dotenv()
 BATCH_SIZE = 500
 REQUEST_TIMEOUT_SECONDS = 60.0
 
+
+def primary_dataset_enabled():
+    return os.getenv("PAYMENTS_PRIMARY_ENABLED", "false").lower() == "true"
+
+
+def transaction_read_source(*, detail=False):
+    if primary_dataset_enabled():
+        return "application_transaction_details" if detail else "application_transactions"
+    return "transactions"
+
+
+def transaction_read_columns():
+    if primary_dataset_enabled():
+        return TRANSACTION_COLUMNS + ",dataset_id,dataset_label,dataset_source_schema,dataset_active"
+    return TRANSACTION_COLUMNS
+
 TRANSACTION_COLUMNS = ",".join(
     [
         "id",
@@ -166,6 +182,13 @@ def _from_database_row(
         ),
     }
 
+    if "dataset_id" in row:
+        transaction["dataset"] = {
+            "id": row["dataset_id"], "label": row.get("dataset_label"),
+            "active": row.get("dataset_active"),
+            "simulation_enriched": row.get("dataset_source_schema") == "PAYMENTS_SIMULATION_WORKBOOK",
+        }
+
     if processing_status is not None:
         transaction["processing_status"] = processing_status
         if processing_status != "COMPLETED":
@@ -236,6 +259,15 @@ def _from_database_row(
             transaction["risk_score"]
         )
 
+    if (row.get("dataset_source_schema") == "PAYMENTS_SIMULATION_WORKBOOK"
+            and transaction["explanation"] is None and persisted_risk_score is not None):
+        failed = [r["rule_name"] for r in transaction["rule_results"] if r.get("status") == "FAILED"]
+        finding = "Rule checks requiring review: " + ", ".join(failed) + "." if failed else "All five rule checks passed."
+        transaction["explanation"] = (
+            f"{finding} The final score combines 60% rule score and 40% Payments anomaly rank. "
+            "The rank measures unusual payment patterns, not fraud probability. "
+            "Actor, limit and vendor-reference checks use simulation-enriched workbook references."
+        )
     return transaction
 
 
@@ -1155,9 +1187,9 @@ def list_transactions(
     url, _ = _get_configuration()
     offset = (page - 1) * page_size
 
-    endpoint = f"{url}/rest/v1/transactions"
+    endpoint = f"{url}/rest/v1/{transaction_read_source()}"
     params = {
-    "select": TRANSACTION_COLUMNS,
+    "select": transaction_read_columns(),
     "order": TRANSACTION_SORT_ORDERS[sort_by],
     "offset": str(offset),
     "limit": str(page_size),
@@ -1317,10 +1349,10 @@ def get_transaction_by_id(
     transaction_id: str,
 ) -> dict[str, Any] | None:
     url, _ = _get_configuration()
-    endpoint = f"{url}/rest/v1/transactions"
+    endpoint = f"{url}/rest/v1/{transaction_read_source(detail=True)}"
 
     params = {
-        "select": TRANSACTION_COLUMNS,
+        "select": transaction_read_columns(),
         "id": f"eq.{transaction_id}",
         "limit": "1",
     }

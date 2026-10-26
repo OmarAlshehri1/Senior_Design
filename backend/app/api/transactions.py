@@ -43,6 +43,7 @@ from app.services.anomaly_model import (
 )
 
 from app.services.alert_stream import alert_manager
+from app.services.primary_dataset import model_for_transaction, score_transaction
 from app.services.gemini_explanations import (
     GEMINI_PROMPT_VERSION,
     GeminiExplanationError,
@@ -300,13 +301,11 @@ async def create_transaction(
 
     try:
         anomaly_model = await run_in_threadpool(
-            _get_anomaly_model
+            model_for_transaction, transaction_data["id"], _get_anomaly_model
         )
-        ai_scores = await run_in_threadpool(
-            anomaly_model.score,
-            [anomaly_features],
+        ai_score = await run_in_threadpool(
+            score_transaction, anomaly_model, transaction_data, anomaly_features,
         )
-        ai_score = ai_scores[0]
     except (OSError, ValueError, TypeError) as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -339,29 +338,30 @@ async def create_transaction(
             detail="Transaction evaluation could not be stored.",
         ) from exc
 
-    try:
-        await run_in_threadpool(
-            persist_transaction_anomaly_scores,
-            [
-                {
-                    "transaction_id": transaction_data["id"],
-                    "model_version": anomaly_model.version,
-                    "ai_score": ai_score,
-                    "threshold": anomaly_model.threshold,
-                    "is_anomalous": (
-                        anomaly_model.is_anomalous(ai_score)
-                    ),
-                }
-            ],
-        )
-    except (
-        SupabaseConfigurationError,
-        SupabasePersistenceError,
-    ) as exc:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="Transaction anomaly score could not be stored.",
-        ) from exc
+    if ai_score is not None:
+        try:
+            await run_in_threadpool(
+                persist_transaction_anomaly_scores,
+                [
+                    {
+                        "transaction_id": transaction_data["id"],
+                        "model_version": anomaly_model.version,
+                        "ai_score": ai_score,
+                        "threshold": anomaly_model.threshold,
+                        "is_anomalous": (
+                            anomaly_model.is_anomalous(ai_score)
+                        ),
+                    }
+                ],
+            )
+        except (
+            SupabaseConfigurationError,
+            SupabasePersistenceError,
+        ) as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Transaction anomaly score could not be stored.",
+            ) from exc
 
     if (
     risk_score is not None

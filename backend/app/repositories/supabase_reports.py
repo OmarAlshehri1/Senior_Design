@@ -12,6 +12,7 @@ from app.repositories.supabase_transactions import (
     SupabasePersistenceError,
     _get_configuration,
     _get_headers,
+    transaction_read_source,
 )
 
 
@@ -111,7 +112,7 @@ def get_daily_audit_summary(
 def get_latest_transaction_period() -> tuple[datetime, datetime]:
     """Return the UTC day containing the latest dated transaction."""
     url, _ = _get_configuration()
-    endpoint = f"{url}/rest/v1/transactions"
+    endpoint = f"{url}/rest/v1/{transaction_read_source()}"
 
     try:
         with httpx.Client(timeout=REQUEST_TIMEOUT_SECONDS) as client:

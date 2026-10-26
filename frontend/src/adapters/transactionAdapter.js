@@ -94,6 +94,7 @@ export function adaptTransaction(payload) {
 
   return {
     id: payload.id ?? null,
+    dataset: payload.dataset ?? null,
     timestamp: payload.timestamp ?? null,
     date: timestampDisplay.date,
     time: timestampDisplay.time,

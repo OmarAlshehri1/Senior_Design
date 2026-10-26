@@ -19,6 +19,7 @@ from app.repositories.supabase_transactions import (
 from app.services.alert_stream import alert_manager
 from app.services.anomaly_features import build_anomaly_features
 from app.services.anomaly_model import load_anomaly_model
+from app.services.primary_dataset import model_for_transaction, score_transaction
 from app.services.audit_rules import (
     RULE_SCORE_VERSION, evaluate_transaction_rules, calculate_rule_score, summarize_rule_status,
 )
@@ -52,8 +53,8 @@ def build_bundle(transaction: dict[str, Any]) -> dict[str, Any]:
                "ghost_vendor_context": vendors[identifier]}
     rules = evaluate_transaction_rules(transaction, context=context)
     rule_score = calculate_rule_score(rules)
-    model = get_model()
-    ai_score = model.score([build_anomaly_features(transaction, context=context)])[0]
+    model = model_for_transaction(identifier, get_model)
+    ai_score = score_transaction(model, transaction, build_anomaly_features(transaction, context=context))
     risk = calculate_risk_score(rule_score, ai_score)
     result = {**transaction, "vendor_monitoring_status": None,
               "rule_status": summarize_rule_status(rules), "rule_score": rule_score,
@@ -111,7 +112,8 @@ async def attach_explanation(result: dict[str, Any]) -> dict[str, Any]:
         await run_in_threadpool(persist_transaction_explanations, [{
             "transaction_id": result["id"], "model_name": get_gemini_model_name(),
             "prompt_version": GEMINI_PROMPT_VERSION, "rule_evaluation_version": RULE_SCORE_VERSION,
-            "anomaly_model_version": get_model().version, "risk_scoring_version": RISK_SCORING_VERSION,
+            "anomaly_model_version": model_for_transaction(result["id"], get_model).version,
+            "risk_scoring_version": RISK_SCORING_VERSION,
             "explanation": explanation,
         }])
         result["explanation"] = explanation

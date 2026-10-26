@@ -254,6 +254,10 @@ export default function TransactionDetail() {
         <DateTime className="transaction-detail-time" value={transaction.timestamp} />
       </header>
 
+      {transaction.dataset?.active === false && (
+        <p role="note">Archived dataset: {transaction.dataset.label}. This transaction and its review history remain available.</p>
+      )}
+
       <section className="card risk-summary-card" aria-labelledby="risk-summary-heading">
         <div className="card-header">
           <h2 id="risk-summary-heading">Risk Summary</h2>

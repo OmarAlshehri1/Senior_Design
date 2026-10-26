@@ -19,6 +19,7 @@ from app.api.cases import router as cases_router
 from app.api.vendors import router as vendors_router
 from app.api.analytics import router as analytics_router
 from app.api.settings import router as settings_router
+from app.api.primary_dataset import router as primary_dataset_router
 from app.api.business_reports import router as business_reports_router
 from app.api.ingestion import router as ingestion_router
 from app.api.feed_review import router as feed_review_router
@@ -139,6 +140,7 @@ app.include_router(cases_router, prefix="/api/v1")
 app.include_router(vendors_router, prefix="/api/v1")
 app.include_router(analytics_router, prefix="/api/v1")
 app.include_router(settings_router, prefix="/api/v1")
+app.include_router(primary_dataset_router, prefix="/api/v1")
 
 
 @app.get("/api/v1/health")
