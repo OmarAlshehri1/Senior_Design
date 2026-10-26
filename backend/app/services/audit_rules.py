@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation, localcontext
 from typing import Any, Callable
 
 from app.services.rule_eligibility import (
@@ -79,6 +79,9 @@ def _evaluate_approval_limits(
         str(transaction["approval_limit"])
     )
     exceeds_limit = amount > approval_limit
+    with localcontext() as context:
+        context.prec = 80
+        excess = amount - approval_limit
 
     if exceeds_limit:
         return (
@@ -86,9 +89,9 @@ def _evaluate_approval_limits(
             "The transaction amount exceeds the approval limit.",
             {
                 "amount_exceeds_limit": True,
-                "excess_amount": float(
-                    amount - approval_limit
-                ),
+                "excess_amount": (str(excess)
+                    if isinstance(transaction["amount"], Decimal) or isinstance(transaction["approval_limit"], Decimal)
+                    else float(excess)),
             },
         )
 
@@ -193,10 +196,10 @@ def _evaluate_invoice_splitting(
         or not isinstance(historical_count, int)
         or historical_count < 0
         or isinstance(window_total, bool)
-        or not isinstance(window_total, (int, float))
+        or not isinstance(window_total, (int, float, Decimal))
         or window_total < 0
         or isinstance(approval_limit, bool)
-        or not isinstance(approval_limit, (int, float))
+        or not isinstance(approval_limit, (int, float, Decimal))
         or approval_limit <= 0
     ):
         return (
@@ -218,9 +221,7 @@ def _evaluate_invoice_splitting(
         "historical_transaction_count": (
             historical_count
         ),
-        "window_total_amount": float(
-            window_total
-        ),
+        "window_total_amount": str(window_total) if isinstance(window_total, Decimal) else float(window_total),
         "window_hours": 24,
     }
 
@@ -245,6 +246,35 @@ def _evaluate_invoice_splitting(
         ),
         evidence,
     )
+
+
+def _evaluate_subthreshold_invoice_splitting(transaction, context):
+    """Version 1.1: explicitly filtered history, using current verified authority."""
+    history = context.get("invoice_splitting_context")
+    limit = transaction.get("approval_limit")
+    amount = transaction.get("amount")
+    if (not isinstance(history, dict)
+            or history.get("calculation_basis") != "SUBTHRESHOLD_CURRENT_APPROVAL_LIMIT"
+            or limit is None or amount is None):
+        return "NOT_EVALUATED", "Filtered subthreshold history is unavailable.", {"historical_context_available": False}
+    try:
+        valid_limit = Decimal(str(history.get("approval_limit"))) == Decimal(str(limit))
+    except (InvalidOperation, TypeError, ValueError):
+        valid_limit = False
+    if not valid_limit:
+        return "NOT_EVALUATED", "Filtered history does not match current approval authority.", {"historical_context_available": False}
+    status, detail, evidence = _evaluate_invoice_splitting(transaction, context)
+    evidence.update(calculation_basis="SUBTHRESHOLD_CURRENT_APPROVAL_LIMIT", approval_limit=str(limit))
+    eligible = Decimal("0") < Decimal(str(amount)) < Decimal(str(limit))
+    evidence["current_payment_below_limit"] = eligible
+    if status != "NOT_EVALUATED":
+        if not eligible:
+            status, detail = "PASSED", "Current payment is outside the positive below-limit splitting candidates; evaluate its approval authority separately."
+        elif status == "FAILED":
+            detail = "Multiple individually below-limit payments to the same vendor exceed the current approval limit within 24 hours; review for possible splitting."
+        else:
+            detail = "Below-limit payments do not exceed the current approval limit within 24 hours."
+    return status, detail, evidence
 
 
 def _evaluate_ghost_vendors(
@@ -369,6 +399,9 @@ def evaluate_transaction_rules(
     ):
         rule_key = eligibility["rule_key"]
         evaluator = RULE_EVALUATORS.get(rule_key)
+        subthreshold = rule_key == "invoice_splitting" and rule_context.get("invoice_splitting_mode") == "SUBTHRESHOLD_PAYMENTS"
+        if subthreshold:
+            evaluator = _evaluate_subthreshold_invoice_splitting
 
         evidence = {
             "eligible": eligibility["eligible"],
@@ -413,7 +446,7 @@ def evaluate_transaction_rules(
             {
                 "rule_key": rule_key,
                 "rule_name": eligibility["rule_name"],
-                "rule_version": RULE_VERSIONS[rule_key],
+                "rule_version": "1.1.0" if subthreshold else RULE_VERSIONS[rule_key],
                 "status": status,
                 "score_contribution": None,
                 "detail": detail,
