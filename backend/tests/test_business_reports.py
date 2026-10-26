@@ -49,6 +49,14 @@ def source():
                        'closed_at': '2026-10-19T00:00:00Z', 'resolution_outcome': 'NO_ISSUE_FOUND'}]}
 
 
+def test_payments_provenance_is_exported_even_when_operational_context_selected():
+    evidence = source()
+    evidence['dataset'] = {'id': 1, 'label': 'Payments', 'source_schema': 'PAYMENTS_SIMULATION_WORKBOOK', 'source_sha256': 'a'*64}
+    document = service.build_document(evidence, recipient='Management', sender='System', data_context='OPERATIONAL')
+    assert document['dataset'] == evidence['dataset']
+    assert any('simulation-enriched' in item for item in document['limitations'])
+
+
 def report():
     return {'id': REPORT_ID, 'created_at': '2026-10-19T10:31:00Z',
             'document': service.build_document(source(), recipient='<Directors>', sender='System', data_context='DEMONSTRATION')}

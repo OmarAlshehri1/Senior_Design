@@ -86,6 +86,14 @@ test('unprivileged database roles cannot read or activate datasets', async () =>
   }
 });
 
+test('same-date reports retain their dataset histories and recorded context', async () => {
+  await db.query("insert into public.audit_reports(id,dataset_id,status,period_start,period_end,completed_at) values('old-report',0,'COMPLETED','2026-10-01','2026-10-02',now()),('new-report',$1,'COMPLETED','2026-10-01','2026-10-02',now())",[dataset]);
+  assert.equal(await scalar('select count(*)::int from public.audit_reports'),2);
+  const summary=await scalar("select public.get_daily_audit_summary('2026-10-01','2026-10-02')");
+  assert.equal(summary.dataset.id,dataset);
+  assert.equal(summary.daily_summary.total_transactions,2);
+});
+
 test('optimistic rollback retains both populations', async () => {
   await assert.rejects(db.query('select public.activate_primary_dataset(0::smallint,0::smallint)'),/selection changed/);
   await scalar('select public.activate_primary_dataset(0::smallint,$1::smallint)',[dataset]);

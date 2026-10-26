@@ -144,6 +144,12 @@ def build_document(source: dict, *, recipient: str, sender: str, data_context: s
                        'Interpret the conclusions within the stated data context and eligibility limitations.'),
         'evidence': deepcopy({'transactions': transactions, 'alerts': alerts, 'cases': cases}),
     }
+    dataset = source.get('dataset')
+    if isinstance(dataset, dict):
+        document['dataset'] = deepcopy(dataset)
+        document['limitations'].insert(0, f"Dataset: {dataset.get('label')}; source SHA-256: {dataset.get('source_sha256') or 'unavailable'}.")
+        if dataset.get('source_schema') == 'PAYMENTS_SIMULATION_WORKBOOK':
+            document['limitations'].insert(1, 'The Payments dataset is simulation-enriched: actors, approval limits, vendor references and time of day are simulated. Rule exceptions use these workbook references. AI scores are payment-pattern ranks, not fraud probabilities.')
     # Always provide detailed explanations, even offline or without a provider.
     return enrich_findings(document, requested=False)
 

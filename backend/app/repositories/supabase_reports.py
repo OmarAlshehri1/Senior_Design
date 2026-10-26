@@ -187,6 +187,12 @@ def persist_completed_report(
         "failure_reason": None,
     }
 
+    dataset = summary.get("dataset")
+    conflict = "period_start,period_end"
+    if isinstance(dataset, dict) and isinstance(dataset.get("id"), int):
+        payload["dataset_id"] = dataset["id"]
+        conflict = "dataset_id,period_start,period_end"
+
     try:
         with httpx.Client(
             timeout=REQUEST_TIMEOUT_SECONDS
@@ -195,7 +201,7 @@ def persist_completed_report(
                 endpoint,
                 headers=headers,
                 params={
-                    "on_conflict": "period_start,period_end",
+                    "on_conflict": conflict,
                     "select": REPORT_COLUMNS,
                 },
                 json=jsonable_encoder(payload),

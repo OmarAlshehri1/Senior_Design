@@ -110,6 +110,17 @@ def build_report_workbook(report: dict[str, Any]) -> bytes:
         f"UTC period: {report.get('period_start', '')} to {report.get('period_end', '')} (exclusive)"
     )
     sheet["A3"].font = Font(name="Aptos", size=10, color="49627A")
+    dataset = summary.get("dataset")
+    if isinstance(dataset, dict):
+        context = book.create_sheet("Dataset Context")
+        _table_header(context, 1, ["Property", "Recorded value"])
+        rows = [[key, str(value) if value is not None else "Unavailable"] for key, value in dataset.items()]
+        if dataset.get("source_schema") == "PAYMENTS_SIMULATION_WORKBOOK":
+            rows.append(["Source context", "Simulation-enriched: actors, limits, vendor references and time of day are simulated. AI scores are payment-pattern ranks, not fraud probabilities."])
+        for number, values in enumerate(rows, 2):
+            _table_row(context, number, values)
+        context.column_dimensions["A"].width = 25
+        context.column_dimensions["B"].width = 100
 
     _metric(sheet, 5, 1, "Total transactions", _number(daily.get("total_transactions")))
     _metric(sheet, 5, 4, "Transactions evaluated", _number(daily.get("transactions_evaluated")))

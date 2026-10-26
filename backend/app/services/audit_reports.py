@@ -59,6 +59,9 @@ def generate_daily_report(
     report_id = (
         f"RPT-{normalized_start.date().isoformat()}"
     )
+    dataset_id = (summary.get("dataset") or {}).get("id", 0)
+    if dataset_id:
+        report_id = f"RPT-P{dataset_id}-{normalized_start.date().isoformat()}"
 
     return persist_completed_report(
         report_id=report_id,
