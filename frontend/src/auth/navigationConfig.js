@@ -7,6 +7,7 @@ export const NAVIGATION_GROUPS = Object.freeze([
     links: Object.freeze([
       Object.freeze({ to: APPLICATION_ROUTES.DASHBOARD, label: 'Dashboard', icon: 'dashboard', end: true, permission: getRoutePermission(APPLICATION_ROUTES.DASHBOARD) }),
       Object.freeze({ to: APPLICATION_ROUTES.TRANSACTIONS, label: 'Transactions', icon: 'transactions', permission: getRoutePermission(APPLICATION_ROUTES.TRANSACTIONS) }),
+      Object.freeze({ to: APPLICATION_ROUTES.FEED_REVIEW, label: 'Feed Review', icon: 'transactions', permission: getRoutePermission(APPLICATION_ROUTES.FEED_REVIEW) }),
       Object.freeze({ to: APPLICATION_ROUTES.ALERTS, label: 'Alerts', icon: 'alerts', permission: getRoutePermission(APPLICATION_ROUTES.ALERTS) }),
       Object.freeze({ to: APPLICATION_ROUTES.VENDORS, label: 'Vendors', icon: 'vendors', permission: getRoutePermission(APPLICATION_ROUTES.VENDORS) }),
     ]),

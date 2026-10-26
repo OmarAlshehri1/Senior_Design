@@ -3,6 +3,7 @@ import { AppProvider } from './context/AppContext';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
+import FeedReview from './pages/FeedReview';
 import TransactionDetail from './pages/TransactionDetail';
 import Alerts from './pages/Alerts';
 import AuditRules from './pages/AuditRules';
@@ -33,7 +34,7 @@ import PasswordRecovery from './pages/PasswordRecovery.jsx';
 
 function protectedPage(path, page) {
   return (
-    <RequirePermission permission={getRoutePermission(path)}>
+    <RequirePermission permission={getRoutePermission(path)} requireAuthentication={path === APPLICATION_ROUTES.FEED_REVIEW}>
       {page}
     </RequirePermission>
   );
@@ -45,6 +46,7 @@ function ApplicationRoutes() {
       <Route path={APPLICATION_ROUTES.DASHBOARD} element={protectedPage(APPLICATION_ROUTES.DASHBOARD, <Dashboard />)} />
       <Route path={APPLICATION_ROUTES.DASHBOARD_ALIAS} element={protectedPage(APPLICATION_ROUTES.DASHBOARD_ALIAS, <Dashboard />)} />
       <Route path={APPLICATION_ROUTES.TRANSACTIONS} element={protectedPage(APPLICATION_ROUTES.TRANSACTIONS, <Transactions />)} />
+      <Route path={APPLICATION_ROUTES.FEED_REVIEW} element={protectedPage(APPLICATION_ROUTES.FEED_REVIEW, <FeedReview />)} />
       <Route path={APPLICATION_ROUTES.TRANSACTION_DETAIL} element={protectedPage(APPLICATION_ROUTES.TRANSACTION_DETAIL, <TransactionDetail />)} />
       <Route path={APPLICATION_ROUTES.ALERTS} element={protectedPage(APPLICATION_ROUTES.ALERTS, <Alerts />)} />
       <Route path={APPLICATION_ROUTES.AUDIT_RULES} element={protectedPage(APPLICATION_ROUTES.AUDIT_RULES, <AuditRules />)} />

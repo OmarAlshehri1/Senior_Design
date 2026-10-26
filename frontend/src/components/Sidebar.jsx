@@ -1,4 +1,6 @@
 import { Link, NavLink } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { apiClient } from '../services/apiClient.js';
 import {
   ShieldIcon,
   GridIcon,
@@ -33,6 +35,15 @@ const NAVIGATION_ICONS = Object.freeze({
 
 export default function Sidebar({ containerRef, closeButtonRef, isOpen, onClose }) {
   const { effectiveRole } = useAuthorization();
+  const [feedAvailable, setFeedAvailable] = useState(false);
+  useEffect(() => {
+    const controller = new AbortController();
+    setFeedAvailable(false);
+    apiClient.get('/feed-review/capabilities', { signal: controller.signal })
+      .then((value) => { if (!controller.signal.aborted) setFeedAvailable(value.enabled === true); })
+      .catch(() => { if (!controller.signal.aborted) setFeedAvailable(false); });
+    return () => controller.abort();
+  }, [effectiveRole]);
   const navigationGroups = effectiveRole ? getNavigationState(effectiveRole) : NAVIGATION_GROUPS;
 
   return (
@@ -51,6 +62,7 @@ export default function Sidebar({ containerRef, closeButtonRef, isOpen, onClose 
           <div className="sidebar-nav-group" key={group.label}>
             <span className="sidebar-nav-label">{group.label}</span>
             {group.links.map(({ to, label, icon, end, restricted = false }) => {
+              if (to === APPLICATION_ROUTES.FEED_REVIEW && !feedAvailable) return null;
               const Icon = NAVIGATION_ICONS[icon];
               if (restricted) {
                 return (
