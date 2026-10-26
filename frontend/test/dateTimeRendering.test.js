@@ -26,7 +26,7 @@ test('semantic time keeps the exact raw value and provides a compact, zoned acce
   const html = render(DateTime, { value: raw, compact: true, showZone: false });
   assert.match(html, /dateTime="2026-10-19T14:10:38\.816954\+00:00"/);
   assert.match(html, /aria-label="19 Oct 2026, 17:10:38 \(UTC\+3\)"/);
-  assert.match(html, /<span>19 Oct 2026<\/span><span>17:10:38<\/span>/);
+  assert.match(html, /<span>19 Oct 2026<\/span><span>17:10<\/span>/);
   assert.doesNotMatch(visible(html), /2026-10-19|816954/);
 });
 
@@ -57,13 +57,13 @@ test('history, notification, discussion and audit detail views format their orig
   for (const [file, props] of cases) {
     const { default: Component } = await vite.ssrLoadModule(`/src/components/${file}.jsx`);
     const html = render(Component, props);
-    assert.match(visible(html), /19 Oct 2026, 17:10:38 \(UTC\+3\)/, file);
+    assert.match(visible(html), file === 'AuditEventDetails' ? /19 Oct 2026, 17:10:38 \(UTC\+3\)/ : /19 Oct 2026, 17:10/, file);
     assert.doesNotMatch(visible(html), /2026-10-19T14:10:38|Invalid Date/, file);
     assert.match(html, /dateTime="2026-10-19T14:10:38\.816954\+00:00"/, file);
   }
 });
 
-test('users and transaction/alert tables expose compact dates with explicit zone context', async () => {
+test('ordinary tables expose compact dates without repeating the global timezone', async () => {
   const { UsersView } = await vite.ssrLoadModule('/src/pages/UserManagement.jsx');
   const { default: TransactionsTable } = await vite.ssrLoadModule('/src/components/TransactionsTable.jsx');
   const { default: AlertsTable } = await vite.ssrLoadModule('/src/components/AlertsTable.jsx');
@@ -73,8 +73,8 @@ test('users and transaction/alert tables expose compact dates with explicit zone
     [AlertsTable, { alerts: [{ id: 'a', timestamp: raw, title: 'Review', status: 'Reviewed' }] }],
   ]) {
     const html = render(Component, props);
-    assert.match(visible(html), /UTC\+3/);
-    assert.match(html, /<span>19 Oct 2026<\/span><span>17:10:38<\/span>/);
+    assert.doesNotMatch(visible(html), /UTC\+3/);
+    assert.match(html, /<span>19 Oct 2026<\/span><span>17:10<\/span>/);
     assert.doesNotMatch(visible(html), /2026-10-19T14:10:38/);
   }
 });
@@ -88,7 +88,7 @@ test('explicit raw audit/case evidence retains original values instead of rewrit
   ]) {
     assert.match(visible(html), /Recorded details \(raw\)/);
     assert.match(visible(html), /2026-10-19T14:10:38\.816954\+00:00/);
-    assert.match(visible(html), /19 Oct 2026, 17:10:38 \(UTC\+3\)/);
+    assert.match(visible(html), /19 Oct 2026, 17:10/);
   }
 });
 
@@ -100,7 +100,7 @@ test('Topbar makes the time-only timezone explicit and reports can deliberately 
     createElement(AppContext.Provider, { value: { lastUpdated: raw, notifications: [], unreadNotificationCount: 0 } },
       createElement(AuthorizationContext.Provider, { value: { mode: 'AUTHENTICATED', effectiveRole: 'ADMIN', user: null } },
         createElement(Topbar, {})))));
-  assert.match(visible(html), /17:10:38 \(UTC\+3\)/);
+  assert.match(visible(html), /17:10 \(UTC\+3\)/);
   const { default: DateTime } = await vite.ssrLoadModule('/src/components/DateTime.jsx');
-  assert.equal(visible(render(DateTime, { value: '2026-10-19T22:30:00Z', utc: true })), '19 Oct 2026, 22:30:00 (UTC)');
+  assert.equal(visible(render(DateTime, { value: '2026-10-19T22:30:00Z', utc: true })), '19 Oct 2026, 22:30 (UTC)');
 });

@@ -111,7 +111,7 @@
 }
 
 .management-tab-panel {
-  min-height: 380px;
+  min-height: 0;
 }
 
 .management-filters {
@@ -5703,7 +5703,7 @@ body {
   table-layout: auto;
 }
 
-@media (max-width: 1349px) {
+@media (max-width: 1100px) {
   .transactions-table,
   .transactions-table tbody,
   .transactions-table tr,

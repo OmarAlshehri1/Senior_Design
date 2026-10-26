@@ -1,13 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import useApp from '../context/useApp';
 import AlertsTable from '../components/AlertsTable';
-import { SearchIcon } from '../components/icons';
-import {
-  ALERT_SORT_OPTIONS,
-  ALERT_TYPE_OPTIONS,
-  deriveAlertSummary,
-  filterAndSortAlerts,
-} from '../utils/alerts';
+import { buildAlertRows } from '../utils/alerts.js';
+import usePagedResource from '../hooks/usePagedResource.js';
+import CollectionPagination from '../components/CollectionPagination.jsx';
+import { alertsService } from '../services/alertsService.js';
+import { realtimeService } from '../services/realtimeService.js';
 import AssignmentDialog from '../components/AssignmentDialog.jsx';
 import useAuthorization from '../auth/useAuthorization.js';
 import { hasPermission, PERMISSIONS } from '../auth/roles.js';
@@ -16,57 +14,18 @@ import { casesService } from '../services/casesService.js';
 import CaseCreateDialog from '../components/CaseCreateDialog.jsx';
 import { useNavigate } from 'react-router-dom';
 
-function EmptyAlertsState({
-  alertCount,
-  search,
-  statusFilter,
-  riskFilter,
-  typeFilter,
-}) {
-  let title = 'No alerts available.';
-  let guidance = 'Alerts requiring audit attention will appear here when available.';
-  const statusIsOnlyFilter = riskFilter === 'All' && typeFilter === 'All';
-
-  if (alertCount > 0 && search.trim()) {
-    title = 'No alerts found.';
-    guidance = 'Try a different alert ID, transaction ID, vendor, or alert type.';
-  } else if (alertCount > 0 && statusFilter === 'Active' && statusIsOnlyFilter) {
-    title = 'No active alerts require review.';
-    guidance = 'Clear the filters to review other alerts.';
-  } else if (alertCount > 0 && statusFilter === 'Reviewed' && statusIsOnlyFilter) {
-    title = 'No reviewed alerts match the selected filters.';
-    guidance = 'Try adjusting or clearing the filters.';
-  } else if (alertCount > 0) {
-    title = 'No alerts match the selected filters.';
-    guidance = 'Try adjusting your search or clearing the filters.';
-  }
-
-  return (
-    <div className="alerts-empty-state" role="status">
-      <h3>{title}</h3>
-      <p>{guidance}</p>
-    </div>
-  );
-}
-
 export default function Alerts() {
   const navigate = useNavigate();
-  const { effectiveRole } = useAuthorization();
-  const {
-    alerts,
-    alertsLoading,
-    alertsError,
-    transactions,
-    markAlertReviewed,
-    showNotification,
-    setAlertAssignment,
-    refreshNotifications,
-  } = useApp();
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
-  const [riskFilter, setRiskFilter] = useState('All');
-  const [typeFilter, setTypeFilter] = useState('All');
-  const [sortBy, setSortBy] = useState(ALERT_SORT_OPTIONS.NEWEST);
+  const { effectiveRole, user } = useAuthorization();
+  const { transactions, showNotification, setAlertAssignment, refreshNotifications } = useApp();
+  const collection = usePagedResource(alertsService.list);
+  const { resource } = collection;
+  const [reviewing, setReviewing] = useState(false);
+  const reviewPending = useRef(false);
+  const statusFilter = collection.query.status ?? '';
+  useEffect(() => realtimeService.onMessage((event) => {
+    if (['alerts.changed', 'alerts.catch_up'].includes(event.type)) resource.load();
+  }), [resource]);
   const [assignmentAlert, setAssignmentAlert] = useState(null);
   const [assignmentData, setAssignmentData] = useState({ alertId: null, assignment: null, history: [], eligibleUsers: [] });
   const [assignmentBusy, setAssignmentBusy] = useState(false);
@@ -116,6 +75,7 @@ export default function Alerts() {
       setAssignmentData((previous) => ({ ...previous, alertId: assignmentAlert.id, assignment: result.assignment }));
       showNotification('Alert assignment saved.', 'success');
       setAssignmentAlert(null);
+      resource.load();
     } catch (error) {
       setAssignmentError(error instanceof Error ? error.message : 'Alert assignment could not be saved.');
     } finally { setAssignmentBusy(false); }
@@ -131,62 +91,25 @@ export default function Alerts() {
       setAssignmentData((previous) => ({ ...previous, alertId: assignmentAlert.id, assignment: result.assignment }));
       showNotification('Alert returned to the team queue.', 'success');
       setAssignmentAlert(null);
+      resource.load();
     } catch (error) {
       setAssignmentError(error instanceof Error ? error.message : 'Alert could not be unassigned.');
     } finally { setAssignmentBusy(false); }
   };
 
-  const summary = useMemo(() => deriveAlertSummary(alerts), [alerts]);
-  const filteredAlerts = useMemo(
-    () => filterAndSortAlerts(alerts, transactions, {
-      search,
-      statusFilter,
-      riskFilter,
-      typeFilter,
-      sortBy,
-    }),
-    [alerts, transactions, search, statusFilter, riskFilter, typeFilter, sortBy]
-  );
-
-  const filtersActive = Boolean(search.trim())
-    || statusFilter !== 'All'
-    || riskFilter !== 'All'
-    || typeFilter !== 'All';
-  const resultLabel = filtersActive
-    ? `${filteredAlerts.length} of ${alerts.length} Alerts`
-    : `${alerts.length} Alerts`;
-
-  const clearFilters = () => {
-    setSearch('');
-    setStatusFilter('All');
-    setRiskFilter('All');
-    setTypeFilter('All');
-    setSortBy(ALERT_SORT_OPTIONS.NEWEST);
-  };
-
   const handleMarkReviewed = async (transactionId) => {
+    const alert = collection.items.find((item) => item.transactionId === transactionId);
+    if (!alert || reviewPending.current) return;
+    reviewPending.current = true; setReviewing(true);
     try {
-      await markAlertReviewed(transactionId);
-      showNotification(
-        'Alert marked as reviewed.',
-        'success'
-      );
-    } catch (error) {
-      showNotification(
-        error instanceof Error
-          ? error.message
-          : 'Alert could not be reviewed.',
-        'error'
-      );
-    }
+      await alertsService.markReviewed(alert.id);
+      await resource.load(); refreshNotifications();
+      showNotification('Alert marked as reviewed.', 'success');
+    } catch (error) { showNotification(error?.message || 'Alert could not be reviewed.', 'error'); }
+    finally { reviewPending.current = false; setReviewing(false); }
   };
-
-  const summaryItems = [
-    ['Active Alerts', summary.active, 'active'],
-    ['Reviewed Alerts', summary.reviewed, 'reviewed'],
-    ['High-Risk Alerts', summary.high, 'high'],
-    ['Medium-Risk Alerts', summary.medium, 'medium'],
-  ];
+  const rows = buildAlertRows(collection.items, transactions);
+  const resultLabel = collection.status === 'success' ? `${collection.total.toLocaleString('en-US')} ${statusFilter ? statusFilter.toLowerCase() + ' ' : ''}alerts` : 'Alerts';
 
   return (
     <>
@@ -198,114 +121,24 @@ export default function Alerts() {
         <span className="alerts-result-count" aria-live="polite">{resultLabel}</span>
       </div>
 
-      <section className="alerts-summary-grid" aria-label="Alert summary">
-        {summaryItems.map(([label, value, tone]) => (
-          <div className={`alert-summary-item summary-${tone}`} key={label}>
-            <span>{label}</span>
-            <strong>{value}</strong>
-          </div>
-        ))}
-      </section>
-
-      <div className="alerts-toolbar" aria-label="Alert search and filters">
-        <label className="alerts-search">
-          <span className="control-label">Search</span>
-          <span className="search-input">
-            <SearchIcon width={16} height={16} color="#7b8493" aria-hidden="true" />
-            <input
-              placeholder="Search alert ID, transaction ID, vendor, or type"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </span>
-        </label>
-
-        <label className="alerts-select-control">
-          <span className="control-label">Status</span>
-          <select
-            className="select-input"
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value)}
-          >
-            <option value="All">All Statuses</option>
-            <option value="Active">Active</option>
-            <option value="Reviewed">Reviewed</option>
+      <div className="alerts-toolbar compact-alert-toolbar" aria-label="Alert filters">
+        <label className="alerts-select-control"><span className="control-label">Status</span>
+          <select className="select-input" value={statusFilter} onChange={(event) => resource.setFilters({ status: event.target.value || undefined })}>
+            <option value="">All alerts</option><option value="ACTIVE">Active</option><option value="REVIEWED">Reviewed</option>
           </select>
         </label>
-
-        <label className="alerts-select-control">
-          <span className="control-label">Risk</span>
-          <select
-            className="select-input"
-            value={riskFilter}
-            onChange={(event) => setRiskFilter(event.target.value)}
-          >
-            <option value="All">All Risks</option>
-            <option value="Medium">Medium</option>
-            <option value="High">High</option>
-          </select>
-        </label>
-
-        <label className="alerts-select-control alerts-type-control">
-          <span className="control-label">Alert Type</span>
-          <select
-            className="select-input"
-            value={typeFilter}
-            onChange={(event) => setTypeFilter(event.target.value)}
-          >
-            <option value="All">All Types</option>
-            {ALERT_TYPE_OPTIONS.map((type) => (
-              <option value={type} key={type}>{type}</option>
-            ))}
-          </select>
-        </label>
-
-        <label className="alerts-select-control">
-          <span className="control-label">Sort By</span>
-          <select
-            className="select-input"
-            value={sortBy}
-            onChange={(event) => setSortBy(event.target.value)}
-          >
-            <option value={ALERT_SORT_OPTIONS.NEWEST}>Newest</option>
-            <option value={ALERT_SORT_OPTIONS.OLDEST}>Oldest</option>
-            <option value={ALERT_SORT_OPTIONS.HIGHEST_RISK}>Highest Risk</option>
-            <option value={ALERT_SORT_OPTIONS.LOWEST_RISK}>Lowest Risk</option>
-          </select>
-        </label>
-
-        {filtersActive && (
-          <button type="button" className="btn btn-secondary alerts-clear-button" onClick={clearFilters}>
-            Clear Filters
-          </button>
-        )}
+        {statusFilter && <button type="button" className="btn btn-secondary" onClick={() => resource.setFilters({ status: undefined })}>Clear Filters</button>}
       </div>
 
       <section className="card alerts-card" aria-labelledby="alerts-results-heading">
         <div className="card-header">
           <h2 id="alerts-results-heading">{resultLabel}</h2>
         </div>
-        {alertsLoading ? (
-          <div className="alerts-empty-state" role="status">
-            <h3>Loading alerts…</h3>
-            <p>Retrieving authoritative alerts from the audit service.</p>
-          </div>
-        ) : alertsError ? (
-          <div className="alerts-empty-state" role="alert">
-            <h3>Alerts could not be loaded.</h3>
-            <p>{alertsError}</p>
-          </div>
-        ) : filteredAlerts.length > 0 ? (
-          <>{caseBusy && <p role="status">Creating case…</p>}<AlertsTable alerts={filteredAlerts} onMarkReviewed={handleMarkReviewed} canAssign={canAssignAlerts} onAssign={setAssignmentAlert} canEscalateToCase={canEscalateToCase} onCreateCase={createCaseFromAlert} /></>
-        ) : (
-          <EmptyAlertsState
-            alertCount={alerts.length}
-            search={search}
-            statusFilter={statusFilter}
-            riskFilter={riskFilter}
-            typeFilter={typeFilter}
-          />
-        )}
+        {collection.status === 'loading' ? <div className="alerts-empty-state" role="status"><h3>{collection.refreshing ? 'Refreshing alerts…' : 'Loading alerts…'}</h3></div>
+          : collection.error ? <div className="alerts-empty-state" role="alert"><h3>Alerts could not be loaded.</h3><p>{collection.error}</p><button type="button" className="btn btn-secondary" onClick={() => resource.load()}>Retry</button></div>
+          : collection.items.length ? <>{caseBusy && <p role="status">Creating case…</p>}<AlertsTable alertOwnerId={user?.id} alerts={rows} reviewing={reviewing} onMarkReviewed={handleMarkReviewed} canAssign={canAssignAlerts} onAssign={setAssignmentAlert} canEscalateToCase={canEscalateToCase} onCreateCase={createCaseFromAlert} /></>
+          : <div className="alerts-empty-state"><h3>{statusFilter ? 'No alerts match this status.' : 'No alerts available.'}</h3></div>}
+        <CollectionPagination collection={collection} itemLabel="alerts" />
       </section>
       <AssignmentDialog alert={assignmentAlert}
         currentAssignment={assignmentData.alertId === assignmentAlert?.id ? assignmentData.assignment : null}

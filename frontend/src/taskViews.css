@@ -1,0 +1,126 @@
+/* Task-focused list surfaces. Brand tokens remain owned by the shared shell. */
+.transaction-reference { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 650; }
+.secondary-metadata { display: block; margin-top: 4px; color: var(--text-secondary); font-size: 12px; font-weight: 400; }
+.task-transactions-table, .task-recent-transactions-table { table-layout: fixed; font-size: 13px; }
+.task-transactions-table th, .task-transactions-table td,
+.task-recent-transactions-table th, .task-recent-transactions-table td { padding: 14px 10px; }
+.task-transactions-table td, .task-recent-transactions-table td { white-space: normal; overflow-wrap: anywhere; }
+.task-transactions-table th:nth-child(1) { width: 21%; }
+.task-transactions-table th:nth-child(2) { width: 20%; }
+.task-transactions-table th:nth-child(3) { width: 11%; }
+.task-transactions-table th:nth-child(4) { width: 13%; }
+.task-transactions-table th:nth-child(5) { width: 12%; }
+.task-transactions-table th:nth-child(6) { width: 13%; }
+.task-transactions-table th:nth-child(7) { width: 10%; }
+.task-transactions-table .vendor-cell-content { min-width: 0; flex-wrap: wrap; }
+.task-transactions-table .vendor-cell-content a { overflow-wrap: anywhere; }
+.task-recent-transactions-table th:nth-child(1) { width: 30%; }
+.task-recent-transactions-table th:nth-child(2) { width: 34%; }
+.task-recent-transactions-table th:nth-child(3) { width: 17%; }
+.task-recent-transactions-table th:nth-child(4) { width: 19%; }
+.transactions-toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: 16px; padding: 16px; }
+.transactions-toolbar .transactions-search { flex: 1 1 320px; }
+.transactions-toolbar .transactions-filter-group { flex: 0 1 auto; border: 0; padding: 0; margin: 0; }
+.compact-alert-toolbar { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; padding: 16px; }
+.compact-alert-toolbar .alerts-select-control { width: 220px; max-width: 100%; }
+.alerts-table-wrap { overflow-x: auto; }
+.alerts-table { min-width: 1150px; font-size: 13px; }
+.task-alerts-table th:nth-child(1) { width: 24%; }
+.task-alerts-table th:nth-child(2) { width: 16%; }
+.task-alerts-table th:nth-child(3) { width: 12%; }
+.task-alerts-table th:nth-child(4) { width: 10%; }
+.task-alerts-table th:nth-child(5) { width: 8%; }
+.task-alerts-table th:nth-child(6) { width: 12%; }
+.task-alerts-table th:nth-child(7) { width: 18%; }
+.task-alerts-table tbody td { white-space: normal; overflow-wrap: anywhere; }
+.task-alerts-table .alert-type-copy { min-width: 0; }
+.task-alerts-table .alert-type-copy > .display-reference { margin-top: 5px; }
+.pagination-page-size select { min-height: 40px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 30px 8px 10px; background-color: var(--surface); color: var(--text-primary); font: inherit; }
+.pagination-bar { align-items: center; }
+.pagination-page-size { margin-left: auto; }
+.pagination-bar:not(:has(.pagination-pages)) { grid-template-columns: 1fr auto; }
+.case-reference { color: var(--blue-dark); font-weight: 650; white-space: nowrap; }
+.source-kind { display: block; margin-bottom: 4px; }
+.display-reference { position: relative; min-width: 0; max-width: 100%; color: var(--text-secondary); font-size: 12px; }
+.display-reference summary { cursor: pointer; overflow-wrap: anywhere; }
+.reference-full { display: block; padding: 8px; margin-top: 6px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-subtle); overflow-wrap: anywhere; user-select: all; }
+.cases-page .operations-table { table-layout: fixed; font-size: 13px; }
+.cases-page .operations-table th:nth-child(1) { width: 10%; }
+.cases-page .operations-table th:nth-child(2) { width: 16%; }
+.cases-page .operations-table th:nth-child(3) { width: 13%; }
+.cases-page .operations-table th:nth-child(4) { width: 10%; }
+.cases-page .operations-table th:nth-child(5) { width: 10%; }
+.cases-page .operations-table th:nth-child(6) { width: 10%; }
+.cases-page .operations-table th:nth-child(7) { width: 10%; }
+.cases-page .operations-table th:nth-child(8) { width: 13%; }
+.cases-page .operations-table th:nth-child(9) { width: 90px; }
+.cases-page .operations-table td:last-child { padding-left: 6px; padding-right: 6px; }
+.cases-page .operations-table td { overflow-wrap: anywhere; }
+.team-activity-page .team-activity-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: start; gap: 20px; }
+.team-activity-page > section, .team-activity-grid, .team-management-area { margin-top: 20px; }
+.team-activity-page .management-detail-card { min-width: 0; margin: 0; }
+.team-activity-feed li { grid-template-columns: minmax(80px, .65fr) minmax(0, 1.4fr); gap: 8px 16px; font-size: 13px; }
+.team-activity-feed li .activity-actor, .team-activity-feed li .activity-action { display: block; min-width: 0; }
+.activity-actor > span { display: block; margin-top: 4px; font-size: 12px; }
+.activity-action p { margin-bottom: 4px; font-weight: 550; }
+.team-activity-feed li > time { grid-column: 2; font-size: 12px; }
+.recent-activity-pagination { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; padding-top: 16px; margin-top: 8px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-secondary); }
+.recent-activity-pagination nav { display: flex; gap: 8px; }
+.team-management-area { display: grid; gap: 12px; }
+.team-management-panel > summary { cursor: pointer; padding: 2px; font-weight: 650; font-size: 15px; }
+.team-management-content { margin-top: 20px; }
+.team-management-content .management-form-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; align-items: end; gap: 16px; margin-bottom: 20px; }
+.team-management-content .dialog-field { margin: 0; }
+.team-management-content input, .team-management-content select { width: 100%; min-width: 0; }
+.team-workload-table { min-width: 0; font-size: 13px; }
+.team-workload-table-wrap { overflow-x: auto; }
+.user-management-page .management-table { min-width: 0; table-layout: fixed; font-size: 13px; }
+.user-management-page .management-table td { overflow-wrap: anywhere; }
+.user-management-page .management-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.audit-log-controls { gap: 12px; padding: 16px; }
+.audit-log-table { min-width: 0; table-layout: fixed; font-size: 13px; }
+.audit-log-table td { overflow-wrap: anywhere; }
+.audit-log-table th:nth-child(1) { width: 17%; }
+.audit-log-table th:nth-child(2) { width: 22%; }
+.audit-log-table th:nth-child(3) { width: 22%; }
+.audit-log-table th:nth-child(4) { width: 12%; }
+.audit-log-table th:nth-child(5) { width: 17%; }
+.audit-log-table th:nth-child(6) { width: 10%; }
+@media (max-width: 1280px) {
+  .team-activity-page .team-activity-grid { grid-template-columns: minmax(0, 1fr); }
+  .team-management-content .management-form-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 1100px) {
+  .alerts-table { min-width: 0; }
+  .task-alerts-table tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .task-alerts-table tbody td:nth-child(n) { grid-column: auto; order: initial; padding: 0; width: auto; }
+  .task-alerts-table tbody td:nth-child(1), .task-alerts-table tbody td:nth-child(2), .task-alerts-table tbody td:last-child { grid-column: 1 / -1; }
+  .task-transactions-table tbody tr, .task-recent-transactions-table tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 20px; }
+  .task-transactions-table tbody td:nth-child(n), .task-recent-transactions-table tbody td:nth-child(n) { grid-column: auto; order: initial; padding: 0; width: auto; }
+  .task-transactions-table tbody td:nth-child(1), .task-transactions-table tbody td:nth-child(2),
+  .task-recent-transactions-table tbody td:nth-child(1), .task-recent-transactions-table tbody td:nth-child(2) { grid-column: 1 / -1; }
+  .cases-page .operations-table { table-layout: auto; }
+}
+@media (max-width: 1000px) {
+  .cases-page .operations-table { display: block; width: 100%; }
+  .cases-page .operations-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .cases-page .operations-table tbody { display: block; width: 100%; }
+  .cases-page .operations-table tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding: 16px; border-bottom: 1px solid var(--border); }
+  .cases-page .operations-table td, .cases-page .operations-table td:last-child { display: block; width: auto; min-width: 0; border: 0; padding: 0; }
+  .cases-page .operations-table td::before { display: block; margin-bottom: 5px; content: attr(data-label); color: var(--text-secondary); font-size: 12px; font-weight: 600; max-width: none; }
+  .cases-page .operations-table td:nth-child(2) { grid-column: 1 / -1; }
+}
+@media (max-width: 700px) {
+  .transactions-toolbar .transactions-filter-group { width: 100%; }
+  .transactions-toolbar .transactions-select-control { flex: 1; }
+  .user-management-page .management-tabs button { font-size: 12px; }
+  .team-management-content .btn, .recent-activity-pagination .btn { min-height: 44px; }
+}
+@media (max-width: 430px) {
+  .cases-page .operations-table tr, .task-alerts-table tbody tr { grid-template-columns: minmax(0, 1fr); }
+  .task-transactions-table tbody tr, .task-recent-transactions-table tbody tr { grid-template-columns: minmax(0, 1fr); }
+  .pagination-bar, .pagination-bar:not(:has(.pagination-pages)) { grid-template-columns: minmax(0, 1fr); }
+  .pagination-page-size { justify-self: start; margin-left: 0; }
+  .team-activity-feed li { grid-template-columns: minmax(0, 1fr); }
+  .team-activity-feed li > time { grid-column: 1; }
+}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import useApp from '../context/useApp';
 import TransactionsTable from '../components/TransactionsTable';
@@ -6,12 +6,9 @@ import Pagination from '../components/Pagination.jsx';
 import { SearchIcon } from '../components/icons';
 import {
   TRANSACTION_SORT_OPTIONS,
-  filterAndSortTransactions,
-  getRiskFilterFromQuery,
 } from '../utils/transactions';
 import { getPageSizeChange, getTotalPages } from '../utils/pagination.js';
 
-const riskFilters = ['All', 'Low', 'Medium', 'High'];
 
 function EmptyTransactionsState({ hasTransactions, hasSearch }) {
   let title = 'No transactions available.';
@@ -49,8 +46,7 @@ export default function Transactions() {
   } = useApp();
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get('vendor') || '');
-  const [ruleFilter, setRuleFilter] = useState('All');
-  const riskFilter = getRiskFilterFromQuery(searchParams.get('risk'));
+  const unavailableRiskView = searchParams.has('risk');
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setTransactionsSearch(search.trim());
@@ -82,51 +78,12 @@ export default function Transactions() {
     transactionsTotal
   );
 
-  const evaluatedTransactions = useMemo(
-    () => transactions.filter((transaction) => !transaction?.processing),
-    [transactions]
-  );
-  const loadedTransactionCount = transactions.length;
-
-  const filtered = useMemo(
-    () => filterAndSortTransactions(transactions, {
-      search: '',
-      riskFilter,
-      ruleFilter,
-      sortBy: transactionsSortBy,
-    }),
-    [
-      transactions,
-      riskFilter,
-      ruleFilter,
-      transactionsSortBy,
-    ]
-  );
-
-  const clientFiltersActive = (
-    riskFilter !== 'All'
-    || ruleFilter !== 'All'
-  );
-
-  const filtersActive = (
-    Boolean(search.trim())
-    || clientFiltersActive
-  );
-
-  let resultLabel = transactionsLoading
-    ? 'Loading transactions...'
-    : (
-      `${firstTransactionNumber.toLocaleString('en-US')}–`
-      + `${lastTransactionNumber.toLocaleString('en-US')} of `
-      + `${transactionsTotal.toLocaleString('en-US')} Transactions`
-    );
-
-  if (!transactionsLoading && clientFiltersActive) {
-    resultLabel = (
-      `${filtered.length} of ${loadedTransactionCount} Transactions `
-      + `on Page ${transactionsPage}`
-    );
-  }
+  const filtered = transactions;
+  const filtersActive = Boolean(search.trim()) || transactionsSortBy !== TRANSACTION_SORT_OPTIONS.NEWEST || unavailableRiskView;
+  const resultLabel = unavailableRiskView ? 'Risk view unavailable'
+    : transactionsLoading ? 'Loading transactions…'
+    : transactionsError ? 'Transactions unavailable'
+    : `${transactionsTotal.toLocaleString('en-US')} transactions`;
 
   const changePage = (nextPage) => {
     if (
@@ -151,20 +108,11 @@ export default function Transactions() {
     setTransactionsPage(next.page);
   };
 
-  const updateRiskFilter = (filter) => {
-    const nextParams = new URLSearchParams(searchParams);
-    if (filter === 'All') nextParams.delete('risk');
-    else nextParams.set('risk', filter.toLowerCase());
-    setSearchParams(nextParams);
-    setTransactionsPage(1);
-  };
-
   const clearFilters = () => {
     setSearch('');
     setTransactionsSearch('');
     setTransactionsSortBy(TRANSACTION_SORT_OPTIONS.NEWEST);
     setTransactionsPage(1);
-    setRuleFilter('All');
 
     const nextParams = new URLSearchParams(searchParams);
     nextParams.delete('risk');
@@ -177,7 +125,7 @@ export default function Transactions() {
       <div className="page-header transactions-page-header">
         <div>
           <h1>Transactions</h1>
-          <p>Browse, filter, and review evaluated transactions.</p>
+          <p>Find transactions and review their audit results.</p>
         </div>
         <span className="transactions-result-count" aria-live="polite">{resultLabel}</span>
       </div>
@@ -203,39 +151,6 @@ export default function Transactions() {
         </label>
 
         <div className="transactions-filter-group">
-          <fieldset className="filter-fieldset">
-            <legend className="control-label">Risk Level</legend>
-            <div className="filter-chip-group">
-              {riskFilters.map((filter) => (
-                <button
-                  type="button"
-                  key={filter}
-                  className={`filter-chip${riskFilter === filter ? ' active' : ''}`}
-                  aria-pressed={riskFilter === filter}
-                  onClick={() => updateRiskFilter(filter)}
-                >
-                  {filter}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-
-          <label className="transactions-select-control">
-            <span className="control-label">Rule Status</span>
-            <select
-              className="select-input"
-              value={ruleFilter}
-              onChange={(event) => {
-                setRuleFilter(event.target.value);
-                setTransactionsPage(1);
-              }}
-            >
-              <option value="All">All Statuses</option>
-              <option value="Passed">Passed</option>
-              <option value="Review">Review</option>
-            </select>
-          </label>
-
           <label className="transactions-select-control">
             <span className="control-label">Sort By</span>
             <select
@@ -267,7 +182,7 @@ onChange={(event) => {
         <div className="card-header">
           <h2 id="transactions-results-heading">{resultLabel}</h2>
         </div>
-        {transactionsLoading ? (
+        {unavailableRiskView ? <div className="transactions-empty-state" role="status"><h3>This risk view is unavailable.</h3><p>You can browse all transactions or search by transaction or vendor.</p><button type="button" className="btn btn-secondary" onClick={clearFilters}>View all transactions</button></div> : transactionsLoading ? (
           <div className="transactions-empty-state" role="status">
             <h3>Loading transactions...</h3>
             <p>The latest transaction data is being retrieved.</p>
@@ -281,11 +196,11 @@ onChange={(event) => {
           <TransactionsTable transactions={filtered} />
         ) : (
           <EmptyTransactionsState
-            hasTransactions={evaluatedTransactions.length > 0}
+            hasTransactions={transactionsTotal > 0}
             hasSearch={Boolean(search.trim())}
           />
         )}
-        {!transactionsLoading && !transactionsError && (
+        {!unavailableRiskView && !transactionsLoading && !transactionsError && (
           <Pagination
             currentPage={transactionsPage}
             totalPages={totalPages}

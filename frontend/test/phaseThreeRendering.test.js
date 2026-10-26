@@ -37,8 +37,8 @@ test('User Management arrows/Home/End update selected tab, roving tabindex and f
   const { UserManagementTabs } = await vite.ssrLoadModule('/src/pages/UserManagement.jsx');
   for (const [start, key, expected] of [
     ['users', 'ArrowRight', 'requests'], ['requests', 'ArrowLeft', 'users'],
-    ['users', 'ArrowLeft', 'disabled'], ['disabled', 'ArrowRight', 'users'],
-    ['locked', 'Home', 'users'], ['users', 'End', 'disabled'],
+    ['users', 'ArrowLeft', 'unlockRequests'], ['unlockRequests', 'ArrowRight', 'users'],
+    ['requests', 'Home', 'users'], ['users', 'End', 'unlockRequests'],
   ]) {
     let activeTab = start, focused, prevented = 0, changes = 0;
     const onSelect = (value) => { activeTab = value; changes += 1; };
@@ -54,7 +54,7 @@ test('User Management arrows/Home/End update selected tab, roving tabindex and f
     const updated = buttons(UserManagementTabs({ activeTab, counts: {}, onSelect }));
     assert.equal(updated.filter((button) => button.props['aria-selected']).length, 1);
     assert.equal(updated.find((button) => button.props.tabIndex === 0).props.id, `management-tab-${expected}`);
-    assert.equal(updated.filter((button) => button.props.tabIndex === -1).length, 4);
+    assert.equal(updated.filter((button) => button.props.tabIndex === -1).length, 2);
   }
 });
 

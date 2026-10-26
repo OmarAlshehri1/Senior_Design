@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { formatAmount, ruleStatusPillClass, riskStatusPillClass } from './statusUtils';
+import { formatAmount, riskStatusPillClass } from './statusUtils';
 import { getTransactionRiskLevel } from '../utils/risk';
 
 export default function RecentTransactionsTable({ transactions, highlightId }) {
@@ -16,21 +16,15 @@ export default function RecentTransactionsTable({ transactions, highlightId }) {
 
   return (
     <div className="dashboard-table-wrap">
-      <table className="data-table dashboard-transactions-table">
+      <table className="data-table dashboard-transactions-table task-recent-transactions-table">
         <thead>
           <tr>
-            <th>Transaction ID</th>
-            <th>Vendor</th>
-            <th>Amount</th>
-            <th>Rule Status</th>
-            <th>AI Score</th>
-            <th>Risk Score</th>
-            <th>Risk Level</th>
+            <th>Transaction</th><th>Vendor</th><th>Amount</th><th>Risk</th>
           </tr>
         </thead>
         <tbody>
           {transactions.map((transaction) => {
-            const riskLevel = getTransactionRiskLevel(transaction) ?? 'Processing';
+            const riskLevel = getTransactionRiskLevel(transaction) ?? (transaction.processing ? 'Processing' : 'Not available');
 
             return (
               <tr
@@ -42,20 +36,11 @@ export default function RecentTransactionsTable({ transactions, highlightId }) {
                 onClick={() => openTransaction(transaction.id)}
                 onKeyDown={(event) => handleRowKeyDown(event, transaction.id)}
               >
-                <td data-label="Transaction ID">{transaction.id}</td>
+                <td data-label="Transaction ID"><span className="transaction-reference" title={transaction.id}>{transaction.id}</span></td>
                 <td className="vendor-cell" data-label="Vendor" title={transaction.vendor}>
                   {transaction.vendor}
                 </td>
                 <td data-label="Amount">{formatAmount(transaction.amount, transaction.currency)}</td>
-                <td data-label="Rule Status">
-                  <span className={ruleStatusPillClass(transaction.ruleStatus)}>
-                    {transaction.ruleStatus}
-                  </span>
-                </td>
-                <td data-label="AI Score">{transaction.aiScore ?? '—'}</td>
-                <td data-label="Risk Score">
-                  {Number.isFinite(transaction.riskScore) ? `${transaction.riskScore}/100` : '—'}
-                </td>
                 <td data-label="Risk Level">
                   <span className={riskStatusPillClass(riskLevel)}>{riskLevel}</span>
                 </td>

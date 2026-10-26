@@ -1,5 +1,3 @@
-import { Link } from 'react-router-dom';
-import { DASHBOARD_RISK_LINKS } from '../utils/dashboard';
 
 export default function DonutChart({ counts, percentages, total }) {
   const lowDeg = (percentages.low / 100) * 360;
@@ -26,11 +24,10 @@ export default function DonutChart({ counts, percentages, total }) {
       </div>
       <div className="donut-legend">
         {['low', 'medium', 'high'].map((level) => (
-          <Link
+          <div
             key={level}
             className={`legend-row legend-${level}`}
-            to={DASHBOARD_RISK_LINKS[level]}
-            aria-label={`View ${level} risk transactions: ${counts[level]}, ${percentages[level]} percent`}
+            aria-label={`${level} risk transactions: ${counts[level]}, ${percentages[level]} percent`}
           >
             <span className="legend-label">
               <span className={`legend-dot dot-${level}`} />
@@ -46,7 +43,7 @@ export default function DonutChart({ counts, percentages, total }) {
                 <span>of evaluated</span>
               </span>
             </span>
-          </Link>
+          </div>
         ))}
       </div>
     </div>

@@ -1,5 +1,6 @@
+import { caseReference } from '../utils/presentation.js';
+import Reference from '../components/Reference.jsx';
 import DateTime from '../components/DateTime.jsx';
-import { DISPLAY_TIME_ZONE_LABEL } from '../utils/dateTime.js';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import usePagedResource from '../hooks/usePagedResource.js';
@@ -30,7 +31,7 @@ export default function Cases() {
   return (
     <div className="operations-page cases-page">
       <div className="page-header">
-        <div><span className="page-eyebrow">Investigations</span><h1>Case Management</h1><p>Coordinate evidence, accountability, resolution, and controlled closure.</p></div>
+        <div><span className="page-eyebrow">Investigations</span><h1>Case Management</h1><p>Track investigations and review case progress.</p></div>
         {can(PERMISSIONS.CREATE_CASE) && <Link className="btn btn-primary" to="/alerts">Create Case from Alert</Link>}
       </div>
       <section className="operations-card" aria-labelledby="case-queue-heading" aria-busy={loading}>
@@ -51,16 +52,16 @@ export default function Cases() {
 }
 
 export function CasesTable({ items }) {
-  return <div className="operations-table-wrap"><table className="operations-table"><thead><tr><th>Case ID</th><th>Title</th><th>Source</th><th>Priority</th><th>Status</th><th>Assigned To</th><th>SLA</th><th>Updated ({DISPLAY_TIME_ZONE_LABEL})</th><th>Actions</th></tr></thead><tbody>
+  return <div className="operations-table-wrap"><table className="operations-table"><thead><tr><th>Case ID</th><th>Title</th><th>Source</th><th>Priority</th><th>Status</th><th>Assigned To</th><th>SLA</th><th>Updated</th><th>Actions</th></tr></thead><tbody>
                 {items.map((item) => {
                   const caseStatus = CASE_STATUS_META[item.status];
                   const sla = getSlaPresentation({ slaStatus: item.slaStatus, slaDueAt: item.slaDueAt, completedAt: item.completedAt });
                   return <tr key={item.id}>
-                    <td data-label="Case ID">{item.reference ?? item.id}</td><td data-label="Title">{item.title}</td>
-                    <td data-label="Source">{item.alertId ?? item.transactionId ?? '—'}</td><td data-label="Priority">{item.priority}</td>
+                    <td data-label="Case ID"><Link className="case-reference" title={item.reference ?? item.id} to={`/cases/${encodeURIComponent(item.id)}`}>{caseReference(item.reference ?? item.id)}</Link></td><td data-label="Title">{item.title}</td>
+                    <td data-label="Source"><span className="source-kind">{item.alertId ? 'Alert' : item.transactionId ? 'Transaction' : '—'}</span><Reference value={item.alertId ?? item.transactionId} /></td><td data-label="Priority">{item.priority}</td>
                     <td data-label="Status"><span className={`workflow-status tone-${caseStatus?.tone ?? 'neutral'}`}>{caseStatus?.label ?? item.status}</span></td>
                     <td data-label="Assigned To">{item.assignedToName ?? '—'}</td><td data-label="SLA"><span className={`sla-status sla-${sla.tone}`}>{sla.label}</span></td>
-                    <td data-label={`Updated (${DISPLAY_TIME_ZONE_LABEL})`}><DateTime value={item.updatedAt} compact showZone={false} /></td>
+                    <td data-label={`Updated`}><DateTime value={item.updatedAt} compact showZone={false} /></td>
                     <td data-label="Actions"><Link className="btn btn-secondary" to={`/cases/${encodeURIComponent(item.id)}`}>Open</Link></td>
                   </tr>;
                 })}

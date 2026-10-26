@@ -1,5 +1,4 @@
 import DateTime from './DateTime.jsx';
-import { DISPLAY_TIME_ZONE_LABEL } from '../utils/dateTime.js';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   displayValue,
@@ -29,18 +28,10 @@ export function TransactionsTableView({ transactions, highlightId, onOpenTransac
 
   return (
     <div className="transactions-table-wrap">
-      <table className="data-table transactions-table">
+      <table className="data-table transactions-table task-transactions-table">
         <thead>
           <tr>
-            <th>Transaction ID</th>
-            <th>Vendor</th>
-            <th>Category</th>
-            <th>Amount</th>
-            <th>Time ({DISPLAY_TIME_ZONE_LABEL})</th>
-            <th>Rule Status</th>
-            <th>AI Score</th>
-            <th>Risk Score</th>
-            <th>Risk Level</th>
+            <th>Transaction</th><th>Vendor</th><th>Amount</th><th>Risk</th><th>Status</th><th>Time</th><th>Scores</th>
           </tr>
         </thead>
         <tbody>
@@ -65,21 +56,13 @@ export function TransactionsTableView({ transactions, highlightId, onOpenTransac
                   canOpenTransaction && handleRowKeyDown(event, transaction.id)
                 )}
               >
-                <td data-label="Transaction ID">{transactionId}</td>
+                <td data-label="Transaction"><span className="transaction-reference" title={transactionId}>{transactionId}</span><span className="secondary-metadata">{displayValue(transaction?.category)}</span></td>
                 <td className="vendor-cell" data-label="Vendor" title={vendor}><span className="vendor-cell-content">{transaction?.vendorId ? <Link to={`/vendors/${transaction.vendorId}`} onClick={(event) => event.stopPropagation()}>{vendor}</Link> : vendor}<VendorMonitoringIndicator status={transaction?.vendorMonitoringStatus} /></span></td>
-                <td data-label="Category">{displayValue(transaction?.category)}</td>
                 <td data-label="Amount">{formatAmount(transaction?.amount, transaction?.currency)}</td>
-                <td data-label={`Time (${DISPLAY_TIME_ZONE_LABEL})`}><DateTime value={transaction?.timestamp} compact showZone={false} /></td>
-                <td data-label="Rule Status">
-                  <span className={ruleStatusPillClass(transaction?.ruleStatus)}>
-                    {displayValue(transaction?.ruleStatus)}
-                  </span>
-                </td>
-                <td data-label="AI Score">{formatScore(transaction?.aiScore)}</td>
-                <td data-label="Risk Score">{formatScore(transaction?.riskScore)}</td>
-                <td data-label="Risk Level">
-                  <span className={riskStatusPillClass(riskLevel)}>{riskLevel}</span>
-                </td>
+                <td data-label="Risk"><span className={riskStatusPillClass(riskLevel)}>{riskLevel}</span></td>
+                <td data-label="Status"><span className={ruleStatusPillClass(transaction?.ruleStatus)}>{displayValue(transaction?.ruleStatus)}</span></td>
+                <td data-label="Time"><DateTime value={transaction?.timestamp} compact /></td>
+                <td data-label="Scores"><span className="secondary-metadata">AI {formatScore(transaction?.aiScore)}</span><span className="secondary-metadata">Risk {formatScore(transaction?.riskScore)}</span></td>
               </tr>
             );
           })}

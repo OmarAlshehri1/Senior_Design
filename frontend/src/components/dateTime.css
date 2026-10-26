@@ -4,4 +4,4 @@
   max-width: 100%;
   font-variant-numeric: tabular-nums;
 }
-.date-time-compact > span { display: block; }
+.date-time-compact > span { display: block; white-space: nowrap; }

@@ -1,5 +1,6 @@
+import { shortReference } from '../utils/presentation.js';
+import Reference from './Reference.jsx';
 import DateTime from './DateTime.jsx';
-import { DISPLAY_TIME_ZONE_LABEL } from '../utils/dateTime.js';
 import { useNavigate } from 'react-router-dom';
 import { getAlertPresentation } from './alertUtils';
 import {
@@ -9,48 +10,23 @@ import {
 } from './statusUtils';
 import { getAlertRiskLevel } from '../utils/alerts';
 
-export default function AlertsTable({ alerts, onMarkReviewed, canAssign = false, onAssign, canEscalateToCase = false, onCreateCase }) {
+export default function AlertsTable({ alerts, alertOwnerId, onMarkReviewed, reviewing = false, canAssign = false, onAssign, canEscalateToCase = false, onCreateCase }) {
   const navigate = useNavigate();
 
-  const openTransaction = (transactionId) => navigate(`/transactions/${transactionId}`);
+  const openTransaction = (transactionId, alert) => navigate(`/transactions/${transactionId}`, { state: { alert, alertOwnerId } });
 
-  const handleRowKeyDown = (event, transactionId) => {
+  const handleRowKeyDown = (event, transactionId, alert) => {
     if (event.target !== event.currentTarget) return;
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      openTransaction(transactionId);
+      openTransaction(transactionId, alert);
     }
   };
 
   return (
     <div className="alerts-table-wrap">
-      <table className="data-table alerts-table">
-        <colgroup>
-          <col className="alert-column-id" />
-          <col className="alert-column-transaction" />
-          <col className="alert-column-vendor" />
-          <col className="alert-column-type" />
-          <col className="alert-column-time" />
-          <col className="alert-column-score" />
-          <col className="alert-column-risk" />
-          <col className="alert-column-status" />
-          <col className="alert-column-assignment" />
-          <col className="alert-column-actions" />
-        </colgroup>
-        <thead>
-          <tr>
-            <th>Alert ID</th>
-            <th>Transaction ID</th>
-            <th>Vendor</th>
-            <th>Alert Type</th>
-            <th>Time ({DISPLAY_TIME_ZONE_LABEL})</th>
-            <th>Risk Score</th>
-            <th>Risk Level</th>
-            <th>Review Status</th>
-            <th>Assigned To</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
+      <table className="data-table alerts-table task-alerts-table">
+        <thead><tr><th>Alert</th><th>Transaction</th><th>Risk</th><th>Status</th><th>Assigned to</th><th>Time</th><th>Actions</th></tr></thead>
         <tbody>
           {alerts.map((alert) => {
             const { Icon, bg, color } = getAlertPresentation(alert?.title ?? '');
@@ -68,38 +44,21 @@ export default function AlertsTable({ alerts, onMarkReviewed, canAssign = false,
                 aria-label={canOpenTransaction
                   ? `View transaction ${alert.transactionId} for ${displayValue(alert?.title)}`
                   : undefined}
-                onClick={() => canOpenTransaction && openTransaction(alert.transactionId)}
+                onClick={() => canOpenTransaction && openTransaction(alert.transactionId, alert)}
                 onKeyDown={(event) => (
-                  canOpenTransaction && handleRowKeyDown(event, alert.transactionId)
+                  canOpenTransaction && handleRowKeyDown(event, alert.transactionId, alert)
                 )}
               >
-                <td data-label="Alert ID" title={displayValue(alert?.id)}>{displayValue(alert?.id)}</td>
-                <td data-label="Transaction ID" title={displayValue(alert?.transactionId)}>{displayValue(alert?.transactionId)}</td>
-                <td className="vendor-cell" data-label="Vendor" title={displayValue(alert?.vendor)}>
-                  {displayValue(alert?.vendor)}
-                </td>
-                <td className="alert-type-table-cell" data-label="Alert Type">
-                  <div className="alert-type-cell-content">
-                    <span className="alert-table-icon" style={{ background: bg, color }} aria-hidden="true">
-                      <Icon width={15} height={15} />
-                    </span>
-                    <span className="alert-type-copy">
-                      <strong>{displayValue(alert?.title)}</strong>
-                      <span>{displayValue(alert?.reasonText)}</span>
-                    </span>
+                <td className="alert-type-table-cell" data-label="Alert">
+                  <div className="alert-type-cell-content"><span className="alert-table-icon" style={{ background: bg, color }} aria-hidden="true"><Icon width={15} height={15} /></span>
+                    <div className="alert-type-copy"><strong>{displayValue(alert?.title)}</strong><span>{displayValue(alert?.reasonText, '')}</span><Reference value={alert?.id} /></div>
                   </div>
                 </td>
-                <td data-label={`Time (${DISPLAY_TIME_ZONE_LABEL})`}><DateTime value={alert?.timestamp} compact showZone={false} /></td>
-                <td data-label="Risk Score">{formatScore(alert?.riskScore)}</td>
-                <td data-label="Risk Level">
-                  <span className={riskStatusPillClass(riskLevel)}>{riskLevel}</span>
-                </td>
-                <td data-label="Review Status">
-                  <span className={`alert-review-badge ${isReviewed ? 'is-reviewed' : 'is-active'}`}>
-                    {isReviewed ? 'Reviewed' : 'Active'}
-                  </span>
-                </td>
-                <td data-label="Assigned To"><span className="assignment-unavailable" aria-label="No assignment available">—</span></td>
+                <td data-label="Transaction"><span>{displayValue(alert?.vendor, '—')}</span><span className="secondary-metadata" title={alert?.transactionId}>{shortReference(alert?.transactionId)}</span></td>
+                <td data-label="Risk"><span className={riskStatusPillClass(riskLevel)}>{riskLevel}</span><span className="secondary-metadata">Score {formatScore(alert?.riskScore)}</span></td>
+                <td data-label="Status"><span className={`alert-review-badge ${isReviewed ? 'is-reviewed' : 'is-active'}`}>{isReviewed ? 'Reviewed' : alert?.status === 'Active' ? 'Active' : 'Unavailable'}</span></td>
+                <td data-label="Assigned to">{alert.assignment?.assigneeName ?? '—'}</td>
+                <td data-label="Time"><DateTime value={alert?.timestamp} compact /></td>
                 <td className="alert-actions-cell" data-label="Actions">
                   <div className="alert-actions">
                     {canEscalateToCase && (
@@ -124,7 +83,7 @@ export default function AlertsTable({ alerts, onMarkReviewed, canAssign = false,
                     {!isReviewed && canOpenTransaction && (
                       <button
                         type="button"
-                        className="btn btn-secondary alert-review-button"
+                        className="btn btn-secondary alert-review-button" disabled={reviewing} aria-busy={reviewing}
                         aria-label={`Mark alert ${displayValue(alert?.id)} as reviewed`}
                         onClick={(event) => {
                           event.stopPropagation();
@@ -142,7 +101,7 @@ export default function AlertsTable({ alerts, onMarkReviewed, canAssign = false,
                         aria-label={`View transaction ${alert.transactionId}`}
                         onClick={(event) => {
                           event.stopPropagation();
-                          openTransaction(alert.transactionId);
+                          openTransaction(alert.transactionId, alert);
                         }}
                         onKeyDown={(event) => event.stopPropagation()}
                       >

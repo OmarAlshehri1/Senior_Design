@@ -84,9 +84,9 @@ export default function Topbar({ mobileNavOpen, onMenuToggle, menuButtonRef, ide
           </div>
         )}
         {user && <button type="button" className="topbar-sign-out" disabled={signingOut} aria-busy={signingOut} onClick={handleSignOut}>{signingOut ? 'Signing out…' : 'Sign out'}</button>}
-        <span className="updated-time">
+        <span className="updated-time" title="Display timezone: Riyadh (UTC+3). Fields explicitly labelled UTC retain UTC.">
           <span>Data updated</span>
-          <strong><DateTime value={lastUpdated} timeOnly /></strong>
+          <strong><DateTime value={lastUpdated} timeOnly showZone /></strong>
         </span>
         <div className="notification-center-anchor">
           <button ref={notificationButtonRef} type="button" className="topbar-icon-btn notification-center-trigger" aria-label="Open notifications" aria-controls="notification-center" aria-expanded={notificationsOpen} onClick={toggleNotifications}>

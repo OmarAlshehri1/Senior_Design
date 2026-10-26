@@ -463,9 +463,9 @@ function LegacyReports() {
               </div>
               <Link
                 className="card-header-link"
-                to="/transactions?risk=high"
+                to="/transactions"
               >
-                View High-Risk Transactions
+                Browse Transactions
               </Link>
             </div>
 

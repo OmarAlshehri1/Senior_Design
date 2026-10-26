@@ -46,6 +46,7 @@ test('audit action definitions contain the stable accountability actions', () =>
     'BLOCK_REQUESTED', 'BLOCK_APPROVED', 'BLOCK_REJECTED', 'UNBLOCKED',
     'ORGANIZATION_SETTINGS_UPDATED',
     'BUSINESS_REPORT_CREATED',
+    'TEAM_CREATED', 'TEAM_UPDATED', 'TEAM_DEACTIVATED', 'TEAM_MEMBER_ADDED', 'TEAM_MEMBER_REMOVED', 'TEAM_MEMBER_TRANSFERRED',
   ]);
 });
 
@@ -54,7 +55,7 @@ test('audit outcomes are exactly success, failed, and denied', () => {
 });
 
 test('audit resource types cover the approved accountable resources', () => {
-  assert.deepEqual(Object.values(AUDIT_RESOURCE_TYPES), ['ACCOUNT', 'TRANSACTION', 'ALERT', 'ACCESS_REQUEST', 'USER', 'CASE', 'VENDOR', 'EVIDENCE', 'SETTINGS', 'REPORT']);
+  assert.deepEqual(Object.values(AUDIT_RESOURCE_TYPES), ['ACCOUNT', 'TRANSACTION', 'ALERT', 'ACCESS_REQUEST', 'USER', 'CASE', 'VENDOR', 'EVIDENCE', 'SETTINGS', 'REPORT', 'TEAM', 'TEAM_MEMBER']);
 });
 
 test('ReviewRecord normalization preserves immutable supported history fields', () => {

@@ -60,9 +60,9 @@ export function getDateTimePresentation(value, { utc = false } = {}) {
     zone: utc ? 'UTC' : DISPLAY_TIME_ZONE_LABEL };
 }
 
-export function formatTimestamp(value, { utc = false, showZone = true } = {}) {
+export function formatTimestamp(value, { utc = false, showZone = true, seconds = true } = {}) {
   const { date, time, zone } = getDateTimePresentation(value, { utc });
-  return time ? `${date}, ${time}${showZone ? ` (${zone})` : ''}` : date;
+  return time ? `${date}, ${seconds ? time : time.slice(0, 5)}${showZone ? ` (${zone})` : ''}` : date;
 }
 
 export function formatDate(value) {

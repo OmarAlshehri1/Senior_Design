@@ -15,7 +15,7 @@ export const DEFAULT_AUDIT_FILTERS = Object.freeze({
   search: '', actor: '', action: '', resourceType: '', outcome: '', date: '',
 });
 
-export const DEFAULT_AUDIT_PAGINATION = Object.freeze({ page: 1, pageSize: 25, total: 0 });
+export const DEFAULT_AUDIT_PAGINATION = Object.freeze({ page: 1, pageSize: 10, total: 0 });
 
 export function getAuditLogScope(role) {
   if (role === ROLE_KEYS.SUPERVISOR) return AUDIT_LOG_SCOPES.TEAM;

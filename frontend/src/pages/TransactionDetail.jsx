@@ -1,7 +1,7 @@
 import DateTime from '../components/DateTime.jsx';
-import { formatDate, formatTime } from '../utils/dateTime.js';
+import { formatDate } from '../utils/dateTime.js';
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useLocation } from 'react-router-dom';
 import useApp from '../context/useApp';
 import {
   displayValue,
@@ -74,7 +74,7 @@ function DetailError() {
 export default function TransactionDetail() {
   const { id } = useParams();
   const { getTransaction, getAlertForTransaction, markAlertReviewed, showNotification } = useApp();
-  const { effectiveRole } = useAuthorization();
+  const { effectiveRole, user } = useAuthorization();
   const currentTransaction = getTransaction(id);
   const [detailState, setDetailState] = useState(() => ({
     id,
@@ -82,7 +82,9 @@ export default function TransactionDetail() {
     transaction: currentTransaction,
     error: null,
   }));
-  const alert = getAlertForTransaction(id);
+  const location = useLocation();
+  const [linkedAlert, setLinkedAlert] = useState(null);
+  const alert = (linkedAlert?.ownerId === user?.id && linkedAlert?.alert?.transactionId === id ? linkedAlert.alert : null) ?? getAlertForTransaction(id) ?? (user?.id && location.state?.alertOwnerId === user.id && location.state?.alert?.transactionId === id ? location.state.alert : null);
   const [reviewHistory, setReviewHistory] = useState([]);
   const [alertReviewHistory, setAlertReviewHistory] = useState([]);
   const [reviewNote, setReviewNote] = useState('');
@@ -210,7 +212,8 @@ export default function TransactionDetail() {
     setReviewError('');
     try {
       const nextStatus = alertReviewState === 'Reviewed' ? 'ACTIVE' : 'REVIEWED';
-      await markAlertReviewed(transaction.id, nextStatus);
+      const reviewed = await markAlertReviewed(transaction.id, nextStatus, null, alert);
+      setLinkedAlert({ ownerId: user?.id, alert: reviewed });
       await refreshAlertReviewHistory();
       showNotification(nextStatus === 'ACTIVE' ? 'Alert review reopened.' : 'Alert marked as reviewed.', 'success');
     } catch (error) {
@@ -300,7 +303,7 @@ export default function TransactionDetail() {
           <DetailField label="Amount" value={formatAmount(transaction.amount, transaction.currency)} />
           <DetailField label="Currency" value={transaction.currency} />
           <DetailField label="Date" value={formatDate(transaction.timestamp)} />
-          <DetailField label="Time" value={formatTime(transaction.timestamp)} />
+          <DetailField label="Time" value={<DateTime value={transaction.timestamp} timeOnly />} />
         </dl>
       </section>
 
@@ -449,6 +452,7 @@ export default function TransactionDetail() {
           </div>
         </section>
 
+        {!alert && <section className="card related-alert-card"><div className="card-header"><h2>Alert activity</h2><Link className="btn btn-secondary" to="/alerts">Browse alerts</Link></div></section>}
         {alert && (
           <section className="card related-alert-card" aria-labelledby="related-alert-heading">
             <div className="card-header">

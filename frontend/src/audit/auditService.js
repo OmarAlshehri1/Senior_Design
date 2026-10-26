@@ -8,7 +8,7 @@ export function createAuditService(client = apiClient) {
     items: Object.freeze((page?.items ?? []).map(normalize).filter(Boolean)),
   });
   return Object.freeze({
-    getAuditEvents: async (query = {}) => adaptPage(await client.get('/audit-events', { query }), normalizeAuditEvent),
+    getAuditEvents: async (query = {}, options = {}) => adaptPage(await client.get('/audit-events', { ...options, query }), normalizeAuditEvent),
     getReviewHistory: async (resourceType, resourceId, query = {}) => adaptPage(await client.get(
       `/reviews/${encodeURIComponent(resourceType)}/${encodeURIComponent(resourceId)}`, { query }
     ), normalizeReviewRecord),

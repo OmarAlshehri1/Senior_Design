@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { DocIcon, ClipboardCheckIcon, TriangleAlertIcon, GaugeIcon } from './icons';
-import { DASHBOARD_RISK_LINKS } from '../utils/dashboard';
 
 function SummaryCard({ label, value, context, valueClass, iconClass, icon: Icon, to }) {
   const content = (
@@ -64,7 +63,6 @@ export default function SummaryCards({ summary, highRiskPercentage }) {
         iconClass="icon-red"
         icon={TriangleAlertIcon}
         context={`${highRiskPercentage}% of evaluated`}
-        to={DASHBOARD_RISK_LINKS.high}
       />
         <SummaryCard
         label="Average Risk Score"

@@ -26,7 +26,7 @@ export default function Pagination({
         {totalItems.toLocaleString('en-US')} {itemLabel}
       </p>
 
-      <nav className="pagination-pages" aria-label={`${itemLabel} pages`}>
+      {totalPages > 1 && <nav className="pagination-pages" aria-label={`${itemLabel} pages`}>
         <button
           type="button"
           className="pagination-button pagination-direction"
@@ -64,7 +64,7 @@ export default function Pagination({
         >
           Next
         </button>
-      </nav>
+      </nav>}
 
       <label className="pagination-page-size">
         <span>Rows per page</span>

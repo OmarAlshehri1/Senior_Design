@@ -257,7 +257,7 @@ export function AppProvider({ children }) {
         setAlertsLoading(true);
         setAlertsError(null);
         try {
-          const result = await alertsService.listAll({ signal: controller.signal });
+          const result = await alertsService.list({ query: { page: 1, page_size: 10 }, signal: controller.signal });
           if (!active) return;
           // Replace the snapshot: this also removes alerts that are no longer
           // visible after a role, team, or assignment change.
@@ -289,10 +289,10 @@ export function AppProvider({ children }) {
       realtimeService.disconnect();
     };
   }, []);
-  const markAlertReviewed = useCallback(async (transactionId, status = 'REVIEWED', note = null) => {
+  const markAlertReviewed = useCallback(async (transactionId, status = 'REVIEWED', note = null, linkedAlert = null) => {
     const alert = alerts.find(
       (item) => item.transactionId === transactionId
-    );
+    ) ?? (linkedAlert?.transactionId === transactionId ? linkedAlert : null);
 
     if (!alert?.id) {
       throw new Error('The alert could not be found.');

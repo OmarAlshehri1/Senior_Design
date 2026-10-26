@@ -68,10 +68,10 @@ test('Dashboard recent rendering distinguishes loading, error, valid empty and p
   assert.match(render(State, { ...props, empty: false }), /<table/);
 });
 
-test('User Management shows an explicit capability limit instead of inert global filters', async () => {
+test('User Management shows supported capabilities without developer-facing copy', async () => {
   const { UsersView } = await vite.ssrLoadModule('/src/pages/UserManagement.jsx');
   const html = render(UsersView, { users: [{ id: 'u1', name: 'Existing user', role: 'AUDITOR', accountStatus: 'ACTIVE' }] });
-  assert.match(html, /Global user search, role\/status filters and sorting are not supported/);
+  assert.doesNotMatch(html, /Global user search|not supported|user service/);
   assert.doesNotMatch(html, /<input|<select/);
   assert.match(html, /View User/);
 });
