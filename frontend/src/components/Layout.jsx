@@ -2,7 +2,6 @@ import { useMemo, useRef, useState } from 'react';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import Notification from './Notification';
-import PrimaryDatasetNotice from './PrimaryDatasetNotice';
 import useOverlayFocus from '../accessibility/useOverlayFocus.js';
 
 export default function Layout({ children, identity = null }) {
@@ -41,7 +40,7 @@ export default function Layout({ children, identity = null }) {
           mobileNavOpen={mobileNavOpen}
           onMenuToggle={() => setMobileNavOpen((open) => !open)}
         />
-        <main className="page-content"><PrimaryDatasetNotice />{children}</main>
+        <main className="page-content">{children}</main>
       </div>
       <Notification />
     </div>
