@@ -23,9 +23,9 @@ for (const [index,id] of actors.entries()) {
 await db.query("insert into public.audit_teams(name,supervisor_id,created_by) values('Primary test team',$1,$2)",[actors[1],actors[0]]);
 await db.exec("insert into public.transactions(id,amount,completeness_status) values('old-payment',5,'PARTIAL')");
 const dataset = await scalar(`insert into public.primary_datasets(dataset_key,label,source_schema,currency,expected_rows,expected_amount,expected_vendors,
-  model_version,model_sha256,model_bucket,model_object,model_threshold,scored_at,provenance)
+  source_sha256,model_version,model_sha256,model_bucket,model_object,model_threshold,scored_at,provenance)
   values('synthetic-test','Synthetic Payments','PAYMENTS_SIMULATION_WORKBOOK','USD',2,250,1,
-  'payments-primary-no-calendar-1.0.0',repeat('a',64),'private-models','test.joblib',99.51,clock_timestamp(),'{"registry_basis":"SIMULATION_WORKBOOK"}') returning id`);
+  repeat('b',64),'payments-primary-no-calendar-1.0.0',repeat('a',64),'private-models','test.joblib',99.51,clock_timestamp(),'{"registry_basis":"SIMULATION_WORKBOOK"}') returning id`);
 await db.query("insert into public.approved_vendors(dataset_id,vendor_id,vendor_name,source_reference) values($1,'V-1','Test Vendor','synthetic fixture')",[dataset]);
 const rows = [
   {id:'new-a',source_row:2,amount:100,primary_rule_mask:0,primary_rule_scaled:0,primary_ai_scaled:5000,primary_risk_scaled:2000},
@@ -94,9 +94,60 @@ test('same-date reports retain their dataset histories and recorded context', as
   assert.equal(summary.daily_summary.total_transactions,2);
 });
 
+test('operator retention preserves saved scores, workflows and legacy records', async () => {
+  await db.query("insert into public.review_records(resource_type,resource_id,transaction_id,actor_id,actor_name,actor_role,action,note) values('TRANSACTION','new-b','new-b',$1,'Admin','ADMIN','NOTE_ADDED','Retain evidence')",[actors[0]]);
+  const full=await scalar("select encode(sha256(convert_to(string_agg(id,E'\n' order by id),'UTF8')),'hex') from public.transactions where dataset_id=$1",[dataset]);
+  const kept=await scalar("select encode(sha256(convert_to('new-b','UTF8')),'hex')");
+  const args=[1,2,'b'.repeat(64),full,kept];
+  const preview=await scalar('select public.reduce_primary_payments($1,$2,$3,$4,$5,false)',args);
+  assert.equal(preview.applied,false);
+  assert.equal(preview.protected_records,1);
+  assert.equal(preview.summary.medium,1);
+  assert.equal(await scalar('select count(*)::int from public.transactions'),3);
+  await assert.rejects(db.query('select public.reduce_primary_payments($1,$2,$3,$4,$5,true)',[1,2,'b'.repeat(64),full,'0'.repeat(64)]),/selection changed/);
+  const applied=await scalar('select public.reduce_primary_payments($1,$2,$3,$4,$5,true)',args);
+  assert.equal(applied.removed_rows,1);
+  assert.equal(await scalar('select count(*)::int from public.application_transactions'),1);
+  assert.equal(await scalar("select primary_risk_scaled from public.transactions where id='new-b'"),6400);
+  assert.equal(await scalar('select count(*)::int from public.review_records'),1);
+  assert.equal(await scalar('select count(*)::int from public.primary_dataset_reductions'),1);
+  await assert.rejects(db.query("update public.primary_datasets set label='Changed' where id=$1",[dataset]),/sealed/);
+  assert.equal(await scalar("select has_function_privilege('service_role','public.reduce_primary_payments(integer,integer,text,text,text,boolean)','execute')"),false);
+  const restored=await scalar('select public.restore_primary_payment_reduction($1)',[applied.reduction_id]);
+  assert.equal(restored.active_rows,2);
+  assert.equal(await scalar('select count(*)::int from public.review_records'),1);
+  assert.equal(await scalar("select primary_risk_scaled from public.transactions where id='new-a'"),2000);
+});
+
 test('optimistic rollback retains both populations', async () => {
   await assert.rejects(db.query('select public.activate_primary_dataset(0::smallint,0::smallint)'),/selection changed/);
   await scalar('select public.activate_primary_dataset(0::smallint,$1::smallint)',[dataset]);
   assert.equal(await scalar('select count(*)::int from public.application_transactions'),1);
   assert.equal(await scalar('select count(*)::int from public.transactions'),3);
+});
+
+test('compressed rollback restores removed transactions, alerts and vendor identity exactly', async () => {
+  const ds=await scalar(`insert into public.primary_datasets(dataset_key,label,source_schema,currency,expected_rows,expected_amount,expected_vendors,
+    source_sha256,model_version,model_sha256,model_bucket,model_object,model_threshold,scored_at)
+    values('archive-roundtrip','Archive test','PAYMENTS_SIMULATION_WORKBOOK','USD',2,250,2,
+    repeat('c',64),'payments-primary-no-calendar-1.0.0',repeat('a',64),'private-models','test.joblib',99.51,now()) returning id`);
+  await db.query("insert into public.approved_vendors(dataset_id,vendor_id,vendor_name,source_reference) values($1,'ARCH-V1','Archived vendor','fixture'),($1,'ARCH-V2','Retained vendor','fixture')",[ds]);
+  const data=[{...rows[1],id:'archive-medium',vendor_id:'ARCH-V1',transaction_timestamp:'2026-09-01T00:00:00Z'},
+              {...rows[0],id:'archive-low',vendor_id:'ARCH-V2',transaction_timestamp:'2026-10-02T00:00:00Z'}];
+  await scalar('select public.import_primary_payment_batch($1::smallint,0,$2::jsonb)',[ds,JSON.stringify(data)]);
+  await scalar('select public.seal_primary_dataset($1::smallint)',[ds]);
+  await scalar('select public.create_primary_dataset_alerts($1::smallint)',[ds]);
+  await scalar('select public.activate_primary_dataset($1::smallint,0::smallint)',[ds]);
+  const before={transaction:await scalar("select to_jsonb(t) from public.transactions t where id='archive-medium'"),
+    alert:await scalar("select to_jsonb(a) from public.alerts a where transaction_id='archive-medium'"),
+    vendor:await scalar("select to_jsonb(v) from public.approved_vendors v where vendor_id='ARCH-V1'")};
+  const full=await scalar("select encode(sha256(convert_to(string_agg(id,chr(10) order by id),'UTF8')),'hex') from public.transactions where dataset_id=$1",[ds]);
+  const kept=await scalar("select encode(sha256(convert_to('archive-low','UTF8')),'hex')");
+  const reduced=await scalar('select public.reduce_primary_payments(1,2,$1,$2,$3,true)',['c'.repeat(64),full,kept]);
+  assert.equal(reduced.removed_alerts,1);
+  assert.equal(reduced.removed_vendors,1);
+  await scalar('select public.restore_primary_payment_reduction($1)',[reduced.reduction_id]);
+  assert.deepEqual(await scalar("select to_jsonb(t) from public.transactions t where id='archive-medium'"),before.transaction);
+  assert.deepEqual(await scalar("select to_jsonb(a) from public.alerts a where transaction_id='archive-medium'"),before.alert);
+  assert.deepEqual(await scalar("select to_jsonb(v) from public.approved_vendors v where vendor_id='ARCH-V1'"),before.vendor);
 });

@@ -1,5 +1,7 @@
 # Payments primary dataset release — 26 October 2026
 
+Current state: the owner subsequently authorized reducing the active population to 47,531 latest Payments records. The [reduction record](PAYMENTS_47531_REDUCTION.md) describes the retained classifications, protected history and compressed rollback archive. The 355,426-row figures below describe the initial cutover.
+
 The owner requested the entire edited workbook in the main hosted application, selected the Payments-specific model, and chose to retain Supabase Free through storage optimization. Feed Review, Experimental Review and all four ingestion flags stay disabled. No billing upgrade or reduction of the selected population is authorized.
 
 ## Reviewed source and inference
