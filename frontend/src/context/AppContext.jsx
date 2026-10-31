@@ -3,7 +3,7 @@ import AppContext from './contextStore';
 import { currentDataSource } from '../data/dataSource';
 import { deriveDashboardSummary } from '../utils/dashboard';
 import { getRiskLevel, RISK_LEVELS } from '../utils/risk';
-import { findTransactionById } from '../utils/transactions';
+import { EMPTY_TRANSACTION_FILTERS, findTransactionById } from '../utils/transactions';
 import { alertsService } from '../services/alertsService';
 import { realtimeService } from '../services/realtimeService';
 import { transactionsService } from '../services/transactionsService';
@@ -71,6 +71,8 @@ export function AppProvider({ children }) {
   const [transactionsPageSize, setTransactionsPageSize] = useState(DEFAULT_TRANSACTIONS_PAGE_SIZE);
   const [transactionsSearch, setTransactionsSearch] = useState('');
   const [transactionsSortBy, setTransactionsSortBy] = useState('newest');
+  const [transactionsFilters, setTransactionsFilters] = useState(EMPTY_TRANSACTION_FILTERS);
+  const [transactionFilterOptions, setTransactionFilterOptions] = useState({ status: 'loading', value: null });
   const [alerts, setAlerts] = useState(initialAlerts);
   const [alertsLoading, setAlertsLoading] = useState(true);
   const [alertsError, setAlertsError] = useState(null);
@@ -200,6 +202,10 @@ export function AppProvider({ children }) {
             page_size: transactionsPageSize,
             search: transactionsSearch || undefined,
             sort_by: transactionsSortBy,
+            // Authoritative server filters, applied before paging and count.
+            risk: transactionsFilters.risk || undefined,
+            rule_status: transactionsFilters.ruleStatus || undefined,
+            category: transactionsFilters.category || undefined,
           },
           signal: controller.signal,
         });
@@ -237,7 +243,16 @@ export function AppProvider({ children }) {
     transactionsPageSize,
     transactionsSearch,
     transactionsSortBy,
+    transactionsFilters,
   ]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    transactionsService.getFilterOptions({ signal: controller.signal })
+      .then((value) => setTransactionFilterOptions({ status: 'success', value }))
+      .catch(() => { if (!controller.signal.aborted) setTransactionFilterOptions({ status: 'error', value: null }); });
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -434,6 +449,9 @@ export function AppProvider({ children }) {
       setTransactionsSearch,
       transactionsSortBy,
       setTransactionsSortBy,
+      transactionsFilters,
+      setTransactionsFilters,
+      transactionFilterOptions,
       alerts,
       alertsLoading,
       alertsError,
@@ -467,6 +485,8 @@ export function AppProvider({ children }) {
       transactionsPageSize,
       transactionsSearch,
       transactionsSortBy,
+      transactionsFilters,
+      transactionFilterOptions,
       alerts,
       alertsLoading,
       alertsError,

@@ -14,16 +14,23 @@ import useAuthorization from '../auth/useAuthorization.js';
 import { dashboardService } from '../services/dashboardService.js';
 import AuditAnalytics from '../components/AuditAnalytics.jsx';
 import { PRESENTATION_FEATURES } from '../config/presentation.js';
+import { PageHeader, Panel } from '../components/ui/Layout.jsx';
+import { EmptyState, ErrorState, LoadingState } from '../components/RequestStateView.jsx';
+import { ArrowRightIcon } from '../components/icons.jsx';
 
 export default function Dashboard() {
   const { effectiveRole } = useAuthorization();
   const [authoritative, setAuthoritative] = useState(null);
   const [summaryError, setSummaryError] = useState(null);
+  const [summaryRequest, setSummaryRequest] = useState(0);
   useEffect(() => {
-    dashboardService.getSummary().then(setAuthoritative).catch((reason) => {
-      setSummaryError(reason instanceof Error ? reason.message : 'Dashboard summary is unavailable.');
+    let active = true;
+    setSummaryError(null);
+    dashboardService.getSummary().then((value) => { if (active) setAuthoritative(value); }).catch((reason) => {
+      if (active) setSummaryError(reason instanceof Error ? reason.message : 'Dashboard summary is unavailable.');
     });
-  }, []);
+    return () => { active = false; };
+  }, [summaryRequest]);
   const {
     transactions,
     alerts,
@@ -39,72 +46,54 @@ export default function Dashboard() {
 
   const recent = usePagedResource(dashboardRecentService.list, { page: 1, page_size: 6 });
   const recentTransactions = recent.items;
-  const recentAlerts = sortNewestFirst(alerts).slice(0, 3);
+  const recentAlerts = sortNewestFirst(alerts).slice(0, 5);
 
   return (
-    <>
-      <div className="page-header dashboard-page-header">
-        <div>
-          <h1>Dashboard</h1>
-          <p>Overview of transaction auditing activity and risk status.</p>
-        </div>
-        {import.meta.env.DEV && (
+    <div className="page dashboard-page">
+      <PageHeader title="Dashboard" description="Where risk sits today and what needs attention next."
+        actions={import.meta.env.DEV && (
           <button
             type="button"
-            className="btn btn-primary"
+            className="btn btn-secondary"
             onClick={simulateNewTransaction}
             disabled={simulating}
           >
             {simulating ? 'Adding Test Transaction...' : 'Add Test Transaction'}
           </button>
-        )}
-      </div>
+        )} />
 
-      {currentSummary && <><SummaryCards summary={currentSummary} highRiskPercentage={currentOverview.high} /><p className="dashboard-active-alerts">{currentSummary.activeAlerts} active alerts in your authorized scope.</p></>}
-      {summaryError && <div className="request-state request-state-error" role="alert">{summaryError}</div>}
+      {summaryError
+        ? <div className="panel"><ErrorState compact title="Overview unavailable" message={summaryError} onRetry={() => setSummaryRequest((value) => value + 1)} /></div>
+        : <SummaryCards summary={currentSummary} highRiskPercentage={currentOverview?.high} loading={!currentSummary} />}
 
-      <div className="dashboard-section-heading">
-        <div>
-          <h2>Risk and transaction activity</h2>
-          <p>Current risk distribution and the latest evaluated transactions.</p>
-        </div>
-      </div>
+      <div className="dashboard-grid">
+        <Panel id="risk-overview-heading" className="dashboard-risk" title="Risk distribution" description="Latest evaluation of every transaction.">
+          {currentCounts
+            ? <DonutChart counts={currentCounts} percentages={currentOverview} total={currentCounts.low + currentCounts.medium + currentCounts.high} />
+            : summaryError ? <EmptyState compact title="Risk distribution unavailable" /> : <LoadingState compact message="Loading risk distribution…" />}
+        </Panel>
 
-      <div className="dashboard-main-grid">
-        <section className="card risk-overview-card dashboard-analysis-panel" aria-labelledby="risk-overview-heading">
-          <div className="card-header">
-            <h2 id="risk-overview-heading">Transaction Risk Overview</h2>
-          </div>
-          {currentCounts && <DonutChart counts={currentCounts} percentages={currentOverview} total={currentCounts.low + currentCounts.medium + currentCounts.high} />}
-        </section>
-
-        <section className="card recent-transactions-card dashboard-analysis-panel" aria-labelledby="recent-transactions-heading">
-          <div className="card-header">
-            <h2 id="recent-transactions-heading">Recent Transactions</h2>
-            <Link className="btn btn-secondary" to="/transactions">View All Transactions</Link>
-          </div>
-          <RecentCollectionState loading={recent.status === 'loading'} error={recent.error}
-            empty={recentTransactions.length === 0} label="recent transactions" onRetry={() => recent.resource.load()}>
-            <RecentTransactionsTable transactions={recentTransactions} highlightId={lastSimulatedTransactionId} />
+        <Panel id="recent-alerts-heading" className="dashboard-alerts" title="Recent alerts" description="Newest alerts in your scope." flush
+          actions={<Link className="text-link" to="/alerts">View alerts<ArrowRightIcon aria-hidden="true" /></Link>}>
+          <RecentCollectionState loading={alertsLoading} error={alertsError} empty={recentAlerts.length === 0} label="recent alerts">
+            <AlertsList alerts={recentAlerts} variant="dashboard" />
           </RecentCollectionState>
-        </section>
+        </Panel>
       </div>
 
-      <section className="card dashboard-alerts-card" aria-labelledby="recent-alerts-heading">
-        <div className="card-header">
-          <h2 id="recent-alerts-heading">Recent Alerts</h2>
-          <Link className="card-header-link" to="/alerts">View All Alerts</Link>
-        </div>
-        <RecentCollectionState loading={alertsLoading} error={alertsError} empty={recentAlerts.length === 0} label="recent alerts">
-          <AlertsList alerts={recentAlerts} variant="dashboard" />
+      <Panel id="recent-transactions-heading" title="Recent transactions" description="Latest evaluated payments." flush
+        actions={<Link className="text-link" to="/transactions">View transactions<ArrowRightIcon aria-hidden="true" /></Link>}>
+        <RecentCollectionState loading={recent.status === 'loading'} error={recent.error}
+          empty={recentTransactions.length === 0} label="recent transactions" onRetry={() => recent.resource.load()}>
+          <RecentTransactionsTable transactions={recentTransactions} highlightId={lastSimulatedTransactionId} />
         </RecentCollectionState>
-      </section>
+      </Panel>
 
       {PRESENTATION_FEATURES.assuranceAnalytics && <AuditAnalytics />}
 
       {PRESENTATION_FEATURES.roleWorkspace && (
         <RoleWorkspace role={effectiveRole} transactions={transactions} />
       )}
-    </>
+    </div>
   );
 }

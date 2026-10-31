@@ -6,6 +6,7 @@ export function createTransactionsService(client = apiClient) {
     list: async (options = {}) => adaptTransactionCollection(
       await client.get('/transactions', options)
     ),
+    getFilterOptions: (options = {}) => client.get('/transactions/filter-options', options),
     getById: async (transactionId, options = {}) => adaptTransaction(
       await client.get(`/transactions/${encodeURIComponent(transactionId)}`, options)
     ),

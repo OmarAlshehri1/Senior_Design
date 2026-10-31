@@ -16,21 +16,33 @@ export function formatScore(score) {
 }
 
 export function ruleStatusPillClass(ruleStatus) {
-  if (ruleStatus === 'Passed') return 'pill pill-passed';
-  if (ruleStatus === 'Review') return 'pill pill-review';
-  return 'pill pill-processing';
+  if (ruleStatus === 'Passed') return 'badge badge-low';
+  if (ruleStatus === 'Review') return 'badge badge-medium';
+  return 'badge badge-neutral';
+}
+
+export function riskTone(status) {
+  if (status === 'High Risk') return 'high';
+  if (status === 'Medium Risk') return 'medium';
+  if (status === 'Low Risk') return 'low';
+  return 'neutral';
 }
 
 export function riskStatusPillClass(status) {
-  if (status === 'High Risk') return 'pill pill-high';
-  if (status === 'Medium Risk') return 'pill pill-medium';
-  if (status === 'Low Risk') return 'pill pill-low';
-  return 'pill pill-processing-status';
+  return `badge badge-${riskTone(status)} badge-risk`;
 }
 
 export function riskBadgeClass(status) {
-  if (status === 'High Risk') return 'risk-badge badge-high';
-  if (status === 'Medium Risk') return 'risk-badge badge-medium';
-  if (status === 'Low Risk') return 'risk-badge badge-low';
-  return 'risk-badge badge-neutral';
+  return riskStatusPillClass(status);
+}
+
+// Presentation tones for recorded workflow states; labels always accompany color.
+export const WORKFLOW_TONES = Object.freeze({ blue: 'info', amber: 'medium', red: 'high', purple: 'violet', green: 'low', slate: 'neutral' });
+export const SLA_TONES = Object.freeze({ complete: 'low', overdue: 'high', 'due-soon': 'medium', 'on-track': 'neutral', neutral: 'neutral' });
+export const MONITORING_TONES = Object.freeze({ NORMAL: 'neutral', WATCHLISTED: 'medium', BLOCKED: 'high' });
+export const PRIORITY_TONES = Object.freeze({ LOW: 'neutral', MEDIUM: 'medium', HIGH: 'high', CRITICAL: 'high' });
+
+export function titleCase(value) {
+  if (typeof value !== 'string' || !value) return '—';
+  return value.toLowerCase().split('_').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
 }

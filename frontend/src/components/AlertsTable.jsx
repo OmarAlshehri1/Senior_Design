@@ -2,13 +2,9 @@ import { shortReference } from '../utils/presentation.js';
 import Reference from './Reference.jsx';
 import DateTime from './DateTime.jsx';
 import { useNavigate } from 'react-router-dom';
-import { getAlertPresentation } from './alertUtils';
-import {
-  displayValue,
-  formatScore,
-  riskStatusPillClass,
-} from './statusUtils';
+import { displayValue, riskStatusPillClass } from './statusUtils';
 import { getAlertRiskLevel } from '../utils/alerts';
+import { ActionMenu } from './ui/Overlays.jsx';
 
 export default function AlertsTable({ alerts, alertOwnerId, onMarkReviewed, reviewing = false, canAssign = false, onAssign, canEscalateToCase = false, onCreateCase }) {
   const navigate = useNavigate();
@@ -24,16 +20,16 @@ export default function AlertsTable({ alerts, alertOwnerId, onMarkReviewed, revi
   };
 
   return (
-    <div className="alerts-table-wrap">
-      <table className="data-table alerts-table task-alerts-table">
-        <thead><tr><th>Alert</th><th>Transaction</th><th>Risk</th><th>Status</th><th>Assigned to</th><th>Time</th><th>Actions</th></tr></thead>
+    <div className="table-wrap">
+      <table className="data-table alerts-table">
+        <thead><tr><th>Alert</th><th>Transaction</th><th>Risk</th><th>Status</th><th>Assigned to</th><th>Raised</th><th><span className="sr-only">Actions</span></th></tr></thead>
         <tbody>
           {alerts.map((alert) => {
-            const { Icon, bg, color } = getAlertPresentation(alert?.title ?? '');
             const riskLevel = getAlertRiskLevel(alert) ?? 'Not available';
             const canOpenTransaction = typeof alert?.transactionId === 'string'
               && alert.transactionId.trim().length > 0;
             const isReviewed = alert?.status === 'Reviewed';
+            const statusLabel = isReviewed ? 'Reviewed' : alert?.status === 'Active' ? 'Active' : 'Unavailable';
 
             return (
               <tr
@@ -49,41 +45,22 @@ export default function AlertsTable({ alerts, alertOwnerId, onMarkReviewed, revi
                   canOpenTransaction && handleRowKeyDown(event, alert.transactionId, alert)
                 )}
               >
-                <td className="alert-type-table-cell" data-label="Alert">
-                  <div className="alert-type-cell-content"><span className="alert-table-icon" style={{ background: bg, color }} aria-hidden="true"><Icon width={15} height={15} /></span>
-                    <div className="alert-type-copy"><strong>{displayValue(alert?.title)}</strong><span>{displayValue(alert?.reasonText, '')}</span><Reference value={alert?.id} /></div>
-                  </div>
+                <td data-label="Alert" className="alert-cell">
+                  <span className="cell-primary">{displayValue(alert?.title)}</span>
+                  {alert?.reasonText && <span className="secondary-metadata alert-reason">{alert.reasonText}</span>}
+                  <Reference value={alert?.id} />
                 </td>
-                <td data-label="Transaction"><span>{displayValue(alert?.vendor, '—')}</span><span className="secondary-metadata" title={alert?.transactionId}>{shortReference(alert?.transactionId)}</span></td>
-                <td data-label="Risk"><span className={riskStatusPillClass(riskLevel)}>{riskLevel}</span><span className="secondary-metadata">Score {formatScore(alert?.riskScore)}</span></td>
-                <td data-label="Status"><span className={`alert-review-badge ${isReviewed ? 'is-reviewed' : 'is-active'}`}>{isReviewed ? 'Reviewed' : alert?.status === 'Active' ? 'Active' : 'Unavailable'}</span></td>
-                <td data-label="Assigned to">{alert.assignment?.assigneeName ?? '—'}</td>
-                <td data-label="Time"><DateTime value={alert?.timestamp} compact /></td>
-                <td className="alert-actions-cell" data-label="Actions">
-                  <div className="alert-actions">
-                    {canEscalateToCase && (
-                      <button type="button" className="btn btn-secondary alert-case-button" onClick={(event) => { event.stopPropagation(); onCreateCase?.(alert); }} onKeyDown={(event) => event.stopPropagation()}>
-                        Create Case
-                      </button>
-                    )}
-                    {canAssign && (
-                      <button
-                        type="button"
-                        className="btn btn-secondary alert-assign-button"
-                        aria-label={`Assign alert ${displayValue(alert?.id)}`}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          onAssign?.(alert);
-                        }}
-                        onKeyDown={(event) => event.stopPropagation()}
-                      >
-                        Assign
-                      </button>
-                    )}
+                <td data-label="Transaction"><span className="cell-primary truncate" title={alert?.vendor}>{displayValue(alert?.vendor, '—')}</span><span className="secondary-metadata reference-text" title={alert?.transactionId}>{shortReference(alert?.transactionId)}</span></td>
+                <td data-label="Risk"><span className={riskStatusPillClass(riskLevel)}>{riskLevel}</span>{Number.isFinite(alert?.riskScore) && <span className="secondary-metadata">Score {alert.riskScore}</span>}</td>
+                <td data-label="Status"><span className={`badge ${isReviewed ? 'badge-low' : statusLabel === 'Active' ? 'badge-info' : 'badge-neutral'}`}>{statusLabel}</span></td>
+                <td data-label="Assigned to">{alert.assignment?.assigneeName ?? <span className="muted">Unassigned</span>}</td>
+                <td data-label="Raised"><DateTime value={alert?.timestamp} compact /></td>
+                <td className="cell-actions" data-label="Actions">
+                  <div className="row-actions">
                     {!isReviewed && canOpenTransaction && (
                       <button
                         type="button"
-                        className="btn btn-secondary alert-review-button" disabled={reviewing} aria-busy={reviewing}
+                        className="btn btn-secondary btn-sm" disabled={reviewing} aria-busy={reviewing}
                         aria-label={`Mark alert ${displayValue(alert?.id)} as reviewed`}
                         onClick={(event) => {
                           event.stopPropagation();
@@ -94,20 +71,11 @@ export default function AlertsTable({ alerts, alertOwnerId, onMarkReviewed, revi
                         Mark Reviewed
                       </button>
                     )}
-                    {canOpenTransaction && (
-                      <button
-                        type="button"
-                        className="alert-view-transaction"
-                        aria-label={`View transaction ${alert.transactionId}`}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          openTransaction(alert.transactionId, alert);
-                        }}
-                        onKeyDown={(event) => event.stopPropagation()}
-                      >
-                        View
-                      </button>
-                    )}
+                    <ActionMenu label={`More actions for alert ${shortReference(alert?.id)}`} items={[
+                      canOpenTransaction && { label: 'View transaction', onSelect: () => openTransaction(alert.transactionId, alert) },
+                      canAssign && { label: alert.assignment?.assigneeName ? 'Reassign' : 'Assign', onSelect: () => onAssign?.(alert) },
+                      canEscalateToCase && { label: 'Create case', onSelect: () => onCreateCase?.(alert) },
+                    ]} />
                   </div>
                 </td>
               </tr>

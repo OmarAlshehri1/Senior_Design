@@ -5,6 +5,7 @@ export function createBusinessReportController(service, saveFile) {
     list: { status: 'loading', refreshing: false, page: 1, items: [], total: null, error: '', unavailable: false },
     selected: null,
     preview: { status: 'idle', html: '', reportId: '', error: '' },
+    detail: { status: 'idle', report: null, reportId: '', error: '' },
     busy: { generate: false, pdf: false, xlsx: false },
     errors: { generate: '', pdf: '', xlsx: '' },
     notice: '',
@@ -12,6 +13,7 @@ export function createBusinessReportController(service, saveFile) {
   const listeners = new Set();
   let listController, previewController;
   let listSequence = 0, previewSequence = 0, lifetime = 0;
+  let detailController;
   const publish = (patch) => { state = { ...state, ...patch }; listeners.forEach((listener) => listener()); };
   const operation = (name, busy, error = '') => publish({
     busy: { ...state.busy, [name]: busy }, errors: { ...state.errors, [name]: error },
@@ -19,12 +21,31 @@ export function createBusinessReportController(service, saveFile) {
   const message = (error) => error?.code === 'CONFIGURATION_UNAVAILABLE'
     ? 'The reporting integration is unavailable.' : error?.message || 'The request could not be completed.';
 
+  // The management summary is read separately; its failure never blocks preview or exports.
+  const loadDetail = async (report, request) => {
+    detailController?.abort();
+    detailController = new AbortController();
+    if (!report) { publish({ detail: { status: 'idle', report: null, reportId: '', error: '' } }); return; }
+    publish({ detail: { status: 'loading', report: null, reportId: report.id, error: '' } });
+    try {
+      if (typeof service.get !== 'function') throw new Error('The report summary is unavailable.');
+      const value = await service.get(report.id, { signal: detailController.signal });
+      if (request !== previewSequence) return;
+      if (!value?.document?.metrics) throw new Error('The report summary could not be read.');
+      publish({ detail: { status: 'success', report: value, reportId: report.id, error: '' } });
+    } catch (error) {
+      if (request !== previewSequence) return;
+      publish({ detail: { status: 'error', report: null, reportId: report.id, error: message(error) } });
+    }
+  };
+
   const select = async (report) => {
     const request = ++previewSequence;
     previewController?.abort();
     previewController = new AbortController();
     publish({ selected: report, errors: { ...state.errors, pdf: '', xlsx: '' },
       preview: { status: report ? 'loading' : 'idle', html: '', reportId: report?.id ?? '', error: '' } });
+    loadDetail(report, request);
     if (!report) return;
     try {
       const blob = await service.download(report.id, 'html', { signal: previewController.signal });
@@ -70,6 +91,7 @@ export function createBusinessReportController(service, saveFile) {
     loadList,
     selectId: (id) => select(state.list.items.find((item) => item.id === id) ?? null),
     retryPreview: () => select(state.selected),
+    retryDetail: () => loadDetail(state.selected, previewSequence),
     generate: async (input) => {
       if (state.busy.generate) return;
       const generation = lifetime;
@@ -108,6 +130,7 @@ export function createBusinessReportController(service, saveFile) {
       previewSequence += 1;
       listController?.abort();
       previewController?.abort();
+      detailController?.abort();
     },
   };
 }

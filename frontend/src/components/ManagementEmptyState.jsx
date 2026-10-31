@@ -1,10 +1,5 @@
-export default function ManagementEmptyState({ title, description }) {
-  return (
-    <div className="management-empty-state" role="status">
-      <span aria-hidden="true">—</span>
-      <h3>{title}</h3>
-      {description && <p>{description}</p>}
-    </div>
-  );
-}
+import { EmptyState } from './RequestStateView.jsx';
 
+export default function ManagementEmptyState({ title, description, filtered = false, action = null }) {
+  return <EmptyState compact title={title} message={description} filtered={filtered} action={action} />;
+}

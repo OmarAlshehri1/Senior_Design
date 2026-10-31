@@ -3,12 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   displayValue,
   formatAmount,
-  formatScore,
   ruleStatusPillClass,
   riskStatusPillClass,
 } from './statusUtils';
 import { getTransactionRiskLevel } from '../utils/risk';
 import VendorMonitoringIndicator from './VendorMonitoringIndicator.jsx';
+import { ChevronRightIcon } from './icons.jsx';
 
 export default function TransactionsTable({ transactions, highlightId }) {
   const navigate = useNavigate();
@@ -27,11 +27,11 @@ export function TransactionsTableView({ transactions, highlightId, onOpenTransac
   };
 
   return (
-    <div className="transactions-table-wrap">
-      <table className="data-table transactions-table task-transactions-table">
+    <div className="table-wrap">
+      <table className="data-table transactions-table">
         <thead>
           <tr>
-            <th>Transaction</th><th>Vendor</th><th>Amount</th><th>Risk</th><th>Status</th><th>Time</th><th>Scores</th>
+            <th>Transaction</th><th>Vendor</th><th>Amount</th><th>Rule status</th><th>Risk</th><th>Time</th><th><span className="sr-only">Open</span></th>
           </tr>
         </thead>
         <tbody>
@@ -56,13 +56,13 @@ export function TransactionsTableView({ transactions, highlightId, onOpenTransac
                   canOpenTransaction && handleRowKeyDown(event, transaction.id)
                 )}
               >
-                <td data-label="Transaction"><span className="transaction-reference" title={transactionId}>{transactionId}</span><span className="secondary-metadata">{displayValue(transaction?.category)}</span></td>
-                <td className="vendor-cell" data-label="Vendor" title={vendor}><span className="vendor-cell-content">{transaction?.vendorId ? <Link to={`/vendors/${transaction.vendorId}`} onClick={(event) => event.stopPropagation()}>{vendor}</Link> : vendor}<VendorMonitoringIndicator status={transaction?.vendorMonitoringStatus} /></span></td>
-                <td data-label="Amount">{formatAmount(transaction?.amount, transaction?.currency)}</td>
-                <td data-label="Risk"><span className={riskStatusPillClass(riskLevel)}>{riskLevel}</span></td>
-                <td data-label="Status"><span className={ruleStatusPillClass(transaction?.ruleStatus)}>{displayValue(transaction?.ruleStatus)}</span></td>
+                <td data-label="Transaction" className="cell-reference"><span className="reference-text truncate" title={transactionId}>{transactionId}</span>{transaction?.category && <span className="secondary-metadata">{transaction.category}</span>}</td>
+                <td data-label="Vendor" title={vendor}><span className="vendor-cell-content">{transaction?.vendorId ? <Link to={`/vendors/${transaction.vendorId}`} onClick={(event) => event.stopPropagation()}>{vendor}</Link> : vendor}<VendorMonitoringIndicator status={transaction?.vendorMonitoringStatus} /></span></td>
+                <td data-label="Amount" className="numeric">{formatAmount(transaction?.amount, transaction?.currency)}</td>
+                <td data-label="Rule status"><span className={ruleStatusPillClass(transaction?.ruleStatus)}>{displayValue(transaction?.ruleStatus)}</span></td>
+                <td data-label="Risk"><span className={riskStatusPillClass(riskLevel)}>{riskLevel}</span>{Number.isFinite(transaction?.riskScore) && <span className="secondary-metadata">Score {transaction.riskScore}</span>}</td>
                 <td data-label="Time"><DateTime value={transaction?.timestamp} compact /></td>
-                <td data-label="Scores"><span className="secondary-metadata">AI {formatScore(transaction?.aiScore)}</span><span className="secondary-metadata">Risk {formatScore(transaction?.riskScore)}</span></td>
+                <td data-label="" className="cell-actions">{canOpenTransaction && <span className="row-chevron" aria-hidden="true"><ChevronRightIcon /></span>}</td>
               </tr>
             );
           })}

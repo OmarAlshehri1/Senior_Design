@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { eventLabel } from '../utils/presentation.js';
 import ManagementEmptyState from '../components/ManagementEmptyState.jsx';
+import { MetricStrip, PageHeader, Panel } from '../components/ui/Layout.jsx';
+import { SelectField } from '../components/ui/Filters.jsx';
+import { LoadingState } from '../components/RequestStateView.jsx';
 import TeamActivityFeed from '../components/TeamActivityFeed.jsx';
 import { teamService } from '../team/teamService.js';
 import useAuthorization from '../auth/useAuthorization.js';
@@ -94,60 +97,65 @@ export default function TeamActivity() {
   }));
 
   return (
-    <div className="management-page team-activity-page">
-      <div className="page-header"><div><h1>Team Activity</h1><p>Review team workload and recent audit activity.</p></div>
-        {effectiveRole === 'ADMIN' && teams.length > 0 && <label className="alerts-select-control"><span className="control-label">Team</span>
-          <select className="select-input" value={teamId} onChange={(event) => setTeamId(event.target.value)}><option value="">All Teams</option>
-            {teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}</select></label>}
-      </div>
-      {error && <p role="alert" className="integration-note">{error}</p>}
-      <section aria-labelledby="team-overview-heading"><div className="management-section-heading"><div><h2 id="team-overview-heading">Team Overview</h2><p>Current team capacity and audit workload.</p></div></div>
-        <div className="management-summary">{metrics.map(([label, value]) => <article key={label}><span>{label}</span><strong>{loading ? '…' : (value ?? '—')}</strong></article>)}</div>
+    <div className="page team-activity-page">
+      <PageHeader title="Team Activity" description="Workload and recent actions for your audit team."
+        actions={effectiveRole === 'ADMIN' && teams.length > 0 && <SelectField label="Team" value={teamId} onChange={setTeamId}
+          options={[{ value: '', label: 'All teams' }, ...teams.map((team) => ({ value: team.id, label: team.name }))]} />} />
+      {error && <p role="alert" className="inline-alert">{error}</p>}
+      <section aria-labelledby="team-overview-heading">
+        <h2 id="team-overview-heading" className="sr-only">Team Overview</h2>
+        <MetricStrip label="Team overview" loading={loading} items={[
+          { label: metrics[0][0], value: metrics[0][1], hint: 'In the selected team', tone: 'primary' },
+          { label: metrics[1][0], value: metrics[1][1], hint: 'Alerts assigned now' },
+          { label: metrics[2][0], value: metrics[2][1], hint: 'Assigned, not yet reviewed', tone: 'medium' },
+          { label: metrics[3][0], value: metrics[3][1], hint: 'Active in team scope', tone: 'high' },
+        ]} />
       </section>
       <div className="team-activity-grid">
-        <section className="management-detail-card" aria-labelledby="recent-team-activity-heading"><h2 id="recent-team-activity-heading">Recent Activity</h2>
-          <p className="card-description">Latest recorded actions for the selected team.</p>{loading ? <p role="status">Loading recent activity…</p> : error ? <p>Recent activity is unavailable.</p> : <TeamActivityFeed key={teamId} events={events} />}</section>
-        <section className="management-detail-card" aria-labelledby="team-workload-heading"><h2 id="team-workload-heading">Team Workload</h2>
-          <p className="card-description">Assignment and review workload by team member.</p>
-          <div className="management-table-wrap team-workload-table-wrap compact"><table className="management-table team-workload-table"><thead><tr><th>User</th><th>Role</th><th>Assigned Alerts</th><th>Open Reviews</th><th>Completed Today</th></tr></thead>
-            <tbody>{data.workload.map((member) => <tr key={member.user_id}><td data-label="User">{member.name}</td><td data-label="Role">{eventLabel(member.role)}</td><td data-label="Assigned Alerts">{member.assigned_alerts}</td><td data-label="Open Reviews">{member.open_reviews}</td><td data-label="Completed Today">{member.completed_today}</td></tr>)}</tbody></table>
-            {!loading && data.workload.length === 0 && <ManagementEmptyState title="No team workload is available yet." />}</div>
-        </section>
+        <Panel id="recent-team-activity-heading" title="Recent activity" description="Latest recorded actions for the selected team.">
+          {loading ? <LoadingState compact message="Loading recent activity…" /> : error ? <p className="muted">Recent activity is unavailable.</p> : <TeamActivityFeed key={teamId} events={events} />}
+        </Panel>
+        <Panel id="team-workload-heading" title="Workload" description="Assignments and reviews by team member." flush>
+          {loading ? <LoadingState compact message="Loading workload…" /> : data.workload.length === 0 ? <ManagementEmptyState title="No team workload yet." />
+            : <div className="table-wrap"><table className="data-table team-workload-table"><thead><tr><th>Member</th><th>Role</th><th>Assigned</th><th>Open reviews</th><th>Done today</th></tr></thead>
+              <tbody>{data.workload.map((member) => <tr key={member.user_id}><td data-label="Member"><span className="cell-primary">{member.name}</span></td><td data-label="Role">{eventLabel(member.role)}</td><td data-label="Assigned" className="numeric">{member.assigned_alerts}</td><td data-label="Open reviews" className="numeric">{member.open_reviews}</td><td data-label="Done today" className="numeric">{member.completed_today}</td></tr>)}</tbody></table></div>}
+        </Panel>
       </div>
-      <div className="team-management-area" aria-label="Team management">
-      {effectiveRole === 'ADMIN' && <details className="management-detail-card team-management-panel"><summary id="create-team-heading">Create team</summary><div className="team-management-content">
-<div className="management-form-grid">
-          <label className="dialog-field"><span>Team Name</span><input value={teamName} maxLength={120} onChange={(event) => setTeamName(event.target.value)} /></label>
-          <label className="dialog-field"><span>Active Supervisor</span><select value={supervisorId} onChange={(event) => setSupervisorId(event.target.value)}><option value="">Select a Supervisor</option>
+      {(effectiveRole === 'ADMIN' || selectedTeam) && <section className="team-management-area" aria-labelledby="team-management-heading">
+        <div className="section-heading"><h2 id="team-management-heading" className="section-title">Team management</h2><p className="section-description">Create teams and manage membership. Changes are recorded in the audit log.</p></div>
+      {effectiveRole === 'ADMIN' && <details className="disclosure"><summary id="create-team-heading"><span className="disclosure-summary-copy">Create team<small>Add a new team with an active supervisor</small></span></summary><div className="disclosure-body">
+        <div className="form-grid">
+          <label className="field"><span className="field-label">Team name</span><input value={teamName} maxLength={120} onChange={(event) => setTeamName(event.target.value)} /></label>
+          <label className="field"><span className="field-label">Supervisor</span><select value={supervisorId} onChange={(event) => setSupervisorId(event.target.value)}><option value="">Select a supervisor</option>
             {supervisors.map((user) => <option value={user.id} key={user.id}>{user.name}</option>)}</select></label>
-          <button type="button" className="btn btn-primary" disabled={saving || !teamName.trim() || !supervisorId}
-            onClick={() => runManagementAction(async () => { const created = await teamService.createTeam(teamName.trim(), supervisorId); setTeamId(created.id); setTeamName(''); })}>Create Team</button>
+          <div className="form-actions"><button type="button" className="btn btn-primary" disabled={saving || !teamName.trim() || !supervisorId}
+            onClick={() => runManagementAction(async () => { const created = await teamService.createTeam(teamName.trim(), supervisorId); setTeamId(created.id); setTeamName(''); })}>Create team</button></div>
         </div>
       </div></details>}
-      {selectedTeam && <details className="management-detail-card team-management-panel"><summary id="manage-team-heading">Manage {selectedTeam.name}</summary><div className="team-management-content">
-        {effectiveRole === 'ADMIN' && <div className="management-form-grid">
-          <label className="dialog-field"><span>Team Name</span><input value={teamNameEdit} maxLength={120} onChange={(event) => setTeamNameEdit(event.target.value)} /></label>
-          <label className="dialog-field"><span>Supervisor</span><select value={teamSupervisorEdit} onChange={(event) => setTeamSupervisorEdit(event.target.value)}>
+      {selectedTeam && <details className="disclosure"><summary id="manage-team-heading"><span className="disclosure-summary-copy">Manage {selectedTeam.name}<small>Rename, change supervisor and manage auditors</small></span></summary><div className="disclosure-body team-manage-body">
+        {effectiveRole === 'ADMIN' && <div className="form-grid">
+          <label className="field"><span className="field-label">Team name</span><input value={teamNameEdit} maxLength={120} onChange={(event) => setTeamNameEdit(event.target.value)} /></label>
+          <label className="field"><span className="field-label">Supervisor</span><select value={teamSupervisorEdit} onChange={(event) => setTeamSupervisorEdit(event.target.value)}>
             {supervisors.map((user) => <option value={user.id} key={user.id}>{user.name}</option>)}</select></label>
-          <button type="button" className="btn btn-secondary" disabled={saving || !teamNameEdit.trim() || !teamSupervisorEdit}
-            onClick={() => runManagementAction(() => teamService.updateTeam(teamId, { name: teamNameEdit.trim(), supervisorId: teamSupervisorEdit }))}>Save Team</button>
+          <div className="form-actions"><button type="button" className="btn btn-secondary" disabled={saving || !teamNameEdit.trim() || !teamSupervisorEdit}
+            onClick={() => runManagementAction(() => teamService.updateTeam(teamId, { name: teamNameEdit.trim(), supervisorId: teamSupervisorEdit }))}>Save team</button></div>
         </div>}
-        <div className="management-form-grid"><label className="dialog-field"><span>Active Auditor</span>
-          <select value={memberId} onChange={(event) => setMemberId(event.target.value)}><option value="">Select an Auditor</option>
+        <div className="form-grid"><label className="field"><span className="field-label">Add or transfer an auditor</span>
+          <select value={memberId} onChange={(event) => setMemberId(event.target.value)}><option value="">Select an auditor</option>
             {candidates.filter((candidate) => candidate.team_id !== teamId).map((candidate) => <option value={candidate.id} key={candidate.id}>
               {candidate.name}{candidate.team_id ? ` (Transfer from ${teams.find((team) => team.id === candidate.team_id)?.name ?? 'another team'})` : ''}</option>)}
           </select></label>
-          <button type="button" className="btn btn-secondary" disabled={saving || !memberId} onClick={() => {
+          <div className="form-actions"><button type="button" className="btn btn-secondary" disabled={saving || !memberId} onClick={() => {
             const candidate = candidates.find((item) => item.id === memberId);
             runManagementAction(() => teamService.updateMember(teamId, memberId, candidate?.team_id ? 'TRANSFER' : 'ADD')).then(() => setMemberId(''));
-          }}>Add / Transfer Auditor</button>
+          }}>Add auditor</button></div>
         </div>
-        <div className="management-table-wrap compact"><table className="management-table"><thead><tr><th>Team Member</th><th>Role</th><th>Action</th></tr></thead><tbody>
-          {data.workload.filter((member) => member.team_id === teamId && member.role === 'AUDITOR').map((member) => <tr key={member.user_id}><td data-label="Team Member">{member.name}</td><td data-label="Role">{eventLabel(member.role)}</td>
-            <td data-label="Action"><button type="button" className="btn btn-secondary" disabled={saving} onClick={() => runManagementAction(() => teamService.updateMember(teamId, member.user_id, 'REMOVE'))}>Remove</button></td></tr>)}
+        <div className="table-wrap team-member-table"><table className="data-table"><thead><tr><th>Team member</th><th>Role</th><th>Action</th></tr></thead><tbody>
+          {data.workload.filter((member) => member.team_id === teamId && member.role === 'AUDITOR').map((member) => <tr key={member.user_id}><td data-label="Team member">{member.name}</td><td data-label="Role">{eventLabel(member.role)}</td>
+            <td data-label="Action" className="cell-actions"><button type="button" className="btn btn-danger btn-sm" disabled={saving} onClick={() => runManagementAction(() => teamService.updateMember(teamId, member.user_id, 'REMOVE'))}>Remove</button></td></tr>)}
         </tbody></table></div>
       </div></details>}
-      </div>
+      </section>}
     </div>
   );
 }

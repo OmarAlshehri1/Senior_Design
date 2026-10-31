@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { auditRulesService } from '../services/auditRulesService.js';
 import { toggleExpandedRuleIds } from '../utils/auditRules';
+import { ErrorState, LoadingState } from '../components/RequestStateView.jsx';
 import { UsersIcon, LimitIcon, DuplicateIcon, SplitIcon, GhostIcon } from '../components/icons';
 
 const iconMap = {
@@ -27,17 +28,17 @@ export default function AuditRules() {
   };
 
   return (
-    <>
+    <div className="page audit-rules-page">
       <div className="page-header audit-rules-page-header">
-        <div>
+        <div className="page-header-copy">
           <h1>Audit Rules</h1>
-          <p>Review the controls used to evaluate transaction compliance and risk.</p>
+          <p className="page-description">The five controls every payment is checked against. Failed rules raise the risk score.</p>
         </div>
-        <span className="audit-rules-count">{rules.length} Audit Rules</span>
+        {rules.length > 0 && <span className="badge badge-neutral">{rules.length} rules active</span>}
       </div>
 
-      {error && <div className="request-state request-state-error" role="alert">{error}</div>}
-      {rules.length === 0 && !error && <div className="request-state" role="status">Loading authoritative rule definitions…</div>}
+      {error && <section className="panel"><ErrorState title="Audit rules are unavailable." message={error} /></section>}
+      {rules.length === 0 && !error && <section className="panel"><LoadingState message="Loading rule definitions…" /></section>}
 
       <div className="rules-grid" aria-label="Audit rule definitions">
         {rules.map((rule) => {
@@ -46,12 +47,12 @@ export default function AuditRules() {
           const detailsId = `${rule.id.toLowerCase()}-details`;
 
           return (
-            <article className="card rule-card" key={rule.id}>
+            <article className="panel rule-card" key={rule.id}>
               <div className="rule-card-top">
                 <span className="rule-card-icon" aria-hidden="true">
                   <Icon aria-hidden="true" />
                 </span>
-                <span className="defined-pill">{rule.status}</span>
+                <span className="badge badge-low">{rule.status}</span>
               </div>
               <span className="rule-id">{rule.id}</span>
               <h2>{rule.name}</h2>
@@ -93,6 +94,6 @@ export default function AuditRules() {
           );
         })}
       </div>
-    </>
+    </div>
   );
 }

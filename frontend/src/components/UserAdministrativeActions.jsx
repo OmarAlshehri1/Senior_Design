@@ -33,15 +33,15 @@ export default function UserAdministrativeActions({ user = null, onAction, onRol
 
   return (
     <>
-      <section className="management-detail-card user-admin-actions">
-        <h2>Administrative Actions</h2>
-        <p>{unavailable ? 'Actions require an available user record and available account administration.' : 'Sensitive account changes require explicit confirmation.'}</p>
-        <div>
-          <button type="button" className="btn btn-secondary" disabled={unavailable || !onRoleChange} onClick={() => setRoleDialogOpen(true)}>Change Role</button>
-          <button type="button" className="btn btn-secondary" disabled={unavailable || !onAction || user?.accountStatus === ACCOUNT_STATUSES.DISABLED} onClick={() => setAction('disable')}>Disable Account</button>
-          <button type="button" className="btn btn-secondary" disabled={unavailable || !onAction || user?.accountStatus !== ACCOUNT_STATUSES.DISABLED} onClick={() => setAction('enable')}>Enable Account</button>
+      <section className="panel user-admin-actions" aria-labelledby="user-admin-heading">
+        <header className="panel-header"><div className="panel-heading"><h2 id="user-admin-heading" className="panel-title">Account actions</h2><p className="panel-description">Each change asks for confirmation and is recorded.</p></div></header>
+        <div className="panel-body admin-action-list">
+          <button type="button" className="btn btn-secondary btn-block" disabled={unavailable || !onRoleChange} onClick={() => setRoleDialogOpen(true)}>Change Role</button>
+          {user?.accountStatus === ACCOUNT_STATUSES.DISABLED
+            ? <button type="button" className="btn btn-secondary btn-block" disabled={unavailable || !onAction} onClick={() => setAction('enable')}>Enable Account</button>
+            : <button type="button" className="btn btn-danger btn-block" disabled={unavailable || !onAction} onClick={() => setAction('disable')}>Disable Account</button>}
+          {error && <p role="alert" className="inline-alert">{error}</p>}
         </div>
-        {error && <p role="alert">{error}</p>}
       </section>
       {roleDialogOpen && (
         <div ref={roleBackdropRef} className="dialog-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setRoleDialogOpen(false)}>

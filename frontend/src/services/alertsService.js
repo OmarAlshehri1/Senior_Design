@@ -6,6 +6,7 @@ export function createAlertsService(client = apiClient) {
 
   return Object.freeze({
     list,
+    getFilterOptions: (options = {}) => client.get('/alerts/filter-options', options),
     listAll: async ({ pageSize = 100, ...options } = {}) => {
       const size = Math.max(1, Math.min(100, Math.trunc(pageSize) || 100));
       const alertsById = new Map();

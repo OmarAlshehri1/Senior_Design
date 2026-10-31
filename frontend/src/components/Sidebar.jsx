@@ -11,8 +11,11 @@ import {
   SettingsIcon,
   XIcon,
   LockIcon,
-  ClipboardCheckIcon,
-  UsersIcon,
+  BuildingIcon,
+  FolderIcon,
+  ActivityIcon,
+  ScrollIcon,
+  UserCogIcon,
 } from './icons';
 import RolePreviewControl from '../auth/RolePreviewControl.jsx';
 import { NAVIGATION_GROUPS, getNavigationState } from '../auth/navigationConfig.js';
@@ -26,11 +29,11 @@ const NAVIGATION_ICONS = Object.freeze({
   'audit-rules': CheckShieldIcon,
   reports: ReportIcon,
   settings: SettingsIcon,
-  'audit-log': ClipboardCheckIcon,
-  'team-activity': UsersIcon,
-  'user-management': ShieldIcon,
-  cases: ClipboardCheckIcon,
-  vendors: UsersIcon,
+  'audit-log': ScrollIcon,
+  'team-activity': ActivityIcon,
+  'user-management': UserCogIcon,
+  cases: FolderIcon,
+  vendors: BuildingIcon,
 });
 
 export default function Sidebar({ containerRef, closeButtonRef, isOpen, onClose }) {
@@ -49,10 +52,10 @@ export default function Sidebar({ containerRef, closeButtonRef, isOpen, onClose 
   return (
     <aside ref={containerRef} tabIndex="-1" id="primary-navigation" className={`sidebar${isOpen ? ' mobile-open' : ''}`}>
       <div className="sidebar-brand">
-        <div className="sidebar-brand-label">
-          <span className="sidebar-brand-icon"><ShieldIcon width={16} height={16} /></span>
-          <span>Audit System</span>
-        </div>
+        <Link className="sidebar-brand-label" to={APPLICATION_ROUTES.DASHBOARD} onClick={onClose}>
+          <span className="sidebar-brand-icon" aria-hidden="true"><ShieldIcon width={17} height={17} /></span>
+          <span className="sidebar-brand-copy"><strong>Audit System</strong><span>Continuous auditing</span></span>
+        </Link>
         <button ref={closeButtonRef} type="button" className="sidebar-close-btn" aria-label="Close navigation" onClick={onClose}>
           <XIcon width={18} height={18} />
         </button>
@@ -74,7 +77,7 @@ export default function Sidebar({ containerRef, closeButtonRef, isOpen, onClose 
                     aria-label={`${label}. Restricted. Requires additional permission.`}
                     onClick={onClose}
                   >
-                    <Icon />
+                    <Icon aria-hidden="true" />
                     <span>{label}</span>
                     <span className="sidebar-restricted-label">
                       <LockIcon aria-hidden="true" />
@@ -92,7 +95,7 @@ export default function Sidebar({ containerRef, closeButtonRef, isOpen, onClose 
                   className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
                   onClick={onClose}
                 >
-                  <Icon />
+                  <Icon aria-hidden="true" />
                   <span>{label}</span>
                 </NavLink>
               );

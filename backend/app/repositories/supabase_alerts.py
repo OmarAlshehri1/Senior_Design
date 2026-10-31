@@ -181,6 +181,36 @@ def list_alerts(
     return [_map_alert(row) for row in result["items"] if isinstance(row, dict)], int(result.get("total", 0))
 
 
+def list_alerts_filtered(
+    *,
+    actor_id: str,
+    page: int = 1,
+    page_size: int = 25,
+    status_filter: str | None = None,
+    severity: str | None = None,
+    alert_type: str | None = None,
+    search: str | None = None,
+    sort: str = "NEWEST",
+) -> tuple[list[dict[str, Any]], int]:
+    result = identity.rpc("list_accessible_alerts_filtered", p_actor=actor_id, p_page=page,
+                          p_page_size=page_size, p_status=status_filter, p_severity=severity,
+                          p_title=alert_type, p_search=search, p_sort=sort)
+    if not isinstance(result, dict) or not isinstance(result.get("items"), list):
+        raise SupabasePersistenceError(
+            "Supabase returned an invalid alerts response."
+        )
+    return [_map_alert(row) for row in result["items"] if isinstance(row, dict)], int(result.get("total", 0))
+
+
+def get_alert_filter_options(*, actor_id: str) -> dict[str, Any]:
+    result = identity.rpc("get_alert_filter_options", p_actor=actor_id)
+    if not isinstance(result, dict) or not isinstance(result.get("types"), list) or not isinstance(result.get("counts"), dict):
+        raise SupabasePersistenceError("Supabase returned invalid alert filter options.")
+    return {"types": [value for value in result["types"] if isinstance(value, str)],
+            "counts": {key: int(result["counts"].get(key, 0)) for key in
+                       ("total", "active", "reviewed", "active_high", "active_medium")}}
+
+
 def mark_alert_reviewed(
     alert_id: str,
 ) -> dict[str, Any] | None:

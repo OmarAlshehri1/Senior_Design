@@ -1,25 +1,19 @@
 import DateTime from './DateTime.jsx';
+import { EmptyState } from './RequestStateView.jsx';
+import { eventLabel } from '../utils/presentation.js';
+
 export default function ReviewHistory({ records = [] }) {
   if (!Array.isArray(records) || records.length === 0) {
-    return (
-      <div className="history-empty-state">
-        <span aria-hidden="true">—</span>
-        <p>No recorded review history is available yet.</p>
-      </div>
-    );
+    return <EmptyState compact title="No review history yet." message="Reviews, reopenings and notes appear here with who and when." />;
   }
 
   return (
-    <ol className="review-history-list" aria-label="Review history">
+    <ol className="timeline review-history-list" aria-label="Review history">
       {records.map((record) => (
         <li key={record.id}>
-          <div>
-            <strong>{record.reviewerName}</strong>
-            <span>{record.reviewerRole}</span>
-          </div>
-          <p>{record.action}</p>
-          <DateTime value={record.timestamp} />
-          {record.note && <blockquote>{record.note}</blockquote>}
+          <strong>{eventLabel(record.action)}</strong>
+          <span className="timeline-meta">{record.reviewerName}{record.reviewerRole ? ` · ${record.reviewerRole}` : ''} · <DateTime value={record.timestamp} /></span>
+          {record.note && <p>{record.note}</p>}
         </li>
       ))}
     </ol>

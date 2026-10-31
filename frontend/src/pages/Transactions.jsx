@@ -3,32 +3,23 @@ import { useSearchParams } from 'react-router-dom';
 import useApp from '../context/useApp';
 import TransactionsTable from '../components/TransactionsTable';
 import Pagination from '../components/Pagination.jsx';
-import { SearchIcon } from '../components/icons';
-import {
-  TRANSACTION_SORT_OPTIONS,
-} from '../utils/transactions';
+import { EMPTY_TRANSACTION_FILTERS, TRANSACTION_SORT_OPTIONS } from '../utils/transactions';
 import { getPageSizeChange, getTotalPages } from '../utils/pagination.js';
+import { PageHeader } from '../components/ui/Layout.jsx';
+import { Combobox, FilterBar, SearchField, SegmentedControl, SelectField } from '../components/ui/Filters.jsx';
+import { EmptyState, ErrorState, LoadingState } from '../components/RequestStateView.jsx';
 
-
-function EmptyTransactionsState({ hasTransactions, hasSearch }) {
-  let title = 'No transactions available.';
-  let guidance = 'Evaluated transactions will appear here when they are available.';
-
-  if (hasTransactions && hasSearch) {
-    title = 'No transactions found.';
-    guidance = 'Try a different transaction ID, vendor, or category, or clear the filters.';
-  } else if (hasTransactions) {
-    title = 'No transactions match the selected filters.';
-    guidance = 'Try adjusting your filters or clearing them.';
-  }
-
-  return (
-    <div className="transactions-empty-state" role="status">
-      <h3>{title}</h3>
-      <p>{guidance}</p>
-    </div>
-  );
-}
+const SORT_LABELS = Object.freeze({
+  [TRANSACTION_SORT_OPTIONS.NEWEST]: 'Newest',
+  [TRANSACTION_SORT_OPTIONS.OLDEST]: 'Oldest',
+  [TRANSACTION_SORT_OPTIONS.HIGHEST_RISK]: 'Highest risk',
+  [TRANSACTION_SORT_OPTIONS.LOWEST_RISK]: 'Lowest risk',
+  [TRANSACTION_SORT_OPTIONS.HIGHEST_AMOUNT]: 'Highest amount',
+  [TRANSACTION_SORT_OPTIONS.LOWEST_AMOUNT]: 'Lowest amount',
+});
+const AMOUNT_AND_DATE_SORTS = [TRANSACTION_SORT_OPTIONS.NEWEST, TRANSACTION_SORT_OPTIONS.OLDEST, TRANSACTION_SORT_OPTIONS.HIGHEST_AMOUNT, TRANSACTION_SORT_OPTIONS.LOWEST_AMOUNT];
+const RISK_OPTIONS = [{ value: '', label: 'All' }, { value: 'low', label: 'Low', tone: 'low' }, { value: 'medium', label: 'Medium', tone: 'medium' }, { value: 'high', label: 'High', tone: 'high' }];
+const RULE_STATUS_OPTIONS = [{ value: '', label: 'All' }, { value: 'passed', label: 'Passed' }, { value: 'review', label: 'Needs review' }];
 
 export default function Transactions() {
   const {
@@ -43,63 +34,64 @@ export default function Transactions() {
     setTransactionsSearch,
     transactionsSortBy,
     setTransactionsSortBy,
+    transactionsFilters = EMPTY_TRANSACTION_FILTERS,
+    setTransactionsFilters,
+    transactionFilterOptions,
   } = useApp();
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get('vendor') || '');
-  const unavailableRiskView = searchParams.has('risk');
+  const options = transactionFilterOptions?.status === 'success' ? transactionFilterOptions.value : null;
+  const optionsLoading = transactionFilterOptions?.status === 'loading';
+  const riskLevels = options?.risk_levels ?? [];
+  const ruleStatuses = options?.rule_statuses ?? [];
+  const categories = options?.categories ?? [];
+  const sorts = options?.sorts ?? AMOUNT_AND_DATE_SORTS;
+  const requestedRisk = searchParams.get('risk');
+  // A risk deep link is honored only as an authoritative server filter.
+  const deepLinkPending = requestedRisk !== null && optionsLoading;
+  const unavailableRiskView = requestedRisk !== null && !optionsLoading && !riskLevels.includes(requestedRisk);
+
+  useEffect(() => {
+    if (requestedRisk === null || !riskLevels.includes(requestedRisk)) return;
+    setTransactionsFilters?.((current) => ({ ...current, risk: requestedRisk }));
+    setTransactionsPage(1);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('risk');
+    setSearchParams(nextParams, { replace: true });
+  }, [requestedRisk, riskLevels, searchParams, setSearchParams, setTransactionsFilters, setTransactionsPage]);
+
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setTransactionsSearch(search.trim());
       setTransactionsPage(1);
     }, 300);
+    return () => window.clearTimeout(timer);
+  }, [search, setTransactionsPage, setTransactionsSearch]);
 
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [
-    search,
-    setTransactionsPage,
-    setTransactionsSearch,
-  ]);
   const totalPages = getTotalPages(transactionsTotal, transactionsPageSize);
 
   useEffect(() => {
-    if (!transactionsLoading && transactionsPage > totalPages) {
-      setTransactionsPage(totalPages);
-    }
+    if (!transactionsLoading && transactionsPage > totalPages) setTransactionsPage(totalPages);
   }, [transactionsLoading, transactionsPage, setTransactionsPage, totalPages]);
 
-  const firstTransactionNumber = transactionsTotal === 0
-    ? 0
-    : ((transactionsPage - 1) * transactionsPageSize) + 1;
+  const firstTransactionNumber = transactionsTotal === 0 ? 0 : ((transactionsPage - 1) * transactionsPageSize) + 1;
+  const lastTransactionNumber = Math.min(transactionsPage * transactionsPageSize, transactionsTotal);
 
-  const lastTransactionNumber = Math.min(
-    transactionsPage * transactionsPageSize,
-    transactionsTotal
-  );
-
-  const filtered = transactions;
-  const filtersActive = Boolean(search.trim()) || transactionsSortBy !== TRANSACTION_SORT_OPTIONS.NEWEST || unavailableRiskView;
-  const resultLabel = unavailableRiskView ? 'Risk view unavailable'
-    : transactionsLoading ? 'Loading transactions…'
+  const activeFilters = [search.trim(), transactionsFilters.risk, transactionsFilters.ruleStatus, transactionsFilters.category,
+    transactionsSortBy !== TRANSACTION_SORT_OPTIONS.NEWEST].filter(Boolean).length;
+  const summary = transactionsLoading ? 'Loading transactions…'
     : transactionsError ? 'Transactions unavailable'
-    : `${transactionsTotal.toLocaleString('en-US')} transactions`;
+      : `${transactionsTotal.toLocaleString('en-US')} ${transactionsTotal === 1 ? 'transaction' : 'transactions'}${activeFilters ? ' match your filters' : ''}`;
+
+  const setFilter = (key, value) => {
+    setTransactionsFilters?.((current) => ({ ...current, [key]: value }));
+    setTransactionsPage(1);
+  };
 
   const changePage = (nextPage) => {
-    if (
-      transactionsLoading
-      || nextPage < 1
-      || nextPage > totalPages
-      || nextPage === transactionsPage
-    ) {
-      return;
-    }
-
+    if (transactionsLoading || nextPage < 1 || nextPage > totalPages || nextPage === transactionsPage) return;
     setTransactionsPage(nextPage);
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth',
-    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const changePageSize = (nextPageSize) => {
@@ -112,95 +104,63 @@ export default function Transactions() {
     setSearch('');
     setTransactionsSearch('');
     setTransactionsSortBy(TRANSACTION_SORT_OPTIONS.NEWEST);
+    setTransactionsFilters?.(EMPTY_TRANSACTION_FILTERS);
     setTransactionsPage(1);
-
     const nextParams = new URLSearchParams(searchParams);
     nextParams.delete('risk');
     nextParams.delete('vendor');
     setSearchParams(nextParams);
   };
 
+  if (unavailableRiskView || deepLinkPending) {
+    return (
+      <div className="page transactions-page">
+        <PageHeader title="Transactions" description="Find a payment and review its audit result." />
+        <section className="panel">
+          {deepLinkPending ? <LoadingState message="Loading risk view…" />
+            : <EmptyState title="This risk view is unavailable." message="You can browse all transactions or search by transaction or vendor."
+              action={<button type="button" className="btn btn-secondary btn-sm" onClick={clearFilters}>View all transactions</button>} />}
+        </section>
+      </div>
+    );
+  }
+
   return (
-    <>
-      <div className="page-header transactions-page-header">
-        <div>
-          <h1>Transactions</h1>
-          <p>Find transactions and review their audit results.</p>
-        </div>
-        <span className="transactions-result-count" aria-live="polite">{resultLabel}</span>
-      </div>
+    <div className="page transactions-page">
+      <PageHeader title="Transactions" description="Find a payment and review its audit result." />
 
-      <div className="transactions-toolbar" aria-label="Transaction search and filters">
-        <label className="transactions-search">
-          <span className="control-label">Search</span>
-          <span className="search-input">
-            <SearchIcon width={16} height={16} color="#7b8493" aria-hidden="true" />
-            <input
-              placeholder="Search by transaction ID, vendor, or category"
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value);
-                if (searchParams.get('vendor')) {
-                  const nextParams = new URLSearchParams(searchParams);
-                  nextParams.delete('vendor');
-                  setSearchParams(nextParams);
-                }
-              }}
-            />
-          </span>
-        </label>
+      <FilterBar label="Transaction search and filters" summary={summary} activeCount={activeFilters} onClear={clearFilters}>
+        <SearchField label="Search transactions" value={search} placeholder="Search by transaction ID or vendor"
+          onChange={(value) => {
+            setSearch(value);
+            if (searchParams.get('vendor')) {
+              const nextParams = new URLSearchParams(searchParams);
+              nextParams.delete('vendor');
+              setSearchParams(nextParams);
+            }
+          }} />
+        {riskLevels.length > 0 && <SegmentedControl label="Risk" value={transactionsFilters.risk}
+          options={RISK_OPTIONS.filter((option) => !option.value || riskLevels.includes(option.value))} onChange={(value) => setFilter('risk', value)} />}
+        {ruleStatuses.length > 0 && <SelectField label="Rule status" value={transactionsFilters.ruleStatus}
+          options={RULE_STATUS_OPTIONS.filter((option) => !option.value || ruleStatuses.includes(option.value))} onChange={(value) => setFilter('ruleStatus', value)} />}
+        {categories.length > 6
+          ? <Combobox label="Category" value={transactionsFilters.category} allLabel="All categories" placeholder="Type a category"
+            options={categories.map((value) => ({ value, label: value }))} onChange={(value) => setFilter('category', value)} />
+          : categories.length > 0 && <SelectField label="Category" value={transactionsFilters.category}
+            options={[{ value: '', label: 'All' }, ...categories.map((value) => ({ value, label: value }))]} onChange={(value) => setFilter('category', value)} />}
+        <SelectField label="Sort" value={transactionsSortBy}
+          options={Object.keys(SORT_LABELS).filter((value) => sorts.includes(value)).map((value) => ({ value, label: SORT_LABELS[value] }))}
+          onChange={(value) => { setTransactionsSortBy(value); setTransactionsPage(1); }} />
+      </FilterBar>
 
-        <div className="transactions-filter-group">
-          <label className="transactions-select-control">
-            <span className="control-label">Sort By</span>
-            <select
-              className="select-input"
-              value={transactionsSortBy}
-onChange={(event) => {
-  setTransactionsSortBy(event.target.value);
-  setTransactionsPage(1);
-}}
-            >
-              <option value={TRANSACTION_SORT_OPTIONS.NEWEST}>Newest</option>
-              <option value={TRANSACTION_SORT_OPTIONS.OLDEST}>Oldest</option>
-              {/* <option value={TRANSACTION_SORT_OPTIONS.HIGHEST_RISK}>Highest Risk</option>
-              <option value={TRANSACTION_SORT_OPTIONS.LOWEST_RISK}>Lowest Risk</option> */}
-              <option value={TRANSACTION_SORT_OPTIONS.HIGHEST_AMOUNT}>Highest Amount</option>
-              <option value={TRANSACTION_SORT_OPTIONS.LOWEST_AMOUNT}>Lowest Amount</option>
-            </select>
-          </label>
-
-          {filtersActive && (
-            <button type="button" className="btn btn-secondary clear-filters-btn" onClick={clearFilters}>
-              Clear Filters
-            </button>
-          )}
-        </div>
-      </div>
-
-      <section className="card transactions-card" aria-labelledby="transactions-results-heading">
-        <div className="card-header">
-          <h2 id="transactions-results-heading">{resultLabel}</h2>
-        </div>
-        {unavailableRiskView ? <div className="transactions-empty-state" role="status"><h3>This risk view is unavailable.</h3><p>You can browse all transactions or search by transaction or vendor.</p><button type="button" className="btn btn-secondary" onClick={clearFilters}>View all transactions</button></div> : transactionsLoading ? (
-          <div className="transactions-empty-state" role="status">
-            <h3>Loading transactions...</h3>
-            <p>The latest transaction data is being retrieved.</p>
-          </div>
-        ) : transactionsError ? (
-          <div className="transactions-empty-state" role="alert">
-            <h3>Transactions are unavailable.</h3>
-            <p>{transactionsError}</p>
-          </div>
-        ) : filtered.length > 0 ? (
-          <TransactionsTable transactions={filtered} />
-        ) : (
-          <EmptyTransactionsState
-            hasTransactions={transactionsTotal > 0}
-            hasSearch={Boolean(search.trim())}
-          />
-        )}
-        {!unavailableRiskView && !transactionsLoading && !transactionsError && (
+      <section className="panel panel-table" aria-label="Transaction results" aria-busy={transactionsLoading}>
+        {transactionsLoading ? <LoadingState message="Loading transactions…" />
+          : transactionsError ? <ErrorState title="Transactions are unavailable." message={transactionsError} />
+            : transactions.length > 0 ? <TransactionsTable transactions={transactions} />
+              : activeFilters ? <EmptyState filtered title="No transactions match these filters." message="Try a different search, or clear the filters."
+                action={<button type="button" className="btn btn-secondary btn-sm" onClick={clearFilters}>Clear filters</button>} />
+                : <EmptyState title="No transactions yet." message="Evaluated payments will appear here." />}
+        {!transactionsLoading && !transactionsError && (
           <Pagination
             currentPage={transactionsPage}
             totalPages={totalPages}
@@ -214,6 +174,6 @@ onChange={(event) => {
           />
         )}
       </section>
-    </>
+    </div>
   );
 }

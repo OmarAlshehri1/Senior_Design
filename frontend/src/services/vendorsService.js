@@ -7,6 +7,7 @@ export function createVendorsService(client = apiClient) {
       const result = await client.get('/vendors', options);
       return { ...result, items: normalizeVendors(result?.items) };
     },
+    getFilterOptions: (options = {}) => client.get('/vendors/filter-options', options),
     async getVendor(vendorId, options = {}) {
       const result = await client.get(`/vendors/${encodeURIComponent(vendorId)}`, options);
       return { ...result, vendor: normalizeVendor(result?.vendor) };

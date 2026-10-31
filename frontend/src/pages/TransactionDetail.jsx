@@ -8,9 +8,12 @@ import {
   formatAmount,
   formatScore,
   riskBadgeClass,
+  riskTone,
   ruleStatusPillClass,
 } from '../components/statusUtils';
-import { ArrowLeftIcon } from '../components/icons';
+import { ArrowLeftIcon, CheckIcon, CopyIcon } from '../components/icons';
+import { Badge, KeyValueList, Panel } from '../components/ui/Layout.jsx';
+import { ErrorState, LoadingState } from '../components/RequestStateView.jsx';
 import { getRiskLevel, getTransactionRiskLevel } from '../utils/risk';
 import { AUDIT_RULE_DEFINITIONS, getTransactionDataQuality } from '../utils/transactions';
 import ReviewHistory from '../components/ReviewHistory.jsx';
@@ -18,7 +21,6 @@ import { createReviewAccountability } from '../audit/reviewRecords.js';
 import { auditService } from '../audit/auditService.js';
 import useAuthorization from '../auth/useAuthorization.js';
 import { hasPermission, PERMISSIONS } from '../auth/roles.js';
-import { REVIEW_RESOLUTIONS } from '../cases/caseWorkflow.js';
 import VendorMonitoringIndicator from '../components/VendorMonitoringIndicator.jsx';
 import {
   loadTransactionDetail,
@@ -34,39 +36,50 @@ function DetailField({ label, value }) {
   );
 }
 
+function CopyReference({ value }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(value); setCopied(true); window.setTimeout(() => setCopied(false), 1500); } catch { /* Selection remains available. */ }
+  };
+  return <span className="copy-reference">
+    <span className="reference-text detail-reference" title={value}>{value}</span>
+    <button type="button" onClick={copy} aria-label={copied ? 'Transaction ID copied' : 'Copy transaction ID'}>{copied ? <CheckIcon /> : <CopyIcon />}</button>
+  </span>;
+}
+
+function ScoreBar({ label, score, tone }) {
+  const width = Number.isFinite(score) ? Math.max(0, Math.min(100, score)) : 0;
+  return <div className="score-bar">
+    <div className="score-bar-head"><span>{label}</span><strong>{formatScore(score)}</strong></div>
+    <div className="score-bar-track" aria-hidden="true"><div className={`score-bar-fill tone-${tone}`} style={{ width: `${width}%` }} /></div>
+  </div>;
+}
+
 function DetailNotFound({ id }) {
   return (
-    <div className="card transaction-not-found">
-      <span className="transaction-not-found-label">Transaction lookup</span>
-      <h1>Transaction not found.</h1>
-      <p>No evaluated transaction exists with the ID “{displayValue(id)}”.</p>
-      <Link className="btn btn-primary" to="/transactions">
-        <ArrowLeftIcon width={15} height={15} />
-        Back to Transactions
-      </Link>
+    <div className="page detail-state-page">
+      <section className="panel">
+        <div className="state">
+          <p className="state-title">Transaction not found.</p>
+          <p className="state-message">No evaluated transaction exists with the ID “{displayValue(id)}”.</p>
+          <Link className="btn btn-secondary btn-sm" to="/transactions"><ArrowLeftIcon width={15} height={15} />Back to Transactions</Link>
+        </div>
+      </section>
     </div>
   );
 }
 
 function DetailLoading() {
-  return (
-    <div className="card transaction-processing-state" role="status">
-      <h1>Loading transaction</h1>
-      <p>The transaction detail is being retrieved.</p>
-    </div>
-  );
+  return <div className="page detail-state-page"><section className="panel"><LoadingState message="Loading transaction…" /></section></div>;
 }
 
 function DetailError() {
   return (
-    <div className="card transaction-not-found" role="alert">
-      <span className="transaction-not-found-label">Transaction lookup</span>
-      <h1>Transaction detail is unavailable.</h1>
-      <p>The transaction could not be retrieved. Try again later.</p>
-      <Link className="btn btn-primary" to="/transactions">
-        <ArrowLeftIcon width={15} height={15} />
-        Back to Transactions
-      </Link>
+    <div className="page detail-state-page">
+      <section className="panel">
+        <ErrorState title="Transaction detail is unavailable." message="The transaction could not be retrieved. Try again later." />
+        <div className="detail-state-actions"><Link className="btn btn-secondary btn-sm" to="/transactions"><ArrowLeftIcon width={15} height={15} />Back to Transactions</Link></div>
+      </section>
     </div>
   );
 }
@@ -157,11 +170,12 @@ export default function TransactionDetail() {
 
   if (transaction.processing) {
     return (
-      <div className="card transaction-processing-state" role="status">
-        <h1>Transaction processing</h1>
-        <p>{displayValue(transaction.id)} is still being prepared for review.</p>
-        <Link className="btn btn-secondary" to="/transactions">Back to Transactions</Link>
-      </div>
+      <div className="page detail-state-page"><section className="panel"><div className="state" role="status">
+        <span className="spinner" aria-hidden="true" />
+        <p className="state-title">Transaction processing</p>
+        <p className="state-message">{displayValue(transaction.id)} is still being prepared for review.</p>
+        <Link className="btn btn-secondary btn-sm" to="/transactions">Back to Transactions</Link>
+      </div></section></div>
     );
   }
 
@@ -238,234 +252,144 @@ export default function TransactionDetail() {
     }
   };
 
-  return (
-    <div className="transaction-detail-page">
-      <Link className="detail-back-link" to="/transactions">
-        <ArrowLeftIcon width={15} height={15} />
-        Back to Transactions
-      </Link>
+  const ruleResults = AUDIT_RULE_DEFINITIONS.map(({ key, label }) => ({ key, label, result: transaction.rules?.[key] }));
+  const failedRules = ruleResults.filter(({ result }) => result?.status === 'Failed').length;
+  const evaluatedRules = ruleResults.filter(({ result }) => ['Passed', 'Failed'].includes(result?.status)).length;
+  const tone = riskTone(riskLevel);
 
-      <header className="transaction-detail-header">
-        <div>
-          <span className="detail-eyebrow">Transaction</span>
-          <div className="transaction-title-row">
-            <h1>{displayValue(transaction.id)}</h1>
-            <span className={riskBadgeClass(riskLevel)}>{riskLevel}</span>
+  return (
+    <div className="page transaction-detail-page">
+      <header className="detail-header">
+        <Link className="back-link" to="/transactions"><ArrowLeftIcon width={15} height={15} aria-hidden="true" />Transactions</Link>
+        <div className="detail-header-main">
+          <div className="detail-header-copy">
+            <p className="page-eyebrow">Transaction</p>
+            <h1 className="sr-only">Transaction {displayValue(transaction.id)}</h1>
+            <div className="detail-title-row">
+              <CopyReference value={displayValue(transaction.id)} />
+              <span className={riskBadgeClass(riskLevel)}>{riskLevel}</span>
+            </div>
+            <p className="detail-subtitle">
+              {hasVendorId ? <Link to={`/vendors/${transaction.vendorId}`}>{displayValue(transaction.vendor)}</Link> : displayValue(transaction.vendor)}
+              <VendorMonitoringIndicator status={transaction.vendorMonitoringStatus} />
+              <span aria-hidden="true">·</span>
+              <DateTime value={transaction.timestamp} />
+            </p>
           </div>
-          <p className="transaction-detail-vendor">{hasVendorId ? <Link to={`/vendors/${transaction.vendorId}`}>{displayValue(transaction.vendor)}</Link> : displayValue(transaction.vendor)} <VendorMonitoringIndicator status={transaction.vendorMonitoringStatus} /></p>
+          {canReview && <div className="page-header-actions">
+            {alert && <button className="btn btn-secondary" type="button" onClick={handleAlertReview} disabled={reviewBusy}>
+              {alertReviewState === 'Reviewed' ? 'Reopen Alert Review' : 'Mark Alert Reviewed'}
+            </button>}
+            <button className="btn btn-primary" type="button" onClick={handleTransactionReview} disabled={reviewBusy}>
+              {reviewState === 'Reviewed' ? 'Reopen Transaction Review' : 'Mark Transaction Reviewed'}
+            </button>
+          </div>}
         </div>
-        <DateTime className="transaction-detail-time" value={transaction.timestamp} />
       </header>
 
       {transaction.dataset?.active === false && (
-        <p role="note">Archived dataset: {transaction.dataset.label}. This transaction and its review history remain available.</p>
+        <p className="inline-note" role="note">Archived dataset: {transaction.dataset.label}. This transaction and its review history remain available.</p>
       )}
+      {reviewError && <p className="inline-alert" role="alert">{reviewError}</p>}
 
-      <section className="card risk-summary-card" aria-labelledby="risk-summary-heading">
-        <div className="card-header">
-          <h2 id="risk-summary-heading">Risk Summary</h2>
-        </div>
-        <div className="risk-summary-grid">
-          <div className="risk-summary-primary">
-            <span>Final Risk Score</span>
-            <strong>{formatScore(transaction.riskScore)}</strong>
-          </div>
-          <div className="risk-summary-item">
-            <span>Risk Level</span>
-            <strong className={riskBadgeClass(riskLevel)}>{riskLevel}</strong>
-          </div>
-          <div className="risk-summary-item">
-            <span>Rule Score</span>
-            <strong>{formatScore(transaction.ruleScore)}</strong>
-          </div>
-          <div className="risk-summary-item">
-            <span>AI Score</span>
-            <strong>{formatScore(transaction.aiScore)}</strong>
-          </div>
-          <div className="risk-summary-item">
-            <span>Rule Status</span>
-            <strong className={ruleStatusPillClass(transaction.ruleStatus)}>
-              {displayValue(transaction.ruleStatus)}
-            </strong>
-          </div>
-        </div>
-      </section>
-
-      <section className="card transaction-info-card" aria-labelledby="transaction-info-heading">
-        <div className="card-header">
-          <h2 id="transaction-info-heading">Transaction Information</h2>
-        </div>
+      <section className="panel detail-summary" aria-labelledby="transaction-info-heading">
+        <h2 id="transaction-info-heading" className="sr-only">Transaction Information</h2>
         <dl className="transaction-info-grid">
-          <DetailField label="Transaction ID" value={transaction.id} />
           <DetailField label="Vendor" value={transaction.vendor} />
           {hasVendorId && <DetailField label="Vendor ID" value={transaction.vendorId} />}
-          <DetailField label="Category" value={transaction.category} />
           <DetailField label="Amount" value={formatAmount(transaction.amount, transaction.currency)} />
-          <DetailField label="Currency" value={transaction.currency} />
           <DetailField label="Date" value={formatDate(transaction.timestamp)} />
           <DetailField label="Time" value={<DateTime value={transaction.timestamp} timeOnly />} />
+          <DetailField label="Category" value={transaction.category} />
         </dl>
       </section>
 
-      <section className="card audit-results-card" aria-labelledby="audit-results-heading">
-        <div className="card-header">
-          <div>
-            <h2 id="audit-results-heading">Audit Rule Results</h2>
-            <p>Evidence recorded for the five project audit rules.</p>
-          </div>
-        </div>
-        <div className="audit-results-list">
-          {AUDIT_RULE_DEFINITIONS.map(({ key, label }) => {
-            const result = transaction.rules?.[key];
-            const status = displayValue(result?.status);
-            const isPassed = status === 'Passed';
-            const isFailed = status === 'Failed';
-
-            return (
-              <article
-                className={`audit-result${isFailed ? ' audit-result-failed' : ''}`}
-                key={key}
-              >
-                <span
-                  className={`audit-result-icon ${isPassed ? 'is-passed' : isFailed ? 'is-failed' : 'is-unknown'}`}
-                  aria-hidden="true"
-                >
-                  {isPassed ? '✓' : isFailed ? '!' : '—'}
-                </span>
-                <div className="audit-result-content">
-                  <h3>{label}</h3>
-                  <p>{displayValue(result?.detail)}</p>
-                </div>
-                <span className={`rule-tag ${isFailed ? 'tag-failed' : isPassed ? 'tag-passed' : 'tag-unknown'}`}>
-                  {status}
-                </span>
-              </article>
-            );
-          })}
-        </div>
-      </section>
-
-      <div className="transaction-analysis-grid">
-        <section className="card analysis-card" aria-labelledby="ai-analysis-heading">
-          <div className="card-header">
-            <h2 id="ai-analysis-heading">AI Analysis</h2>
-          </div>
-          <div className="analysis-card-body">
-            <div className="analysis-score-row">
-              <span>AI Score</span>
-              <strong>{formatScore(transaction.aiScore)}</strong>
-            </div>
-            <span className="analysis-status">Isolation Forest</span>
-            <p>The anomaly score is supplied by the authoritative backend model.</p>
-          </div>
-        </section>
-
-        <section className="card analysis-card" aria-labelledby="risk-explanation-heading">
-          <div className="card-header">
-            <h2 id="risk-explanation-heading">Risk Explanation</h2>
-          </div>
-          <div className="analysis-card-body">
-            <p>{displayValue(transaction.riskExplanation)}</p>
-          </div>
-        </section>
-      </div>
-
-      <section className="card data-quality-card" aria-labelledby="data-quality-heading">
-        <div>
-          <span className="detail-section-label" id="data-quality-heading">Data Quality</span>
-          <strong className={`data-quality-status quality-${dataQuality.status.toLowerCase().replaceAll(' ', '-')}`}>
-            {dataQuality.status}
-          </strong>
-        </div>
-        <p>
-          {dataQuality.missingFields.length > 0
-            ? `Missing fields: ${dataQuality.missingFields.join(', ')}.`
-            : 'All fields required for this review are available.'}
-        </p>
-      </section>
-
-      <div className={`transaction-review-grid${alert ? '' : ' without-alert'}`}>
-        <section className="card review-state-card" aria-labelledby="review-state-heading">
-          <div className="card-header">
-            <div>
-              <h2 id="review-state-heading">Review &amp; Accountability</h2>
-              <p>Review status and attributable history from the audit service.</p>
-            </div>
-          </div>
-          <div className="review-accountability-body">
-            <section className="session-review-section" aria-labelledby="session-review-heading">
-              <span className="review-section-label">Review Status</span>
-              <h3 id="session-review-heading">Transaction Review Status</h3>
-              <div className="review-state-row">
-                <span>Current Status</span>
-                <strong className={reviewState === 'Reviewed' ? 'reviewed-state' : 'not-reviewed-state'}>{reviewState}</strong>
+      <div className="detail-layout">
+        <div className="detail-main">
+          <Panel id="risk-summary-heading" title="Risk assessment" description="Final risk combines rule results (60%) with the anomaly model (40%).">
+            <div className="risk-assessment">
+              <div className={`risk-score-hero tone-${tone}`}>
+                <span>Final risk score</span>
+                <strong>{Number.isFinite(transaction.riskScore) ? transaction.riskScore : '—'}<small>/100</small></strong>
+                <span className={riskBadgeClass(riskLevel)}>{riskLevel}</span>
               </div>
-              <p>Every review, reopening, and note is saved with the acting user and timestamp.</p>
-              <div className="review-actions">
-                {canReview && (
-                  <button className="btn btn-primary" type="button" onClick={handleTransactionReview} disabled={reviewBusy}>
-                    {reviewState === 'Reviewed' ? 'Reopen Transaction Review' : 'Mark Transaction Reviewed'}
-                  </button>
-                )}
-                {alert && canReview && (
-                  <button className="btn btn-secondary" type="button" onClick={handleAlertReview} disabled={reviewBusy}>
-                    {alertReviewState === 'Reviewed' ? 'Reopen Alert Review' : 'Mark Alert Reviewed'}
-                  </button>
-                )}
-                {hasVendor && (
-                  <Link className="btn btn-secondary" to={`/transactions?vendor=${encodeURIComponent(transaction.vendor)}`}>
-                    View Related Transactions
-                  </Link>
-                )}
+              <div className="risk-score-breakdown">
+                <ScoreBar label="Rule score" score={transaction.ruleScore} tone={transaction.ruleScore > 0 ? 'medium' : 'low'} />
+                <ScoreBar label="AI score · Isolation Forest" score={transaction.aiScore} tone={tone === 'neutral' ? 'low' : tone} />
+                <div className="score-bar-head"><span>Rule status</span><span className={ruleStatusPillClass(transaction.ruleStatus)}>{displayValue(transaction.ruleStatus)}</span></div>
               </div>
-            </section>
+            </div>
+            <div className="risk-explanation" aria-labelledby="risk-explanation-heading">
+              <h3 id="risk-explanation-heading" className="panel-subtitle">Why this score</h3>
+              <p>{displayValue(transaction.riskExplanation, 'No explanation was recorded for this transaction.')}</p>
+            </div>
+          </Panel>
 
-            <section className="review-accountability-section" aria-labelledby="accountability-heading">
-              <h3 id="accountability-heading">Accountability</h3>
-              <dl>
-                <div><dt>Reviewed By</dt><dd>{accountability.reviewedBy ?? <span aria-label="Unavailable">—</span>}</dd></div>
-                <div><dt>Reviewed At</dt><dd><DateTime value={accountability.reviewedAt} /></dd></div>
+          <Panel id="audit-results-heading" title="Audit rule results" flush
+            description={evaluatedRules ? `${failedRules} of ${evaluatedRules} evaluated rules failed.` : 'No rule results were recorded.'}>
+            <ul className="rule-results">
+              {ruleResults.map(({ key, label, result }) => {
+                const status = displayValue(result?.status);
+                const isPassed = status === 'Passed';
+                const isFailed = status === 'Failed';
+                return (
+                  <li className={`rule-result${isFailed ? ' is-failed' : isPassed ? ' is-passed' : ' is-unknown'}`} key={key}>
+                    <span className="rule-result-icon" aria-hidden="true">{isPassed ? '✓' : isFailed ? '!' : '–'}</span>
+                    <div className="rule-result-copy">
+                      <h3>{label}</h3>
+                      <p>{displayValue(result?.detail)}</p>
+                    </div>
+                    <Badge tone={isFailed ? 'high' : isPassed ? 'low' : 'neutral'}>{status}</Badge>
+                  </li>
+                );
+              })}
+            </ul>
+          </Panel>
+
+          <Panel id="data-quality-heading" title="Data quality"
+            actions={<Badge tone={dataQuality.status === 'Complete' ? 'low' : 'medium'}>{dataQuality.status}</Badge>}>
+            {dataQuality.missingFields.length > 0
+              ? <div className="data-quality-missing"><span>Missing fields</span><ul>{dataQuality.missingFields.map((field) => <li key={field} className="badge badge-outline">{field}</li>)}</ul>
+                <p>Rules that need a missing field are recorded as not evaluated rather than passed.</p></div>
+              : <p className="muted">All fields required for this review are available.</p>}
+          </Panel>
+        </div>
+
+        <aside className="detail-side" aria-label="Review">
+          <Panel id="review-state-heading" title="Review" actions={<Badge tone={reviewState === 'Reviewed' ? 'low' : 'neutral'}>{reviewState}</Badge>}>
+            <KeyValueList items={[
+              ['Reviewed by', accountability.reviewedBy ?? '—'],
+              ['Reviewed at', <DateTime value={accountability.reviewedAt} />],
+            ]} />
+            <div className="review-latest-note"><span>Latest note</span><p>{accountability.note ?? 'No review note yet.'}</p></div>
+            <div className="review-note-form">
+              <label htmlFor="review-note-input" className="field-label">Add a note</label>
+              <textarea id="review-note-input" className="input" rows="3" maxLength="2000" value={reviewNote} disabled={!canReview || reviewBusy}
+                onChange={(event) => setReviewNote(event.target.value)} placeholder="Notes are saved with your name and time" />
+              <button className="btn btn-secondary btn-sm" type="button" disabled={!canReview || reviewBusy || !reviewNote.trim()} onClick={handleAddReviewNote}>Add Review Note</button>
+            </div>
+            {hasVendor && <Link className="text-link related-link" to={`/transactions?vendor=${encodeURIComponent(transaction.vendor)}`}>View related transactions</Link>}
+          </Panel>
+
+          {alert ? (
+            <Panel id="related-alert-heading" title="Related alert" actions={<Badge tone={alertReviewState === 'Reviewed' ? 'low' : 'info'}>{alertReviewState}</Badge>}>
+              <dl className="key-values columns-1">
+                <DetailField label="Alert type" value={alert.title} />
+                <DetailField label="Risk level" value={alertRiskLevel} />
+                <DetailField label="Raised" value={<DateTime value={alert.timestamp} />} />
               </dl>
-            </section>
+            </Panel>
+          ) : (
+            <Panel id="related-alert-heading" title="Related alert">
+              <p className="muted">No alert in your scope is linked to this transaction.</p>
+              <Link className="text-link related-link" to="/alerts">Browse alerts</Link>
+            </Panel>
+          )}
 
-            <section className="review-note-section" aria-labelledby="review-note-heading">
-              <div>
-                <h3 id="review-note-heading">Review Note</h3>
-                <p>{accountability.note ?? 'No review note available.'}</p>
-              </div>
-              <label><span className="sr-only">Review note</span><textarea rows="2" maxLength="2000" value={reviewNote} onChange={(event) => setReviewNote(event.target.value)} placeholder="Add an attributed review note" /></label>
-              <button className="btn btn-secondary" type="button" disabled={!canReview || reviewBusy || !reviewNote.trim()} onClick={handleAddReviewNote}>Add Review Note</button>
-            </section>
-
-            {reviewError && <p className="integration-error" role="alert">{reviewError}</p>}
-
-            <section className="review-history-section" aria-labelledby="review-history-heading">
-              <h3 id="review-history-heading">Review History</h3>
-              <ReviewHistory records={reviewRecords} />
-            </section>
-            <section className="review-resolution-section" aria-labelledby="review-resolution-heading">
-              <div><h3 id="review-resolution-heading">Review Resolution</h3><p>Record an authoritative outcome separately from the current session review status.</p></div>
-              <label><span>Outcome</span><select disabled defaultValue=""><option value="">Select an outcome</option>{Object.values(REVIEW_RESOLUTIONS).map((value) => <option key={value} value={value}>{value.replaceAll('_', ' ')}</option>)}</select></label>
-              <label><span>Resolution Note</span><textarea rows="3" disabled placeholder="Add supporting context" /></label>
-              <button type="button" className="btn btn-secondary" disabled title="Review resolution is not available until the service is connected.">Save Resolution</button>
-            </section>
-          </div>
-        </section>
-
-        {!alert && <section className="card related-alert-card"><div className="card-header"><h2>Alert activity</h2><Link className="btn btn-secondary" to="/alerts">Browse alerts</Link></div></section>}
-        {alert && (
-          <section className="card related-alert-card" aria-labelledby="related-alert-heading">
-            <div className="card-header">
-              <h2 id="related-alert-heading">Related Alert</h2>
-            </div>
-            <dl className="related-alert-list">
-              <DetailField label="Alert Type" value={alert.title} />
-              <DetailField label="Risk Level" value={alertRiskLevel} />
-              <DetailField label="Time" value={<DateTime value={alert.timestamp} />} />
-              <DetailField label="Review State" value={alertReviewState} />
-            </dl>
-          </section>
-        )}
+          <Panel id="review-history-heading" title="Review history">
+            <ReviewHistory records={reviewRecords} />
+          </Panel>
+        </aside>
       </div>
     </div>
   );

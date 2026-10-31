@@ -56,13 +56,12 @@ export default function Settings() {
   }
 
   return (
-    <>
+    <div className="page settings-page">
       <div className="page-header settings-page-header">
-        <div>
+        <div className="page-header-copy">
           <h1>Settings</h1>
-          <p>Review system configuration and audit preferences.</p>
+          <p className="page-description">System configuration and audit reference. {isAdmin ? 'You can edit the organization name.' : 'Settings are managed by an administrator.'}</p>
         </div>
-        <span className="settings-mode-badge">Organization name {isAdmin ? 'editable by Admin' : 'managed by Admin'}; other settings read-only</span>
       </div>
 
       <div className="settings-groups">
@@ -86,9 +85,9 @@ export default function Settings() {
               {isAdmin && !loadError && organizationName && (
                 <form className="settings-organization-form" onSubmit={saveOrganizationName}>
                   <label htmlFor="organization-name">Update organization name</label>
-                  <input id="organization-name" value={draftName} minLength={2} maxLength={120}
+                  <input id="organization-name" className="input" value={draftName} minLength={2} maxLength={120}
                     onChange={(event) => setDraftName(event.target.value)} required />
-                  <button type="submit" disabled={saving || draftName.trim() === organizationName}>
+                  <button type="submit" className="btn btn-secondary btn-sm" disabled={saving || draftName.trim() === organizationName}>
                     {saving ? 'Saving…' : 'Save'}
                   </button>
                   {message && <p role="status">{message}</p>}
@@ -110,7 +109,7 @@ export default function Settings() {
                   </div>
                 ))}
               </div>
-              <p className="settings-note">Risk thresholds are shown for reference. Configuration editing is not available yet.</p>
+              <p className="settings-note">Thresholds used to classify every transaction.</p>
             </article>
           </div>
         </section>
@@ -172,7 +171,7 @@ export default function Settings() {
             <article className="settings-panel" aria-labelledby="integration-settings-heading">
               <div className="settings-panel-header">
                 <h3 id="integration-settings-heading">Integration Capabilities</h3>
-                <p>Implementation reference; runtime health is not checked here.</p>
+
               </div>
               <SettingsList items={[
                 ['Transaction Source', settings.integration.transactionSource],
@@ -194,6 +193,6 @@ export default function Settings() {
           </div>
         </section>
       </div>
-    </>
+    </div>
   );
 }

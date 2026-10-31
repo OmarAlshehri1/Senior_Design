@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { formatAmount, riskStatusPillClass } from './statusUtils';
 import { getTransactionRiskLevel } from '../utils/risk';
+import { ChevronRightIcon } from './icons.jsx';
 
 export default function RecentTransactionsTable({ transactions, highlightId }) {
   const navigate = useNavigate();
@@ -15,11 +16,11 @@ export default function RecentTransactionsTable({ transactions, highlightId }) {
   };
 
   return (
-    <div className="dashboard-table-wrap">
-      <table className="data-table dashboard-transactions-table task-recent-transactions-table">
+    <div className="table-wrap">
+      <table className="data-table recent-transactions-table">
         <thead>
           <tr>
-            <th>Transaction</th><th>Vendor</th><th>Amount</th><th>Risk</th>
+            <th>Transaction</th><th>Vendor</th><th>Amount</th><th>Risk</th><th><span className="sr-only">Open</span></th>
           </tr>
         </thead>
         <tbody>
@@ -36,14 +37,11 @@ export default function RecentTransactionsTable({ transactions, highlightId }) {
                 onClick={() => openTransaction(transaction.id)}
                 onKeyDown={(event) => handleRowKeyDown(event, transaction.id)}
               >
-                <td data-label="Transaction ID"><span className="transaction-reference" title={transaction.id}>{transaction.id}</span></td>
-                <td className="vendor-cell" data-label="Vendor" title={transaction.vendor}>
-                  {transaction.vendor}
-                </td>
-                <td data-label="Amount">{formatAmount(transaction.amount, transaction.currency)}</td>
-                <td data-label="Risk Level">
-                  <span className={riskStatusPillClass(riskLevel)}>{riskLevel}</span>
-                </td>
+                <td data-label="Transaction"><span className="reference-text truncate" title={transaction.id}>{transaction.id}</span></td>
+                <td data-label="Vendor"><span className="truncate" title={transaction.vendor}>{transaction.vendor}</span></td>
+                <td data-label="Amount" className="numeric">{formatAmount(transaction.amount, transaction.currency)}</td>
+                <td data-label="Risk"><span className={riskStatusPillClass(riskLevel)}>{riskLevel}</span></td>
+                <td data-label="" className="cell-actions"><span className="row-chevron" aria-hidden="true"><ChevronRightIcon /></span></td>
               </tr>
             );
           })}

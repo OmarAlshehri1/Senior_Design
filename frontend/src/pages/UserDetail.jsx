@@ -6,8 +6,15 @@ import ManagementEmptyState from '../components/ManagementEmptyState.jsx';
 import UserAdministrativeActions from '../components/UserAdministrativeActions.jsx';
 import LoginHistory from '../components/LoginHistory.jsx';
 import { userManagementService } from '../management/userManagementService.js';
+import { Panel } from '../components/ui/Layout.jsx';
+import { ErrorState, LoadingState } from '../components/RequestStateView.jsx';
+import { ArrowLeftIcon } from '../components/icons.jsx';
+import { titleCase } from '../components/statusUtils.js';
+import { shortReference } from '../utils/presentation.js';
+import { ROLE_DEFINITIONS } from '../auth/roles.js';
 
 const Field = ({ label, value }) => <div><dt>{label}</dt><dd>{value ?? '—'}</dd></div>;
+const ACCOUNT_TONES = Object.freeze({ ACTIVE: 'low', LOCKED: 'medium', DISABLED: 'high' });
 
 export default function UserDetail() {
   const { userId } = useParams();
@@ -41,20 +48,28 @@ export default function UserDetail() {
     await reload();
   };
 
+  const retry = () => { setLoading(true); reload().catch((loadError) => setError(loadError.message)).finally(() => setLoading(false)); };
   return (
-    <div className="management-page user-detail-page">
-      <Link className="back-link" to={APPLICATION_ROUTES.USERS}>Back to User Management</Link>
-      <div className="page-header"><div><h1>{user?.name || 'User Detail'}</h1><p>Review identity, access, security, and sign-in activity.</p></div></div>
-      {loading && <p role="status">Loading user account…</p>}
-      {error && <p role="alert">{error} <button type="button" onClick={() => { setLoading(true); reload().catch((loadError) => setError(loadError.message)).finally(() => setLoading(false)); }}>Retry</button></p>}
-      {!loading && !error && !user && <section className="user-detail-unavailable"><ManagementEmptyState title="User information is unavailable." description={`No user record is available for ${userId}.`} /></section>}
-      <div className="user-detail-grid">
-        <section className="management-detail-card"><h2>Identity</h2><dl className="management-definition-grid"><Field label="Name" value={user?.name} /><Field label="Email" value={user?.email} /><Field label="Role" value={user?.role} /><Field label="Account Status" value={user?.accountStatus} /></dl></section>
-        <section className="management-detail-card"><h2>Access</h2><dl className="management-definition-grid"><Field label="Role" value={user?.role} /><Field label="Team" value={user?.teamId} /><Field label="Supervisor" value={user?.supervisorId} /></dl></section>
-        <section className="management-detail-card"><h2>Security</h2><dl className="management-definition-grid"><Field label="Last Login" value={<DateTime value={user?.lastLoginAt} />} /><Field label="Failed Sign-In Attempts" value={user?.failedSignInAttempts} /><Field label="Account Status" value={user?.accountStatus} /><Field label="Status Reason" value={user?.lockReason} /></dl></section>
-        <section className="management-detail-card"><h2>Sign-In History</h2><LoginHistory records={history} /></section>
-        <UserAdministrativeActions user={user} onAction={(action) => runAction(action)} onRoleChange={(role) => runAction('role', role)} />
-      </div>
+    <div className="page user-detail-page">
+      <header className="detail-header">
+        <Link className="back-link" to={APPLICATION_ROUTES.USERS}><ArrowLeftIcon width={15} height={15} aria-hidden="true" />User Management</Link>
+        <div className="detail-header-copy">
+          <p className="page-eyebrow">User</p>
+          <h1>{user?.name || 'User Detail'}</h1>
+          {user && <div className="detail-title-row"><span className="badge badge-info">{ROLE_DEFINITIONS[user.role]?.displayName ?? titleCase(user.role)}</span><span className={`badge badge-${ACCOUNT_TONES[user.accountStatus] ?? 'neutral'}`}>{titleCase(user.accountStatus)}</span><span className="muted">{user.email}</span></div>}
+        </div>
+      </header>
+      {loading && <section className="panel"><LoadingState message="Loading user account…" /></section>}
+      {error && <section className="panel"><ErrorState title="User information is unavailable." message={error} onRetry={retry} /></section>}
+      {!loading && !error && !user && <section className="panel"><ManagementEmptyState title="User information is unavailable." description={`No user record is available for ${userId}.`} /></section>}
+      {!loading && user && <div className="detail-layout">
+        <div className="detail-main">
+          <Panel id="user-identity-heading" title="Identity and access"><dl className="key-values columns-2"><Field label="Name" value={user.name} /><Field label="Email" value={user.email} /><Field label="Role" value={ROLE_DEFINITIONS[user.role]?.displayName ?? user.role} /><Field label="Account status" value={titleCase(user.accountStatus)} /><Field label="Team" value={user.teamId && <span className="reference-text" title={user.teamId}>{shortReference(user.teamId)}</span>} /><Field label="Supervisor" value={user.supervisorId && <span className="reference-text" title={user.supervisorId}>{shortReference(user.supervisorId)}</span>} /></dl></Panel>
+          <Panel id="user-security-heading" title="Security"><dl className="key-values columns-2"><Field label="Last sign-in" value={<DateTime value={user.lastLoginAt} />} /><Field label="Failed sign-in attempts" value={user.failedSignInAttempts} /><Field label="Status reason" value={user.lockReason} /></dl></Panel>
+          <Panel id="user-history-heading" title="Sign-in history"><LoginHistory records={history} /></Panel>
+        </div>
+        <aside className="detail-side"><UserAdministrativeActions user={user} onAction={(action) => runAction(action)} onRoleChange={(role) => runAction('role', role)} /></aside>
+      </div>}
     </div>
   );
 }

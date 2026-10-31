@@ -72,8 +72,8 @@ test('Dashboard retains risk information without advertising unsupported global 
   const { default: Chart } = await vite.ssrLoadModule('/src/components/DonutChart.jsx');
   const cards = render(Cards, { summary: { totalTransactions: 10, transactionsEvaluated: 10, highRiskTransactions: 3, averageRiskScore: 60 }, highRiskPercentage: 30 });
   const chart = render(Chart, { counts: { low: 5, medium: 2, high: 3 }, percentages: { low: 50, medium: 20, high: 30 }, total: 10 });
-  assert.match(strip(cards), /High-Risk Transactions3/);
-  assert.match(strip(chart), /High Risk3transactions30%/);
+  assert.match(strip(cards), /High risk3/);
+  assert.match(strip(chart), /High risk330%/);
   assert.doesNotMatch(cards + chart, /href="\/transactions\?risk=/);
 });
 

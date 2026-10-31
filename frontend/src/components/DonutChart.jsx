@@ -1,51 +1,45 @@
+const LEVELS = Object.freeze([
+  ['high', 'High risk'],
+  ['medium', 'Medium risk'],
+  ['low', 'Low risk'],
+]);
+const RADIUS = 52;
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 export default function DonutChart({ counts, percentages, total }) {
-  const lowDeg = (percentages.low / 100) * 360;
-  const mediumDeg = (percentages.medium / 100) * 360;
-
-  const background = total === 0 ? '#e5e8ee' : `conic-gradient(
-    #16a34a 0deg ${lowDeg}deg,
-    #ea8c1e ${lowDeg}deg ${lowDeg + mediumDeg}deg,
-    #dc2626 ${lowDeg + mediumDeg}deg 360deg
-  )`;
+  let offset = 0;
+  const segments = total === 0 ? [] : ['low', 'medium', 'high'].map((level) => {
+    const length = (counts[level] / total) * CIRCUMFERENCE;
+    const segment = { level, length, offset };
+    offset += length;
+    return segment;
+  }).filter((segment) => segment.length > 0);
 
   return (
-    <div className="donut-wrap">
-      <div
-        className="donut-chart"
-        role="img"
-        aria-label={`${counts.low} low risk transactions, ${counts.medium} medium risk transactions, and ${counts.high} high risk transactions`}
-        style={{ background }}
-      >
-        <div className="donut-center">
+    <div className="risk-distribution">
+      <div className="risk-donut" role="img"
+        aria-label={`${counts.low} low risk transactions, ${counts.medium} medium risk transactions, and ${counts.high} high risk transactions`}>
+        <svg viewBox="0 0 128 128" aria-hidden="true">
+          <circle className="risk-donut-track" cx="64" cy="64" r={RADIUS} />
+          {segments.map(({ level, length, offset: start }) => <circle key={level} className={`risk-donut-segment is-${level}`} cx="64" cy="64" r={RADIUS}
+            strokeDasharray={`${length} ${CIRCUMFERENCE - length}`} strokeDashoffset={-start} />)}
+        </svg>
+        <div className="risk-donut-center">
           <strong>{total.toLocaleString('en-US')}</strong>
           <span>Evaluated</span>
         </div>
       </div>
-      <div className="donut-legend">
-        {['low', 'medium', 'high'].map((level) => (
-          <div
-            key={level}
-            className={`legend-row legend-${level}`}
-            aria-label={`${level} risk transactions: ${counts[level]}, ${percentages[level]} percent`}
-          >
-            <span className="legend-label">
-              <span className={`legend-dot dot-${level}`} />
-              {`${level[0].toUpperCase()}${level.slice(1)} Risk`}
-            </span>
-            <span className="legend-metrics">
-              <span className="legend-metric">
-                <strong>{counts[level]}</strong>
-                <span>transactions</span>
-              </span>
-              <span className="legend-metric">
-                <strong>{percentages[level]}%</strong>
-                <span>of evaluated</span>
-              </span>
-            </span>
-          </div>
+      <ul className="risk-legend">
+        {LEVELS.map(([level, label]) => (
+          <li key={level} className={`risk-legend-row is-${level}`}
+            aria-label={`${label} transactions: ${counts[level]}, ${percentages[level]} percent`}>
+            <span className="risk-legend-label"><span className="risk-legend-dot" aria-hidden="true" />{label}</span>
+            <span className="risk-legend-count">{counts[level].toLocaleString('en-US')}</span>
+            <span className="risk-legend-percent">{percentages[level]}%</span>
+            <span className="risk-legend-bar" aria-hidden="true"><span style={{ width: `${percentages[level]}%` }} /></span>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }

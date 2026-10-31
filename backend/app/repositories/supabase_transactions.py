@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import time
 from typing import Any
 
 import httpx
@@ -1143,7 +1144,105 @@ TRANSACTION_SORT_ORDERS = {
     "oldest": "transaction_timestamp.asc.nullslast,id.asc",
     "highest-amount": "amount.desc.nullslast,id.asc",
     "lowest-amount": "amount.asc.nullslast,id.asc",
+    "highest-risk": "primary_risk_scaled.desc.nullslast,transaction_timestamp.desc.nullslast,id.asc",
+    "lowest-risk": "primary_risk_scaled.asc.nullslast,transaction_timestamp.desc.nullslast,id.asc",
 }
+
+# Same thresholds as all_dataset_risk_scores and get_dashboard_summary for
+# persisted primary-dataset results (HIGH >= 75, MEDIUM >= 50, LOW < 50).
+TRANSACTION_RISK_FILTERS = {
+    "high": {"primary_risk_scaled": "gte.7500"},
+    "medium": {"and": "(primary_risk_scaled.gte.5000,primary_risk_scaled.lt.7500)"},
+    "low": {"primary_risk_scaled": "lt.5000"},
+}
+TRANSACTION_RULE_STATUS_FILTERS = {
+    "passed": {"primary_rule_mask": "eq.0"},
+    "review": {"primary_rule_mask": "gt.0"},
+}
+RISK_SORT_OPTIONS = frozenset({"highest-risk", "lowest-risk"})
+FILTER_CAPABILITY_TTL_SECONDS = 60.0
+CATEGORY_OPTION_LIMIT = 60
+_filter_capability_cache: dict[str, tuple[float, Any]] = {}
+
+
+class TransactionFilterUnavailableError(ValueError):
+    pass
+
+
+def _cached(key: str, ttl: float, load):
+    now = time.monotonic()
+    cached = _filter_capability_cache.get(key)
+    if cached and now - cached[0] < ttl:
+        return cached[1]
+    value = load()
+    _filter_capability_cache[key] = (now, value)
+    return value
+
+
+def _count_rows(client: httpx.Client, endpoint: str, filters: dict[str, str]) -> int:
+    response = client.get(
+        endpoint,
+        headers=_get_headers(include_count=True),
+        params={"select": "id", "limit": "1", **filters},
+    )
+    response.raise_for_status()
+    rows = response.json()
+    return _parse_total(response.headers.get("content-range"), len(rows) if isinstance(rows, list) else 0)
+
+
+def _risk_filters_supported() -> bool:
+    # Risk and rule status are columns only for persisted primary-dataset
+    # results. Any application row without them (for example a newly ingested
+    # payment) would be silently excluded, so filtering is then unavailable.
+    if not primary_dataset_enabled():
+        return False
+    url, _ = _get_configuration()
+    endpoint = f"{url}/rest/v1/{transaction_read_source()}"
+    try:
+        with httpx.Client(timeout=REQUEST_TIMEOUT_SECONDS) as client:
+            return _count_rows(client, endpoint, {"primary_rule_mask": "is.null"}) == 0
+    except (httpx.HTTPError, ValueError) as exc:
+        raise SupabasePersistenceError("Failed to read transaction filter capability.") from exc
+
+
+def _category_options() -> tuple[list[str], bool]:
+    # Bounded distinct scan: one ordered single-row read per category.
+    url, _ = _get_configuration()
+    endpoint = f"{url}/rest/v1/{transaction_read_source()}"
+    categories: list[str] = []
+    try:
+        with httpx.Client(timeout=REQUEST_TIMEOUT_SECONDS) as client:
+            while len(categories) <= CATEGORY_OPTION_LIMIT:
+                params = {"select": "category", "order": "category.asc", "limit": "1",
+                          "category": f"gt.{categories[-1]}" if categories else "not.is.null"}
+                response = client.get(endpoint, headers=_get_headers(), params=params)
+                response.raise_for_status()
+                rows = response.json()
+                if not isinstance(rows, list):
+                    raise ValueError("Invalid category response.")
+                if not rows:
+                    break
+                value = rows[0].get("category") if isinstance(rows[0], dict) else None
+                if not isinstance(value, str):
+                    break
+                categories.append(value)
+    except (httpx.HTTPError, ValueError) as exc:
+        raise SupabasePersistenceError("Failed to read transaction categories.") from exc
+    truncated = len(categories) > CATEGORY_OPTION_LIMIT
+    return [value for value in categories[:CATEGORY_OPTION_LIMIT] if value.strip()], truncated
+
+
+def get_transaction_filter_options() -> dict[str, Any]:
+    risk_supported = _cached("risk", FILTER_CAPABILITY_TTL_SECONDS, _risk_filters_supported)
+    categories, truncated = _cached("categories", FILTER_CAPABILITY_TTL_SECONDS * 5, _category_options)
+    return {
+        "risk_levels": ["low", "medium", "high"] if risk_supported else [],
+        "rule_statuses": ["passed", "review"] if risk_supported else [],
+        "sorts": [*TRANSACTION_SORT_ORDERS] if risk_supported
+        else [sort for sort in TRANSACTION_SORT_ORDERS if sort not in RISK_SORT_OPTIONS],
+        "categories": categories,
+        "categories_truncated": truncated,
+    }
 
 def get_processing_statuses(transaction_ids: list[str]) -> dict[str, str]:
     if not transaction_ids or os.getenv("TRANSACTION_RECOVERY_ENABLED", "false").lower() != "true":
@@ -1167,12 +1266,25 @@ def list_transactions(
     page_size: int = 25,
     search: str | None = None,
     sort_by: str = "newest",
+    risk: str | None = None,
+    rule_status: str | None = None,
+    category: str | None = None,
 ) -> tuple[list[dict[str, Any]], int]:
     if page < 1 or page_size < 1:
         raise ValueError("Page and page size must be positive integers.")
 
     if sort_by not in TRANSACTION_SORT_ORDERS:
         raise ValueError("Unsupported transaction sort option.")
+    if risk is not None and risk not in TRANSACTION_RISK_FILTERS:
+        raise ValueError("Unsupported transaction risk filter.")
+    if rule_status is not None and rule_status not in TRANSACTION_RULE_STATUS_FILTERS:
+        raise ValueError("Unsupported transaction rule status filter.")
+    if (risk or rule_status or sort_by in RISK_SORT_OPTIONS) and not _cached(
+        "risk", FILTER_CAPABILITY_TTL_SECONDS, _risk_filters_supported
+    ):
+        raise TransactionFilterUnavailableError(
+            "Risk filtering is unavailable for the current transaction data."
+        )
 
     search_term = " ".join((search or "").split())
 
@@ -1202,6 +1314,13 @@ def list_transactions(
             f"vendor_name.ilike.{search_pattern},"
             f"category.ilike.{search_pattern})"
         )
+    # Filters are applied by the database before offset/limit and count.
+    if risk:
+        params.update(TRANSACTION_RISK_FILTERS[risk])
+    if rule_status:
+        params.update(TRANSACTION_RULE_STATUS_FILTERS[rule_status])
+    if category is not None and category.strip():
+        params["category"] = f"eq.{category}"
 
     try:
         with httpx.Client(timeout=REQUEST_TIMEOUT_SECONDS) as client:

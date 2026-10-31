@@ -39,9 +39,27 @@ async def _call(operation, **values):
 async def list_vendors(
     page: int = Query(default=1, ge=1), page_size: int = Query(default=25, ge=1, le=100),
     status: Literal["NORMAL", "WATCHLISTED", "BLOCKED"] | None = None,
+    search: str | None = Query(default=None, max_length=100),
     user: dict = Depends(get_current_user),
 ):
+    search = (search or "").strip()
+    if search:
+        return await _call(vendors.search_vendors, actor_id=user["id"], page=page, page_size=page_size,
+                           status=status, search=search)
     return await _call(vendors.list_vendors, actor_id=user["id"], page=page, page_size=page_size, status=status)
+
+
+@router.get("/filter-options", dependencies=[Depends(require_roles("AUDITOR", "SUPERVISOR", "ADMIN"))])
+async def vendor_filter_options(user: dict = Depends(get_current_user)):
+    # Search is offered only when the database search function is available.
+    try:
+        await run_in_threadpool(vendors.search_vendors, actor_id=user["id"], page=1, page_size=1,
+                                status=None, search="")
+    except identity.IdentityError as exc:
+        if exc.status in (401, 403):
+            raise HTTPException(status_code=exc.status, detail=exc.code) from exc
+        return {"search": False, "statuses": ["NORMAL", "WATCHLISTED", "BLOCKED"]}
+    return {"search": True, "statuses": ["NORMAL", "WATCHLISTED", "BLOCKED"]}
 
 
 @router.get("/{vendor_id}", dependencies=[Depends(require_roles("AUDITOR", "SUPERVISOR", "ADMIN"))])

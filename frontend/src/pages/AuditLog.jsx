@@ -3,12 +3,17 @@ import usePagedResource from '../hooks/usePagedResource.js';
 import CollectionPagination from '../components/CollectionPagination.jsx';
 import Reference from '../components/Reference.jsx';
 import { eventLabel, resourceLabel } from '../utils/presentation.js';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AUDIT_ACTIONS, AUDIT_OUTCOMES, AUDIT_RESOURCE_TYPES } from '../audit/auditEvents.js';
 import { AUDIT_LOG_SORTS, getAuditLogScope } from '../audit/auditLog.js';
 import { auditService } from '../audit/auditService.js';
 import AuditEventDetails from '../components/AuditEventDetails.jsx';
 import useAuthorization from '../auth/useAuthorization.js';
+import { Badge, PageHeader } from '../components/ui/Layout.jsx';
+import { Combobox, FilterBar, SearchField, SegmentedControl, SelectField } from '../components/ui/Filters.jsx';
+import { EmptyState, ErrorState, LoadingState } from '../components/RequestStateView.jsx';
+
+const OUTCOME_TONES = Object.freeze({ SUCCESS: 'low', FAILED: 'high', DENIED: 'medium' });
 
 const EMPTY_FILTERS = { search: '', actor: '', action: '', resource_type: '', outcome: '', date: '', sort: 'NEWEST' };
 const loadAuditPage = ({ query, signal }) => auditService.getAuditEvents(query, { signal });
@@ -21,43 +26,45 @@ export default function AuditLog() {
   const { effectiveRole } = useAuthorization();
   const collection = usePagedResource(loadAuditPage, EMPTY_FILTERS);
   const { resource, query } = collection;
-  const filters = { ...query, resourceType: query.resource_type };
-  const sort = query.sort;
   const loading = collection.status === 'loading';
   const error = collection.error;
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [text, setText] = useState({ search: query.search, actor: query.actor });
   const scope = getAuditLogScope(effectiveRole);
-  const updateFilter = (key) => (event) => resource.setFilters({ [key === 'resourceType' ? 'resource_type' : key]: event.target.value });
-  const filtersActive = Object.keys(EMPTY_FILTERS).some((key) => query[key] !== EMPTY_FILTERS[key]);
+  const setFilter = (key, value) => resource.setFilters({ [key]: value });
+  const activeFilters = Object.keys(EMPTY_FILTERS).filter((key) => query[key] !== EMPTY_FILTERS[key]).length;
+  useEffect(() => {
+    if (text.search === query.search && text.actor === query.actor) return undefined;
+    const timer = setTimeout(() => resource.setFilters({ search: text.search, actor: text.actor }), 300);
+    return () => clearTimeout(timer);
+  }, [text, query.search, query.actor, resource]);
+  const clearFilters = () => { setText({ search: '', actor: '' }); resource.setFilters(EMPTY_FILTERS); };
+  const summary = loading ? 'Loading activity…' : error ? 'Activity unavailable'
+    : `${collection.total.toLocaleString('en-US')} ${collection.total === 1 ? 'event' : 'events'}${activeFilters ? ' match your filters' : ''}`;
 
   return (
-    <div className="audit-log-page">
-      <div className="page-header audit-log-page-header">
-        <div>
-          <h1>Audit Log</h1>
-          <p>Review recorded system and user activity.</p>
-        </div>
-        {scope && <span className="audit-scope-badge">{scope === 'TEAM' ? 'Your activity and available team events' : 'All activity'}</span>}
-      </div>
+    <div className="page audit-log-page">
+      <PageHeader title="Audit Log" description="Every recorded action, who took it and what happened."
+        actions={scope && <Badge tone="neutral">{scope === 'TEAM' ? 'Your activity and team events' : 'All activity'}</Badge>} />
 
-      <section className="audit-log-controls" aria-label="Audit log filters">
-        <label className="audit-filter audit-filter-search"><span>Search</span><input type="search" value={filters.search} onChange={updateFilter('search')} placeholder="Search activity" /></label>
-        <label className="audit-filter"><span>User / Actor</span><input value={filters.actor} onChange={updateFilter('actor')} placeholder="Actor name" /></label>
-        <label className="audit-filter"><span>Action</span><select value={filters.action} onChange={updateFilter('action')}><option value="">All actions</option>{Object.values(AUDIT_ACTIONS).map((action) => <option value={action} key={action}>{eventLabel(action)}</option>)}</select></label>
-        <label className="audit-filter"><span>Resource</span><select value={filters.resourceType} onChange={updateFilter('resourceType')}><option value="">All resources</option>{Object.values(AUDIT_RESOURCE_TYPES).map((resource) => <option value={resource} key={resource}>{titleCase(resource)}</option>)}</select></label>
-        <label className="audit-filter"><span>Outcome</span><select value={filters.outcome} onChange={updateFilter('outcome')}><option value="">All outcomes</option>{Object.values(AUDIT_OUTCOMES).map((outcome) => <option value={outcome} key={outcome}>{titleCase(outcome)}</option>)}</select></label>
-        <label className="audit-filter"><span>Date (UTC)</span><input type="date" value={filters.date} onChange={updateFilter('date')} /></label>
-        <label className="audit-filter audit-sort-control"><span>Order</span><select value={sort} onChange={(event) => resource.setFilters({ sort: event.target.value })}><option value={AUDIT_LOG_SORTS.NEWEST}>Newest</option><option value={AUDIT_LOG_SORTS.OLDEST}>Oldest</option></select></label>
-        {filtersActive && <button type="button" className="btn btn-secondary" onClick={() => resource.setFilters(EMPTY_FILTERS)}>Clear Filters</button>}
-      </section>
+      <FilterBar label="Audit log filters" summary={summary} activeCount={activeFilters} onClear={clearFilters}>
+        <SearchField label="Search activity" value={text.search} onChange={(value) => setText((current) => ({ ...current, search: value }))} placeholder="Search activity" />
+        <div className="text-filter"><label htmlFor="audit-actor-filter">Actor</label><input id="audit-actor-filter" value={text.actor} onChange={(event) => setText((current) => ({ ...current, actor: event.target.value }))} placeholder="Name" /></div>
+        <Combobox label="Action" value={query.action} allLabel="All actions" placeholder="Type an action" options={Object.values(AUDIT_ACTIONS).map((action) => ({ value: action, label: eventLabel(action) }))} onChange={(value) => setFilter('action', value)} />
+        <SelectField label="Resource" value={query.resource_type} onChange={(value) => setFilter('resource_type', value)} options={[{ value: '', label: 'All' }, ...Object.values(AUDIT_RESOURCE_TYPES).map((resourceType) => ({ value: resourceType, label: titleCase(resourceType) }))]} />
+        <SegmentedControl label="Outcome" value={query.outcome} onChange={(value) => setFilter('outcome', value)} options={[{ value: '', label: 'All' }, ...Object.values(AUDIT_OUTCOMES).map((outcome) => ({ value: outcome, label: titleCase(outcome), tone: OUTCOME_TONES[outcome] }))]} />
+        <div className={`text-filter${query.date ? ' is-active' : ''}`}><label htmlFor="audit-date-filter">Day (UTC)</label><input id="audit-date-filter" type="date" value={query.date} onChange={(event) => setFilter('date', event.target.value)} /></div>
+        <SelectField label="Order" value={query.sort} onChange={(value) => setFilter('sort', value)} options={[{ value: AUDIT_LOG_SORTS.NEWEST, label: 'Newest' }, { value: AUDIT_LOG_SORTS.OLDEST, label: 'Oldest' }]} />
+      </FilterBar>
 
-      <section className="audit-log-surface" aria-labelledby="audit-activity-heading" aria-busy={loading}>
-        <header><div><h2 id="audit-activity-heading">Recorded Activity</h2><p>Recorded actions and outcomes.</p></div><span>{loading || error ? '—' : collection.total} events</span></header>
-        {error && <p role="alert" className="integration-error">{error}</p>}
-        {loading && <p className="request-state" role="status">{collection.refreshing ? 'Refreshing activity…' : 'Loading activity…'}</p>}
-        {!loading && !error && <AuditLogTable events={collection.items} onSelect={setSelectedEvent} />}
-        {!loading && !error && collection.items.length === 0 && <div className="audit-log-empty"><h3>No activity matches these filters.</h3></div>}
-        {error && <button type="button" className="btn btn-secondary" onClick={() => resource.load()}>Retry</button>}
+      <section className="panel panel-table" aria-labelledby="audit-activity-heading" aria-busy={loading}>
+        <h2 id="audit-activity-heading" className="sr-only">Recorded Activity</h2>
+        {loading ? <LoadingState message={collection.refreshing ? 'Refreshing activity…' : 'Loading activity…'} />
+          : error ? <ErrorState title="Activity could not be loaded." message={error} onRetry={() => resource.load()} />
+            : collection.items.length === 0 ? (activeFilters
+              ? <EmptyState filtered title="No activity matches these filters." message="Widen the filters or clear them." action={<button type="button" className="btn btn-secondary btn-sm" onClick={clearFilters}>Clear filters</button>} />
+              : <EmptyState title="No activity recorded yet." />)
+              : <AuditLogTable events={collection.items} onSelect={setSelectedEvent} />}
         <CollectionPagination collection={collection} itemLabel="events" />
       </section>
       <AuditEventDetails event={selectedEvent} onClose={() => setSelectedEvent(null)} />
@@ -66,16 +73,16 @@ export default function AuditLog() {
 }
 
 export function AuditLogTable({ events, onSelect }) {
-  return <div className="audit-log-table-wrap"><table className="audit-log-table">
+  return <div className="table-wrap"><table className="data-table audit-log-table">
     <caption className="sr-only">Recorded audit activity</caption>
-    <thead><tr><th>Actor</th><th>Action</th><th>Resource</th><th>Outcome</th><th>Time</th><th><span className="sr-only">Details</span></th></tr></thead>
+    <thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Resource</th><th>Outcome</th><th><span className="sr-only">Details</span></th></tr></thead>
     <tbody>{events.map((event) => <tr key={event.id}>
-      <td data-label="Actor"><strong>{event.actorName ?? '—'}</strong><span className="secondary-metadata">{eventLabel(event.actorRole)}</span></td>
-      <td data-label="Action">{eventLabel(event.action)}</td>
-      <td data-label="Resource"><Reference value={event.resourceId} label={resourceLabel(event.resourceType, event.resourceId)} /></td>
-      <td data-label="Outcome">{titleCase(event.outcome ?? 'Unavailable')}</td>
       <td data-label="Time"><DateTime value={event.timestamp} compact /></td>
-      <td data-label="Details"><button type="button" className="audit-details-button" onClick={() => onSelect(event)}>Details</button></td>
+      <td data-label="Actor"><span className="cell-primary">{event.actorName ?? '—'}</span><span className="secondary-metadata">{eventLabel(event.actorRole)}</span></td>
+      <td data-label="Action"><span className="cell-primary">{eventLabel(event.action)}</span></td>
+      <td data-label="Resource"><Reference value={event.resourceId} label={resourceLabel(event.resourceType, event.resourceId)} /></td>
+      <td data-label="Outcome"><span className={`badge badge-${OUTCOME_TONES[event.outcome] ?? 'neutral'}`}>{titleCase(event.outcome ?? 'Unavailable')}</span></td>
+      <td data-label="Details" className="cell-actions"><button type="button" className="btn btn-ghost btn-sm" onClick={() => onSelect?.(event)}>Details</button></td>
     </tr>)}</tbody>
   </table></div>;
 }

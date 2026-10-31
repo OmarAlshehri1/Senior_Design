@@ -20,6 +20,7 @@ import CollectionPagination from '../components/CollectionPagination.jsx';
 import useApp from '../context/useApp';
 import { reportsService } from '../services/reportsService';
 import useAuthorization from '../auth/useAuthorization.js';
+import { LoadingState } from '../components/RequestStateView.jsx';
 
 const BusinessReports = lazy(() => import('../components/BusinessReports.jsx'));
 
@@ -50,8 +51,8 @@ export default function Reports() {
   const { effectiveRole } = useAuthorization();
   const [legacy, setLegacy] = useState(false);
   return <>
-    {effectiveRole === 'ADMIN' && <div className="business-report-actions"><button type="button" className="btn btn-secondary" onClick={() => setLegacy((value) => !value)}>{legacy ? 'Open Business Reports' : 'Open Legacy Daily Summaries'}</button></div>}
-    {legacy && effectiveRole === 'ADMIN' ? <LegacyReports /> : <Suspense fallback={<p role="status">Loading business reports…</p>}><BusinessReports /></Suspense>}
+    {effectiveRole === 'ADMIN' && <div className="reports-mode-switch"><button type="button" className="btn btn-ghost btn-sm" onClick={() => setLegacy((value) => !value)}>{legacy ? 'Back to Business Reports' : 'Legacy daily summaries'}</button></div>}
+    {legacy && effectiveRole === 'ADMIN' ? <div className="page legacy-reports"><LegacyReports /></div> : <Suspense fallback={<div className="page"><section className="panel"><LoadingState message="Loading business reports…" /></section></div>}><BusinessReports /></Suspense>}
   </>;
 }
 

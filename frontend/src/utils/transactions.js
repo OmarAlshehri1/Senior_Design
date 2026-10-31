@@ -1,6 +1,8 @@
 import { getTransactionRiskLevel } from './risk.js';
 import { AUDIT_RULES } from '../data/auditRules.js';
 
+export const EMPTY_TRANSACTION_FILTERS = Object.freeze({ risk: '', ruleStatus: '', category: '' });
+
 export const TRANSACTION_SORT_OPTIONS = Object.freeze({
   NEWEST: 'newest',
   OLDEST: 'oldest',

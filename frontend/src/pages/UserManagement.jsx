@@ -7,6 +7,12 @@ import CollectionPagination from '../components/CollectionPagination.jsx';
 import ManagementEmptyState from '../components/ManagementEmptyState.jsx';
 import AccessRequestDetails from '../components/AccessRequestDetails.jsx';
 import { userManagementService } from '../management/userManagementService.js';
+import { PageHeader } from '../components/ui/Layout.jsx';
+import { ErrorState, LoadingState } from '../components/RequestStateView.jsx';
+import { titleCase } from '../components/statusUtils.js';
+
+const ACCOUNT_TONES = Object.freeze({ ACTIVE: 'low', LOCKED: 'medium', DISABLED: 'high', PENDING: 'info', APPROVED: 'low', REJECTED: 'neutral' });
+const StatusBadge = ({ value }) => (value ? <span className={`badge badge-${ACCOUNT_TONES[value] ?? 'neutral'}`}>{titleCase(value)}</span> : '—');
 
 export const USER_MANAGEMENT_TABS = Object.freeze([
   Object.freeze({ key: 'users', label: 'Users' }),
@@ -39,30 +45,45 @@ const displayValue = (value) => value ?? '—';
 
 function ManagementTable({ columns, rows, renderRow, title, description }) {
   return (
-    <div className="management-table-wrap">
-      <table className="management-table">
+    <div className="table-wrap">
+      {rows.length === 0 ? <ManagementEmptyState title={title} description={description} /> : <table className="data-table">
         <thead><tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr></thead>
         <tbody>{rows.map(renderRow)}</tbody>
-      </table>
-      {rows.length === 0 && <ManagementEmptyState title={title} description={description} />}
+      </table>}
     </div>
   );
 }
 
 export function UsersView({ users }) {
   return (
-    <>
-      <ManagementTable columns={['Name', 'Email', 'Role', 'Status', `Last Login`, 'Actions']} rows={users} renderRow={(user) => <tr key={user.id}><td data-label="Name">{displayValue(user.name)}</td><td data-label="Email">{displayValue(user.email)}</td><td data-label="Role">{displayValue(ROLE_DEFINITIONS[user.role]?.displayName)}</td><td data-label="Status">{displayValue(user.accountStatus)}</td><td data-label={`Last Login`}><DateTime value={user.lastLoginAt} compact showZone={false} /></td><td data-label="Actions"><Link className="management-row-action" to={`/users/${user.id}`}>View User</Link></td></tr>} title="No user data is available yet." description="There are no user accounts in this view." />
-    </>
+    <ManagementTable columns={['User', 'Role', 'Status', 'Last sign-in', 'Action']} rows={users} renderRow={(user) => <tr key={user.id}>
+      <td data-label="User"><span className="cell-primary">{displayValue(user.name)}</span><span className="secondary-metadata">{displayValue(user.email)}</span></td>
+      <td data-label="Role">{displayValue(ROLE_DEFINITIONS[user.role]?.displayName)}</td>
+      <td data-label="Status"><StatusBadge value={user.accountStatus} /></td>
+      <td data-label="Last sign-in"><DateTime value={user.lastLoginAt} compact showZone={false} /></td>
+      <td data-label="Action" className="cell-actions"><Link className="btn btn-secondary btn-sm" to={`/users/${user.id}`}>View User</Link></td>
+    </tr>} title="No users yet." description="User accounts appear here once access is approved." />
   );
 }
 
 function RequestsView({ requests, onSelect }) {
-  return <ManagementTable columns={['Full Name', 'Work Email', 'Department', 'Employee ID', `Requested At`, 'Status', 'Actions']} rows={requests} renderRow={(request) => <tr key={request.id}><td data-label="Full Name">{displayValue(request.fullName)}</td><td data-label="Work Email">{displayValue(request.email)}</td><td data-label="Department">{displayValue(request.department)}</td><td data-label="Employee ID">{displayValue(request.employeeId)}</td><td data-label={`Requested At`}><DateTime value={request.requestedAt} compact showZone={false} /></td><td data-label="Status">{displayValue(request.status)}</td><td data-label="Actions"><button type="button" className="management-row-action" onClick={() => onSelect(request)}>View Request</button></td></tr>} title="No access requests are available yet." description="Submitted requests will remain available here for review and historical reference." />;
+  return <ManagementTable columns={['Requester', 'Department', 'Employee ID', 'Requested', 'Status', 'Action']} rows={requests} renderRow={(request) => <tr key={request.id}>
+    <td data-label="Requester"><span className="cell-primary">{displayValue(request.fullName)}</span><span className="secondary-metadata">{displayValue(request.email)}</span></td>
+    <td data-label="Department">{displayValue(request.department)}</td>
+    <td data-label="Employee ID">{displayValue(request.employeeId)}</td>
+    <td data-label="Requested"><DateTime value={request.requestedAt} compact showZone={false} /></td>
+    <td data-label="Status"><StatusBadge value={request.status} /></td>
+    <td data-label="Action" className="cell-actions"><button type="button" className="btn btn-secondary btn-sm" onClick={() => onSelect(request)}>Review request</button></td>
+  </tr>} title="No access requests." description="New requests appear here for review and stay available for reference." />;
 }
 
 function UnlockRequestsView({ requests, onDecision }) {
-  return <ManagementTable columns={['Account Email', `Requested At`, 'Status', 'Actions']} rows={requests} renderRow={(request) => <tr key={request.id}><td data-label="Account Email">{displayValue(request.email)}</td><td data-label={`Requested At`}><DateTime value={request.requested_at} compact showZone={false} /></td><td data-label="Status">{displayValue(request.status)}</td><td data-label="Actions">{request.status === 'PENDING' && <><button type="button" className="management-row-action" onClick={() => onDecision(request.id, true)}>Approve Unlock</button><button type="button" className="management-row-action" onClick={() => onDecision(request.id, false)}>Reject</button></>}</td></tr>} title="No account unlock requests are available." description="Locked account owners can request an unlock; an administrator reviews requests here." />;
+  return <ManagementTable columns={['Account', 'Requested', 'Status', 'Action']} rows={requests} renderRow={(request) => <tr key={request.id}>
+    <td data-label="Account"><span className="cell-primary">{displayValue(request.email)}</span></td>
+    <td data-label="Requested"><DateTime value={request.requested_at} compact showZone={false} /></td>
+    <td data-label="Status"><StatusBadge value={request.status} /></td>
+    <td data-label="Action" className="cell-actions">{request.status === 'PENDING' ? <div className="row-actions"><button type="button" className="btn btn-primary btn-sm" onClick={() => onDecision(request.id, true)}>Approve unlock</button><button type="button" className="btn btn-secondary btn-sm" onClick={() => onDecision(request.id, false)}>Reject</button></div> : '—'}</td>
+  </tr>} title="No unlock requests." description="Locked users can request an unlock; requests appear here for review." />;
 }
 
 export default function UserManagement() {
@@ -77,7 +98,6 @@ export default function UserManagement() {
   const unlockRequests = unlockPage.items;
   const current = activeTab === 'requests' ? requestPage : activeTab === 'unlockRequests' ? unlockPage : userPage;
   const loading = current.status === 'loading';
-  const error = current.error || actionError;
   const counts = { users: userPage.total, requests: requestPage.total, unlockRequests: unlockPage.total };
 
   const decideRequest = async (decision) => {
@@ -100,17 +120,16 @@ export default function UserManagement() {
   };
 
   return (
-    <div className="management-page user-management-page">
-      <div className="page-header">
-        <div><h1>User Management</h1><p>Manage system access, roles, and account status.</p></div>
-      </div>
-      <section className="management-surface">
-        {error && <p role="alert">{error} <button type="button" onClick={() => { setActionError(''); current.resource.load(); }}>Retry</button></p>}
-        {loading && <p role="status">Loading records…</p>}
+    <div className="page user-management-page">
+      <PageHeader title="User Management" description="Manage who can access the system and what they can do." />
+      <section className="panel panel-table">
         <UserManagementTabs activeTab={activeTab} counts={counts} onSelect={(key) => { setActiveTab(key); setActionError(''); }} />
-        {USER_MANAGEMENT_TABS.map((tab) => <div key={tab.key} id={`management-panel-${tab.key}`} role="tabpanel" hidden={tab.key !== activeTab} tabIndex={0} aria-labelledby={`management-tab-${tab.key}`} className="management-tab-panel">
+        {actionError && <p role="alert" className="inline-alert panel-alert">{actionError}</p>}
+        {USER_MANAGEMENT_TABS.map((tab) => <div key={tab.key} id={`management-panel-${tab.key}`} role="tabpanel" hidden={tab.key !== activeTab} tabIndex={0} aria-labelledby={`management-tab-${tab.key}`} className="tab-panel">
           {tab.key === activeTab && <>
-          {current.status === 'success' && current.items.length === 0 && current.total > 0 && <p>No records on this page. Retry or browse another server page.</p>}
+          {loading && <LoadingState message="Loading records…" />}
+          {current.status === 'error' && <ErrorState title="Records could not be loaded." message={current.error} onRetry={() => current.resource.load()} />}
+          {current.status === 'success' && current.items.length === 0 && current.total > 0 && <p className="inline-status panel-alert">No records on this page. Go back a page or refresh.</p>}
           {current.status === 'success' && !(current.items.length === 0 && current.total > 0) && activeTab === 'users' && <UsersView users={users} />}
           {current.status === 'success' && !(current.items.length === 0 && current.total > 0) && activeTab === 'requests' && <RequestsView requests={requests} onSelect={setSelectedRequest} />}
           {current.status === 'success' && !(current.items.length === 0 && current.total > 0) && activeTab === 'unlockRequests' && <UnlockRequestsView requests={unlockRequests} onDecision={decideUnlock} />}

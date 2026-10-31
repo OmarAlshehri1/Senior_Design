@@ -1,0 +1,110 @@
+/* Design tokens. One source of truth for color, type, space, radius and depth. */
+:root {
+  /* Surfaces */
+  --color-bg: #f3f5f8;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #f8f9fb;
+  --color-surface-sunken: #eef1f5;
+  --color-surface-elevated: #ffffff;
+  --color-ink: #121821;
+  --color-ink-soft: #1f2733;
+
+  /* Borders */
+  --color-border: #e3e7ed;
+  --color-border-subtle: #edf0f4;
+  --color-border-strong: #cfd6df;
+
+  /* Text */
+  --color-text: #121821;
+  --color-text-secondary: #4a5565;
+  --color-text-muted: #687384;
+  --color-text-inverse: #ffffff;
+
+  /* Brand */
+  --color-primary: #2456c4;
+  --color-primary-hover: #1b459f;
+  --color-primary-soft: #eaf0fb;
+  --color-primary-border: #c9d7f2;
+  --color-focus: #2f6fe4;
+
+  /* Risk and status (meaning is never conveyed by color alone) */
+  --color-low: #1d7a4c;
+  --color-low-soft: #e8f4ed;
+  --color-low-border: #c4e3d1;
+  --color-low-chart: #3a9d6a;
+  --color-medium: #a5590d;
+  --color-medium-soft: #fdf2e3;
+  --color-medium-border: #f1d6ad;
+  --color-medium-chart: #e19a34;
+  --color-high: #b73232;
+  --color-high-soft: #fcebeb;
+  --color-high-border: #f2c4c4;
+  --color-high-chart: #d6504d;
+  --color-success: var(--color-low);
+  --color-success-soft: var(--color-low-soft);
+  --color-warning: var(--color-medium);
+  --color-warning-soft: var(--color-medium-soft);
+  --color-error: var(--color-high);
+  --color-error-soft: var(--color-high-soft);
+  --color-neutral-soft: #eef1f5;
+
+  /* Navigation (dark navy anchor). Contrast on --color-nav-bg:
+     text 10.3:1, icons 6.4:1, labels 5.1:1, restricted 5.6:1, active text on active surface 11:1. */
+  --color-nav-bg: #172231;
+  --color-nav-border: #223044;
+  --color-nav-hover: #1f2d40;
+  --color-nav-active: #283d5a;
+  --color-nav-accent: #7ea6f4;
+  --color-nav-text: #c6d0dc;
+  --color-nav-icon: #95a5b9;
+  --color-nav-label: #8293a9;
+  --color-nav-restricted: #8b9aae;
+  --color-nav-strong: #ffffff;
+  --color-nav-focus: #9cbcff;
+
+  /* Typography */
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+  --text-page-title: 600 1.625rem/1.2 var(--font-sans);
+  --text-section-title: 600 1.0625rem/1.35 var(--font-sans);
+  --text-card-title: 600 0.9375rem/1.4 var(--font-sans);
+  --text-body: 400 0.875rem/1.55 var(--font-sans);
+  --text-label: 500 0.8125rem/1.35 var(--font-sans);
+  --text-meta: 400 0.8125rem/1.45 var(--font-sans);
+  --text-caption: 500 0.75rem/1.35 var(--font-sans);
+  --text-metric: 600 1.625rem/1.1 var(--font-sans);
+
+  /* Space (4px rhythm) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Shape and depth */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+  --shadow-xs: 0 1px 2px rgba(18, 24, 33, 0.04);
+  --shadow-sm: 0 1px 2px rgba(18, 24, 33, 0.04), 0 2px 8px rgba(18, 24, 33, 0.04);
+  --shadow-md: 0 4px 12px rgba(18, 24, 33, 0.06), 0 1px 3px rgba(18, 24, 33, 0.05);
+  --shadow-lg: 0 16px 40px rgba(18, 24, 33, 0.14), 0 2px 8px rgba(18, 24, 33, 0.06);
+  --ring: 0 0 0 3px rgba(47, 111, 228, 0.28);
+
+  /* Layout */
+  --sidebar-width: 248px;
+  --topbar-height: 64px;
+  --content-max: 1440px;
+  --control-height: 38px;
+  --control-height-sm: 32px;
+  --page-gutter: clamp(16px, 3vw, 40px);
+  --motion-fast: 120ms ease;
+  --motion: 180ms cubic-bezier(0.2, 0, 0, 1);
+}

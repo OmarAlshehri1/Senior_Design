@@ -15,6 +15,11 @@ def list_vendors(*, actor_id: str, page: int, page_size: int, status: str | None
                 p_page_size=page_size, p_status=status)
 
 
+def search_vendors(*, actor_id: str, page: int, page_size: int, status: str | None, search: str):
+    return _rpc("search_vendor_monitoring", p_actor=actor_id, p_page=page,
+                p_page_size=page_size, p_status=status, p_search=search)
+
+
 def get_vendor(*, actor_id: str, vendor_id: str):
     return _rpc("get_vendor_monitoring_bundle", p_actor=actor_id, p_vendor=vendor_id)
 

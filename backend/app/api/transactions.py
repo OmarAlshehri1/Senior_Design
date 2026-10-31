@@ -14,7 +14,9 @@ from app.repositories.supabase_transactions import (
     SupabaseConfigurationError,
     SupabasePersistenceError,
     get_transaction_by_id,
+    get_transaction_filter_options,
     list_transactions,
+    TransactionFilterUnavailableError,
     insert_transaction,
     TransactionAlreadyExistsError,
     persist_transaction_evaluation,
@@ -88,8 +90,17 @@ async def get_transactions(
         "oldest",
         "highest-amount",
         "lowest-amount",
+        "highest-risk",
+        "lowest-risk",
     ] = Query(default="newest"),
+    risk: Literal["low", "medium", "high"] | None = Query(default=None),
+    rule_status: Literal["passed", "review"] | None = Query(default=None),
+    category: str | None = Query(default=None, min_length=1, max_length=120),
 ) -> dict[str, object]:
+    # Only supplied filters are forwarded, so unfiltered reads are unchanged.
+    filters = {key: value for key, value in
+               {"risk": risk, "rule_status": rule_status, "category": category}.items()
+               if value is not None}
     try:
         transactions, total = await run_in_threadpool(
             list_transactions,
@@ -97,7 +108,13 @@ async def get_transactions(
             page_size=page_size,
             search=search,
             sort_by=sort_by,
+            **filters,
         )
+    except TransactionFilterUnavailableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc),
+        ) from exc
     except SupabaseConfigurationError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -115,6 +132,22 @@ async def get_transactions(
         "page": page,
         "page_size": page_size,
     }
+
+
+@router.get("/filter-options")
+async def get_transactions_filter_options() -> dict[str, object]:
+    try:
+        return await run_in_threadpool(get_transaction_filter_options)
+    except SupabaseConfigurationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Transaction storage is not configured.",
+        ) from exc
+    except SupabasePersistenceError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Transaction filters could not be retrieved.",
+        ) from exc
 
 
 @router.get("/{transaction_id}")

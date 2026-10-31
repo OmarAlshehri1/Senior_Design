@@ -21,6 +21,10 @@ from app.repositories.identity import IdentityError
 from starlette.concurrency import run_in_threadpool
 
 from app.repositories.supabase_alerts import list_alerts as repository_list_alerts
+from app.repositories.supabase_alerts import (
+    get_alert_filter_options as repository_alert_filter_options,
+    list_alerts_filtered as repository_list_alerts_filtered,
+)
 from app.repositories import accountability, identity
 from app.repositories.supabase_transactions import (
     SupabaseConfigurationError,
@@ -61,16 +65,35 @@ async def get_alerts(
         "ACTIVE",
         "REVIEWED",
     ] | None = Query(default=None, alias="status"),
+    severity: Literal["LOW", "MEDIUM", "HIGH"] | None = Query(default=None),
+    alert_type: str | None = Query(default=None, alias="type", min_length=1, max_length=200),
+    search: str | None = Query(default=None, max_length=100),
+    sort: Literal["NEWEST", "OLDEST", "HIGHEST_RISK"] = Query(default="NEWEST"),
     user: dict = Depends(get_current_user),
 ) -> dict[str, object]:
+    search = (search or "").strip() or None
     try:
-        alerts, total = await run_in_threadpool(
-            repository_list_alerts,
-            actor_id=user["id"],
-            page=page,
-            page_size=page_size,
-            status_filter=status_filter,
-        )
+        if severity or alert_type or search or sort != "NEWEST":
+            # Same database scope as the default list; filters precede paging.
+            alerts, total = await run_in_threadpool(
+                repository_list_alerts_filtered,
+                actor_id=user["id"],
+                page=page,
+                page_size=page_size,
+                status_filter=status_filter,
+                severity=severity,
+                alert_type=alert_type,
+                search=search,
+                sort=sort,
+            )
+        else:
+            alerts, total = await run_in_threadpool(
+                repository_list_alerts,
+                actor_id=user["id"],
+                page=page,
+                page_size=page_size,
+                status_filter=status_filter,
+            )
     except SupabaseConfigurationError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -90,6 +113,20 @@ async def get_alerts(
         "page": page,
         "page_size": page_size,
     }
+
+
+@router.get("/filter-options")
+async def get_alert_filter_options(user: dict = Depends(get_current_user)) -> dict[str, object]:
+    # Advanced filters are offered only when the scoped option query succeeds.
+    try:
+        options = await run_in_threadpool(repository_alert_filter_options, actor_id=user["id"])
+    except IdentityError as exc:
+        if exc.status in (401, 403):
+            raise HTTPException(status_code=exc.status, detail=exc.code) from exc
+        return {"supported": False, "types": [], "counts": None}
+    except (SupabaseConfigurationError, SupabasePersistenceError):
+        return {"supported": False, "types": [], "counts": None}
+    return {"supported": True, **options}
 
 
 @router.get("/{alert_id}/assignment")

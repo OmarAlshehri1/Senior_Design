@@ -11,6 +11,11 @@ import NotificationCenter from './NotificationCenter.jsx';
 import { authService } from '../auth/authService.js';
 import { AUTH_ROUTES } from '../auth/authRoutes.js';
 
+function initials(name) {
+  const parts = typeof name === 'string' ? name.trim().split(/\s+/).filter(Boolean) : [];
+  return parts.length ? parts.slice(0, 2).map((part) => part[0].toUpperCase()).join('') : '—';
+}
+
 export default function Topbar({ mobileNavOpen, onMenuToggle, menuButtonRef, identity = null }) {
   const { lastUpdated, notifications, unreadNotificationCount, notificationsLoading,
     notificationsError, refreshNotifications, markNotificationRead, markAllNotificationsRead } = useApp();
@@ -77,15 +82,8 @@ export default function Topbar({ mobileNavOpen, onMenuToggle, menuButtonRef, ide
             </Link>
           </>
         )}
-        {(authenticatedIdentity?.name || authenticatedRole) && (
-          <div className="topbar-identity" aria-label="Signed-in user">
-            {authenticatedIdentity?.name && <strong>{authenticatedIdentity.name}</strong>}
-            {authenticatedRole && <span>{authenticatedRole.displayName}</span>}
-          </div>
-        )}
-        {user && <button type="button" className="topbar-sign-out" disabled={signingOut} aria-busy={signingOut} onClick={handleSignOut}>{signingOut ? 'Signing out…' : 'Sign out'}</button>}
-        <span className="updated-time" title="Display timezone: Riyadh (UTC+3). Fields explicitly labelled UTC retain UTC.">
-          <span>Data updated</span>
+        <span className={`updated-time${lastUpdated ? '' : ' is-pending'}`} title="Times are shown in Riyadh time (UTC+3) unless labelled UTC.">
+          <span>Updated</span>
           <strong><DateTime value={lastUpdated} timeOnly showZone /></strong>
         </span>
         <div className="notification-center-anchor">
@@ -98,6 +96,16 @@ export default function Topbar({ mobileNavOpen, onMenuToggle, menuButtonRef, ide
             onMarkRead={markNotificationRead} onMarkAllRead={markAllNotificationsRead}
             onClose={closeNotifications} returnFocusRef={notificationButtonRef} />
         </div>
+        {(authenticatedIdentity?.name || authenticatedRole) && (
+          <Link className="topbar-identity" to={APPLICATION_ROUTES.PROFILE} aria-label={`Your profile${authenticatedIdentity?.name ? `: ${authenticatedIdentity.name}` : ''}${authenticatedRole ? `, ${authenticatedRole.displayName}` : ''}`}>
+            <span className="topbar-avatar" aria-hidden="true">{initials(authenticatedIdentity?.name)}</span>
+            <span className="topbar-identity-copy">
+              {authenticatedIdentity?.name && <strong>{authenticatedIdentity.name}</strong>}
+              {authenticatedRole && <span>{authenticatedRole.displayName}</span>}
+            </span>
+          </Link>
+        )}
+        {user && <button type="button" className="topbar-sign-out" disabled={signingOut} aria-busy={signingOut} onClick={handleSignOut}>{signingOut ? 'Signing out…' : 'Sign out'}</button>}
       </div>
     </header>
   );

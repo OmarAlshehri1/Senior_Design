@@ -13,6 +13,31 @@ import { assignmentService } from '../assignments/assignmentService.js';
 import { casesService } from '../services/casesService.js';
 import CaseCreateDialog from '../components/CaseCreateDialog.jsx';
 import { useNavigate } from 'react-router-dom';
+import { MetricStrip, PageHeader } from '../components/ui/Layout.jsx';
+import { Combobox, FilterBar, SearchField, SegmentedControl, SelectField } from '../components/ui/Filters.jsx';
+import { EmptyState, ErrorState, LoadingState } from '../components/RequestStateView.jsx';
+
+const STATUS_OPTIONS = [{ value: '', label: 'All' }, { value: 'ACTIVE', label: 'Active' }, { value: 'REVIEWED', label: 'Reviewed' }];
+const RISK_OPTIONS = [{ value: '', label: 'All' }, { value: 'MEDIUM', label: 'Medium', tone: 'medium' }, { value: 'HIGH', label: 'High', tone: 'high' }];
+const SORT_OPTIONS = [{ value: 'NEWEST', label: 'Newest' }, { value: 'OLDEST', label: 'Oldest' }, { value: 'HIGHEST_RISK', label: 'Highest risk' }];
+const ALERT_FILTER_KEYS = ['status', 'severity', 'type', 'search'];
+
+// Counts come from the scoped options query, or from exact status totals.
+function useAlertOverview(refreshKey) {
+  const [overview, setOverview] = useState({ status: 'loading', options: null, counts: null });
+  useEffect(() => {
+    const controller = new AbortController();
+    const signal = controller.signal;
+    alertsService.getFilterOptions({ signal }).then(async (options) => {
+      if (options?.supported) return { options, counts: options.counts };
+      const [active, reviewed] = await Promise.all(['ACTIVE', 'REVIEWED'].map((status) => alertsService.list({ query: { page: 1, page_size: 1, status }, signal })));
+      return { options: null, counts: { active: active.total, reviewed: reviewed.total } };
+    }).then((value) => { if (!signal.aborted) setOverview({ status: 'success', ...value }); })
+      .catch(() => { if (!signal.aborted) setOverview({ status: 'error', options: null, counts: null }); });
+    return () => controller.abort();
+  }, [refreshKey]);
+  return overview;
+}
 
 export default function Alerts() {
   const navigate = useNavigate();
@@ -23,8 +48,19 @@ export default function Alerts() {
   const [reviewing, setReviewing] = useState(false);
   const reviewPending = useRef(false);
   const statusFilter = collection.query.status ?? '';
+  const [overviewKey, setOverviewKey] = useState(0);
+  const overview = useAlertOverview(overviewKey);
+  const advanced = Boolean(overview.options?.supported);
+  const types = overview.options?.types ?? [];
+  const [search, setSearch] = useState('');
+  const pendingSearch = (collection.query.search ?? '') !== search.trim();
+  useEffect(() => {
+    if ((collection.query.search ?? '') === search.trim()) return undefined;
+    const timer = setTimeout(() => resource.setFilters({ search: search.trim() || undefined }), 300);
+    return () => clearTimeout(timer);
+  }, [search, collection.query.search, resource]);
   useEffect(() => realtimeService.onMessage((event) => {
-    if (['alerts.changed', 'alerts.catch_up'].includes(event.type)) resource.load();
+    if (['alerts.changed', 'alerts.catch_up'].includes(event.type)) { resource.load(); setOverviewKey((value) => value + 1); }
   }), [resource]);
   const [assignmentAlert, setAssignmentAlert] = useState(null);
   const [assignmentData, setAssignmentData] = useState({ alertId: null, assignment: null, history: [], eligibleUsers: [] });
@@ -103,42 +139,55 @@ export default function Alerts() {
     reviewPending.current = true; setReviewing(true);
     try {
       await alertsService.markReviewed(alert.id);
-      await resource.load(); refreshNotifications();
+      await resource.load(); refreshNotifications(); setOverviewKey((value) => value + 1);
       showNotification('Alert marked as reviewed.', 'success');
     } catch (error) { showNotification(error?.message || 'Alert could not be reviewed.', 'error'); }
     finally { reviewPending.current = false; setReviewing(false); }
   };
   const rows = buildAlertRows(collection.items, transactions);
-  const resultLabel = collection.status === 'success' ? `${collection.total.toLocaleString('en-US')} ${statusFilter ? statusFilter.toLowerCase() + ' ' : ''}alerts` : 'Alerts';
+  const query = collection.query;
+  const activeFilters = ALERT_FILTER_KEYS.filter((key) => query[key]).length + (query.sort && query.sort !== 'NEWEST' ? 1 : 0);
+  const loading = collection.status === 'loading' || pendingSearch;
+  const summary = loading ? 'Loading alerts…' : collection.error ? 'Alerts unavailable'
+    : `${collection.total.toLocaleString('en-US')} ${collection.total === 1 ? 'alert' : 'alerts'}${activeFilters ? ' match your filters' : ''}`;
+  const counts = overview.counts;
+  const metrics = counts && advanced ? [
+    { label: 'Active', value: counts.active?.toLocaleString('en-US'), hint: 'Awaiting review', tone: 'primary' },
+    { label: 'High risk', value: counts.active_high?.toLocaleString('en-US'), hint: 'Active, high severity', tone: 'high' },
+    { label: 'Medium risk', value: counts.active_medium?.toLocaleString('en-US'), hint: 'Active, medium severity', tone: 'medium' },
+    { label: 'Reviewed', value: counts.reviewed?.toLocaleString('en-US'), hint: 'Review recorded', tone: 'low' },
+  ] : counts ? [
+    { label: 'Active', value: counts.active?.toLocaleString('en-US'), hint: 'Awaiting review', tone: 'primary' },
+    { label: 'Reviewed', value: counts.reviewed?.toLocaleString('en-US'), hint: 'Review recorded', tone: 'low' },
+  ] : null;
+  const clearFilters = () => { setSearch(''); resource.setFilters({ status: undefined, severity: undefined, type: undefined, search: undefined, sort: undefined }); };
 
   return (
-    <>
-      <div className="page-header alerts-page-header">
-        <div>
-          <h1>Alerts</h1>
-          <p>Review transactions that require audit attention.</p>
-        </div>
-        <span className="alerts-result-count" aria-live="polite">{resultLabel}</span>
-      </div>
+    <div className="page alerts-page">
+      <PageHeader title="Alerts" description="Payments flagged for auditor review, newest first." />
 
-      <div className="alerts-toolbar compact-alert-toolbar" aria-label="Alert filters">
-        <label className="alerts-select-control"><span className="control-label">Status</span>
-          <select className="select-input" value={statusFilter} onChange={(event) => resource.setFilters({ status: event.target.value || undefined })}>
-            <option value="">All alerts</option><option value="ACTIVE">Active</option><option value="REVIEWED">Reviewed</option>
-          </select>
-        </label>
-        {statusFilter && <button type="button" className="btn btn-secondary" onClick={() => resource.setFilters({ status: undefined })}>Clear Filters</button>}
-      </div>
+      {overview.status === 'loading' && <MetricStrip label="Alert summary" loading items={[{ label: 'Active' }, { label: 'High risk' }, { label: 'Medium risk' }, { label: 'Reviewed' }]} />}
+      {metrics && <MetricStrip label="Alert summary" items={metrics} />}
 
-      <section className="card alerts-card" aria-labelledby="alerts-results-heading">
-        <div className="card-header">
-          <h2 id="alerts-results-heading">{resultLabel}</h2>
-        </div>
-        {collection.status === 'loading' ? <div className="alerts-empty-state" role="status"><h3>{collection.refreshing ? 'Refreshing alerts…' : 'Loading alerts…'}</h3></div>
-          : collection.error ? <div className="alerts-empty-state" role="alert"><h3>Alerts could not be loaded.</h3><p>{collection.error}</p><button type="button" className="btn btn-secondary" onClick={() => resource.load()}>Retry</button></div>
-          : collection.items.length ? <>{caseBusy && <p role="status">Creating case…</p>}<AlertsTable alertOwnerId={user?.id} alerts={rows} reviewing={reviewing} onMarkReviewed={handleMarkReviewed} canAssign={canAssignAlerts} onAssign={setAssignmentAlert} canEscalateToCase={canEscalateToCase} onCreateCase={createCaseFromAlert} /></>
-          : <div className="alerts-empty-state"><h3>{statusFilter ? 'No alerts match this status.' : 'No alerts available.'}</h3></div>}
-        <CollectionPagination collection={collection} itemLabel="alerts" />
+      <FilterBar label="Alert filters" summary={summary} activeCount={activeFilters} onClear={clearFilters}>
+        {advanced && <SearchField label="Search alerts" value={search} onChange={setSearch} placeholder="Search by alert, transaction or vendor" />}
+        <SegmentedControl label="Status" value={statusFilter} options={STATUS_OPTIONS} onChange={(value) => resource.setFilters({ status: value || undefined })} />
+        {advanced && <SegmentedControl label="Risk" value={query.severity ?? ''} options={RISK_OPTIONS} onChange={(value) => resource.setFilters({ severity: value || undefined })} />}
+        {advanced && types.length > 1 && (types.length > 6
+          ? <Combobox label="Type" value={query.type ?? ''} allLabel="All types" options={types.map((value) => ({ value, label: value }))} onChange={(value) => resource.setFilters({ type: value || undefined })} />
+          : <SelectField label="Type" value={query.type ?? ''} options={[{ value: '', label: 'All' }, ...types.map((value) => ({ value, label: value }))]} onChange={(value) => resource.setFilters({ type: value || undefined })} />)}
+        {advanced && <SelectField label="Sort" value={query.sort ?? 'NEWEST'} options={SORT_OPTIONS} onChange={(value) => resource.setFilters({ sort: value === 'NEWEST' ? undefined : value })} />}
+      </FilterBar>
+
+      <section className="panel panel-table" aria-label="Alert queue" aria-busy={loading}>
+        {caseBusy && <p className="inline-status panel-inline-status" role="status">Creating case…</p>}
+        {loading ? <LoadingState message={collection.refreshing ? 'Refreshing alerts…' : 'Loading alerts…'} />
+          : collection.error ? <ErrorState title="Alerts could not be loaded." message={collection.error} onRetry={() => resource.load()} />
+            : collection.items.length ? <AlertsTable alertOwnerId={user?.id} alerts={rows} reviewing={reviewing} onMarkReviewed={handleMarkReviewed} canAssign={canAssignAlerts} onAssign={setAssignmentAlert} canEscalateToCase={canEscalateToCase} onCreateCase={createCaseFromAlert} />
+              : activeFilters ? <EmptyState filtered title="No alerts match these filters." message="Try another status or risk level, or clear the filters."
+                action={<button type="button" className="btn btn-secondary btn-sm" onClick={clearFilters}>Clear filters</button>} />
+                : <EmptyState title="No alerts right now." message="New alerts appear here as payments are evaluated." />}
+        {!pendingSearch && <CollectionPagination collection={collection} itemLabel="alerts" />}
       </section>
       <AssignmentDialog alert={assignmentAlert}
         currentAssignment={assignmentData.alertId === assignmentAlert?.id ? assignmentData.assignment : null}
@@ -147,6 +196,6 @@ export default function Alerts() {
         busy={assignmentBusy} error={assignmentError} onSave={saveAssignment} onUnassign={unassignAlert}
         onClose={() => setAssignmentAlert(null)} />
       <CaseCreateDialog alert={caseAlert} busy={caseBusy} onClose={() => setCaseAlert(null)} onSubmit={saveCaseFromAlert} />
-    </>
+    </div>
   );
 }

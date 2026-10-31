@@ -19,19 +19,18 @@ export default function Forbidden() {
   }, []);
 
   return (
-    <div className="forbidden-page">
-      <div className="forbidden-card">
-        <div className="forbidden-code" aria-hidden="true">403</div>
-        <p className="forbidden-eyebrow">Authorization required</p>
+    <div className="page status-page">
+      <div className="panel status-card">
+        <div className="status-code" aria-hidden="true">403</div>
+        <p className="page-eyebrow">Authorization required</p>
         <h1 ref={headingRef} tabIndex="-1">Access Denied</h1>
-        <p>You do not have permission to access this area.</p>
-        <p>Your current role does not include the required permission.</p>
+        <p>Your role does not include access to this area. Ask an administrator if you need it.</p>
         {previewRole && (
           <span className={`forbidden-preview role-badge role-${previewRole.key.toLowerCase()}`}>
             Role Preview: {previewRole.displayName}
           </span>
         )}
-        <div className="forbidden-actions">
+        <div className="status-actions">
           <Link className="btn btn-primary" to={APPLICATION_ROUTES.DASHBOARD}>Return to Dashboard</Link>
           {location.state?.from && (
             <button type="button" className="btn btn-secondary" onClick={() => navigate(-1)}>Back</button>

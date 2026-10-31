@@ -42,11 +42,11 @@ export default function Profile() {
     : history.userId !== user.id ? { status: 'loading', items: [] } : history;
 
   return (
-    <div className="profile-page">
+    <div className="page profile-page">
       <div className="page-header profile-page-header">
-        <div>
+        <div className="page-header-copy">
           <h1>My Profile</h1>
-          <p>Account information, activity, and security context.</p>
+          <p className="page-description">Your account, activity and recent sign-ins.</p>
         </div>
         {profile.previewRole && (
           <span className={`role-badge role-${profile.previewRole.key.toLowerCase()}`}>
@@ -56,7 +56,7 @@ export default function Profile() {
       </div>
 
       <section className="profile-identity" aria-labelledby="profile-identity-heading">
-        <div className="profile-identity-mark" aria-hidden="true">—</div>
+        <div className="profile-identity-mark" aria-hidden="true">{profile.hasIdentity && profile.fields.name ? profile.fields.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase() : '—'}</div>
         <div>
           <p className="profile-eyebrow">{profile.hasIdentity ? 'Authenticated account' : 'Development preview'}</p>
           <h2 id="profile-identity-heading">{profile.hasIdentity ? profile.fields.name : 'Profile information unavailable'}</h2>
@@ -68,7 +68,7 @@ export default function Profile() {
         <section className="profile-section profile-section-wide" aria-labelledby="account-information-heading">
           <header>
             <h2 id="account-information-heading">Account Information</h2>
-            <p>Identity and account details supplied by the authenticated account service.</p>
+            <p>Details from your organization account.</p>
           </header>
           <dl className="profile-definition-grid">
             <ProfileField label="Name" value={profile.fields.name} />
@@ -114,6 +114,6 @@ export function ProfileHistory({ history, onRefresh }) {
     {history.status === 'loading' ? <p role="status">{history.refreshing ? 'Refreshing sign-in history…' : 'Loading sign-in history…'}</p>
       : history.status === 'error' || history.status === 'unavailable' ? <p role="alert">{history.status === 'unavailable' ? 'Sign-in history unavailable. ' : ''}{history.error}</p>
         : <LoginHistory records={history.items} />}
-    {onRefresh && <button type="button" className="btn btn-secondary" disabled={history.status === 'loading'} onClick={onRefresh}>{history.status === 'error' || history.status === 'unavailable' ? 'Retry sign-in history' : 'Refresh sign-in history'}</button>}
+    {onRefresh && <button type="button" className="btn btn-ghost btn-sm" disabled={history.status === 'loading'} onClick={onRefresh}>{history.status === 'error' || history.status === 'unavailable' ? 'Retry sign-in history' : 'Refresh sign-in history'}</button>}
   </div>;
 }
