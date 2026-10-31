@@ -9,7 +9,7 @@ import { MetricStrip, Panel } from '../components/ui/Layout.jsx';
 import { EmptyState, ErrorState, LoadingState } from '../components/RequestStateView.jsx';
 import { formatAmount, MONITORING_TONES, riskStatusPillClass, titleCase } from '../components/statusUtils.js';
 import { vendorActionKeys, vendorActionLabel, VendorReasonDialog } from '../components/VendorActions.jsx';
-import { eventLabel } from '../utils/presentation.js';
+import { eventLabel, transactionReference } from '../utils/presentation.js';
 
 export const VENDOR_PROFILE_SECTIONS = Object.freeze(['Overview', 'Transactions', 'Alerts', 'Cases', 'Risk History', 'Monitoring History']);
 const riskLabel = (level) => (level ? `${titleCase(level)} Risk` : 'Not available');
@@ -102,7 +102,7 @@ export function VendorProfileContent({ bundle, error, busy, refreshing, can, act
 
     <Panel id="vendor-records-heading" title="Related audit records" description="Payments to this vendor with their latest risk result." flush>
       {transactions.length === 0 ? <EmptyState compact title="No transactions for this vendor." /> : <div className="table-wrap"><table className="data-table"><thead><tr><th>Transaction</th><th>Date</th><th>Amount</th><th>Risk</th><th>Alerts</th><th>Cases</th></tr></thead><tbody>{transactions.map((tx) => <tr key={tx.id}>
-        <td data-label="Transaction"><Link className="reference-text truncate" title={tx.id} to={`/transactions/${encodeURIComponent(tx.id)}`}>{tx.id}</Link></td>
+        <td data-label="Transaction"><Link className="reference-text truncate" title={tx.id} to={`/transactions/${encodeURIComponent(tx.id)}`}>{transactionReference(tx.id)}</Link></td>
         <td data-label="Date"><DateTime value={tx.timestamp} compact showZone={false} /></td>
         <td data-label="Amount" className="numeric">{formatAmount(tx.amount, tx.currency)}</td>
         <td data-label="Risk"><span className={riskStatusPillClass(riskLabel(tx.risk_level))}>{riskLabel(tx.risk_level)}</span>{tx.risk_score != null && <span className="secondary-metadata">Score {tx.risk_score}</span>}</td>
@@ -115,7 +115,7 @@ export function VendorProfileContent({ bundle, error, busy, refreshing, can, act
       <details className="disclosure">
         <summary><span className="disclosure-summary-copy">Risk history<small>{riskHistory.length} recorded scores</small></span></summary>
         <div className="disclosure-body disclosure-body-flush">{riskHistory.length === 0 ? <EmptyState compact title="No risk-score history yet." /> : <div className="table-wrap"><table className="data-table"><thead><tr><th>Transaction</th><th>Risk level</th><th>Score</th><th>Scoring version</th><th>Calculated</th></tr></thead><tbody>{riskHistory.map((item) => <tr key={`${item.transaction_id}-${item.calculated_at}`}>
-          <td data-label="Transaction"><span className="reference-text truncate" title={item.transaction_id}>{item.transaction_id}</span></td>
+          <td data-label="Transaction"><span className="reference-text truncate" title={item.transaction_id}>{transactionReference(item.transaction_id)}</span></td>
           <td data-label="Risk level"><span className={riskStatusPillClass(riskLabel(item.risk_level))}>{riskLabel(item.risk_level)}</span></td>
           <td data-label="Score" className="numeric">{item.risk_score}</td>
           <td data-label="Scoring version">{item.scoring_version}</td>

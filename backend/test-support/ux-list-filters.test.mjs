@@ -113,3 +113,71 @@ test('new list functions are not executable by unprivileged database roles', asy
     assert.equal(await scalar(`select has_function_privilege('service_role','${signature}','execute')`), true);
   }
 });
+
+const byRule = (actor, rule, options = {}) => scalar(
+  'select public.list_accessible_alerts_by_rule($1::uuid,$2,$3,$4,$5,$6,$7,$8,$9)',
+  [actor, options.page ?? 1, options.pageSize ?? 25, rule, options.status ?? null, options.severity ?? null,
+    options.title ?? null, options.search ?? null, options.sort ?? 'NEWEST'],
+);
+const RULES = ['segregation_of_duties', 'approval_limits', 'duplicate_payment', 'invoice_splitting', 'ghost_vendors'];
+
+test('alert rule keys are the FAILED results of the latest stored evaluation', async () => {
+  for (const id of ['low-a', 'medium-b', 'high-c']) {
+    const latest = await scalar('select rule_results from public.get_latest_transaction_evaluations(array[$1])', [id]);
+    const expected = latest.filter((rule) => rule.status === 'FAILED').map((rule) => rule.rule_key);
+    assert.deepEqual(await scalar('select public.transaction_failed_rule_keys($1)', [id]), expected);
+  }
+  assert.deepEqual(await scalar("select public.transaction_failed_rule_keys('high-c')"),
+    ['approval_limits', 'duplicate_payment', 'invoice_splitting', 'ghost_vendors']);
+  assert.deepEqual(await scalar("select public.get_transaction_failed_rule_keys(array['medium-b','missing'])"),
+    { 'medium-b': ['approval_limits', 'duplicate_payment'], missing: [] });
+  await assert.rejects(scalar('select public.get_transaction_failed_rule_keys($1::text[])',
+    [Array.from({ length: 101 }, (_, index) => `t-${index}`)]), /Invalid rule lookup/);
+});
+
+test('non-primary rows use the latest transaction_evaluations rule_results', async () => {
+  await db.query(`insert into public.transactions(id,dataset_id,completeness_status) values('legacy-rule',0,'COMPLETE')`);
+  await db.query(`insert into public.transaction_evaluations(transaction_id,evaluation_version,rule_status,rule_score,rule_results,evaluated_at) values
+    ('legacy-rule','1','REVIEW',20,'[{"rule_key":"ghost_vendors","status":"FAILED"}]','2026-01-01'),
+    ('legacy-rule','1','REVIEW',20,'[{"rule_key":"ghost_vendors","status":"PASSED"},{"rule_key":"approval_limits","status":"FAILED"},{"rule_key":"invoice_splitting","status":"NOT_EVALUATED"}]','2026-02-01')`);
+  assert.deepEqual(await scalar("select public.transaction_failed_rule_keys('legacy-rule')"), ['approval_limits']);
+});
+
+test('rule filter applies before paging and count, composes with filters, and keeps scope', async () => {
+  assert.equal((await byRule(admin, 'ghost_vendors')).total, 1);
+  assert.equal((await byRule(admin, 'ghost_vendors')).items[0].transaction_id, 'high-c');
+  assert.equal((await byRule(admin, 'segregation_of_duties')).total, 0);
+  const approval = await byRule(admin, 'approval_limits', { pageSize: 1, page: 2, sort: 'HIGHEST_RISK' });
+  assert.equal(approval.total, 2);
+  assert.equal(approval.items.length, 1);
+  assert.equal(approval.items[0].transaction_id, 'medium-b');
+  assert.deepEqual(approval.items[0].rule_keys, ['approval_limits', 'duplicate_payment']);
+  assert.equal(approval.items[0].list_position, undefined);
+  assert.equal((await byRule(admin, 'approval_limits', { severity: 'MEDIUM' })).total, 1);
+  assert.equal((await byRule(admin, 'duplicate_payment', { search: 'contoso' })).total, 1);
+  assert.equal((await byRule(admin, 'invoice_splitting', { status: 'REVIEWED' })).total, 0);
+  for (const actor of [admin, supervisor, auditor]) {
+    const all = (await filtered(actor)).items;
+    for (const rule of RULES) {
+      const result = await byRule(actor, rule);
+      const expected = [];
+      for (const item of all) {
+        if ((await scalar('select public.transaction_failed_rule_keys($1)', [item.transaction_id])).includes(rule)) expected.push(item.id);
+      }
+      assert.equal(result.total, expected.length);
+      assert.deepEqual(result.items.map((item) => item.id), expected);
+    }
+  }
+  assert.equal((await byRule(auditor, 'approval_limits')).total, 0);
+  await assert.rejects(byRule(admin, 'unknown_rule'), /Invalid alert query/);
+  await assert.rejects(byRule(admin, null), /Invalid alert query/);
+});
+
+test('rule filter functions are not executable by unprivileged database roles', async () => {
+  for (const signature of ['public.list_accessible_alerts_by_rule(uuid,integer,integer,text,text,text,text,text,text)',
+    'public.transaction_failed_rule_keys(text)', 'public.get_transaction_failed_rule_keys(text[])']) {
+    assert.equal(await scalar(`select has_function_privilege('authenticated','${signature}','execute')`), false);
+    assert.equal(await scalar(`select has_function_privilege('anon','${signature}','execute')`), false);
+    assert.equal(await scalar(`select has_function_privilege('service_role','${signature}','execute')`), true);
+  }
+});

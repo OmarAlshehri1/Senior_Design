@@ -7,6 +7,7 @@ import { Badge, Field, MetricStrip, PageHeader, Panel, Switch } from './ui/Layou
 import { EmptyState, ErrorState, LoadingState } from './RequestStateView.jsx';
 import { DownloadIcon, ReportIcon, SparkIcon } from './icons.jsx';
 import { formatAmount, titleCase } from './statusUtils.js';
+import { transactionReference } from '../utils/presentation.js';
 
 const DATA_CONTEXTS = Object.freeze([
   { value: 'UNVERIFIED', label: 'Source not verified', hint: 'Use when the data source has not been independently confirmed.' },
@@ -72,7 +73,7 @@ function ReportSummary({ report }) {
     </section>
     {highRisk.length > 0 && <section className="report-block" aria-labelledby="report-high-heading">
       <h3 id="report-high-heading">High-risk transactions</h3>
-      <ul className="stack-list">{highRisk.slice(0, 8).map((item) => <li key={item.id}><span className="reference-text truncate" title={item.id}>{item.id}</span><span>{formatAmount(item.amount, item.currency)}</span><Badge tone="high">Score {item.risk_score ?? '—'}</Badge></li>)}</ul>
+      <ul className="stack-list">{highRisk.slice(0, 8).map((item) => <li key={item.id}><span className="reference-text truncate" title={item.id}>{transactionReference(item.id)}</span><span>{formatAmount(item.amount, item.currency)}</span><Badge tone="high">Score {item.risk_score ?? '—'}</Badge></li>)}</ul>
       {highRisk.length > 8 && <p className="muted">{highRisk.length - 8} more in the full memorandum.</p>}
     </section>}
     {recommendations.length > 0 && <section className="report-block" aria-labelledby="report-priorities-heading">

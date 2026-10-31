@@ -407,6 +407,7 @@ tr.clickable:hover .row-chevron { color: var(--color-text); }
 .display-reference > summary { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; color: var(--color-text-secondary); font: 500 0.75rem/1.4 var(--font-mono); cursor: pointer; list-style: none; }
 .display-reference > summary::-webkit-details-marker { display: none; }
 .display-reference > summary:hover { color: var(--color-text); text-decoration: underline dotted; }
+.reference-full-id { overflow-wrap: anywhere; user-select: all; }
 .reference-full { display: block; margin-top: 4px; padding: 6px 8px; border-radius: var(--radius-xs); background: var(--color-surface-sunken); color: var(--color-text); font: 0.75rem/1.4 var(--font-mono); overflow-wrap: anywhere; user-select: all; }
 .copy-reference { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; }
 .copy-reference button { display: inline-grid; place-items: center; width: 26px; height: 26px; flex: none; border: 0; border-radius: var(--radius-xs); background: transparent; color: var(--color-text-muted); }
@@ -475,7 +476,6 @@ tr.clickable:hover .row-chevron { color: var(--color-text); }
 .alerts-table .alert-cell { min-width: 240px; max-width: 320px; }
 .alerts-table td[data-label='Transaction'] .truncate { max-width: 200px; }
 .alerts-table td[data-label='Assigned to'] { max-width: 140px; }
-.alert-reason { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .alerts-table .display-reference { margin-top: 4px; }
 .dialog-form { display: grid; gap: var(--space-4); }
 .dialog-inline-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); margin: var(--space-2) calc(var(--space-6) * -1) calc(var(--space-5) * -1); padding: var(--space-4) var(--space-6); border-top: 1px solid var(--color-border-subtle); background: var(--color-surface-subtle); }

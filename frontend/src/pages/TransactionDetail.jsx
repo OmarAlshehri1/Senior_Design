@@ -22,6 +22,7 @@ import { auditService } from '../audit/auditService.js';
 import useAuthorization from '../auth/useAuthorization.js';
 import { hasPermission, PERMISSIONS } from '../auth/roles.js';
 import VendorMonitoringIndicator from '../components/VendorMonitoringIndicator.jsx';
+import { transactionReference } from '../utils/presentation.js';
 import {
   loadTransactionDetail,
   TRANSACTION_DETAIL_STATES,
@@ -36,14 +37,14 @@ function DetailField({ label, value }) {
   );
 }
 
-function CopyReference({ value }) {
+export function CopyReference({ value }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try { await navigator.clipboard.writeText(value); setCopied(true); window.setTimeout(() => setCopied(false), 1500); } catch { /* Selection remains available. */ }
   };
   return <span className="copy-reference">
-    <span className="reference-text detail-reference" title={value}>{value}</span>
-    <button type="button" onClick={copy} aria-label={copied ? 'Transaction ID copied' : 'Copy transaction ID'}>{copied ? <CheckIcon /> : <CopyIcon />}</button>
+    <span className="reference-text detail-reference" title={value}>{transactionReference(value)}</span>
+    <button type="button" onClick={copy} title={`Copy full transaction ID ${value}`} aria-label={copied ? 'Transaction ID copied' : 'Copy full transaction ID'}>{copied ? <CheckIcon /> : <CopyIcon />}</button>
   </span>;
 }
 
@@ -264,7 +265,7 @@ export default function TransactionDetail() {
         <div className="detail-header-main">
           <div className="detail-header-copy">
             <p className="page-eyebrow">Transaction</p>
-            <h1 className="sr-only">Transaction {displayValue(transaction.id)}</h1>
+            <h1 className="sr-only">Transaction {transactionReference(transaction.id)}</h1>
             <div className="detail-title-row">
               <CopyReference value={displayValue(transaction.id)} />
               <span className={riskBadgeClass(riskLevel)}>{riskLevel}</span>
@@ -301,6 +302,7 @@ export default function TransactionDetail() {
           <DetailField label="Date" value={formatDate(transaction.timestamp)} />
           <DetailField label="Time" value={<DateTime value={transaction.timestamp} timeOnly />} />
           <DetailField label="Category" value={transaction.category} />
+          {transactionReference(transaction.id) !== transaction.id && <DetailField label="Transaction ID" value={<span className="reference-text reference-full-id">{transaction.id}</span>} />}
         </dl>
       </section>
 

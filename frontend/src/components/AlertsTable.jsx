@@ -1,9 +1,10 @@
-import { shortReference } from '../utils/presentation.js';
+import { shortReference, transactionReference } from '../utils/presentation.js';
 import Reference from './Reference.jsx';
+import TransactionReference from './TransactionReference.jsx';
 import DateTime from './DateTime.jsx';
 import { useNavigate } from 'react-router-dom';
 import { displayValue, riskStatusPillClass } from './statusUtils';
-import { getAlertRiskLevel } from '../utils/alerts';
+import { getAlertRiskLevel, getAlertRuleLabels } from '../utils/alerts';
 import { ActionMenu } from './ui/Overlays.jsx';
 
 export default function AlertsTable({ alerts, alertOwnerId, onMarkReviewed, reviewing = false, canAssign = false, onAssign, canEscalateToCase = false, onCreateCase }) {
@@ -30,6 +31,7 @@ export default function AlertsTable({ alerts, alertOwnerId, onMarkReviewed, revi
               && alert.transactionId.trim().length > 0;
             const isReviewed = alert?.status === 'Reviewed';
             const statusLabel = isReviewed ? 'Reviewed' : alert?.status === 'Active' ? 'Active' : 'Unavailable';
+            const ruleLabels = getAlertRuleLabels(alert?.ruleKeys);
 
             return (
               <tr
@@ -38,7 +40,7 @@ export default function AlertsTable({ alerts, alertOwnerId, onMarkReviewed, revi
                 role={canOpenTransaction ? 'link' : undefined}
                 tabIndex={canOpenTransaction ? 0 : undefined}
                 aria-label={canOpenTransaction
-                  ? `View transaction ${alert.transactionId} for ${displayValue(alert?.title)}`
+                  ? `View transaction ${transactionReference(alert.transactionId)} for ${displayValue(alert?.title)}`
                   : undefined}
                 onClick={() => canOpenTransaction && openTransaction(alert.transactionId, alert)}
                 onKeyDown={(event) => (
@@ -46,11 +48,12 @@ export default function AlertsTable({ alerts, alertOwnerId, onMarkReviewed, revi
                 )}
               >
                 <td data-label="Alert" className="alert-cell">
-                  <span className="cell-primary">{displayValue(alert?.title)}</span>
-                  {alert?.reasonText && <span className="secondary-metadata alert-reason">{alert.reasonText}</span>}
+                  {ruleLabels.length
+                    ? <span className="cell-primary alert-rules" title={displayValue(alert?.title)}>{ruleLabels.join(' · ')}</span>
+                    : <span className="cell-primary">{displayValue(alert?.title)}</span>}
                   <Reference value={alert?.id} />
                 </td>
-                <td data-label="Transaction"><span className="cell-primary truncate" title={alert?.vendor}>{displayValue(alert?.vendor, '—')}</span><span className="secondary-metadata reference-text" title={alert?.transactionId}>{shortReference(alert?.transactionId)}</span></td>
+                <td data-label="Transaction"><span className="cell-primary truncate" title={alert?.vendor}>{displayValue(alert?.vendor, '—')}</span><span className="secondary-metadata"><TransactionReference value={alert?.transactionId} /></span></td>
                 <td data-label="Risk"><span className={riskStatusPillClass(riskLevel)}>{riskLevel}</span>{Number.isFinite(alert?.riskScore) && <span className="secondary-metadata">Score {alert.riskScore}</span>}</td>
                 <td data-label="Status"><span className={`badge ${isReviewed ? 'badge-low' : statusLabel === 'Active' ? 'badge-info' : 'badge-neutral'}`}>{statusLabel}</span></td>
                 <td data-label="Assigned to">{alert.assignment?.assigneeName ?? <span className="muted">Unassigned</span>}</td>

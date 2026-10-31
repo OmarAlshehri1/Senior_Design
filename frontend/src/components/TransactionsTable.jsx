@@ -9,6 +9,8 @@ import {
 import { getTransactionRiskLevel } from '../utils/risk';
 import VendorMonitoringIndicator from './VendorMonitoringIndicator.jsx';
 import { ChevronRightIcon } from './icons.jsx';
+import TransactionReference from './TransactionReference.jsx';
+import { transactionReference } from '../utils/presentation.js';
 
 export default function TransactionsTable({ transactions, highlightId }) {
   const navigate = useNavigate();
@@ -49,14 +51,14 @@ export function TransactionsTableView({ transactions, highlightId, onOpenTransac
                 role={canOpenTransaction ? 'link' : undefined}
                 tabIndex={canOpenTransaction ? 0 : undefined}
                 aria-label={canOpenTransaction
-                  ? `View transaction ${transactionId}, ${riskLevel}`
+                  ? `View transaction ${transactionReference(transactionId)}, ${riskLevel}`
                   : undefined}
                 onClick={() => canOpenTransaction && openTransaction(transaction.id)}
                 onKeyDown={(event) => (
                   canOpenTransaction && handleRowKeyDown(event, transaction.id)
                 )}
               >
-                <td data-label="Transaction" className="cell-reference"><span className="reference-text truncate" title={transactionId}>{transactionId}</span>{transaction?.category && <span className="secondary-metadata">{transaction.category}</span>}</td>
+                <td data-label="Transaction" className="cell-reference"><TransactionReference value={transaction?.id} />{transaction?.category && <span className="secondary-metadata">{transaction.category}</span>}</td>
                 <td data-label="Vendor" title={vendor}><span className="vendor-cell-content">{transaction?.vendorId ? <Link to={`/vendors/${transaction.vendorId}`} onClick={(event) => event.stopPropagation()}>{vendor}</Link> : vendor}<VendorMonitoringIndicator status={transaction?.vendorMonitoringStatus} /></span></td>
                 <td data-label="Amount" className="numeric">{formatAmount(transaction?.amount, transaction?.currency)}</td>
                 <td data-label="Rule status"><span className={ruleStatusPillClass(transaction?.ruleStatus)}>{displayValue(transaction?.ruleStatus)}</span></td>

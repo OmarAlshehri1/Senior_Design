@@ -21,6 +21,7 @@ import useApp from '../context/useApp';
 import { reportsService } from '../services/reportsService';
 import useAuthorization from '../auth/useAuthorization.js';
 import { LoadingState } from '../components/RequestStateView.jsx';
+import { transactionReference } from '../utils/presentation.js';
 
 const BusinessReports = lazy(() => import('../components/BusinessReports.jsx'));
 
@@ -510,8 +511,9 @@ export function LegacyReportTransactions({ transactions }) {
                 <td data-label="Transaction ID">
                   <Link
                     to={`/transactions/${transaction.id}`}
+                    title={transaction.id}
                   >
-                    {displayValue(transaction.id)}
+                    {transactionReference(transaction.id)}
                   </Link>
                 </td>
                 <td data-label="Vendor">

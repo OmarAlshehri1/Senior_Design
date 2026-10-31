@@ -5,8 +5,19 @@ export function caseReference(value) {
   return match ? `Case #${match[1].replace(/^0+(?=\d)/, '')}` : shortReference(value);
 }
 
+// Generated payment IDs (PAY- + hex digest) display as TR- + the first eight hex
+// characters. Deterministic; the stored ID stays the key everywhere else.
+const GENERATED_TRANSACTION_ID = /^PAY-([0-9a-f]{16,})$/i;
+
+export function transactionReference(value) {
+  if (typeof value !== 'string' || !value) return '—';
+  const match = GENERATED_TRANSACTION_ID.exec(value);
+  return match ? `TR-${match[1].slice(0, 8).toUpperCase()}` : value;
+}
+
 export function shortReference(value) {
   if (typeof value !== 'string' || !value) return '—';
+  if (GENERATED_TRANSACTION_ID.test(value)) return transactionReference(value);
   if (value.length <= 22) return value;
   return `${value.slice(0, value.startsWith('AL-') ? 7 : 8)}…${value.slice(-4)}`;
 }

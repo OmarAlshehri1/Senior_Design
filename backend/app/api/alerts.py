@@ -22,8 +22,11 @@ from starlette.concurrency import run_in_threadpool
 
 from app.repositories.supabase_alerts import list_alerts as repository_list_alerts
 from app.repositories.supabase_alerts import (
+    ALERT_RULE_KEYS,
+    attach_alert_rule_keys as repository_attach_alert_rule_keys,
     get_alert_filter_options as repository_alert_filter_options,
     list_alerts_filtered as repository_list_alerts_filtered,
+    rule_filter_supported as repository_rule_filter_supported,
 )
 from app.repositories import accountability, identity
 from app.repositories.supabase_transactions import (
@@ -69,11 +72,26 @@ async def get_alerts(
     alert_type: str | None = Query(default=None, alias="type", min_length=1, max_length=200),
     search: str | None = Query(default=None, max_length=100),
     sort: Literal["NEWEST", "OLDEST", "HIGHEST_RISK"] = Query(default="NEWEST"),
+    rule: Literal[ALERT_RULE_KEYS] | None = Query(default=None),
     user: dict = Depends(get_current_user),
 ) -> dict[str, object]:
     search = (search or "").strip() or None
     try:
-        if severity or alert_type or search or sort != "NEWEST":
+        if rule:
+            # Stored rule association; filters precede paging and count.
+            alerts, total = await run_in_threadpool(
+                repository_list_alerts_filtered,
+                actor_id=user["id"],
+                page=page,
+                page_size=page_size,
+                status_filter=status_filter,
+                severity=severity,
+                alert_type=alert_type,
+                search=search,
+                sort=sort,
+                rule=rule,
+            )
+        elif severity or alert_type or search or sort != "NEWEST":
             # Same database scope as the default list; filters precede paging.
             alerts, total = await run_in_threadpool(
                 repository_list_alerts_filtered,
@@ -106,6 +124,7 @@ async def get_alerts(
         ) from exc
     except IdentityError as exc:
         raise HTTPException(status_code=exc.status, detail=exc.code) from exc
+    alerts = await run_in_threadpool(repository_attach_alert_rule_keys, alerts)
 
     return {
         "items": alerts,
@@ -123,10 +142,11 @@ async def get_alert_filter_options(user: dict = Depends(get_current_user)) -> di
     except IdentityError as exc:
         if exc.status in (401, 403):
             raise HTTPException(status_code=exc.status, detail=exc.code) from exc
-        return {"supported": False, "types": [], "counts": None}
+        return {"supported": False, "types": [], "counts": None, "rules": False}
     except (SupabaseConfigurationError, SupabasePersistenceError):
-        return {"supported": False, "types": [], "counts": None}
-    return {"supported": True, **options}
+        return {"supported": False, "types": [], "counts": None, "rules": False}
+    rules = await run_in_threadpool(repository_rule_filter_supported)
+    return {"supported": True, **options, "rules": rules}
 
 
 @router.get("/{alert_id}/assignment")

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from datetime import datetime, timezone
 from typing import Any
 
@@ -8,6 +9,7 @@ from fastapi.encoders import jsonable_encoder
 
 from app.repositories.supabase_transactions import (
     REQUEST_TIMEOUT_SECONDS,
+    SupabaseConfigurationError,
     SupabasePersistenceError,
     _get_configuration,
     _get_headers,
@@ -31,6 +33,16 @@ ALERT_COLUMNS = ",".join(
         "latency_ms",
     ]
 )
+# Stored rule keys (see 20261031120000_alert_rule_filter.sql), never alert titles.
+ALERT_RULE_KEYS = (
+    "segregation_of_duties",
+    "approval_limits",
+    "duplicate_payment",
+    "invoice_splitting",
+    "ghost_vendors",
+)
+RULE_CAPABILITY_TTL_SECONDS = 60.0
+_rule_capability: dict[str, tuple[float, bool]] = {}
 
 
 def _map_alert(row: dict[str, Any]) -> dict[str, Any]:
@@ -61,6 +73,8 @@ def _map_alert(row: dict[str, Any]) -> dict[str, Any]:
             "assigned_at": assignment.get("assigned_at"),
             "status": assignment.get("status"),
         } if isinstance(assignment, dict) else None)
+    if isinstance(row.get("rule_keys"), list):
+        result["rule_keys"] = [key for key in row["rule_keys"] if key in ALERT_RULE_KEYS]
     return result
 
 
@@ -191,10 +205,12 @@ def list_alerts_filtered(
     alert_type: str | None = None,
     search: str | None = None,
     sort: str = "NEWEST",
+    rule: str | None = None,
 ) -> tuple[list[dict[str, Any]], int]:
-    result = identity.rpc("list_accessible_alerts_filtered", p_actor=actor_id, p_page=page,
-                          p_page_size=page_size, p_status=status_filter, p_severity=severity,
-                          p_title=alert_type, p_search=search, p_sort=sort)
+    filters = dict(p_actor=actor_id, p_page=page, p_page_size=page_size, p_status=status_filter,
+                   p_severity=severity, p_title=alert_type, p_search=search, p_sort=sort)
+    result = (identity.rpc("list_accessible_alerts_by_rule", p_rule=rule, **filters) if rule
+              else identity.rpc("list_accessible_alerts_filtered", **filters))
     if not isinstance(result, dict) or not isinstance(result.get("items"), list):
         raise SupabasePersistenceError(
             "Supabase returned an invalid alerts response."
@@ -209,6 +225,39 @@ def get_alert_filter_options(*, actor_id: str) -> dict[str, Any]:
     return {"types": [value for value in result["types"] if isinstance(value, str)],
             "counts": {key: int(result["counts"].get(key, 0)) for key in
                        ("total", "active", "reviewed", "active_high", "active_medium")}}
+
+
+def rule_filter_supported() -> bool:
+    # Cached probe of the additive migration; an empty lookup reads no rows.
+    now = time.monotonic()
+    cached = _rule_capability.get("supported")
+    if cached and now - cached[0] < RULE_CAPABILITY_TTL_SECONDS:
+        return cached[1]
+    try:
+        supported = isinstance(identity.rpc("get_transaction_failed_rule_keys", p_transaction_ids=[]), dict)
+    except (identity.IdentityError, SupabaseConfigurationError):
+        supported = False
+    _rule_capability["supported"] = (now, supported)
+    return supported
+
+
+def attach_alert_rule_keys(alerts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    # Page enrichment for alerts already returned by a scoped list function.
+    missing = list(dict.fromkeys(alert["transaction_id"] for alert in alerts
+                                 if "rule_keys" not in alert and isinstance(alert.get("transaction_id"), str)))
+    if not missing or not rule_filter_supported():
+        return alerts
+    try:
+        keys = identity.rpc("get_transaction_failed_rule_keys", p_transaction_ids=missing)
+    except identity.IdentityError:
+        return alerts
+    if not isinstance(keys, dict):
+        return alerts
+    for alert in alerts:
+        values = keys.get(alert.get("transaction_id"))
+        if "rule_keys" not in alert and isinstance(values, list):
+            alert["rule_keys"] = [key for key in values if key in ALERT_RULE_KEYS]
+    return alerts
 
 
 def mark_alert_reviewed(

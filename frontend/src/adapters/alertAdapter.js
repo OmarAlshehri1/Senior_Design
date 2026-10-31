@@ -33,6 +33,7 @@ export function adaptAlert(payload) {
     reason: payload.reason ?? null,
     status: ALERT_STATUS_MAP[payload.status] ?? null,
     reviewedAt: payload.reviewed_at ?? null,
+    ...(Array.isArray(payload.rule_keys) && { ruleKeys: payload.rule_keys.filter((key) => typeof key === 'string') }),
     assignment: payload.assignment ? {
       assigneeId: payload.assignment.assignee_id ?? null,
       assigneeName: payload.assignment.assignee_name ?? null,

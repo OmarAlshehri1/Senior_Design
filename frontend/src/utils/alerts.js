@@ -15,6 +15,20 @@ export const ALERT_TYPE_OPTIONS = Object.freeze([
   'Ghost Vendor',
 ]);
 
+// Stored rule keys (alerts.rule_keys / ?rule=) with their display names.
+export const ALERT_RULE_OPTIONS = Object.freeze([
+  { value: 'segregation_of_duties', label: 'Segregation of Duties' },
+  { value: 'approval_limits', label: 'Approval Limits' },
+  { value: 'duplicate_payment', label: 'Duplicate Payments' },
+  { value: 'invoice_splitting', label: 'Invoice Splitting' },
+  { value: 'ghost_vendors', label: 'Ghost Vendors' },
+]);
+
+export function getAlertRuleLabels(ruleKeys) {
+  if (!Array.isArray(ruleKeys)) return [];
+  return ALERT_RULE_OPTIONS.filter(({ value }) => ruleKeys.includes(value)).map(({ label }) => label);
+}
+
 const fallbackReasons = Object.freeze({
   'Duplicate Payment': 'Possible duplicate payment detected for the same vendor and amount.',
   'Invoice Splitting': 'Related purchases may indicate an invoice-splitting pattern.',

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import useApp from '../context/useApp';
 import AlertsTable from '../components/AlertsTable';
-import { buildAlertRows } from '../utils/alerts.js';
+import { ALERT_RULE_OPTIONS, buildAlertRows } from '../utils/alerts.js';
 import usePagedResource from '../hooks/usePagedResource.js';
 import CollectionPagination from '../components/CollectionPagination.jsx';
 import { alertsService } from '../services/alertsService.js';
@@ -20,7 +20,8 @@ import { EmptyState, ErrorState, LoadingState } from '../components/RequestState
 const STATUS_OPTIONS = [{ value: '', label: 'All' }, { value: 'ACTIVE', label: 'Active' }, { value: 'REVIEWED', label: 'Reviewed' }];
 const RISK_OPTIONS = [{ value: '', label: 'All' }, { value: 'MEDIUM', label: 'Medium', tone: 'medium' }, { value: 'HIGH', label: 'High', tone: 'high' }];
 const SORT_OPTIONS = [{ value: 'NEWEST', label: 'Newest' }, { value: 'OLDEST', label: 'Oldest' }, { value: 'HIGHEST_RISK', label: 'Highest risk' }];
-const ALERT_FILTER_KEYS = ['status', 'severity', 'type', 'search'];
+const RULE_OPTIONS = [{ value: '', label: 'All Rules' }, ...ALERT_RULE_OPTIONS];
+const ALERT_FILTER_KEYS = ['status', 'severity', 'rule', 'type', 'search'];
 
 // Counts come from the scoped options query, or from exact status totals.
 function useAlertOverview(refreshKey) {
@@ -39,6 +40,20 @@ function useAlertOverview(refreshKey) {
   return overview;
 }
 
+// Every control is a server-side filter; each change returns to page 1.
+export function AlertFilters({ summary, activeCount, onClear, advanced, ruleFilter, types, query, search, onSearch, onFilter }) {
+  return <FilterBar label="Alert filters" summary={summary} activeCount={activeCount} onClear={onClear}>
+    {advanced && <SearchField label="Search alerts" value={search} onChange={onSearch} placeholder="Search by alert, transaction or vendor" />}
+    <SegmentedControl label="Status" value={query.status ?? ''} options={STATUS_OPTIONS} onChange={(value) => onFilter({ status: value || undefined })} />
+    {advanced && <SegmentedControl label="Risk" value={query.severity ?? ''} options={RISK_OPTIONS} onChange={(value) => onFilter({ severity: value || undefined })} />}
+    {ruleFilter && <SelectField label="Audit Rule" value={query.rule ?? ''} options={RULE_OPTIONS} onChange={(value) => onFilter({ rule: value || undefined })} />}
+    {advanced && types.length > 1 && (types.length > 6
+      ? <Combobox label="Type" value={query.type ?? ''} allLabel="All types" options={types.map((value) => ({ value, label: value }))} onChange={(value) => onFilter({ type: value || undefined })} />
+      : <SelectField label="Type" value={query.type ?? ''} options={[{ value: '', label: 'All' }, ...types.map((value) => ({ value, label: value }))]} onChange={(value) => onFilter({ type: value || undefined })} />)}
+    {advanced && <SelectField label="Sort" value={query.sort ?? 'NEWEST'} options={SORT_OPTIONS} onChange={(value) => onFilter({ sort: value === 'NEWEST' ? undefined : value })} />}
+  </FilterBar>;
+}
+
 export default function Alerts() {
   const navigate = useNavigate();
   const { effectiveRole, user } = useAuthorization();
@@ -47,11 +62,11 @@ export default function Alerts() {
   const { resource } = collection;
   const [reviewing, setReviewing] = useState(false);
   const reviewPending = useRef(false);
-  const statusFilter = collection.query.status ?? '';
   const [overviewKey, setOverviewKey] = useState(0);
   const overview = useAlertOverview(overviewKey);
   const advanced = Boolean(overview.options?.supported);
   const types = overview.options?.types ?? [];
+  const ruleFilter = advanced && overview.options?.rules === true;
   const [search, setSearch] = useState('');
   const pendingSearch = (collection.query.search ?? '') !== search.trim();
   useEffect(() => {
@@ -160,7 +175,7 @@ export default function Alerts() {
     { label: 'Active', value: counts.active?.toLocaleString('en-US'), hint: 'Awaiting review', tone: 'primary' },
     { label: 'Reviewed', value: counts.reviewed?.toLocaleString('en-US'), hint: 'Review recorded', tone: 'low' },
   ] : null;
-  const clearFilters = () => { setSearch(''); resource.setFilters({ status: undefined, severity: undefined, type: undefined, search: undefined, sort: undefined }); };
+  const clearFilters = () => { setSearch(''); resource.setFilters({ status: undefined, severity: undefined, rule: undefined, type: undefined, search: undefined, sort: undefined }); };
 
   return (
     <div className="page alerts-page">
@@ -169,22 +184,15 @@ export default function Alerts() {
       {overview.status === 'loading' && <MetricStrip label="Alert summary" loading items={[{ label: 'Active' }, { label: 'High risk' }, { label: 'Medium risk' }, { label: 'Reviewed' }]} />}
       {metrics && <MetricStrip label="Alert summary" items={metrics} />}
 
-      <FilterBar label="Alert filters" summary={summary} activeCount={activeFilters} onClear={clearFilters}>
-        {advanced && <SearchField label="Search alerts" value={search} onChange={setSearch} placeholder="Search by alert, transaction or vendor" />}
-        <SegmentedControl label="Status" value={statusFilter} options={STATUS_OPTIONS} onChange={(value) => resource.setFilters({ status: value || undefined })} />
-        {advanced && <SegmentedControl label="Risk" value={query.severity ?? ''} options={RISK_OPTIONS} onChange={(value) => resource.setFilters({ severity: value || undefined })} />}
-        {advanced && types.length > 1 && (types.length > 6
-          ? <Combobox label="Type" value={query.type ?? ''} allLabel="All types" options={types.map((value) => ({ value, label: value }))} onChange={(value) => resource.setFilters({ type: value || undefined })} />
-          : <SelectField label="Type" value={query.type ?? ''} options={[{ value: '', label: 'All' }, ...types.map((value) => ({ value, label: value }))]} onChange={(value) => resource.setFilters({ type: value || undefined })} />)}
-        {advanced && <SelectField label="Sort" value={query.sort ?? 'NEWEST'} options={SORT_OPTIONS} onChange={(value) => resource.setFilters({ sort: value === 'NEWEST' ? undefined : value })} />}
-      </FilterBar>
+      <AlertFilters summary={summary} activeCount={activeFilters} onClear={clearFilters} advanced={advanced} ruleFilter={ruleFilter}
+        types={types} query={query} search={search} onSearch={setSearch} onFilter={resource.setFilters} />
 
       <section className="panel panel-table" aria-label="Alert queue" aria-busy={loading}>
         {caseBusy && <p className="inline-status panel-inline-status" role="status">Creating case…</p>}
         {loading ? <LoadingState message={collection.refreshing ? 'Refreshing alerts…' : 'Loading alerts…'} />
           : collection.error ? <ErrorState title="Alerts could not be loaded." message={collection.error} onRetry={() => resource.load()} />
             : collection.items.length ? <AlertsTable alertOwnerId={user?.id} alerts={rows} reviewing={reviewing} onMarkReviewed={handleMarkReviewed} canAssign={canAssignAlerts} onAssign={setAssignmentAlert} canEscalateToCase={canEscalateToCase} onCreateCase={createCaseFromAlert} />
-              : activeFilters ? <EmptyState filtered title="No alerts match these filters." message="Try another status or risk level, or clear the filters."
+              : activeFilters ? <EmptyState filtered title="No alerts match these filters." message="Try another status, risk level or audit rule, or clear the filters."
                 action={<button type="button" className="btn btn-secondary btn-sm" onClick={clearFilters}>Clear filters</button>} />
                 : <EmptyState title="No alerts right now." message="New alerts appear here as payments are evaluated." />}
         {!pendingSearch && <CollectionPagination collection={collection} itemLabel="alerts" />}

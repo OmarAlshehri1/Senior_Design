@@ -1,6 +1,7 @@
 import DateTime from './DateTime.jsx';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRightIcon } from './icons.jsx';
+import { transactionReference } from '../utils/presentation.js';
 
 const SEVERITY_TONES = Object.freeze({ High: 'high', Medium: 'medium', Low: 'low' });
 
@@ -16,7 +17,7 @@ export default function AlertsList({ alerts, variant = 'default' }) {
             <button
               type="button"
               className="alert-item"
-              aria-label={`View ${alert.title} for transaction ${alert.transactionId}`}
+              aria-label={`View ${alert.title} for transaction ${transactionReference(alert.transactionId)}`}
               onClick={() => navigate(`/transactions/${alert.transactionId}`)}
             >
               <span className={`alert-item-marker is-${tone}`} aria-hidden="true" />
