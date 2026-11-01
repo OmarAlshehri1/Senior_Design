@@ -1324,9 +1324,9 @@ def list_transactions(
     if category is not None and uncategorized:
         raise ValueError('Select a category or uncategorized transactions, not both.')
     if category is not None:
-        # Quoted PostgREST literal prevents category punctuation becoming syntax.
-        import json
-        params['category'] = 'eq.' + json.dumps(category, ensure_ascii=False)
+        # A direct eq value is literal text; httpx URL-encodes punctuation.
+        # Quotes here would become part of the category value in PostgREST.
+        params['category'] = 'eq.' + category
     elif uncategorized:
         params['and'] = '(or(category.is.null,category.eq.""))'
 

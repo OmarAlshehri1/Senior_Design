@@ -1,5 +1,3 @@
-import json
-
 import pytest
 from fastapi.testclient import TestClient
 
@@ -19,7 +17,7 @@ def test_category_repository_forwards_actor_and_rejects_missing_results(monkeypa
 
 
 @pytest.mark.parametrize('category,uncategorized', [('Procurement', False), ('a,b).or.("x"', False), (None, True)])
-def test_transaction_category_filter_uses_exact_quoted_values(monkeypatch, category, uncategorized):
+def test_transaction_category_filter_uses_exact_parameter_values(monkeypatch, category, uncategorized):
     params = {}
     monkeypatch.setenv('SUPABASE_URL', 'https://example.supabase.co')
     monkeypatch.setenv('SUPABASE_SECRET_KEY', 'test-only')
@@ -50,7 +48,7 @@ def test_transaction_category_filter_uses_exact_quoted_values(monkeypatch, categ
         assert params['and'] == '(or(category.is.null,category.eq.""))'
         assert 'category' not in params
     else:
-        assert params['category'] == 'eq.' + json.dumps(category)
+        assert params['category'] == 'eq.' + category
 
 
 def test_category_filter_api_validates_conflicts_and_forwards_server_query(monkeypatch):
