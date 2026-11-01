@@ -22,7 +22,7 @@ export default function RecentTransactionsTable({ transactions, highlightId }) {
       <table className="data-table recent-transactions-table">
         <thead>
           <tr>
-            <th>Transaction</th><th>Vendor</th><th>Amount</th><th>Risk</th><th><span className="sr-only">Open</span></th>
+            <th>Transaction</th><th>Vendor</th><th>Category</th><th>Amount</th><th>Risk</th><th><span className="sr-only">Open</span></th>
           </tr>
         </thead>
         <tbody>
@@ -41,6 +41,7 @@ export default function RecentTransactionsTable({ transactions, highlightId }) {
               >
                 <td data-label="Transaction"><TransactionReference value={transaction.id} /></td>
                 <td data-label="Vendor"><span className="truncate" title={transaction.vendor}>{transaction.vendor}</span></td>
+                <td data-label="Category">{transaction.category || 'Uncategorized'}</td>
                 <td data-label="Amount" className="numeric">{formatAmount(transaction.amount, transaction.currency)}</td>
                 <td data-label="Risk"><span className={riskStatusPillClass(riskLevel)}>{riskLevel}</span></td>
                 <td data-label="" className="cell-actions"><span className="row-chevron" aria-hidden="true"><ChevronRightIcon /></span></td>

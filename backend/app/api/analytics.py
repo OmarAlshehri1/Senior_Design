@@ -27,6 +27,11 @@ async def get_audit_rules():
     return await run_in_threadpool(analytics.list_audit_rules)
 
 
+@router.get('/dashboard/categories', dependencies=[AllowedRoles])
+async def get_dashboard_categories(user: dict = Depends(get_current_user)):
+    return await _call(analytics.get_dashboard_categories, actor_id=user['id'])
+
+
 @router.get("/analytics", dependencies=[AllowedRoles])
 async def get_analytics(
     period: Literal["7_DAYS", "30_DAYS", "90_DAYS"] = Query(default="30_DAYS"),

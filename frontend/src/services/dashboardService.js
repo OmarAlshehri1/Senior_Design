@@ -1,5 +1,34 @@
 import { apiClient } from './apiClient.js';
 
+export function adaptDashboardCategories(value) {
+  if (!Array.isArray(value?.items) || !Number.isSafeInteger(value?.total_transactions)) {
+    throw new Error('Category totals are unavailable.');
+  }
+  if (value.total_transactions < 0 || value.items.some((row) =>
+    !row || !(row.category === null || (typeof row.category === 'string' && row.category.length > 0))
+    || !Number.isSafeInteger(row.transactions) || row.transactions < 0
+    || !Number.isSafeInteger(row.high_risk_transactions) || row.high_risk_transactions < 0
+    || row.high_risk_transactions > row.transactions)
+    || value.items.reduce((total, row) => total + row.transactions, 0) !== value.total_transactions) {
+    throw new Error('Category totals are unavailable.');
+  }
+  return Object.freeze({
+    totalTransactions: value.total_transactions,
+    items: Object.freeze(value.items.map((row) => Object.freeze({
+      key: JSON.stringify(row.category),
+      name: row.category ?? 'Uncategorized',
+      transactions: row.transactions,
+      highRiskTransactions: row.high_risk_transactions,
+    }))),
+  });
+}
+
+export function dashboardCategoryFilter(key) {
+  if (key === '') return {};
+  const category = JSON.parse(key);
+  return category === null ? { uncategorized: true } : { category };
+}
+
 export function adaptDashboardSummary(value) {
   const low = Number(value?.low_risk_transactions ?? 0);
   const medium = Number(value?.medium_risk_transactions ?? 0);
@@ -32,6 +61,9 @@ export function adaptDashboardSummary(value) {
 
 export function createDashboardService(client = apiClient) {
   return Object.freeze({
+    async getCategories(options = {}) {
+      return adaptDashboardCategories(await client.get('/dashboard/categories', options));
+    },
     async getSummary(options = {}) {
       return adaptDashboardSummary(await client.get('/dashboard/summary', options));
     },

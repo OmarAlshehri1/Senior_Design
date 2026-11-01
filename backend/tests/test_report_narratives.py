@@ -235,8 +235,8 @@ def test_provider_errors_are_generic_and_do_not_stop_report(monkeypatch,status,e
         assert secret not in caplog.text
     saved={'id':REPORT_ID,'created_at':'2026-10-19T10:31:00Z','document':result}
     html = business_reports.render_business_html(saved)
-    assert 'Commentary failure code' in html and code in html
-    assert 'gemini-3.8-flash' in html
+    assert 'Commentary failure code' not in html and code not in html
+    assert 'gemini-3.8-flash' not in html
     book = load_workbook(BytesIO(business_reports.build_business_workbook(saved)))
     assert ('Commentary failure_code', code) in list(book['Memorandum'].values)
 
@@ -265,7 +265,8 @@ def test_transient_errors_retry_with_backoff_and_save_only_final_narrative(monke
     assert all(call[1]['json']==calls[0][1]['json'] for call in calls)
     assert 'failure_code' not in saved['document']['narrative']
     rendered = dict(saved, created_at='2026-10-19T10:31:00Z')
-    assert 'Commentary attempts' in business_reports.render_business_html(rendered)
+    book = load_workbook(BytesIO(business_reports.build_business_workbook(rendered)))
+    assert ('Commentary attempts', 3) in list(book['Memorandum'].values)
 
 
 def test_provider_retry_after_is_respected_or_retry_is_skipped(monkeypatch):
@@ -291,7 +292,7 @@ def test_retry_does_not_start_when_window_is_exhausted(monkeypatch):
     assert result['narrative']['failure_code']=='HTTP_503'
 
 
-def test_saved_commentary_is_shared_by_html_and_excel_without_regeneration(monkeypatch):
+def test_saved_commentary_is_retained_in_excel_without_regeneration(monkeypatch):
     doc = document()
     install_client(monkeypatch,envelope(response_items(doc)))
     enriched = service.enrich_findings(doc)
@@ -300,10 +301,10 @@ def test_saved_commentary_is_shared_by_html_and_excel_without_regeneration(monke
     def forbidden(*args,**kwargs): pytest.fail('Rendering must not regenerate explanations')
     monkeypatch.setattr(service.httpx,'Client',forbidden)
     html = business_reports.render_business_html(saved)
-    assert 'AI-assisted (Gemini)' in html
-    assert 'Potential business implication' in html
+    assert 'AI-assisted (Gemini)' not in html
+    assert 'Potential business implication' not in html
     text = enriched['findings'][0]['analysis']['interpretation']
-    assert text in html
+    assert text not in html
     book = load_workbook(BytesIO(business_reports.build_business_workbook(saved)))
     assert text in [row[1] for row in book['Memorandum'].iter_rows(values_only=True)]
 

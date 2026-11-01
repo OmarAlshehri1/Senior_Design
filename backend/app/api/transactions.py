@@ -96,11 +96,16 @@ async def get_transactions(
     risk: Literal["low", "medium", "high"] | None = Query(default=None),
     rule_status: Literal["passed", "review"] | None = Query(default=None),
     category: str | None = Query(default=None, min_length=1, max_length=120),
+    uncategorized: bool = Query(default=False),
 ) -> dict[str, object]:
+    if category is not None and uncategorized:
+        raise HTTPException(status_code=422, detail="Select a category or uncategorized transactions, not both.")
     # Only supplied filters are forwarded, so unfiltered reads are unchanged.
     filters = {key: value for key, value in
                {"risk": risk, "rule_status": rule_status, "category": category}.items()
                if value is not None}
+    if uncategorized:
+        filters["uncategorized"] = True
     try:
         transactions, total = await run_in_threadpool(
             list_transactions,

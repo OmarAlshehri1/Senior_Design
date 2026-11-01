@@ -4,7 +4,27 @@ import assert from 'node:assert/strict';
 import { adaptAuditRule, adaptAuditRuleCollection } from '../src/adapters/auditRuleAdapter.js';
 import { createAuditCoverage, createTrendModel } from '../src/analytics/analyticsModels.js';
 import { createAnalyticsService } from '../src/services/analyticsService.js';
-import { adaptDashboardSummary, createDashboardService } from '../src/services/dashboardService.js';
+import { adaptDashboardSummary, adaptDashboardCategories, dashboardCategoryFilter, createDashboardService } from '../src/services/dashboardService.js';
+
+test('category totals are server counts independent of loaded pages and distinguish missing category from its label', async () => {
+  const payload = { total_transactions: 24, items: [
+    { category: 'Purchasing', transactions: 20, high_risk_transactions: 3 },
+    { category: null, transactions: 3, high_risk_transactions: 0 },
+    { category: 'Uncategorized', transactions: 1, high_risk_transactions: 1 },
+  ] };
+  const value = adaptDashboardCategories(payload);
+  assert.equal(value.totalTransactions, 24);
+  assert.equal(value.items[0].transactions, 20);
+  assert.notEqual(value.items[1].key, value.items[2].key);
+  assert.deepEqual(dashboardCategoryFilter('null'), { uncategorized: true });
+  assert.deepEqual(dashboardCategoryFilter('"Uncategorized"'), { category: 'Uncategorized' });
+  assert.deepEqual(dashboardCategoryFilter(''), {});
+  assert.throws(() => adaptDashboardCategories({}), /unavailable/);
+  const calls = [];
+  const service = createDashboardService({ get: async (...args) => { calls.push(args); return payload; } });
+  await service.getCategories({ signal: 'fixture-signal' });
+  assert.deepEqual(calls, [['/dashboard/categories', { signal: 'fixture-signal' }]]);
+});
 import { createAuditRulesService } from '../src/services/auditRulesService.js';
 
 test('dashboard summary adapter preserves authoritative counts and normalizes risk distribution', () => {

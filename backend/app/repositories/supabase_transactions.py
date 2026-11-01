@@ -1265,6 +1265,7 @@ def list_transactions(
     page: int = 1,
     page_size: int = 25,
     search: str | None = None,
+    uncategorized: bool = False,
     sort_by: str = "newest",
     risk: str | None = None,
     rule_status: str | None = None,
@@ -1319,8 +1320,15 @@ def list_transactions(
         params.update(TRANSACTION_RISK_FILTERS[risk])
     if rule_status:
         params.update(TRANSACTION_RULE_STATUS_FILTERS[rule_status])
-    if category is not None and category.strip():
-        params["category"] = f"eq.{category}"
+
+    if category is not None and uncategorized:
+        raise ValueError('Select a category or uncategorized transactions, not both.')
+    if category is not None:
+        # Quoted PostgREST literal prevents category punctuation becoming syntax.
+        import json
+        params['category'] = 'eq.' + json.dumps(category, ensure_ascii=False)
+    elif uncategorized:
+        params['and'] = '(or(category.is.null,category.eq.""))'
 
     try:
         with httpx.Client(timeout=REQUEST_TIMEOUT_SECONDS) as client:

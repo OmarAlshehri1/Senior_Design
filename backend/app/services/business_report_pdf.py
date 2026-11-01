@@ -1,4 +1,4 @@
-"""Render the saved memorandum as PDF without a browser or external resources."""
+"""Render the plain-language daily report without external resources."""
 from html import escape
 from html.parser import HTMLParser
 from io import BytesIO
@@ -7,12 +7,12 @@ from threading import Lock
 
 import reportlab
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
-    BaseDocTemplate, Frame, LongTable, NextPageTemplate, PageBreak, PageTemplate,
+    BaseDocTemplate, Frame, LongTable, PageBreak, PageTemplate,
     Paragraph, Spacer, TableStyle,
 )
 from reportlab.graphics.shapes import Drawing, Rect, String
@@ -41,6 +41,7 @@ class _MemorandumBlocks(HTMLParser):
         self.blocks = []
         self.in_body = False
         self.skip_bars = False
+        self.chart_kind = 'risk'
         self.tag = None
         self.text = []
         self.rows = None
@@ -54,6 +55,7 @@ class _MemorandumBlocks(HTMLParser):
             return
         if tag == 'div' and dict(attrs).get('class') == 'bars':
             self.skip_bars = True
+            self.chart_kind = dict(attrs).get('data-chart', 'risk')
         if self.skip_bars:
             return
         if tag in ('table', 'dl'):
@@ -74,7 +76,7 @@ class _MemorandumBlocks(HTMLParser):
             # Only the following section closes the generated bars container.
             if tag == 'section':
                 self.skip_bars = False
-                self.blocks.append(('risk_chart', None))
+                self.blocks.append((self.chart_kind + '_chart', None))
             return
         if tag == self.tag:
             text = ''.join(self.text)
@@ -98,7 +100,7 @@ class _MemorandumBlocks(HTMLParser):
 
 
 def build_business_pdf(report: dict) -> bytes:
-    # Reuse the complete HTML content: no parallel fact/narrative reconstruction.
+    # Preview and PDF share the same summary; detailed evidence stays in Excel.
     from app.services.business_reports import render_business_html
 
     _register_fonts()
@@ -109,15 +111,15 @@ def build_business_pdf(report: dict) -> bytes:
     margin = 36
     ink = colors.HexColor('#172536')
     blue = colors.HexColor('#0876b9')
-    body = ParagraphStyle('MemoBody', fontName='MemoVera', fontSize=9, leading=14,
+    body = ParagraphStyle('MemoBody', fontName='MemoVera', fontSize=10, leading=15,
                           textColor=ink, spaceAfter=8, splitLongWords=True)
     heading_styles = {
         tag: ParagraphStyle(tag, parent=body, fontName='MemoVeraBold', fontSize=size,
-                            leading=size + 5, spaceBefore=10, spaceAfter=8,
+                            leading=size + 4, spaceBefore=8, spaceAfter=6,
                             keepWithNext=True, textColor=blue if tag == 'h2' else ink)
         for tag, size in [('h1', 24), ('h2', 14), ('h3', 11), ('h4', 9)]
     }
-    cell = ParagraphStyle('MemoCell', parent=body, fontSize=7, leading=10,
+    cell = ParagraphStyle('MemoCell', parent=body, fontSize=8.5, leading=12,
                           spaceAfter=0)
     header_cell = ParagraphStyle('MemoHeaderCell', parent=cell, fontName='MemoVeraBold')
 
@@ -129,7 +131,7 @@ def build_business_pdf(report: dict) -> bytes:
         width, _ = canvas._pagesize
         canvas.setFont('MemoVera', 6)
         canvas.setFillColor(ink)
-        canvas.drawString(margin, 19, f"BR-{report['id']} | Draft — human review required")
+        canvas.drawString(margin, 19, f"BR-{report['id']} | Draft - please review before sharing")
         canvas.drawRightString(width - margin, 19, f'Page {doc.page}')
         canvas.restoreState()
 
@@ -137,7 +139,7 @@ def build_business_pdf(report: dict) -> bytes:
                           topMargin=margin, bottomMargin=margin,
                           title=f"Business Audit Report BR-{report['id']}",
                           author='Continuous Auditing System')
-    for name, page_size in [('memo', A4), ('appendix', landscape(A4))]:
+    for name, page_size in [('daily', A4)]:
         width, height = page_size
         doc.addPageTemplates(PageTemplate(name, [Frame(margin, margin, width-2*margin,
                             height-2*margin, leftPadding=0, rightPadding=0,
@@ -145,9 +147,8 @@ def build_business_pdf(report: dict) -> bytes:
     story = []
     width = A4[0] - 2*margin
     for tag, value in parsed.blocks:
-        if tag == 'h2' and value.startswith('Appendix '):
-            story.extend([NextPageTemplate('appendix'), PageBreak()])
-            width = landscape(A4)[0] - 2*margin
+        if tag == 'h2' and value == 'Supplier Summary and Actions':
+            story.append(PageBreak())
         if tag in heading_styles:
             story.append(paragraph(value, heading_styles[tag]))
         elif tag in ('p', 'li'):
@@ -158,6 +159,10 @@ def build_business_pdf(report: dict) -> bytes:
             weights = [max(1, min(2.6, len(label)/12)) for label in value[0]]
             if count == 2:
                 weights = [1, 2]
+            elif value[0] == ['Issue', 'Affected transactions', 'Recommended action']:
+                weights = [1.5, .8, 2.7]
+            elif value[0] == ['Supplier', 'Transactions', 'Total value', 'High risk']:
+                weights = [2, 1, 1.6, 1]
             widths = [width*w/sum(weights) for w in weights]
             rows = [[paragraph(text, header_cell if index == 0 else cell)
                      for text in row] for index, row in enumerate(value)]
@@ -173,15 +178,17 @@ def build_business_pdf(report: dict) -> bytes:
                 ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
             ]))
             story.append(table)
-        elif tag == 'risk_chart':
-            values = report['document']['metrics']['risk_distribution']
-            chart = Drawing(width, 22*len(values)+12)
+        elif tag in ('risk_chart', 'issues_chart'):
+            from app.services.daily_business_presentation import chart_values
+            values = chart_values(report['document'], 'issues' if tag == 'issues_chart' else 'risk')
+            chart = Drawing(width, 18*len(values)+8)
             maximum = max([1, *values.values()])
             for index, (label, count) in enumerate(values.items()):
-                y = 22*(len(values)-index-1)+10
-                chart.add(String(0, y, f'{label}: {count}', fontName='MemoVera', fontSize=8))
-                chart.add(Rect(125, y-2, (width-150)*count/maximum, 10,
-                               fillColor=blue, strokeColor=None))
+                y = 18*(len(values)-index-1)+8
+                chart.add(String(0, y, f'{label}: {count}', fontName='MemoVera', fontSize=9))
+                fill = {'Low risk': '#16844a', 'Medium risk': '#c47a11', 'High risk': '#c73545'}.get(label, '#0876b9')
+                chart.add(Rect(210, y-2, (width-235)*count/maximum, 10,
+                               fillColor=colors.HexColor(fill), strokeColor=None))
             story.extend([chart, Spacer(1, 8)])
     doc.build(story)
     return output.getvalue()

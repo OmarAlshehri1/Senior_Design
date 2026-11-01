@@ -28,6 +28,13 @@ def get_analytics(*, actor_id: str, period_days: int) -> dict:
     return result
 
 
+def get_dashboard_categories(*, actor_id: str) -> dict:
+    result = identity.rpc('get_dashboard_categories', p_actor=actor_id)
+    if not isinstance(result, dict) or not isinstance(result.get('items'), list):
+        raise identity.IdentityError('ANALYTICS_UNAVAILABLE')
+    return result
+
+
 def list_audit_rules() -> dict:
     items = []
     for index, definition in enumerate(RULE_DEFINITIONS, start=1):

@@ -4337,13 +4337,14 @@ table.data-table {
   table-layout: fixed;
 }
 
-.dashboard-transactions-table th:first-child { width: 15%; }
-.dashboard-transactions-table th:nth-child(2) { width: 25%; }
-.dashboard-transactions-table th:nth-child(3) { width: 13%; }
-.dashboard-transactions-table th:nth-child(4) { width: 13%; }
-.dashboard-transactions-table th:nth-child(5) { width: 10%; }
-.dashboard-transactions-table th:nth-child(6) { width: 11%; }
-.dashboard-transactions-table th:nth-child(7) { width: 13%; }
+.dashboard-transactions-table th:first-child { width: 14%; }
+.dashboard-transactions-table th:nth-child(2) { width: 18%; }
+.dashboard-transactions-table th:nth-child(3) { width: 16%; }
+.dashboard-transactions-table th:nth-child(4) { width: 12%; }
+.dashboard-transactions-table th:nth-child(5) { width: 11%; }
+.dashboard-transactions-table th:nth-child(6) { width: 8%; }
+.dashboard-transactions-table th:nth-child(7) { width: 9%; }
+.dashboard-transactions-table th:nth-child(8) { width: 12%; }
 
 .dashboard-transactions-table th,
 .dashboard-transactions-table td {
@@ -4987,7 +4988,7 @@ select,
   }
 }
 
-/* Phase 8.10 — advanced audit workflow */
+/* Phase 8.10 â€” advanced audit workflow */
 .operations-page,
 .report-analytics {
   display: grid;
@@ -6395,3 +6396,11 @@ body {
   .operations-table td::before { flex: 0 0 40%; max-width: 45%; white-space: normal; }
   .operations-table td[data-label='Actions'], .operations-table td[data-label='Decision'] { gap: 8px; }
 }
+.dashboard-category-card { padding: 24px; margin-block: 24px; }
+.dashboard-category-card > p { color: #52657b; margin-block: 12px; }
+.dashboard-category-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.dashboard-category-item { display: grid; gap: 10px; padding: 16px; border: 1px solid #cbd5e1; border-radius: 10px; background: #f8fafc; color: #172536; text-align: left; cursor: pointer; font: inherit; }
+.dashboard-category-item[aria-pressed="true"] { border-color: #0876b9; background: #edf6fc; }
+.dashboard-category-item meter { width: 100%; }
+.dashboard-category-filter { display: flex; gap: 12px; align-items: center; margin: 12px 20px; flex-wrap: wrap; }
+.dashboard-category-filter select { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; max-width: 100%; }

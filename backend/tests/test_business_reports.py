@@ -106,10 +106,11 @@ def test_html_and_excel_keep_same_evidence_versions_dates_and_safe_text():
     assert '<script>' not in html
     assert '&lt;Org &amp; Co&gt;' in html
     assert '&lt;Directors&gt;' in html
-    for label in ['Terms of Reference', 'Procedure / Methodology', 'Findings', 'Conclusion', 'Recommendations', 'Review / Sign-off', 'Appendix D']:
+    for label in ['Risk overview', 'Issues identified', 'Management focus', 'Recommended actions', 'Follow-up status']:
         assert label in html
-    assert '2026-10-19T10:30:00Z' in html
-    assert '2026-10-03T00:00:00Z' in html
+    assert 'Terms of Reference' not in html and 'Appendix D' not in html
+    assert '19 October 2026, 10:30 UTC' in html
+    assert '03 October 2026 (UTC)' in html
     assert 'not confirmed losses' in html
     book = load_workbook(BytesIO(service.build_business_workbook(saved)))
     assert book['Transactions']['D2'].value == 500

@@ -4,7 +4,6 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from copy import deepcopy
 from decimal import Decimal, ROUND_HALF_UP
-from html import escape
 import json
 from typing import Any
 
@@ -109,7 +108,7 @@ def build_document(source: dict, *, recipient: str, sender: str, data_context: s
                'UNVERIFIED': 'Data provenance is unverified; synthetic and operational records have not been independently distinguished.'}[data_context]
     document = {
         'schema_version': '2.0.0', 'approval_status': 'DRAFT', 'generation_status': 'COMPLETED',
-        'title': 'Daily Transaction Risk and Control Exceptions — Business Memorandum',
+        'title': 'Daily Business Report',
         'organization_name': source['organization_name'], 'recipient': recipient, 'sender': sender,
         'prepared_by': deepcopy(source['prepared_by']), 'data_context': data_context,
         'scope': source['scope'], 'team_id': source.get('team_id'), 'team_name': source.get('team_name'),
@@ -177,100 +176,21 @@ def read_business_reports(*, actor_id: str, report_id=None, page=1, page_size=25
 
 
 def render_business_html(report: dict) -> str:
-    d = report['document']
-    def text(value):
-        return escape('Not recorded' if value is None else str(value), quote=True)
-    def table(headers, rows):
-        return '<table><thead><tr>' + ''.join(f'<th>{text(h)}</th>' for h in headers) + '</tr></thead><tbody>' + ''.join(
-            '<tr>' + ''.join(f'<td>{text(v)}</td>' for v in row) + '</tr>' for row in rows) + '</tbody></table>'
-    def section(title, body):
-        return f'<section><h2>{text(title)}</h2>{body}</section>'
-    def paragraph(value):
-        return f'<p>{text(value)}</p>'
-    def reference(*values):
-        return ' / '.join('Not recorded' if value is None else str(value) for value in values)
-    m = d['metrics']
-    content = '<h1>Memorandum</h1><p class="draft">AUTOMATICALLY GENERATED DRAFT — HUMAN REVIEW REQUIRED</p>'
-    header = [
-        ['Organization',d['organization_name']], ['To',d['recipient']], ['From',d['sender']],
-        ['Subject',d['title']], ['Report / revision ID',f"BR-{report['id']}"],
-        ['Prepared at',report['created_at']], ['Evidence as of',d['as_of']],
-        ['Transaction period (UTC)',f"{d['period_start']} to {d['period_end']} (exclusive)"],
-        ['Scope',d['scope'] + (f" — {d['team_name']}" if d.get('team_name') else '')], ['Data context',d['data_context']],
-    ]
-    content += '<dl class="memo-header">' + ''.join(f'<dt>{text(k)}</dt><dd>{text(v)}</dd>' for k,v in header) + '</dl>'
-    content += section('I. Terms of Reference',paragraph(d['terms']))
-    content += section('II. Procedure / Methodology',paragraph(d['methodology']) + '<ul>' + ''.join(f'<li>{text(x)}</li>' for x in d['limitations']) + '</ul>')
-    findings = table(['Metric','Recorded value'], [
-        ['Transactions',m['total_transactions']], ['Evaluated (at least one rule)',m['evaluated_transactions']],
-        ['Evaluation coverage (%)',m['coverage_percent']], ['Stored combined scores',m['scored_transactions']],
-        ['Average risk score / 100',m['average_risk_score']], ['Unscored',m['unscored_transactions']],
-        ['Unique transactions with rule failures',m['unique_exception_transactions']], ['Failed-rule occurrences (may overlap)',m['rule_failure_occurrences']],
-        ['Missing amount or currency',m['missing_amount_or_currency']],
-    ])
-    narrative = d.get('narrative') or {}
-    findings += paragraph('Finding explanations: ' + ('AI-assisted (Gemini); advisory, human review required.'
-                          if narrative.get('provider')=='GEMINI' else 'Standard explanations; AI commentary was not used.'))
-    for finding in d['findings']:
-        findings += f"<h3>{text(finding['id'])}. {text(finding['title'])}</h3>" + paragraph(finding['text'])
-        findings += paragraph('Evidence: ' + (', '.join(finding['transaction_ids']) or 'Authorized workflow schedules in Appendix C.'))
-        analysis = finding.get('analysis') or {}
-        for key,label in [('interpretation','Interpretation'),('business_implication','Potential business implication'),
-                          ('recommended_review','Proposed verification'),('limitations','Limits of interpretation')]:
-            if analysis.get(key):
-                findings += f'<h4>{text(label)}</h4>' + paragraph(analysis[key])
-    findings += table(['Currency','Recorded transaction value','Records with amount and currency'],
-                      [[x['currency'],x['amount'],x['transactions']] for x in m['amount_totals']])
-    findings += paragraph('High-risk recorded values only (not losses):') + table(['Currency','Amount','Transactions'],
-                      [[x['currency'],x['amount'],x['transactions']] for x in m['high_risk_amount_totals']])
-    content += section('III. Findings',findings)
-    content += section('IV. Conclusion',paragraph(d['conclusion']))
-    content += section('V. Recommendations',paragraph('Proposed actions only; no approval, due date or completed remediation is implied.') +
-                       table(['Finding','Priority','Proposed responsible role','Proposed action'],
-                             [[r['finding_id'],r['priority'],r['proposed_owner'],r['action']] for r in d['recommendations']]))
-    content += section('VI. Review / Sign-off',table(['Field','Value'],[[k,v] for k,v in d['review'].items()]) + paragraph('Draft — not approved. Generation completion is not review or sign-off.'))
-    content += section('Appendix A — Transaction schedule',table(
-        ['Transaction','UTC timestamp','Vendor','Amount','Currency','Data quality','Missing fields','Risk score','Risk level','Risk snapshot / version / date','Rule / anomaly versions used in risk'],
-        [[t['id'],t['timestamp'],t.get('vendor_name'),t.get('amount'),t.get('currency'),t.get('data_quality_status'),
-          ', '.join(t.get('missing_fields') or []),t.get('risk_score'),t.get('risk_level'),
-          reference(t.get('risk_snapshot_id'),t.get('scoring_version'),t.get('calculated_at')),
-          reference(t.get('rule_evaluation_version'),t.get('anomaly_model_version')) ] for t in d['evidence']['transactions']]))
-    rules = table(['Rule','Evaluated','Not evaluated','Failed transactions','Exclusion reasons'],
-                  [[r['name'],r['evaluated'],r['not_evaluated'],r['failed'],json.dumps(r['exclusions'],sort_keys=True)] for r in d['rules']])
-    rules += table(['Transaction','Evaluation ID / version / date','Rule / version','Status','Recorded detail','Recorded evidence'],[
-        [t['id'],reference(t.get('evaluation_id'),t.get('evaluation_version'),t.get('evaluated_at')),
-         reference(r.get('rule_name'),r.get('rule_version')),r.get('status'),r.get('detail'),json.dumps(r.get('evidence') or {},sort_keys=True)]
-        for t in d['evidence']['transactions'] for r in t['rule_results']])
-    risks = table(['Classification','Transactions'],[[key,value] for key,value in m['risk_distribution'].items()])
-    risks += '<div class="bars" role="img" aria-label="Risk distribution; exact counts in the table above">' + ''.join(
-        f'<div>{text(key)}: {value}<span style="width:{round(value*100/max(m["total_transactions"],1),2)}%"></span></div>'
-        for key,value in m['risk_distribution'].items()) + '</div>'
-    content += section('Appendix B — Coverage, rule evidence and risk distribution',rules + risks)
-    content += section('Appendix C — Authorized follow-up at extraction', paragraph('Snapshot as of ' + d['as_of']) +
-        table(['Alert','Transaction','Severity','Status','Created','Reviewed'],[
-            [a['id'],a['transaction_id'],a['severity'],a['status'],a.get('created_at'),a.get('reviewed_at')] for a in d['evidence']['alerts']]) +
-        table(['Case','Transaction','Status','Priority','SLA','Created','Updated','Closed','Outcome'],[
-            [f"CASE-{c['case_number']:06}",c['transaction_id'],c['status'],c['priority'],c['sla_status'],c['created_at'],c['updated_at'],c.get('closed_at'),c.get('resolution_outcome')]
-            for c in d['evidence']['cases']]))
-    content += section('Appendix D — Glossary',paragraph(GLOSSARY) +
-        table(['Document metadata','Saved value'],[['Schema version',d['schema_version']],['Requested by',d['prepared_by'].get('name')],
-            ['Preparation','Automated reporting service'],['Generation status',d['generation_status']],['Approval status',d['approval_status']],
-            ['Commentary provider',narrative.get('provider')],['Commentary status',narrative.get('status')],
-            ['Commentary model',narrative.get('model')],['Commentary prompt version',narrative.get('prompt_version')],
-            ['Commentary attempted model',narrative.get('attempted_model')],['Commentary failure code',narrative.get('failure_code')],
-            ['Commentary attempts',narrative.get('attempts')],
-            ['Commentary generated at',narrative.get('generated_at')]]))
-    return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' + \
-        '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; base-uri \'none\'; form-action \'none\'">' + \
-        '<title>' + text(d['title']) + '</title><style>' + \
-        'body{font:15px/1.6 Georgia,serif;color:#172536;max-width:1100px;margin:32px auto;padding:24px;background:white}' + \
-        'h1{font-size:34px}h2{border-bottom:2px solid #0876b9;padding-bottom:8px}h3{margin-bottom:6px}' + \
-        '.memo-header{display:grid;grid-template-columns:180px 1fr;gap:8px 18px}.memo-header dt{font-weight:bold}.memo-header dd{margin:0;overflow-wrap:anywhere}' + \
-        'table{border-collapse:collapse;width:100%;margin:18px 0;font:12px/1.5 Arial,sans-serif;overflow-wrap:anywhere}' + \
-        'th,td{padding:9px;border:1px solid #cbd5e1;text-align:left;vertical-align:top}th{background:#edf3f8}' + \
-        '.draft{border:1px solid #b45309;padding:12px}.bars span{display:block;height:12px;background:#0876b9}' + \
-        '@media print{@page{size:A4;margin:14mm}body{margin:0;padding:0;font-size:11pt}thead{display:table-header-group}tr{break-inside:avoid}h2,h3{break-after:avoid}table{font-size:8pt}}' + \
-        '</style></head><body>' + content + '</body></html>'
+    """Management-facing preview; technical schedules remain in Excel."""
+    from app.services.daily_business_presentation import render_daily_overview
+    return (
+        '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width, initial-scale=1">'
+        '<meta http-equiv="Content-Security-Policy" content="default-src &apos;none&apos;; style-src &apos;unsafe-inline&apos;; base-uri &apos;none&apos;; form-action &apos;none&apos;">'
+        '<title>Daily Business Report</title><style>'
+        'body{font:15px/1.6 Arial,sans-serif;color:#172536;max-width:1000px;margin:24px auto;padding:24px;background:white}'
+        'h1{font-size:32px}h2{color:#0876b9;border-bottom:2px solid #0876b9;padding-bottom:6px}h3{font-size:16px}'
+        'table{border-collapse:collapse;width:100%;margin:16px 0;font-size:13px;overflow-wrap:anywhere}'
+        'th,td{padding:9px;border:1px solid #cbd5e1;text-align:left;vertical-align:top}th{background:#edf3f8}'
+        '.bars span{display:block;height:12px;background:#0876b9}.bars>div{margin:8px 0}'
+        '@media print{@page{size:A4;margin:14mm}body{margin:0;padding:0;font-size:10pt}thead{display:table-header-group}tr{break-inside:avoid}h2,h3{break-after:avoid}table{font-size:8pt}}'
+        '</style></head><body>' + render_daily_overview(report) + '</body></html>'
+    )
 
 
 def build_business_workbook(report: dict) -> bytes:
@@ -279,6 +199,7 @@ def build_business_workbook(report: dict) -> bytes:
     from openpyxl.chart import BarChart, Reference
     from openpyxl.styles import Alignment
     from app.services.report_workbook import _table_header, _table_row
+    from app.services.daily_business_presentation import supplier_rows, chart_values, amount_label, ISSUE_LABELS, ISSUE_ACTIONS
     d = report['document']
     book = Workbook()
     sheets = [
@@ -309,7 +230,7 @@ def build_business_workbook(report: dict) -> bytes:
          [[a.get(k) for k in ('id','transaction_id','severity','status','created_at','reviewed_at')] for a in d['evidence']['alerts']]),
         ('Cases', ['Number','Transaction','Status','Priority','SLA','Created','Updated','Closed','Outcome'],
          [[c.get(k) for k in ('case_number','transaction_id','status','priority','sla_status','created_at','updated_at','closed_at','resolution_outcome')] for c in d['evidence']['cases']]),
-        ('Risk Distribution', ['Risk level','Transactions'], [[k,v] for k,v in d['metrics']['risk_distribution'].items()]),
+        ('Risk Distribution', ['Risk level','Transactions'], list(chart_values(d, 'risk').items())),
     ]
     for index,(name,headers,rows) in enumerate(sheets):
         sheet = book.active if index==0 else book.create_sheet()
@@ -329,9 +250,68 @@ def build_business_workbook(report: dict) -> bytes:
         sheet = book['Risk Distribution']
         chart = BarChart()
         chart.title = 'Recorded risk classifications'
-        chart.add_data(Reference(sheet,min_col=2,min_row=1,max_row=4),titles_from_data=True)
-        chart.set_categories(Reference(sheet,min_col=1,min_row=2,max_row=4))
+        chart.add_data(Reference(sheet,min_col=2,min_row=1,max_row=sheet.max_row),titles_from_data=True)
+        chart.set_categories(Reference(sheet,min_col=1,min_row=2,max_row=sheet.max_row))
         sheet.add_chart(chart,'D2')
+    from collections import Counter
+    m = d['metrics']
+    alerts = Counter(a['status'] for a in d['evidence']['alerts'])
+    daily = book.create_sheet('Daily Business Report', 0)
+    _table_header(daily, 1, ['Daily Business Report', 'Saved reporting period / value'])
+    overview = [
+        ['Organization', d['organization_name']], ['Transaction day (UTC)', d['period_start'][:10]],
+        ['Transactions', m['total_transactions']], ['Total value', amount_label(m['amount_totals'])],
+        ['High-risk transactions', m['risk_distribution']['HIGH']],
+        ['High-risk value', amount_label(m['high_risk_amount_totals'])],
+        ['Transactions with issues', m['unique_exception_transactions']],
+        ['Open alerts', alerts['ACTIVE']], ['Reviewed alerts', alerts['REVIEWED']],
+        ['Follow-up status as of', d['as_of']], ['Scope', d['scope']], ['Data context', d['data_context']],
+        ['Interpretation', 'Transaction values are not confirmed losses. Reviewed does not mean resolved.'],
+    ]
+    for row, values in enumerate(overview, 2):
+        _table_row(daily, row, values)
+    for name, headers, rows in [
+        ('Supplier Summary', ['Supplier', 'Currency', 'Transactions', 'Recorded value', 'High-risk transactions', 'Missing values'],
+         [[r['supplier'], r['currency'], r['count'], float(r['amount']) if r['missing'] < r['count'] else 'Not recorded', r['high'], r['missing']] for r in supplier_rows(d)]),
+        ('Issues and Actions', ['Issue', 'Affected transactions', 'Recommended action'],
+         [[ISSUE_LABELS.get(r['key'], r['name']), r['failed'], ISSUE_ACTIONS[r['key']]] for r in d['rules']]),
+    ]:
+        sheet = book.create_sheet(name)
+        _table_header(sheet, 1, headers)
+        for row, values in enumerate(rows, 2):
+            _table_row(sheet, row, values)
+        sheet.freeze_panes = 'A2'
+        sheet.auto_filter.ref = sheet.dimensions
+    issues = book['Issues and Actions']
+    chart = BarChart()
+    chart.type = 'bar'
+    chart.title = 'Issues identified (transactions may overlap)'
+    chart.add_data(Reference(issues, min_col=2, min_row=1, max_row=1+len(d['rules'])), titles_from_data=True)
+    chart.set_categories(Reference(issues, min_col=1, min_row=2, max_row=1+len(d['rules'])))
+    chart.width, chart.height = 24, 10
+    daily.add_chart(chart, 'D19')
+    risk_sheet = book['Risk Distribution']
+    chart = BarChart()
+    chart.title = 'Risk overview'
+    chart.add_data(Reference(risk_sheet, min_col=2, min_row=1, max_row=risk_sheet.max_row), titles_from_data=True)
+    chart.set_categories(Reference(risk_sheet, min_col=1, min_row=2, max_row=risk_sheet.max_row))
+    daily.add_chart(chart, 'D2')
+    for sheet in (daily, book['Supplier Summary'], issues):
+        sheet.sheet_view.showGridLines = False
+        sheet.freeze_panes = 'A2'
+        for column in sheet.columns:
+            sheet.column_dimensions[column[0].column_letter].width = 42 if column[0].column == 1 else 28
+        for row in sheet:
+            for cell in row:
+                cell.alignment = Alignment(wrap_text=True, vertical='top')
+        sheet.sheet_properties.pageSetUpPr.fitToPage = True
+        sheet.page_setup.orientation = 'landscape'
+        sheet.page_setup.paperSize = sheet.PAPERSIZE_A4
+        sheet.page_setup.fitToWidth = 1
+        sheet.page_setup.fitToHeight = 0
+        sheet.print_title_rows = '1:1'
+    for row in range(2, book['Supplier Summary'].max_row+1):
+        book['Supplier Summary'].cell(row, 4).number_format = '#,##0.00'
     output = BytesIO()
     book.save(output)
     return output.getvalue()

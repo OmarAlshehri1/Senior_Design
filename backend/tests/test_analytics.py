@@ -9,7 +9,7 @@ def test_analytics_routes_require_authentication():
     app.dependency_overrides.clear()
     try:
         with TestClient(app) as client:
-            for path in ("/api/v1/dashboard/summary", "/api/v1/audit-rules", "/api/v1/analytics"):
+            for path in ("/api/v1/dashboard/summary", "/api/v1/dashboard/categories", "/api/v1/audit-rules", "/api/v1/analytics"):
                 assert client.get(path).status_code == 401
     finally:
         app.dependency_overrides.clear()
@@ -20,16 +20,19 @@ def test_analytics_routes_bind_actor_and_validate_period(monkeypatch):
     app.dependency_overrides[get_current_user] = lambda: {"id": actor_id, "role": "AUDITOR", "account_status": "ACTIVE"}
     calls = []
     monkeypatch.setattr("app.api.analytics.analytics.get_dashboard_summary", lambda **values: calls.append(("summary", values)) or {"total_transactions": 2})
+    monkeypatch.setattr("app.api.analytics.analytics.get_dashboard_categories", lambda **values: calls.append(("categories", values)) or {"items": [], "total_transactions": 0})
     monkeypatch.setattr("app.api.analytics.analytics.get_analytics", lambda **values: calls.append(("analytics", values)) or {"period_days": values["period_days"]})
     monkeypatch.setattr("app.api.analytics.analytics.list_audit_rules", lambda: {"items": []})
     try:
         with TestClient(app) as client:
             assert client.get("/api/v1/dashboard/summary").json()["total_transactions"] == 2
+            assert client.get('/api/v1/dashboard/categories').json()['total_transactions'] == 0
             assert client.get("/api/v1/audit-rules").json() == {"items": []}
             assert client.get("/api/v1/analytics?period=7_DAYS").json() == {"period_days": 7}
             assert client.get("/api/v1/analytics?period=14_DAYS").status_code == 422
         assert calls == [
             ("summary", {"actor_id": actor_id}),
+            ("categories", {"actor_id": actor_id}),
             ("analytics", {"actor_id": actor_id, "period_days": 7}),
         ]
     finally:
