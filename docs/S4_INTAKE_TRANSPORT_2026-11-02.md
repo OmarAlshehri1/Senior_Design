@@ -1,5 +1,12 @@
 # Intake transport investigation - 2 November 2026
 
+Later follow-up: the [ten-minute varied-payload soak](S4_SOAK_STAGING_2026-11-02.md)
+completed 86 additional transactions with full scoring and HIGH alerts. Of
+these, 84 client confirmations met five seconds; two large-payload requests
+took 5.625660 and 6.380250 seconds, including about three seconds in the combined
+body-reading/parsing phase. The previous six-second persistence-RPC delay was
+not reproduced. The original 37-case observations below remain preserved.
+
 The earlier **8.059360-second** request was **not reproduced** in 37 new staging
 requests. Every new request completed with five evaluated rules, a real AI score
 and a saved HIGH alert within five seconds. The previous miss remains recorded;
