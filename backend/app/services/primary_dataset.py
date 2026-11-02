@@ -113,3 +113,10 @@ def _model_for_metadata(value):
             path = _private_artifact(value)
             _models[key] = load_payments_primary_model(path, value['model_sha256'], value['dataset_key'])
         return _models[key]
+
+
+def model_for_source_binding(digest, dataset_key, bucket, name):
+    """Reuse the hash-checked, locked Payments loader for an operator-pinned feed."""
+    return _model_for_metadata({'source_schema': 'PAYMENTS_SIMULATION_WORKBOOK', 'state': 'READY',
+                               'dataset_key': dataset_key, 'model_sha256': digest,
+                               'model_bucket': bucket, 'model_object': name})

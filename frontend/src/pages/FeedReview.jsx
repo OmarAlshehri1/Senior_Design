@@ -140,6 +140,9 @@ export default function FeedReview() {
         <p>Department / category: {detail.category || 'Uncategorized'}</p>
         <p>Invoice: {detail.invoice_number || 'Unavailable'} · Evaluated: {time(detail.evaluated_at)}</p>
         <p>Clock: {detail.time_basis || 'Unavailable'} · Combined risk: {detail.risk_score ?? 'Not scored'} {detail.risk_level}</p>
+        <p>AI anomaly score: {detail.ai_score == null ? 'Not scored' : `${detail.ai_score}/100`}</p>
+        {detail.ai_score != null && <p>The AI score shows how unusual this payment is compared with its reference history. It is not a probability of fraud.</p>}
+        {detail.ai_score != null && detail.risk_score == null && <p>Combined risk is unavailable until all five audit checks can be evaluated.</p>}
         {detail.unscored_reason && <p>Scoring reason: {detail.unscored_reason}</p>}
         {modelCapability?.inline_diagnostics && canReviewModel && <PaymentsModelDiagnostic detail={detail} />}
         <ul>{(detail.rules || []).map((rule) => <li key={rule.rule_key}>
