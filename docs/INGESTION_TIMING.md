@@ -1,5 +1,21 @@
 # Staging ingestion timing
 
+Successful producer POST responses also subdivide the enclosing `parse` duration:
+
+- `body_read`: reading the request stream after source authentication, including
+  ASGI body waits, byte-buffer operations and scheduling delays during the read.
+- `validate`: copying/decoding the complete body, validating the envelope and
+  confirming that its source matches the authenticated identity.
+- `fingerprint`: building the typed canonical fingerprint and hashing it.
+
+The legacy `parse` measurement still encloses all three plus header checks and
+small timing overhead. Do not add its children to it when calculating totals.
+These are elapsed durations, not CPU-profiler measurements. `body_read` does
+not include all client upload time: bytes can arrive or be buffered at the
+platform before source authentication or before the handler starts reading.
+Failed requests continue to omit timing headers. Payload limits, original-body
+preservation, fingerprints, authorization and scoring are unchanged.
+
 With the same opt-in flag, each RPC also reports duration-only fields prefixed
 by its route phase (for example, `persist_rpc_tcp` and `read_rpc_wait`):
 

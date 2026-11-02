@@ -101,7 +101,7 @@ def test_opt_in_timing_headers_preserve_payload_and_hide_source_details(intake, 
     replay = client.post("/api/v1/ingestion/events", headers=HEADERS, json=event())
     assert replay.status_code == 200 and replay.json()["duplicate"] is True
     timings = dict(part.strip().split(";dur=") for part in replay.headers["server-timing"].split(","))
-    assert set(timings) == {"auth_rpc", "parse", "persist_rpc", "app"}
+    assert set(timings) == {"auth_rpc", "body_read", "validate", "fingerprint", "parse", "persist_rpc", "app"}
     assert all(float(value) >= 0 for value in timings.values())
     assert float(timings["app"]) >= sum(float(timings[key]) for key in ("auth_rpc", "parse", "persist_rpc"))
     assert TOKEN not in replay.headers["server-timing"] and "source-A" not in replay.headers["server-timing"]
@@ -114,6 +114,61 @@ def test_opt_in_timing_headers_preserve_payload_and_hide_source_details(intake, 
         assert read.headers["x-ingestion-instance"] == replay.headers["x-ingestion-instance"]
         assert {part.strip().split(";dur=")[0] for part in read.headers["server-timing"].split(",")} == {"read_rpc", "app"}
     assert "server-timing" not in client.get(f"/api/v1/ingestion/receipts/{RECEIPT}").headers
+
+
+def test_body_wait_is_separate_from_validation_and_fingerprinting(monkeypatch):
+    import asyncio
+    from starlette.requests import Request
+
+    original = json.dumps(event()).encode()
+    expected_fingerprint = hashlib.sha256(json.dumps(
+        api.fingerprint_value(event()), ensure_ascii=False, separators=(",", ":"),
+        allow_nan=False).encode()).hexdigest()
+    clock = [0.0]
+    monkeypatch.setattr(api, "perf_counter", lambda: clock[0])
+    parse_original, fingerprint_original = api.parse_envelope, api.fingerprint_value
+
+    def parse(body):
+        clock[0] += .2
+        return parse_original(body)
+
+    def fingerprint(envelope):
+        clock[0] += .3
+        return fingerprint_original(envelope)
+
+    monkeypatch.setattr(api, "parse_envelope", parse)
+    monkeypatch.setattr(api, "fingerprint_value", fingerprint)
+    chunks = [(original[:20], True, .6), (original[20:], False, .65)]
+
+    async def receive():
+        body, more, wait = chunks.pop(0)
+        clock[0] += wait
+        return {"type": "http.request", "body": body, "more_body": more}
+
+    captured = []
+
+    async def submit(name, **payload):
+        assert name == "submit_ingestion_event"
+        captured.append(payload)
+        clock[0] += .1
+        return {"receipt_id": RECEIPT, "duplicate": False}
+
+    monkeypatch.setattr(api, "call", submit)
+    monkeypatch.setattr(api, "notify", lambda worker: None)
+    request = Request({"type": "http", "headers": [(b"content-type", b"application/json")]}, receive)
+    request.state.ingestion_started = 0.0
+    request.state.ingestion_timings = {}
+    response = asyncio.run(api.receive_event(request, ("digest", "source-A")))
+    assert response.status_code == 202
+    durations = {key: float(value) for key, value in
+                 (part.strip().split(";dur=") for part in response.headers["server-timing"].split(","))}
+    assert durations["body_read"] == pytest.approx(1250)
+    assert durations["validate"] == pytest.approx(200)
+    assert durations["fingerprint"] == pytest.approx(300)
+    assert durations["parse"] == pytest.approx(1750)
+    assert durations["persist_rpc"] == pytest.approx(100)
+    assert captured[0]["p_fingerprint"] == expected_fingerprint
+    assert captured[0]["p_payload_text"] == original.decode()
 
 
 def test_receipt_lookup_uses_one_fresh_authorized_rpc(intake, monkeypatch):

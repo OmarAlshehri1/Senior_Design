@@ -92,11 +92,14 @@ async def receive_event(request: Request, identity: tuple[str, str] = Depends(so
         raise HTTPException(415, detail={"code": "JSON_REQUIRED"})
     if request.headers.get("content-encoding", "identity").lower() != "identity":
         raise HTTPException(415, detail={"code": "ENCODING_UNSUPPORTED"})
+    body_started = perf_counter()
     body = bytearray()
     async for chunk in request.stream():
         if len(body) + len(chunk) > MAX_BODY:
             raise HTTPException(413, detail={"code": "PAYLOAD_TOO_LARGE"})
         body.extend(chunk)
+    record_timing(request, "body_read", body_started)
+    validation_started = perf_counter()
     try:
         envelope = parse_envelope(bytes(body))
     except (ValueError, UnicodeError, RecursionError, OverflowError):
@@ -104,8 +107,11 @@ async def receive_event(request: Request, identity: tuple[str, str] = Depends(so
     digest, source_id = identity
     if envelope["source_id"] != source_id:
         raise HTTPException(403, detail={"code": "SOURCE_MISMATCH"})
+    record_timing(request, "validate", validation_started)
+    fingerprint_started = perf_counter()
     canonical = json.dumps(fingerprint_value(envelope), ensure_ascii=False, separators=(",", ":"), allow_nan=False)
     fingerprint = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    record_timing(request, "fingerprint", fingerprint_started)
     record_timing(request, "parse", parse_started)
     result = await timed_call(request, "persist_rpc", "submit_ingestion_event", p_credential_hash=digest,
                         p_payload_text=body.decode("utf-8"), p_fingerprint=fingerprint)
