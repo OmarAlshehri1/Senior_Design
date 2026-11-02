@@ -1,0 +1,12 @@
+{
+  "environment": "staging",
+  "production_changed": false,
+  "test_source_active": false,
+  "test_source_audit_enabled": false,
+  "credential_rejected_status": 401,
+  "unauthorized_timings_absent": true,
+  "total_synthetic_source_receipts": 84,
+  "new_completed_transactions_and_alerts": 37,
+  "other_source_receipts_unchanged": 51082,
+  "original_payments_source_records_unchanged": 1001
+}

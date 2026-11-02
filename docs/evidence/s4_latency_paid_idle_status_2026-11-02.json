@@ -1,0 +1,20 @@
+{
+  "environment": "staging",
+  "production_changed": false,
+  "pid": 14776,
+  "status": "FINISHED",
+  "idle_seconds": 980,
+  "started_at": "2026-11-02T09:51:54.332676+00:00",
+  "scheduled_post_at": "2026-11-02T10:08:14.332676+00:00",
+  "scheduled_riyadh_time": "2026-11-02T13:08:14.332676+03:00",
+  "prior_warm_instance": "b6245eb8b8034d42a730ac7958f14f15",
+  "updated_at": "2026-11-02T10:31:08.660293+00:00",
+  "remaining_seconds": 0,
+  "case_status": "INTERRUPTED",
+  "completion_upper_bound_seconds": null,
+  "confirmed_within_5_seconds": null,
+  "observed_instance": null,
+  "process_changed": null,
+  "uptime_at_post_ack_seconds": null,
+  "finished_at": "2026-11-02T10:31:08.660293+00:00"
+}

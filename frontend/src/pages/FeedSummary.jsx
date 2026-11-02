@@ -55,6 +55,16 @@ export default function FeedSummary({ source }) {
       <h3>Recorded payment amounts by currency</h3><p>Recorded amounts are not losses. No currency conversion or combined currency total.</p>
       <table aria-label="Summary currencies"><thead><tr><th>Currency</th><th>Transactions</th><th>Amounts recorded</th><th>Total recorded amount</th><th>Failed transaction amount</th></tr></thead>
         <tbody>{report.currencies.map((item) => <tr key={item.currency || 'unspecified'}><td>{item.currency || 'Unspecified'}</td><td>{item.transactions}</td><td>{item.amounts_recorded}</td><td>{item.recorded_amount ?? 'Unavailable'}</td><td>{item.failed_recorded_amount ?? 'No recorded amount'}</td></tr>)}</tbody></table>
+      <h3>Department / category breakdown</h3>
+      <p>Departments come from the imported classification. Missing values are Uncategorized. Amounts remain separate for each currency.</p>
+      {Array.isArray(report.departments) ? <>
+        <p>Showing {report.departments.length} of {report.departments_group_count} department/currency groups{report.departments_truncated ? ` (largest ${report.departments_limit} groups)` : ''}.</p>
+        <div className="table-container"><table aria-label="Summary departments"><thead><tr><th>Department / category</th><th>Currency</th><th>Transactions</th><th>Processed</th><th>Flagged by rules</th><th>Recorded amount</th></tr></thead>
+          <tbody>{report.departments.map((item) => <tr key={JSON.stringify([item.category, item.currency])}>
+            <td>{item.category}</td><td>{item.currency || 'Unspecified'}</td><td>{item.transactions}</td><td>{item.completed}</td><td>{item.failed_transactions}</td><td>{item.recorded_amount ?? 'Unavailable'}</td>
+          </tr>)}</tbody></table></div>
+        {!report.departments.length && <p>No department groups in this report scope.</p>}
+      </> : <p>Department breakdown is unavailable for this report.</p>}
       <h3>Saved rule outcomes</h3><table aria-label="Summary rules"><thead><tr><th>Rule</th><th>Passed</th><th>Failed</th><th>Not evaluated</th><th>Missing or unknown outcome</th></tr></thead>
         <tbody>{report.rules.map((rule) => <tr key={rule.rule_key}><td>{label(rule.rule_key)}</td><td>{rule.passed}</td><td>{rule.failed}</td><td>{rule.not_evaluated}</td><td>{rule.missing_or_unknown}</td></tr>)}</tbody></table>
       <p>Schedule: latest {report.schedule.length} of {report.counts.transactions} transactions (maximum {report.schedule_limit}). Aggregate totals cover the full authorized report population.</p>

@@ -5,7 +5,7 @@ from io import BytesIO
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, LongTable, TableStyle, PageBreak
+from reportlab.platypus import SimpleDocTemplate, Paragraph, LongTable, TableStyle, CondPageBreak
 
 from app.services.business_report_pdf import _register_fonts
 from app.services.feed_exception_pdf import display, label, timestamp
@@ -74,7 +74,17 @@ def build_summary_pdf(report):
         [c.get('currency') or 'Unspecified', c.get('transactions'), c.get('amounts_recorded'),
          c.get('recorded_amount'), c.get('failed_recorded_amount')] for c in report['currencies']],
         [65, 85, 100, (doc.width-250)/2, (doc.width-250)/2])
-    section('03  Rule outcomes')
+    if 'departments' in report:
+        section('03  Department / category breakdown')
+        story.append(p(f"{len(report['departments'])} of {report['departments_group_count']} department/currency groups; "
+                       f"largest {report['departments_limit']} maximum. Missing classifications are Uncategorized. "
+                       'Currency amounts remain separate; flagged payments are not confirmed losses.', 'note'))
+        table([['Department / category', 'Currency', 'Transactions', 'Processed', 'Flagged by rules',
+                'Recorded amount (exact)', 'Rule-flagged amount (exact)']] + [
+            [d['category'], d.get('currency') or 'Unspecified', d['transactions'], d['completed'],
+             d['failed_transactions'], d.get('recorded_amount'), d.get('failed_recorded_amount')]
+            for d in report['departments']], [doc.width*fraction for fraction in (.22, .08, .10, .10, .10, .20, .20)])
+    section('04  Rule outcomes')
     table([['Rule', 'Passed', 'Failed', 'Not evaluated', 'Missing / unknown']] + [
         [label(r['rule_key']), r.get('passed'), r.get('failed'), r.get('not_evaluated'),
          r.get('missing_or_unknown')] for r in report['rules']],
@@ -85,21 +95,21 @@ def build_summary_pdf(report):
                    'rule-failed transactions. Pending validation receipts are excluded. Recorded amounts are not losses. '
                    'Currency totals remain separate; no currency conversion is applied. Rule failures and review decisions '
                    'are not confirmed fraud. Simulation inputs remain simulated. This is not an approved management memorandum.', 'note'))
-    story.append(PageBreak())
-    section('04  Transaction schedule')
+    story.append(CondPageBreak(180))
+    section('05  Transaction schedule')
     story.append(p(f"{len(report['schedule'])} of {report['counts']['transactions']} transactions shown; "
                    f"latest {report['schedule_limit']} maximum. "
                    'Aggregates above cover the entire authorized report population.', 'note'))
     story.append(p('A rule-failed transaction without a saved review starts in Open. A dash means not recorded. '
                    'The review column lists failure / review state, then decision / version (v). Amounts preserve exact stored precision.', 'note'))
-    rows = [['Transaction ID / record', 'Amount / currency', 'Arrival (UTC)', 'Processing',
+    rows = [['Transaction ID / record / department', 'Amount / currency', 'Arrival (UTC)', 'Processing',
              'Rule failure / review', 'Assigned team']]
     for tx in report['schedule']:
         review = tx.get('review_status') or ('OPEN' if tx.get('failed') else None)
         decision = label(tx['resolution']) if tx.get('resolution') else '—'
         version = str(tx['version']) if tx.get('version') is not None else '—'
         rows.append([
-            f"{tx['id']}\n{display(tx.get('record_id'))}",
+            f"{tx['id']}\n{display(tx.get('record_id'))}\nDepartment / category: {tx.get('category') or 'Uncategorized'}",
             f"{display(tx.get('amount'))}\n{display(tx.get('currency'))}",
             timestamp(tx.get('received_at')),
             label(tx.get('job_status') or 'Not recorded'),

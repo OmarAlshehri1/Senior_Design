@@ -1,7 +1,9 @@
 """Restricted ingestion RPCs; never log request bodies or source credentials."""
 from typing import Any
 from contextlib import contextmanager
+from contextvars import ContextVar
 from threading import Condition
+from time import perf_counter
 
 import httpx
 
@@ -13,6 +15,38 @@ _pool = Condition()
 _client: httpx.Client | None = None
 _users = 0
 _closing = False
+_timings: ContextVar[tuple[float, dict[str, float]] | None] = ContextVar("ingestion_rpc_timings", default=None)
+
+
+@contextmanager
+def capture_rpc_timings():
+    """Share one duration collector with a copied thread-pool context."""
+    durations: dict[str, float] = {}
+    token = _timings.set((perf_counter(), durations))
+    try:
+        yield durations
+    finally:
+        _timings.reset(token)
+
+
+def _duration_trace(durations):
+    # Never inspect trace info: it may contain credentials, bodies and URLs.
+    phases = {"connection.connect_tcp": "tcp", "connection.start_tls": "tls",
+              "http11.send_request_headers": "send", "http11.send_request_body": "send",
+              "http11.receive_response_headers": "wait", "http11.receive_response_body": "body"}
+    starts = {}
+    for key in set(phases.values()):
+        durations[key] = 0.0
+
+    def trace(name, _info):
+        event, _, state = name.rpartition(".")
+        if event not in phases:
+            return
+        if state == "started":
+            starts[event] = perf_counter()
+        elif state in {"complete", "failed"} and event in starts:
+            durations[phases[event]] += (perf_counter() - starts.pop(event)) * 1000
+    return trace
 
 
 @contextmanager
@@ -56,11 +90,29 @@ def rpc(name: str, payload: dict[str, Any]) -> Any:
                     "release_ingestion_validation", "resume_ingestion_validation",
                     "prepare_feed_audits", "claim_feed_audit", "finish_feed_audit", "release_feed_audit", "resume_feed_audit"}:
         raise ValueError("Unsupported ingestion operation.")
+    captured = _timings.get()
+    durations = captured[1] if captured is not None else None
+    if durations is not None:
+        durations["dispatch"] = (perf_counter() - captured[0]) * 1000
     url, _ = _get_configuration()
+    lease_started = perf_counter()
     try:
         with _rpc_client() as client:
-            response = client.post(f"{url}/rest/v1/rpc/{name}", headers=_get_headers(), json=payload)
+            if durations is not None:
+                durations["lease"] = (perf_counter() - lease_started) * 1000
+            options = {"extensions": {"trace": _duration_trace(durations)}} if durations is not None else {}
+            http_started = perf_counter()
+            try:
+                response = client.post(f"{url}/rest/v1/rpc/{name}", headers=_get_headers(), json=payload, **options)
+            finally:
+                if durations is not None:
+                    durations["http"] = (perf_counter() - http_started) * 1000
             response.raise_for_status()
-            return response.json()
+            decode_started = perf_counter()
+            try:
+                return response.json()
+            finally:
+                if durations is not None:
+                    durations["decode"] = (perf_counter() - decode_started) * 1000
     except (httpx.HTTPError, ValueError) as exc:
         raise SupabasePersistenceError("Ingestion storage unavailable.") from exc

@@ -1,0 +1,42 @@
+{
+  "source_id": "SYNTHETIC-combined-s4-20261102",
+  "repetitions": 3,
+  "cases": [
+    [
+      "extreme_seed",
+      "EXTREME-MISSING",
+      "1000000000000.00",
+      "BOSS",
+      "EXTREME",
+      [
+        "segregation_of_duties",
+        "approval_limits",
+        "ghost_vendors"
+      ]
+    ],
+    [
+      "extreme_duplicate",
+      "EXTREME-MISSING",
+      "1000000000000.00",
+      "BOSS",
+      "EXTREME",
+      [
+        "segregation_of_duties",
+        "approval_limits",
+        "duplicate_payment",
+        "ghost_vendors"
+      ]
+    ]
+  ],
+  "expected_high_cases": [
+    "S4-1-extreme_duplicate",
+    "S4-2-extreme_duplicate",
+    "S4-3-extreme_duplicate"
+  ],
+  "rules_mode": "SUBTHRESHOLD_PAYMENTS",
+  "alert_policy": "Existing combined HIGH only; thresholds unchanged",
+  "limits": "Warmed, sequential HTTP posting; synthetic pipeline coverage, not model accuracy or production SLA",
+  "phase": "extreme_value_branch_coverage",
+  "additional_seed_alerts_allowed": true,
+  "purpose": "Explicit extreme synthetic outliers to exercise existing HIGH alert path; original moderate-value observations retained; no accuracy claims or threshold changes"
+}

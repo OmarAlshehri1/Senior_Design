@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.concurrency import run_in_threadpool
 
 from app.api.alerts import (
     router as alerts_router,
@@ -24,6 +25,7 @@ from app.api.business_reports import router as business_reports_router
 from app.api.ingestion import router as ingestion_router
 from app.api.feed_review import router as feed_review_router
 from app.api.payments_model_review import router as payments_model_review_router
+from app.api.company_imports import router as company_imports_router
 
 
 LOCAL_FRONTEND_ORIGINS = (
@@ -54,25 +56,28 @@ async def lifespan(app: FastAPI):
     from app.services.case_sla import escalation_loop
     from app.services.daily_report_scheduler import daily_report_loop
     from app.services.ingestion_validation import enabled as validation_enabled, validation_loop
-    from app.services.feed_auditing import enabled as feed_audit_enabled, audit_loop
+    from app.services.feed_auditing import enabled as feed_audit_enabled, audit_loop, prewarm_configured_payments_model
+    from app.services.feed_worker_concurrency import worker_count
+    validation_count = worker_count("VALIDATION") if validation_enabled() else 0
+    audit_count = worker_count("AUDIT") if feed_audit_enabled() else 0
+    await run_in_threadpool(prewarm_configured_payments_model)
     task = asyncio.create_task(recovery_loop()) if enabled() else None
     sla_enabled = os.getenv("CASE_SLA_ESCALATION_ENABLED", "false").lower() == "true"
     sla_task = asyncio.create_task(escalation_loop()) if sla_enabled else None
     reports_enabled = os.getenv("DAILY_REPORT_SCHEDULER_ENABLED", "false").lower() == "true"
     report_task = asyncio.create_task(daily_report_loop()) if reports_enabled else None
-    validation_task = asyncio.create_task(validation_loop()) if validation_enabled() else None
-    feed_audit_task = asyncio.create_task(audit_loop()) if feed_audit_enabled() else None
+    feed_tasks = [asyncio.create_task(validation_loop(), name=f"feed-validation-{index}")
+                  for index in range(validation_count)]
+    feed_tasks.extend(asyncio.create_task(audit_loop(), name=f"feed-audit-{index}")
+                      for index in range(audit_count))
     try:
         yield
     finally:
-        if feed_audit_task is not None:
-            feed_audit_task.cancel()
-            with suppress(asyncio.CancelledError):
-                await feed_audit_task
-        if validation_task is not None:
-            validation_task.cancel()
-            with suppress(asyncio.CancelledError):
-                await validation_task
+        # Cancel all feed workers before awaiting any one worker, then let the
+        # RPC client drain in-flight calls below before its connection pool closes.
+        for feed_task in feed_tasks:
+            feed_task.cancel()
+        await asyncio.gather(*feed_tasks, return_exceptions=True)
         if task is not None:
             task.cancel()
             with suppress(asyncio.CancelledError):
@@ -86,7 +91,6 @@ async def lifespan(app: FastAPI):
             with suppress(asyncio.CancelledError):
                 await report_task
         from app.repositories.ingestion import close_rpc_client
-        from starlette.concurrency import run_in_threadpool
         await run_in_threadpool(close_rpc_client)
 
 
@@ -131,6 +135,7 @@ app.include_router(business_reports_router, prefix="/api/v1")
 app.include_router(ingestion_router, prefix="/api/v1")
 app.include_router(feed_review_router, prefix="/api/v1")
 app.include_router(payments_model_review_router, prefix="/api/v1")
+app.include_router(company_imports_router, prefix="/api/v1")
 app.include_router(alerts_websocket_router)
 app.include_router(identity_router, prefix="/api/v1")
 app.include_router(accountability_router, prefix="/api/v1")

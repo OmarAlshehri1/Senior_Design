@@ -1,0 +1,48 @@
+{
+  "environment": "staging",
+  "production_changed": false,
+  "source_id": "SYNTHETIC-combined-s4-20261102",
+  "application_commit": "845318b40aaa324b1e2d1bca68f82afba1f4351c",
+  "records": 37,
+  "completed": 37,
+  "full_rule_checks": 185,
+  "rule_outcome_mismatches": [],
+  "combined_formula_mismatches": [],
+  "alert_policy_mismatches": [],
+  "real_ai_scored": 37,
+  "combined_risk_scored": 37,
+  "actual_alerts": 7,
+  "max_audit_attempts": 1,
+  "receipt_to_alert_insert_seconds": {
+    "min": 0.879213,
+    "max": 1.434396
+  },
+  "timed_followup": {
+    "actual_alerts": 6,
+    "confirmed_within_5_seconds": 5,
+    "confirmation_over_5_seconds": 1,
+    "min_upper_bound_seconds": 2.149187,
+    "max_upper_bound_seconds": 6.939203,
+    "median_upper_bound_seconds": 2.997921,
+    "all_client_read_retry_times_included": true,
+    "read_transport_errors": 0
+  },
+  "earlier_attempts": {
+    "moderate_cases_completed": 30,
+    "moderate_high_alerts": 0,
+    "moderate_fixture_expectation_failure": "HIGH_CASE_EXPECTATION_MISMATCH",
+    "extreme_pilot_posted": 1,
+    "pilot_saved_alerts": 1,
+    "pilot_completion_timing_unavailable": true,
+    "pilot_transport_error": "RemoteProtocolError"
+  },
+  "health_warmup_seconds": 63.658305,
+  "s4_status": "PARTIAL_NOT_ALL_ALERT_DEADLINES_DEMONSTRATED",
+  "limits": [
+    "Warmed sequential synthetic integration test; no production or cold-post alert SLA certified.",
+    "Six follow-up HIGH alerts were timed; five confirmed within 5 seconds, one in 6.939203 seconds.",
+    "One earlier HIGH pilot alert lacks an end-to-end completion observation after a transport failure.",
+    "Database created_at is an insert timestamp, not exact commit time; track_commit_timestamp is off.",
+    "Synthetic extreme cases exercise code paths, not fraud detection accuracy."
+  ]
+}

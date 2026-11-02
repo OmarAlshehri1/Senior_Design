@@ -63,11 +63,11 @@ test('locked navigation is derived from permission checks rather than role-speci
 
   assert.deepEqual(
     auditor.filter((link) => link.restricted).map((link) => link.label),
-    ['Reports', 'Team Activity', 'User Management', 'Audit Log', 'Settings']
+    ['Import transactions', 'Reports', 'Team Activity', 'User Management', 'Audit Log', 'Settings']
   );
   assert.deepEqual(
     supervisor.filter((link) => link.restricted).map((link) => link.label),
-    ['User Management', 'Settings']
+    ['Import transactions', 'User Management', 'Settings']
   );
 });
 

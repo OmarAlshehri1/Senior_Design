@@ -1,0 +1,77 @@
+{
+  "date": "2026-11-01",
+  "status": "LOCAL_ACCEPTANCE_PASS",
+  "deployment_status": "Not deployed; no hosted migration/configuration/source/data changed",
+  "story": "Admin uploads CSV/XLSX, explicitly maps columns and previews all rows, confirms a pinned revision, and existing durable feed workers save source-scoped audit results. Producers can use existing source-authenticated JSON intake.",
+  "tests": {
+    "backend": {
+      "passed": 142,
+      "command": "backend/.venv/Scripts/python.exe -m pytest backend/tests/test_company_imports.py backend/tests/test_company_import_pipeline.py backend/tests/test_ingestion.py backend/tests/test_ingestion_mapping.py backend/tests/test_feed_auditing.py backend/tests/test_reports.py -q -p no:cacheprovider --basetemp backend/.feed-simulator/company-import-regression-20261101Tfinal",
+      "warnings": [
+        "Existing Starlette/httpx deprecation warning"
+      ]
+    },
+    "frontend": {
+      "passed": 325,
+      "command": "npm test",
+      "lint": "passed",
+      "build": "passed",
+      "build_note": "Vite reports an existing-style bundle-size warning for the main chunk above 500 kB."
+    },
+    "database": {
+      "passed": 2,
+      "command": "node --test backend/test-support/company-imports.test.mjs backend/test-support/feed-review.test.mjs",
+      "engine": "in-memory PGlite",
+      "checks": [
+        "source and Admin restrictions",
+        "service-only RPCs and private tables",
+        "preview without receipts",
+        "pinned mapping and revision check",
+        "confirmation replay",
+        "cross-file stable-ID deduplication",
+        "preview reference conflicts",
+        "whole-batch rollback on conflict",
+        "invalid and expired batch rejection",
+        "durable progress",
+        "disabled-user denial"
+      ]
+    },
+    "browser": {
+      "evidence": "company_import_browser_acceptance_2026-11-01.json",
+      "identity": "synthetic substituted Admin; hosted Auth not tested",
+      "database": "in-memory PGlite",
+      "network": "loopback only"
+    }
+  },
+  "pipeline_observation": {
+    "confirm_to_saved_audit_seconds": 0.2126855000001342,
+    "all_five_rules_evaluated": true,
+    "failed_rules": 3,
+    "risk_level": "HIGH",
+    "persisted_alerts": 1,
+    "receipt_to_saved_alert_ms": 193,
+    "source": "Synthetic retail conformance fixture with explicit fictional policy/registry/model approval and existing trusted local retail artifact.",
+    "limits": "Single local observation; not hosted S4, performance under load, IS2 client notification latency, or real-company model approval."
+  },
+  "feature_limits": {
+    "formats": [
+      "UTF-8 comma-separated CSV",
+      "XLSX",
+      "existing JSON producer API"
+    ],
+    "max_rows": 1000,
+    "max_columns": 64,
+    "max_upload_bytes": 5242880,
+    "max_expanded_xlsx_bytes": 41943040,
+    "upload_identity": "Stable source transaction reference required; source-derived company scope",
+    "model": "No automatic approval of an existing model for new companies",
+    "results": "Separate source-scoped Feed Review, exceptions and reports; no automatic merge into existing Payments dataset"
+  },
+  "activation_pending": [
+    "Review/apply the additive import migration to an isolated environment after prerequisite verification",
+    "Register reviewed source mapping/context and explicit Admin/read grants",
+    "Agree source-data retention and expired-draft cleanup",
+    "Set feature/worker flags and deploy/restart in staging",
+    "Verify real authenticated roles and hosted latency before production"
+  ]
+}

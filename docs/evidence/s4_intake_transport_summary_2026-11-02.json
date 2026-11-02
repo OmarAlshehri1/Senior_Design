@@ -1,0 +1,111 @@
+{
+  "environment": "staging",
+  "production_changed": false,
+  "billing_changed_by_this_run": false,
+  "deployed_commit": "82d40138225356686d2129f3b725378a09975d30",
+  "deploy_id": "dep-dbk76oflk1mc73b29i00",
+  "compute_plan": "0.5c-512mb",
+  "latest_sample_status": "37_OF_37_CONFIRMED_WITHIN_FIVE_SECONDS",
+  "historical_eight_second_delay": "NOT_REPRODUCED_AND_NOT_RETROACTIVELY_EXPLAINED",
+  "overall_S4": "PARTIAL_HISTORICAL_MISS_RETAINED",
+  "request_retry_count": 0,
+  "cases": {
+    "count": 37,
+    "minimum_seconds": 1.352844,
+    "median_seconds": 1.461707,
+    "p95_nearest_rank_seconds": 2.086781,
+    "maximum_seconds": 2.125896
+  },
+  "cohorts": {
+    "transport_concurrent": {
+      "count": 6,
+      "minimum_seconds": 1.455417,
+      "median_seconds": 1.6274264999999999,
+      "p95_nearest_rank_seconds": 2.086781,
+      "maximum_seconds": 2.086781
+    },
+    "transport_first": {
+      "count": 1,
+      "minimum_seconds": 2.125896,
+      "median_seconds": 2.125896,
+      "p95_nearest_rank_seconds": 2.125896,
+      "maximum_seconds": 2.125896
+    },
+    "transport_pooled": {
+      "count": 30,
+      "minimum_seconds": 1.352844,
+      "median_seconds": 1.4535019999999998,
+      "p95_nearest_rank_seconds": 1.633785,
+      "maximum_seconds": 1.702538
+    }
+  },
+  "rpc_stages": {
+    "dispatch": {
+      "count": 148,
+      "minimum_seconds": 0.00011,
+      "median_seconds": 0.00016850000000000003,
+      "p95_nearest_rank_seconds": 0.0011279999999999999,
+      "maximum_seconds": 0.012532999999999999
+    },
+    "lease": {
+      "count": 148,
+      "minimum_seconds": 5e-06,
+      "median_seconds": 1e-05,
+      "p95_nearest_rank_seconds": 1.3e-05,
+      "maximum_seconds": 2.9e-05
+    },
+    "http": {
+      "count": 148,
+      "minimum_seconds": 0.092016,
+      "median_seconds": 0.110489,
+      "p95_nearest_rank_seconds": 0.188007,
+      "maximum_seconds": 0.371594
+    },
+    "tcp": {
+      "count": 148,
+      "minimum_seconds": 0.0,
+      "median_seconds": 0.0,
+      "p95_nearest_rank_seconds": 0.0,
+      "maximum_seconds": 0.004894999999999999
+    },
+    "tls": {
+      "count": 148,
+      "minimum_seconds": 0.0,
+      "median_seconds": 0.0,
+      "p95_nearest_rank_seconds": 0.0,
+      "maximum_seconds": 0.008891999999999999
+    },
+    "send": {
+      "count": 148,
+      "minimum_seconds": 0.00019700000000000002,
+      "median_seconds": 0.0003155,
+      "p95_nearest_rank_seconds": 0.000502,
+      "maximum_seconds": 0.006860000000000001
+    },
+    "wait": {
+      "count": 148,
+      "minimum_seconds": 0.090547,
+      "median_seconds": 0.1089285,
+      "p95_nearest_rank_seconds": 0.186429,
+      "maximum_seconds": 0.269494
+    },
+    "body": {
+      "count": 148,
+      "minimum_seconds": 4.2000000000000004e-05,
+      "median_seconds": 0.00015099999999999998,
+      "p95_nearest_rank_seconds": 0.001078,
+      "maximum_seconds": 0.093044
+    },
+    "decode": {
+      "count": 148,
+      "minimum_seconds": 1.6e-05,
+      "median_seconds": 2.6e-05,
+      "p95_nearest_rank_seconds": 3.9e-05,
+      "maximum_seconds": 7.5e-05
+    }
+  },
+  "database_alerts": 37,
+  "verified_rule_outcomes": 185,
+  "max_database_receipt_to_alert_insertion_seconds": 0.952312,
+  "tests_passed": 89
+}

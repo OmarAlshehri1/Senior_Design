@@ -1,0 +1,50 @@
+{
+  "environment": "staging",
+  "production_changed": false,
+  "application_commit": "845318b40aaa324b1e2d1bca68f82afba1f4351c",
+  "main_commit": "71ca4a0d5d12e1082ca3f415d5de7e99ca8f056f",
+  "backend_deploy": {
+    "id": "dep-dbk39tmc6qcc73ddj320",
+    "status": "live"
+  },
+  "frontend_deploy": {
+    "id": "dep-dbk3a2bbc2fs73e9t2mg",
+    "status": "live"
+  },
+  "activation": {
+    "source_id": "payments-file-local",
+    "model_version": "payments-primary-no-calendar-1.0.0",
+    "active_context": "payments-source-ai-20261102",
+    "existing_feed_records": 1001,
+    "existing_results_unscored": 1001,
+    "previous_context_retained": true
+  },
+  "production_readonly_check": {
+    "active_payments": 47531,
+    "ai_scored": 47531
+  },
+  "checks": {
+    "python_tests": 61,
+    "final_loader_failure_test": 1,
+    "sql_test_groups": [
+      16,
+      3
+    ],
+    "frontend_build": "passed",
+    "frontend_lint": "passed",
+    "actual_model_parity_inputs": 30,
+    "hosted_receipts": 7,
+    "ai_scored": 5,
+    "negative_controls_unscored": 2,
+    "csv_and_xlsx_match_json": true,
+    "real_browser_sign_in_and_ai_display": true,
+    "temporary_account_disabled": true,
+    "temporary_producer_source_disabled": true
+  },
+  "limitations": [
+    "Source-specific Payments USD model; no unrelated company approval.",
+    "Existing immutable imports were not rescored.",
+    "Expired audit references were preserved; partial audit coverage leaves combined risk null.",
+    "No fraud accuracy or S4 alert-latency pass claimed."
+  ]
+}

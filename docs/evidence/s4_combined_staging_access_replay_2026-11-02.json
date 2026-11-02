@@ -1,0 +1,9 @@
+{
+  "environment": "staging",
+  "production_changed": false,
+  "exact_replay_status": 200,
+  "same_receipt": true,
+  "authenticated_high_risk_detail": true,
+  "unassigned_source_status": 403,
+  "logout_status": 204
+}

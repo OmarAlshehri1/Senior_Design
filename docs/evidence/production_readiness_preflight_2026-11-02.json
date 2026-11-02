@@ -1,0 +1,56 @@
+{
+  "environment": "production",
+  "read_only": true,
+  "production_changed": false,
+  "project_id": "sqiqspqfpbotmwrerbsi",
+  "baseline": {
+    "pgcrypto": true,
+    "audit_teams": true,
+    "app_sessions": true,
+    "user_profiles": true,
+    "applied_migrations": [
+      {
+        "name": "payments_primary_dataset",
+        "version": "20261026084708"
+      },
+      {
+        "name": "payments_primary_report_context",
+        "version": "20261026085927"
+      },
+      {
+        "name": "optimize_primary_business_report",
+        "version": "20261026091108"
+      },
+      {
+        "name": "optimize_primary_report_bounds",
+        "version": "20261026091514"
+      },
+      {
+        "name": "reduce_primary_payments_operator",
+        "version": "20261026120617"
+      },
+      {
+        "name": "active_dataset_dashboard_categories",
+        "version": "20261101132513"
+      },
+      {
+        "name": "ux_list_filters",
+        "version": "20261101165410"
+      },
+      {
+        "name": "alert_rule_filter",
+        "version": "20261101165416"
+      }
+    ],
+    "feed_schema_present": false,
+    "import_schema_present": false,
+    "audit_team_memberships": true,
+    "private_payments_model_bucket": true
+  },
+  "backend_plan": "1c-2g",
+  "backend_auto_deploy": true,
+  "backend_branch": "main",
+  "main_head": "71ca4a0d5d12e1082ca3f415d5de7e99ca8f056f",
+  "backend_live_commit": "f4f4a7ab4522d10010a39e7bf94b48dbcab5dacd",
+  "backend_rollback_deploy": "dep-dbjjrpqvcj2c73f28qjg"
+}

@@ -1,0 +1,931 @@
+{
+  "environment": "production",
+  "project_id": "sqiqspqfpbotmwrerbsi",
+  "scope": "approved schema-only rollout",
+  "application_deployed": false,
+  "main_merged": false,
+  "imports_activated": false,
+  "ai_activated": false,
+  "source_candidate_commit": "b1ca6416d32454ae0218ed446bc0cda09b087331",
+  "planned_migrations": 26,
+  "initial_migration_count": 8,
+  "legacy_before": {
+    "transactions": {
+      "count": 57384,
+      "digest": "62627a774ad2604ceced658421b445b1"
+    },
+    "alerts": {
+      "count": 4150,
+      "digest": "2d2caebe25fe05dc359d7780b30cc15a"
+    }
+  },
+  "status": "APPLIED_AND_VERIFIED",
+  "migrations": [
+    {
+      "order": 1,
+      "path": "backend/migrations/026_create_ingestion_receipts.sql",
+      "name": "create_ingestion_receipts",
+      "sha256_git_content": "757263d07a382994bcd1bbaa43610d881501b478e957da98bf58bea236a50e34",
+      "status": "APPLIED",
+      "result": {
+        "success": true
+      },
+      "version": "20261102164324"
+    },
+    {
+      "order": 2,
+      "path": "backend/migrations/027_create_ingestion_validation.sql",
+      "name": "create_ingestion_validation",
+      "sha256_git_content": "873247883295fafa4c8c60e87c280721978c129a2170e177d87ed6ef7cec3a5a",
+      "status": "APPLIED",
+      "result": {
+        "success": true
+      },
+      "version": "20261102164345"
+    },
+    {
+      "order": 3,
+      "path": "backend/migrations/028_create_scoped_feed_auditing.sql",
+      "name": "create_scoped_feed_auditing",
+      "sha256_git_content": "dc7dbeaa72a75de3dda846de52be5fc67bdca0bfec39b7b3e35acc8de520ee2c",
+      "status": "APPLIED",
+      "result": {
+        "success": true
+      },
+      "version": "20261102164350"
+    },
+    {
+      "order": 4,
+      "path": "backend/migrations/029_add_simulation_arrival_clock.sql",
+      "name": "add_simulation_arrival_clock",
+      "sha256_git_content": "b65830345d831e5f0f374a67f12c19d8f6ea19a14d65413acd8564ea5cc09b5e",
+      "status": "APPLIED",
+      "result": {
+        "success": true
+      },
+      "version": "20261102164355"
+    },
+    {
+      "order": 5,
+      "path": "backend/migrations/030_add_simulated_name_window_indicator.sql",
+      "name": "add_simulated_name_window_indicator",
+      "sha256_git_content": "554d6bae79d52ca239e83a98af28865e987bca9e6c27fe6ed1f91b017aa4777d",
+      "status": "APPLIED",
+      "result": {
+        "success": true
+      },
+      "version": "20261102164400"
+    },
+    {
+      "order": 6,
+      "path": "backend/migrations/031_optimize_feed_history_readiness.sql",
+      "name": "optimize_feed_history_readiness",
+      "sha256_git_content": "479dd415dadc1902c16a33fd223be293286d5bbfa77d4e9e332832b30e4db24b",
+      "status": "APPLIED",
+      "result": {
+        "success": true
+      },
+      "version": "20261102164423"
+    },
+    {
+      "order": 7,
+      "path": "backend/migrations/032_add_subthreshold_splitting_context.sql",
+      "name": "add_subthreshold_splitting_context",
+      "sha256_git_content": "c5e61f7c3fe8955f1d452e4f75f941d63bfe86b373275f10f94b9229de8018ce",
+      "status": "APPLIED",
+      "result": {
+        "success": true
+      },
+      "version": "20261102164431"
+    },
+    {
+      "order": 8,
+      "path": "backend/migrations/033_configure_source_intake_rate.sql",
+      "name": "configure_source_intake_rate",
+      "sha256_git_content": "fa55945513fdd5b99a3ced70ff220528456c667612aec66029946859dfea7e5e",
+      "status": "APPLIED",
+      "result": {
+        "success": true
+      },
+      "version": "20261102164437"
+    },
+    {
+      "order": 9,
+      "path": "backend/migrations/034_share_pinned_feed_configuration.sql",
+      "name": "share_pinned_feed_configuration",
+      "sha256_git_content": "c0f69d663b5e47d45a52fc242e0e66c090c98bfd0ff6b76733e2fe18b7f96ecd",
+      "status": "APPLIED",
+      "result": {
+        "success": true
+      },
+      "version": "20261102164443"
+    },
+    {
+      "order": 10,
+      "path": "backend/migrations/035_project_feed_result_summary.sql",
+      "name": "project_feed_result_summary",
+      "sha256_git_content": "c3550e9ca4b56ac1039d459f18973c9deb0f1dde4612f9d35584e8a60888ba1c",
+      "status": "APPLIED",
+      "result": {
+        "success": true
+      },
+      "version": "20261102164448"
+    },
+    {
+      "order": 11,
+      "path": "backend/migrations/036_index_and_queue_feed_preparation.sql",
+      "name": "index_and_queue_feed_preparation",
+      "sha256_git_content": "548e3007e6a0f91e9b50058da59c077c01c7161fe69642bd98ba2de2297331e2",
+      "status": "APPLIED",
+      "result": {
+        "success": true
+      },
+      "version": "20261102164506"
+    },
+    {
+      "order": 12,
+      "path": "backend/migrations/037_add_authenticated_feed_review.sql",
+      "name": "add_authenticated_feed_review",
+      "sha256_git_content": "bdda1670e605c61689cdb0e607041558d9aaa1f2eaae1499654ebf34d92a871b",
+      "status": "APPLIED",
+      "result": {
+        "success": true
+      },
+      "version": "20261102164511"
+    },
+    {
+      "order": 13,
+      "path": "backend/migrations/038_add_feed_exception_review.sql",
+      "name": "add_feed_exception_review",
+      "sha256_git_content": "55bbc6ba5494949315e41e7ab5c57535a2ac08dd80582000988faac63ac71d30",
+      "status": "APPLIED",
+      "result": {
+        "success": true
+      },
+      "version": "20261102164516"
+    },
+    {
+      "order": 14,
+      "path": "backend/migrations/039_add_feed_summary_report.sql",
+      "name": "add_feed_summary_report",
+      "sha256_git_content": "567553d9579b3f75a97b4dd9fc996dd6a4de7b7e3d533eaee87deb23eb8bbd29",
+      "status": "APPLIED",
+      "result": {
+        "success": true
+      },
+      "version": "20261102164521"
+    },
+    {
+      "order": 15,
+      "path": "backend/migrations/20261101181927_company_transaction_imports.sql",
+      "name": "company_transaction_imports",
+      "sha256_git_content": "9c846499c108a9adaf2a0bb01863c25d8089d0dba9b4f36383ebbae3d9322ef6",
+      "status": "APPLIED",
+      "result": {
+        "success": true
+      },
+      "version": "20261102164604"
+    },
+    {
+      "order": 16,
+      "path": "backend/migrations/20261102025407_company_import_request_timeouts.sql",
+      "name": "company_import_request_timeouts",
+      "sha256_git_content": "690cad563c69e42efa60cb7ec859767bf42ae271e8fe43b02888ee7334455f68",
+      "status": "APPLIED",
+      "result": {
+        "success": true
+      },
+      "version": "20261102164614"
+    },
+    {
+      "order": 17,
+      "path": "backend/migrations/20261102031416_optimize_ingestion_open_queue.sql",
+      "name": "optimize_ingestion_open_queue",
+      "sha256_git_content": "32f4f19f7917774548be0e3ce1538ec86e21b774df6a1f6c33ec3a7d6357bb3b",
+      "status": "APPLIED",
+      "result": {
+        "success": true
+      },
+      "version": "20261102164620"
+    },
+    {
+      "order": 18,
+      "path": "backend/migrations/20261102032159_company_import_progress_timeout.sql",
+      "name": "company_import_progress_timeout",
+      "sha256_git_content": "c3bf8fec0f1544800a7779c5a62138d69537f18bf8236e2ea7d6df986df9d04b",
+      "status": "APPLIED",
+      "result": {
+        "success": true
+      },
+      "version": "20261102164625"
+    },
+    {
+      "order": 19,
+      "path": "backend/migrations/20261102033856_feed_department_reporting.sql",
+      "name": "feed_department_reporting",
+      "sha256_git_content": "158f11f89e23c37af1cede51c0bcd1fa929599891ce85127c7483b16669387e2",
+      "status": "APPLIED",
+      "result": {
+        "success": true
+      },
+      "version": "20261102164637"
+    },
+    {
+      "order": 20,
+      "path": "backend/migrations/20261102041731_company_import_draft_cleanup.sql",
+      "name": "company_import_draft_cleanup",
+      "sha256_git_content": "ec5dc7fe4ef88f7ce95c7615022cc02f5411801181d1ad8e17d2a5dff473235e",
+      "status": "APPLIED",
+      "result": {
+        "success": true
+      },
+      "version": "20261102164643"
+    },
+    {
+      "order": 21,
+      "path": "backend/migrations/20261102043639_optimize_import_progress_and_preparation.sql",
+      "name": "optimize_import_progress_and_preparation",
+      "sha256_git_content": "75ad629050aa946e1f1d4242fda9eed38bd358f1a247095de6a2f65372c6445b",
+      "status": "APPLIED",
+      "result": {
+        "success": true
+      },
+      "version": "20261102164649"
+    },
+    {
+      "order": 22,
+      "path": "backend/migrations/20261102044800_narrow_feed_preparation_and_progress.sql",
+      "name": "narrow_feed_preparation_and_progress",
+      "sha256_git_content": "aa67aed6685747be646e7eb6d2bab6c33acaf4d27aa94c647ba65fa9463cb0a1",
+      "status": "APPLIED",
+      "result": {
+        "success": true
+      },
+      "version": "20261102164653"
+    },
+    {
+      "order": 23,
+      "path": "backend/migrations/20261102045703_bound_feed_preparation_queue_reads.sql",
+      "name": "bound_feed_preparation_queue_reads",
+      "sha256_git_content": "1b6ca245d7c16877ea200180932bcdb0bf1266de95cfe9442df656ea0ac54666",
+      "status": "APPLIED",
+      "result": {
+        "success": true
+      },
+      "version": "20261102164707"
+    },
+    {
+      "order": 24,
+      "path": "backend/migrations/20261102051123_indexed_feed_history_counts.sql",
+      "name": "indexed_feed_history_counts",
+      "sha256_git_content": "272a61ae03e4a86f9b9e4fea4d396908377833d7ce6923ed21f9043d0df52523",
+      "status": "APPLIED",
+      "result": {
+        "success": true
+      },
+      "version": "20261102164713"
+    },
+    {
+      "order": 25,
+      "path": "backend/migrations/20261102064921_payments_feed_source_model.sql",
+      "name": "payments_feed_source_model",
+      "sha256_git_content": "bb4d3322a87505639b1997b227368b8d95e9b0f603c2e80854a4ea39b0ac55ea",
+      "status": "APPLIED",
+      "result": {
+        "success": true
+      },
+      "version": "20261102164717"
+    },
+    {
+      "order": 26,
+      "path": "backend/migrations/20261102065319_feed_ai_score_visibility.sql",
+      "name": "feed_ai_score_visibility",
+      "sha256_git_content": "56c4e44c25df80f14b2766ddf4bc2fb71c3f9dada4b18cc3f56098b4c502df36",
+      "status": "APPLIED",
+      "result": {
+        "success": true
+      },
+      "version": "20261102164722"
+    }
+  ],
+  "final_migration_count": 34,
+  "legacy_after": {
+    "transactions": {
+      "count": 57384,
+      "digest": "62627a774ad2604ceced658421b445b1"
+    },
+    "alerts": {
+      "count": 4150,
+      "digest": "2d2caebe25fe05dc359d7780b30cc15a"
+    }
+  },
+  "legacy_data_checksums_unchanged": true,
+  "verification": {
+    "tables": [
+      {
+        "rls": true,
+        "name": "company_import_batches",
+        "anon_access": false,
+        "authenticated_access": false,
+        "service_direct_access": false
+      },
+      {
+        "rls": true,
+        "name": "company_import_cleanup_runs",
+        "anon_access": false,
+        "authenticated_access": false,
+        "service_direct_access": false
+      },
+      {
+        "rls": true,
+        "name": "company_import_profiles",
+        "anon_access": false,
+        "authenticated_access": false,
+        "service_direct_access": false
+      },
+      {
+        "rls": true,
+        "name": "feed_audit_alerts",
+        "anon_access": false,
+        "authenticated_access": false,
+        "service_direct_access": false
+      },
+      {
+        "rls": true,
+        "name": "feed_audit_configuration_blobs",
+        "anon_access": false,
+        "authenticated_access": false,
+        "service_direct_access": false
+      },
+      {
+        "rls": true,
+        "name": "feed_audit_context_configuration_refs",
+        "anon_access": false,
+        "authenticated_access": false,
+        "service_direct_access": false
+      },
+      {
+        "rls": true,
+        "name": "feed_audit_contexts",
+        "anon_access": false,
+        "authenticated_access": false,
+        "service_direct_access": false
+      },
+      {
+        "rls": true,
+        "name": "feed_audit_jobs",
+        "anon_access": false,
+        "authenticated_access": false,
+        "service_direct_access": false
+      },
+      {
+        "rls": true,
+        "name": "feed_audit_preparations",
+        "anon_access": false,
+        "authenticated_access": false,
+        "service_direct_access": false
+      },
+      {
+        "rls": true,
+        "name": "feed_audit_results",
+        "anon_access": false,
+        "authenticated_access": false,
+        "service_direct_access": false
+      },
+      {
+        "rls": true,
+        "name": "feed_exception_events",
+        "anon_access": false,
+        "authenticated_access": false,
+        "service_direct_access": false
+      },
+      {
+        "rls": true,
+        "name": "feed_exception_reviews",
+        "anon_access": false,
+        "authenticated_access": false,
+        "service_direct_access": false
+      },
+      {
+        "rls": true,
+        "name": "feed_review_teams",
+        "anon_access": false,
+        "authenticated_access": false,
+        "service_direct_access": false
+      },
+      {
+        "rls": true,
+        "name": "feed_review_users",
+        "anon_access": false,
+        "authenticated_access": false,
+        "service_direct_access": false
+      },
+      {
+        "rls": true,
+        "name": "feed_transactions",
+        "anon_access": false,
+        "authenticated_access": false,
+        "service_direct_access": false
+      },
+      {
+        "rls": true,
+        "name": "ingestion_jobs",
+        "anon_access": false,
+        "authenticated_access": false,
+        "service_direct_access": false
+      },
+      {
+        "rls": true,
+        "name": "ingestion_mappings",
+        "anon_access": false,
+        "authenticated_access": false,
+        "service_direct_access": false
+      },
+      {
+        "rls": true,
+        "name": "ingestion_receipts",
+        "anon_access": false,
+        "authenticated_access": false,
+        "service_direct_access": false
+      },
+      {
+        "rls": true,
+        "name": "ingestion_sources",
+        "anon_access": false,
+        "authenticated_access": false,
+        "service_direct_access": false
+      },
+      {
+        "rls": true,
+        "name": "ingestion_validations",
+        "anon_access": false,
+        "authenticated_access": false,
+        "service_direct_access": false
+      }
+    ],
+    "row_counts": [
+      {
+        "records": 0,
+        "table_name": "company_import_batches"
+      },
+      {
+        "records": 0,
+        "table_name": "company_import_cleanup_runs"
+      },
+      {
+        "records": 0,
+        "table_name": "company_import_profiles"
+      },
+      {
+        "records": 0,
+        "table_name": "feed_audit_alerts"
+      },
+      {
+        "records": 0,
+        "table_name": "feed_audit_configuration_blobs"
+      },
+      {
+        "records": 0,
+        "table_name": "feed_audit_context_configuration_refs"
+      },
+      {
+        "records": 0,
+        "table_name": "feed_audit_contexts"
+      },
+      {
+        "records": 0,
+        "table_name": "feed_audit_jobs"
+      },
+      {
+        "records": 0,
+        "table_name": "feed_audit_preparations"
+      },
+      {
+        "records": 0,
+        "table_name": "feed_audit_results"
+      },
+      {
+        "records": 0,
+        "table_name": "feed_exception_events"
+      },
+      {
+        "records": 0,
+        "table_name": "feed_exception_reviews"
+      },
+      {
+        "records": 0,
+        "table_name": "feed_review_teams"
+      },
+      {
+        "records": 0,
+        "table_name": "feed_review_users"
+      },
+      {
+        "records": 0,
+        "table_name": "feed_transactions"
+      },
+      {
+        "records": 0,
+        "table_name": "ingestion_jobs"
+      },
+      {
+        "records": 0,
+        "table_name": "ingestion_mappings"
+      },
+      {
+        "records": 0,
+        "table_name": "ingestion_receipts"
+      },
+      {
+        "records": 0,
+        "table_name": "ingestion_sources"
+      },
+      {
+        "records": 0,
+        "table_name": "ingestion_validations"
+      }
+    ],
+    "functions": [
+      {
+        "name": "act_on_feed_exception",
+        "signature": "act_on_feed_exception(uuid,text,uuid,text,integer,text,uuid,text)",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "name": "can_review_feed",
+        "signature": "can_review_feed(uuid,text)",
+        "anon_execute": false,
+        "service_execute": false,
+        "authenticated_execute": false
+      },
+      {
+        "name": "can_review_feed_exception",
+        "signature": "can_review_feed_exception(uuid,uuid)",
+        "anon_execute": false,
+        "service_execute": false,
+        "authenticated_execute": false
+      },
+      {
+        "name": "claim_feed_audit",
+        "signature": "claim_feed_audit()",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "name": "claim_feed_audit_before_name_window",
+        "signature": "claim_feed_audit_before_name_window()",
+        "anon_execute": false,
+        "service_execute": false,
+        "authenticated_execute": false
+      },
+      {
+        "name": "claim_feed_audit_before_subthreshold",
+        "signature": "claim_feed_audit_before_subthreshold()",
+        "anon_execute": false,
+        "service_execute": false,
+        "authenticated_execute": false
+      },
+      {
+        "name": "claim_feed_audit_compact",
+        "signature": "claim_feed_audit_compact()",
+        "anon_execute": false,
+        "service_execute": false,
+        "authenticated_execute": false
+      },
+      {
+        "name": "claim_ingestion_validation",
+        "signature": "claim_ingestion_validation()",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "name": "cleanup_expired_company_imports",
+        "signature": "cleanup_expired_company_imports(integer)",
+        "anon_execute": false,
+        "service_execute": false,
+        "authenticated_execute": false
+      },
+      {
+        "name": "compact_feed_snapshot",
+        "signature": "compact_feed_snapshot()",
+        "anon_execute": false,
+        "service_execute": false,
+        "authenticated_execute": false
+      },
+      {
+        "name": "company_import_history",
+        "signature": "company_import_history(uuid,text)",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "name": "company_import_progress",
+        "signature": "company_import_progress(uuid,text,uuid)",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "name": "complete_feed_preparation",
+        "signature": "complete_feed_preparation()",
+        "anon_execute": false,
+        "service_execute": false,
+        "authenticated_execute": false
+      },
+      {
+        "name": "confirm_company_import",
+        "signature": "confirm_company_import(uuid,text,uuid,text,text)",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "name": "enqueue_feed_preparation",
+        "signature": "enqueue_feed_preparation()",
+        "anon_execute": false,
+        "service_execute": false,
+        "authenticated_execute": false
+      },
+      {
+        "name": "feed_history_counts",
+        "signature": "feed_history_counts(uuid,boolean,timestamp with time zone)",
+        "anon_execute": false,
+        "service_execute": false,
+        "authenticated_execute": false
+      },
+      {
+        "name": "feed_snapshot_sql_configuration",
+        "signature": "feed_snapshot_sql_configuration(jsonb)",
+        "anon_execute": false,
+        "service_execute": false,
+        "authenticated_execute": false
+      },
+      {
+        "name": "finish_feed_audit",
+        "signature": "finish_feed_audit(uuid,uuid,jsonb)",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "name": "finish_feed_audit_before_name_window",
+        "signature": "finish_feed_audit_before_name_window(uuid,uuid,jsonb)",
+        "anon_execute": false,
+        "service_execute": false,
+        "authenticated_execute": false
+      },
+      {
+        "name": "finish_ingestion_validation",
+        "signature": "finish_ingestion_validation(uuid,uuid,jsonb)",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "name": "get_company_import",
+        "signature": "get_company_import(uuid,text,uuid)",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "name": "hydrate_feed_commit_snapshot",
+        "signature": "hydrate_feed_commit_snapshot(jsonb)",
+        "anon_execute": false,
+        "service_execute": false,
+        "authenticated_execute": false
+      },
+      {
+        "name": "hydrate_feed_snapshot",
+        "signature": "hydrate_feed_snapshot(jsonb)",
+        "anon_execute": false,
+        "service_execute": false,
+        "authenticated_execute": false
+      },
+      {
+        "name": "ingestion_receipt_view",
+        "signature": "ingestion_receipt_view(ingestion_receipts)",
+        "anon_execute": false,
+        "service_execute": false,
+        "authenticated_execute": false
+      },
+      {
+        "name": "ingestion_source",
+        "signature": "ingestion_source(text)",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "name": "list_company_import_sources",
+        "signature": "list_company_import_sources(uuid)",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "name": "list_feed_exception_teams",
+        "signature": "list_feed_exception_teams(uuid,text)",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "name": "list_review_feed_sources",
+        "signature": "list_review_feed_sources(uuid)",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "name": "pin_feed_source_configuration",
+        "signature": "pin_feed_source_configuration()",
+        "anon_execute": false,
+        "service_execute": false,
+        "authenticated_execute": false
+      },
+      {
+        "name": "prepare_feed_audits",
+        "signature": "prepare_feed_audits(integer)",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "name": "preview_company_import",
+        "signature": "preview_company_import(uuid,text,uuid,jsonb)",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "name": "protect_ingestion_evidence",
+        "signature": "protect_ingestion_evidence()",
+        "anon_execute": false,
+        "service_execute": false,
+        "authenticated_execute": false
+      },
+      {
+        "name": "read_feed_exceptions",
+        "signature": "read_feed_exceptions(uuid,text,integer,integer,uuid)",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "name": "read_feed_summary_report",
+        "signature": "read_feed_summary_report(uuid,text,timestamp with time zone,timestamp with time zone,uuid)",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "name": "read_ingestion_receipts",
+        "signature": "read_ingestion_receipts(text,uuid,text)",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "name": "read_review_feed",
+        "signature": "read_review_feed(uuid,text,integer,integer,uuid)",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "name": "reject_feed_configuration_change",
+        "signature": "reject_feed_configuration_change()",
+        "anon_execute": false,
+        "service_execute": false,
+        "authenticated_execute": false
+      },
+      {
+        "name": "release_feed_audit",
+        "signature": "release_feed_audit(uuid,uuid,text)",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "name": "release_ingestion_validation",
+        "signature": "release_ingestion_validation(uuid,uuid,text)",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "name": "require_company_import_source",
+        "signature": "require_company_import_source(uuid,text)",
+        "anon_execute": false,
+        "service_execute": false,
+        "authenticated_execute": false
+      },
+      {
+        "name": "resume_feed_audit",
+        "signature": "resume_feed_audit(uuid)",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "name": "resume_ingestion_validation",
+        "signature": "resume_ingestion_validation(uuid)",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "name": "simulated_name_window",
+        "signature": "simulated_name_window(uuid,jsonb)",
+        "anon_execute": false,
+        "service_execute": false,
+        "authenticated_execute": false
+      },
+      {
+        "name": "store_company_import",
+        "signature": "store_company_import(uuid,text,jsonb)",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "name": "submit_ingestion_event",
+        "signature": "submit_ingestion_event(text,text,text)",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      }
+    ],
+    "service_privileges": {
+      "required_rpcs": 16,
+      "missing": [],
+      "cleanup_owner_only": true
+    },
+    "function_definition_parity": {
+      "checked": 45,
+      "staging_count": 45,
+      "comparison": "CRLF normalized to LF",
+      "mismatches": []
+    },
+    "cron_catalog": null,
+    "cleanup_job_scheduled": false
+  },
+  "advisors": [
+    {
+      "type": "security",
+      "lints": [
+        {
+          "name": "rls_enabled_no_policy",
+          "level": "INFO",
+          "count": 63,
+          "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy"
+        },
+        {
+          "name": "anon_security_definer_function_executable",
+          "level": "WARN",
+          "count": 1,
+          "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable"
+        },
+        {
+          "name": "authenticated_security_definer_function_executable",
+          "level": "WARN",
+          "count": 1,
+          "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable"
+        },
+        {
+          "name": "auth_leaked_password_protection",
+          "level": "WARN",
+          "count": 1,
+          "remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection"
+        }
+      ]
+    },
+    {
+      "type": "performance",
+      "lints": [
+        {
+          "name": "unindexed_foreign_keys",
+          "level": "INFO",
+          "count": 48,
+          "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0001_unindexed_foreign_keys"
+        },
+        {
+          "name": "unused_index",
+          "level": "INFO",
+          "count": 24,
+          "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index"
+        }
+      ]
+    }
+  ],
+  "finished_at": "2026-11-02 16:52:55 UTC",
+  "schema_changed": true,
+  "application_environment_modified": false,
+  "existing_transactions_and_alerts_changed": false
+}

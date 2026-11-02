@@ -1,6 +1,6 @@
 """Scoped feed auditing: verified references, exact rules and explicit model eligibility."""
 import asyncio
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from functools import lru_cache
 import hashlib
@@ -8,6 +8,7 @@ import logging
 import math
 import os
 from pathlib import Path
+from time import perf_counter
 from typing import Any, Literal
 
 from pydantic import Field, ValidationError, model_validator
@@ -94,6 +95,24 @@ class ModelApproval(StrictModel):
         return self
 
 
+class PaymentsModelApproval(StrictModel):
+    model_version: Literal["payments-primary-no-calendar-1.0.0"]
+    feature_version: Literal["payments-source-no-calendar-1.0.0"]
+    artifact_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    validation_reference: str = Field(min_length=10, max_length=200)
+    population_reference: str = Field(min_length=5, max_length=200)
+    supported_currencies: list[Literal["USD"]] = Field(min_length=1, max_length=1)
+    dataset_key: str = Field(min_length=5, max_length=128)
+    model_bucket: str = Field(pattern=r"^[a-z0-9][a-z0-9._-]{0,62}$")
+    model_object: str = Field(min_length=1, max_length=512)
+
+    @model_validator(mode="after")
+    def private_object(self):
+        if self.model_object.startswith('/') or any(p in ('', '.', '..') for p in self.model_object.split('/')):
+            raise ValueError("Invalid private model object")
+        return self
+
+
 class SimulationNameWindow(StrictModel):
     scenario_version: Literal["payments-name-window-1.0.0"]
     threshold: Literal["10000.00"]
@@ -115,7 +134,7 @@ class AuditContext(StrictModel):
     history: HistoryReference | None = None
     approval_policies: list[ApprovalPolicy] = Field(default_factory=list, max_length=10000)
     vendor_registry: VendorRegistry | None = None
-    model_approval: ModelApproval | None = None
+    model_approval: ModelApproval | PaymentsModelApproval | None = None
     simulation_splitting: SimulationNameWindow | None = None
     simulation_history_wait_seconds: int = Field(default=0, ge=0, le=30, strict=True)
     invoice_splitting_mode: Literal["ALL_PAYMENTS", "SUBTHRESHOLD_PAYMENTS"] = "ALL_PAYMENTS"
@@ -160,7 +179,58 @@ def decimal_value(value: Any) -> Decimal | None:
     return parsed
 
 
-def build_bundle(job: dict[str, Any], *, allow_model: bool = False, model_loader=approved_model) -> dict[str, Any]:
+@lru_cache(maxsize=4)
+def approved_payments_model(digest: str, dataset_key: str, bucket: str, name: str):
+    import httpx
+    from app.services.primary_dataset import model_for_source_binding
+    try:
+        return model_for_source_binding(digest, dataset_key, bucket, name)
+    except (httpx.HTTPError, OSError, ValueError, TypeError, KeyError) as exc:
+        raise ModelUnavailable("Approved Payments model unavailable") from exc
+
+
+def prewarm_configured_payments_model() -> bool:
+    """Optional readiness requirement; this never approves a source for scoring."""
+    binding = os.getenv("INGESTION_PREWARM_PAYMENTS_BINDING", "")
+    if not binding or not enabled() or os.getenv("INGESTION_FEED_ANOMALY_ENABLED", "false").lower() != "true":
+        return False
+    started = perf_counter()
+    try:
+        if len(binding.encode("utf-8")) > 4096:
+            raise ValueError("Oversized model binding")
+        approval = PaymentsModelApproval.model_validate_json(binding)
+        model = approved_payments_model(approval.artifact_sha256, approval.dataset_key,
+                                        approval.model_bucket, approval.model_object)
+        if model.version != approval.model_version:
+            raise ModelUnavailable("Model version differs from prewarm binding")
+    except (ValidationError, ValueError, ModelUnavailable):
+        raise ModelUnavailable("Configured Payments model is not ready") from None
+    logger.info("Approved Payments model ready before feed workers (%.3f seconds).", perf_counter() - started)
+    return True
+
+
+def payments_source_row(transaction: dict[str, Any]) -> dict[str, str] | None:
+    """Only original mapped source fields; never arrival time or simulated controls."""
+    name = transaction.get('vendor_name')
+    if (transaction.get('currency') != 'USD' or transaction.get('amount') is None
+            or transaction['amount'] <= 0 or not isinstance(name, str) or not name.strip()):
+        return None
+    try:
+        original_day = transaction.get('source_date')
+        if original_day is not None:
+            day = date.fromisoformat(original_day)
+        else:
+            source_time = instant(transaction.get('timestamp'))
+            if source_time is None:
+                return None
+            day = source_time.date()
+    except (ValueError, TypeError):
+        return None
+    return {'AMOUNT': str(transaction['amount']), 'CHECK DATE': day.strftime('%m/%d/%Y'), 'VENDOR NAME': name}
+
+
+def build_bundle(job: dict[str, Any], *, allow_model: bool = False, model_loader=approved_model,
+                 payments_model_loader=approved_payments_model) -> dict[str, Any]:
     snapshot = job["snapshot"]
     context = AuditContext.model_validate(snapshot["configuration"]) if snapshot["configuration"] is not None else AuditContext()
     transaction = dict(job["canonical"])
@@ -266,25 +336,32 @@ def build_bundle(job: dict[str, Any], *, allow_model: bool = False, model_loader
     failed = sum(result["status"] == "FAILED" for result in results)
     coverage = {"total": 5, "evaluated": evaluated, "failed": failed, "not_evaluated": 5-evaluated}
     approval = context.model_approval
+    payments_model = isinstance(approval, PaymentsModelApproval)
+    source_row = payments_source_row(transaction) if payments_model else None
     missing_features = [field for field in ("amount", "currency", "timestamp", "category", "approver_role",
                                            "created_by", "approved_by") if transaction.get(field) is None]
-    reason = ("MODEL_SIMULATION_CLOCK_NOT_APPROVED" if simulated else "MODEL_SOURCE_NOT_APPROVED" if approval is None else "MODEL_RULE_VERSION_NOT_APPROVED" if context.invoice_splitting_mode == "SUBTHRESHOLD_PAYMENTS" else "MODEL_SCORING_DISABLED" if not allow_model
+    reason = ("MODEL_SIMULATION_CLOCK_NOT_APPROVED" if simulated and not payments_model else "MODEL_SOURCE_NOT_APPROVED" if approval is None else "MODEL_RULE_VERSION_NOT_APPROVED" if context.invoice_splitting_mode == "SUBTHRESHOLD_PAYMENTS" and not payments_model else "MODEL_SCORING_DISABLED" if not allow_model
               else "MODEL_CURRENCY_UNSUPPORTED" if transaction.get("currency") not in approval.supported_currencies
-              else "MODEL_CONTEXT_INCOMPLETE" if evaluated != 5 else "MODEL_FEATURES_MISSING" if missing_features else None)
+              else "MODEL_CONTEXT_INCOMPLETE" if evaluated != 5 and not payments_model
+              else "MODEL_FEATURES_MISSING" if (source_row is None if payments_model else missing_features) else None)
     ai_score = None
     anomaly = {"status": "NOT_EVALUATED", "reason": reason, "model_version": None}
     if reason is None:
         from app.services.anomaly_features import build_anomaly_features
-        model = model_loader(approval.artifact_sha256)
+        model = (payments_model_loader(approval.artifact_sha256, approval.dataset_key, approval.model_bucket, approval.model_object)
+                 if payments_model else model_loader(approval.artifact_sha256))
         if model.version != approval.model_version:
             raise ModelUnavailable("Approved model version mismatch")
-        features_input = dict(transaction)
-        features_input.update(amount=float(transaction["amount"]), approval_limit=float(transaction["approval_limit"]))
-        features_context = dict(rule_context)
-        features_context["invoice_splitting_context"] = dict(rule_context["invoice_splitting_context"])
-        features_context["invoice_splitting_context"]["window_total_amount"] = float(
-            rule_context["invoice_splitting_context"]["window_total_amount"])
-        scores = model.score([build_anomaly_features(features_input, context=features_context)])
+        if payments_model:
+            scores = model.score_source_rows([source_row])[1]
+        else:
+            features_input = dict(transaction)
+            features_input.update(amount=float(transaction["amount"]), approval_limit=float(transaction["approval_limit"]))
+            features_context = dict(rule_context)
+            features_context["invoice_splitting_context"] = dict(rule_context["invoice_splitting_context"])
+            features_context["invoice_splitting_context"]["window_total_amount"] = float(
+                rule_context["invoice_splitting_context"]["window_total_amount"])
+            scores = model.score([build_anomaly_features(features_input, context=features_context)])
         if (len(scores) != 1 or isinstance(scores[0], bool) or not isinstance(scores[0], (float, int))
                 or not math.isfinite(scores[0]) or not 0 <= scores[0] <= 100):
             raise ModelUnavailable("Approved model returned invalid score")
@@ -292,7 +369,9 @@ def build_bundle(job: dict[str, Any], *, allow_model: bool = False, model_loader
         anomaly = {"status": "SCORED", "reason": None, "model_version": model.version,
                    "artifact_sha256": approval.artifact_sha256, "validation_reference": approval.validation_reference,
                    "population_reference": approval.population_reference}
-    risk = calculate_risk_score(rule_score, ai_score)
+        if payments_model:
+            anomaly.update(feature_version=approval.feature_version, feature_time_basis='SOURCE_FIELDS', dataset_key=approval.dataset_key)
+    risk = None if payments_model and evaluated != 5 else calculate_risk_score(rule_score, ai_score)
     observation = None
     if simulated:
         prior = history.get("arrival_window_count")

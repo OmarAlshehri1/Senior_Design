@@ -1,0 +1,119 @@
+{
+  "environment": "staging",
+  "production_changed": false,
+  "application_commit": "be6d664a1aacd837ff1873ff420fdb4f5c5f8637",
+  "phases": {
+    "baseline_fresh": {
+      "cases": 6,
+      "complete_high": 6,
+      "confirmed_within_5": 5,
+      "min_seconds": 3.376018,
+      "max_seconds": 7.992328,
+      "median_seconds": 3.9754495,
+      "median_receipt_app_seconds": 0.2674555,
+      "transport_errors": 0
+    },
+    "baseline_pooled": {
+      "cases": 6,
+      "complete_high": 6,
+      "confirmed_within_5": 6,
+      "min_seconds": 1.533263,
+      "max_seconds": 2.406979,
+      "median_seconds": 2.042691,
+      "median_receipt_app_seconds": 0.39041800000000004,
+      "transport_errors": 0
+    },
+    "postdeploy_model_cold": {
+      "cases": 1,
+      "complete_high": 1,
+      "confirmed_within_5": 0,
+      "min_seconds": 6.858066,
+      "max_seconds": 6.858066,
+      "median_seconds": 6.858066,
+      "median_receipt_app_seconds": 0.259548,
+      "transport_errors": 0
+    },
+    "after_pooled": {
+      "cases": 6,
+      "complete_high": 6,
+      "confirmed_within_5": 6,
+      "min_seconds": 1.657539,
+      "max_seconds": 2.786018,
+      "median_seconds": 1.8905805,
+      "median_receipt_app_seconds": 0.142187,
+      "transport_errors": 0
+    },
+    "postdeploy_prewarmed": {
+      "cases": 1,
+      "complete_high": 1,
+      "confirmed_within_5": 1,
+      "min_seconds": 2.867095,
+      "max_seconds": 2.867095,
+      "median_seconds": 2.867095,
+      "median_receipt_app_seconds": 0.192107,
+      "transport_errors": 0
+    },
+    "final_pooled": {
+      "cases": 6,
+      "complete_high": 6,
+      "confirmed_within_5": 6,
+      "min_seconds": 1.499719,
+      "max_seconds": 2.220918,
+      "median_seconds": 1.7860565,
+      "median_receipt_app_seconds": 0.146326,
+      "transport_errors": 0
+    },
+    "final_concurrent": {
+      "cases": 6,
+      "complete_high": 6,
+      "confirmed_within_5": 6,
+      "min_seconds": 1.655629,
+      "max_seconds": 3.363264,
+      "median_seconds": 2.2171000000000003,
+      "median_receipt_app_seconds": 0.14221,
+      "transport_errors": 0
+    }
+  },
+  "cold_status": "CONFIRMED_NEW_PROCESS_AFTER_IDLE",
+  "overall_s4_status": "NOT_ATTAINED_FOR_IDLE_COLD_POST",
+  "actual_idle_cold": {
+    "idle_seconds": 980,
+    "process_changed": true,
+    "prior_instance": "a25ab6d67e664fab8471ec01f9bb5b99",
+    "observed_instance": "e6f05073f7c94fba85bcccd6c4428812",
+    "uptime_at_post_ack_seconds": 12.446,
+    "posting_to_confirmation_seconds": 66.404687,
+    "posting_acknowledgment_seconds": 65.318744,
+    "app_post_seconds": 0.34612400000000004,
+    "tcp_tls_seconds": 1.71351,
+    "response_headers_wait_seconds": 63.594866,
+    "fully_scored": true,
+    "confirmed_within_5_seconds": false
+  },
+  "database_verification": {
+    "records": 33,
+    "completed": 33,
+    "alerts": 33,
+    "evaluated_rule_checks": 165,
+    "outcome_or_formula_mismatches": [],
+    "max_audit_attempts": 1
+  },
+  "runtime_configuration": {
+    "ingestion_timing_enabled_on_staging": true,
+    "approved_payments_model_prewarm_enabled_on_staging": true,
+    "production_configuration_changed": false,
+    "billing_changed": false
+  },
+  "validation": {
+    "final_python_tests_passed": 85,
+    "initial_instrumentation_tests_passed": 35,
+    "lookup_pipeline_tests_passed": 38,
+    "hosted_access_and_revocation_passed": true
+  },
+  "limits": [
+    "Small controlled synthetic sequential and three-at-once samples; not a production latency SLA.",
+    "All earlier late and model-cold cases retained.",
+    "Free-plan cold spin-up is outside the measured request handler; routing/startup and transport remain included in client time.",
+    "Model thresholds, source eligibility and the combined-risk formula were not changed."
+  ]
+}

@@ -1,0 +1,133 @@
+{
+  "scope": "release review and preparation only",
+  "production_changed": false,
+  "main_unchanged": "71ca4a0d5d12e1082ca3f415d5de7e99ca8f056f",
+  "source_candidate_commit": "b1ca6416d32454ae0218ed446bc0cda09b087331",
+  "staging_backend_commit": "474165891d8c88c884742eb8d404a97efb6ebc89",
+  "staging_frontend_commit": "845318b40aaa324b1e2d1bca68f82afba1f4351c",
+  "backend_and_migration_parity": true,
+  "frontend_parity": true,
+  "backend_tests": {
+    "passed": 447,
+    "failed": 0,
+    "initial_environment_errors": 4,
+    "initial_error": "temporary parent directory missing",
+    "rerun_passed": true
+  },
+  "frontend_tests": {
+    "passed": 317,
+    "failed": 0,
+    "lint": "PASSED",
+    "build": "PASSED"
+  },
+  "sql_integration_tests": {
+    "engine": "isolated in-memory PGlite",
+    "passed": 58,
+    "failed": 0,
+    "production_migrations_executed": false
+  },
+  "fresh_hosted_api_checks": 40,
+  "browser_imports": "PASSED",
+  "browser_departments": "PASSED",
+  "mobile_width": 390,
+  "browser_runtime_exceptions": 0,
+  "export_formats": [
+    "PDF",
+    "XLSX"
+  ],
+  "pdf_first_page_visually_reviewed": true,
+  "pdf_pages": 10,
+  "new_confirmed_synthetic_records": 3,
+  "test_cleanup": {
+    "synthetic_admin_status": "DISABLED",
+    "synthetic_admin_live_application_sessions": 0,
+    "api_logout_statuses": [
+      204,
+      204,
+      204
+    ],
+    "validation_source_receipts": 50010,
+    "original_payments_source_records": 1001,
+    "latency_test_source_remains_disabled": true
+  },
+  "production_preflight": {
+    "feed_schema_present": false,
+    "import_schema_present": false,
+    "minimum_identity_team_crypto_prerequisites_present": true,
+    "private_payments_model_bucket_exists": true,
+    "required_candidate_migration_files": 26,
+    "backend_plan": "1c-2g",
+    "backend_auto_deploy": true,
+    "backend_live_commit": "f4f4a7ab4522d10010a39e7bf94b48dbcab5dacd",
+    "backend_rollback_deploy": "dep-dbjjrpqvcj2c73f28qjg"
+  },
+  "security": [
+    {
+      "environment": "production",
+      "lints": [
+        {
+          "name": "rls_enabled_no_policy",
+          "level": "INFO",
+          "count": 43,
+          "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy"
+        },
+        {
+          "name": "anon_security_definer_function_executable",
+          "level": "WARN",
+          "count": 1,
+          "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable"
+        },
+        {
+          "name": "authenticated_security_definer_function_executable",
+          "level": "WARN",
+          "count": 1,
+          "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable"
+        },
+        {
+          "name": "auth_leaked_password_protection",
+          "level": "WARN",
+          "count": 1,
+          "remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection"
+        }
+      ]
+    },
+    {
+      "environment": "staging",
+      "lints": [
+        {
+          "name": "rls_enabled_no_policy",
+          "level": "INFO",
+          "count": 63,
+          "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy"
+        },
+        {
+          "name": "anon_security_definer_function_executable",
+          "level": "WARN",
+          "count": 1,
+          "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable"
+        },
+        {
+          "name": "authenticated_security_definer_function_executable",
+          "level": "WARN",
+          "count": 1,
+          "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable"
+        },
+        {
+          "name": "auth_leaked_password_protection",
+          "level": "WARN",
+          "count": 1,
+          "remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection"
+        }
+      ]
+    }
+  ],
+  "readiness": "VERIFIED_CANDIDATE_WITH_ROLLOUT_CONDITIONS",
+  "S4": "PARTIAL",
+  "remaining_conditions": [
+    "Approve and apply only the 26 ordered candidate migrations using the established process.",
+    "Verify production flags and source-specific onboarding before activation.",
+    "Keep synthetic contexts, test identities and staging credentials out of production.",
+    "Record acceptance of partial S4 and existing security advisories.",
+    "Coordinate frontend production deployment and rollback with its owner."
+  ]
+}

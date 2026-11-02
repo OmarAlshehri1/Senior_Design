@@ -1,0 +1,29 @@
+{
+  "environment": "staging",
+  "production_changed": false,
+  "source_id": "payments-ai-verification-20261102",
+  "formats": [
+    {
+      "format": "csv",
+      "batch_id": "fcf8c9f3-8bc8-4d65-b646-1c74945bda8e",
+      "transaction_id": "3203dd95-aef4-4384-8503-cff1c18a5ec5",
+      "ai_score": 71.29,
+      "completed": 1,
+      "combined_risk": null,
+      "evaluated_rules": 0,
+      "matches_producer_ai_score": true
+    },
+    {
+      "format": "xlsx",
+      "batch_id": "a6706c05-34d2-4211-8ecb-842409ac0e60",
+      "transaction_id": "1dc8b6cd-fd6f-45f0-9ce4-8087d3200633",
+      "ai_score": 70.16,
+      "completed": 1,
+      "combined_risk": null,
+      "evaluated_rules": 0,
+      "matches_producer_ai_score": true
+    }
+  ],
+  "status": "PASSED",
+  "logout_status": 204
+}

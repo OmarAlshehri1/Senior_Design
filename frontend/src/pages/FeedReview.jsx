@@ -116,9 +116,10 @@ export default function FeedReview() {
     {!loading && !error && !sources.length && <p>No feed sources are assigned to your account or active team.</p>}
     {!exceptions && !summary && !(modelReview && canReviewModel) && result && <>
       <div className="table-container"><table>
-        <thead><tr><th>Record</th><th>Vendor</th><th>Amount</th><th>Original date</th><th>Arrival</th><th>Processing</th><th>Coverage</th><th>Evidence</th></tr></thead>
+        <thead><tr><th>Record</th><th>Vendor</th><th>Department / category</th><th>Amount</th><th>Original date</th><th>Arrival</th><th>Processing</th><th>Coverage</th><th>Evidence</th></tr></thead>
         <tbody>{result.items.map((row) => <tr key={row.id}>
           <td>{row.record_id}</td><td>{row.vendor_name || 'Unavailable'}</td>
+          <td>{row.category || 'Uncategorized'}</td>
           <td>{row.amount ?? 'Unavailable'} {row.currency}</td>
           <td>{row.source_date || time(row.transaction_timestamp)}</td><td>{time(row.received_at)}</td>
           <td>{row.processing_status || 'Unavailable'}</td>
@@ -136,8 +137,12 @@ export default function FeedReview() {
       {detailError && <p role="alert">{detailError}</p>}
       {!detail && !detailError && <p role="status">Loading evidence…</p>}
       {detail && <>
+        <p>Department / category: {detail.category || 'Uncategorized'}</p>
         <p>Invoice: {detail.invoice_number || 'Unavailable'} · Evaluated: {time(detail.evaluated_at)}</p>
         <p>Clock: {detail.time_basis || 'Unavailable'} · Combined risk: {detail.risk_score ?? 'Not scored'} {detail.risk_level}</p>
+        <p>AI anomaly score: {detail.ai_score == null ? 'Not scored' : `${detail.ai_score}/100`}</p>
+        {detail.ai_score != null && <p>The AI score shows how unusual this payment is compared with its reference history. It is not a probability of fraud.</p>}
+        {detail.ai_score != null && detail.risk_score == null && <p>Combined risk is unavailable until all five audit checks can be evaluated.</p>}
         {detail.unscored_reason && <p>Scoring reason: {detail.unscored_reason}</p>}
         {modelCapability?.inline_diagnostics && canReviewModel && <PaymentsModelDiagnostic detail={detail} />}
         <ul>{(detail.rules || []).map((rule) => <li key={rule.rule_key}>

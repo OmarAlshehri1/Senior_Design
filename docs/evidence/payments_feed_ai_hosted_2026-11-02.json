@@ -1,0 +1,115 @@
+{
+  "environment": "staging",
+  "production_changed": false,
+  "source_id": "payments-ai-verification-20261102",
+  "deployed_commit": "845318b40aaa324b1e2d1bca68f82afba1f4351c",
+  "status": "PASSED",
+  "cases": [
+    {
+      "event_id": "AI-VERIFY-1",
+      "receipt_id": "4c0f3601-41ea-400c-975e-7ce66577fd55",
+      "post_status": 202,
+      "intake_status": "PARTIAL",
+      "processing_status": "COMPLETED",
+      "ai_score": 71.29,
+      "risk_score": null,
+      "coverage": {
+        "total": 5,
+        "failed": 0,
+        "evaluated": 1,
+        "not_evaluated": 4
+      },
+      "unscored_reason": null,
+      "observed_seconds": 7.923,
+      "transaction_id": "f26f8dc1-3969-43ee-bdda-9af8d4d4873e",
+      "authenticated_detail_score_matches": true,
+      "exact_replay_same_receipt": true
+    },
+    {
+      "event_id": "AI-VERIFY-2",
+      "receipt_id": "49af1915-9f7a-43c8-be17-159f4f84cce5",
+      "post_status": 202,
+      "intake_status": "PARTIAL",
+      "processing_status": "COMPLETED",
+      "ai_score": 70.16,
+      "risk_score": null,
+      "coverage": {
+        "total": 5,
+        "failed": 0,
+        "evaluated": 1,
+        "not_evaluated": 4
+      },
+      "unscored_reason": null,
+      "observed_seconds": 2.769,
+      "transaction_id": "38f03c08-0530-40d5-9891-e6e862b6a552",
+      "authenticated_detail_score_matches": true,
+      "exact_replay_same_receipt": true
+    },
+    {
+      "event_id": "AI-VERIFY-3",
+      "receipt_id": "7e92ce3b-9725-4998-b180-ae013442b34e",
+      "post_status": 202,
+      "intake_status": "PARTIAL",
+      "processing_status": "COMPLETED",
+      "ai_score": 53.61,
+      "risk_score": null,
+      "coverage": {
+        "total": 5,
+        "failed": 0,
+        "evaluated": 1,
+        "not_evaluated": 4
+      },
+      "unscored_reason": null,
+      "observed_seconds": 3.003,
+      "transaction_id": "057ccb57-a440-4d97-ac83-1d397e8606d6",
+      "authenticated_detail_score_matches": true,
+      "exact_replay_same_receipt": true
+    },
+    {
+      "event_id": "AI-VERIFY-MISSING-NAME",
+      "receipt_id": "d744630f-e19c-42e1-b704-d0c1f3f01d3a",
+      "post_status": 202,
+      "intake_status": "PARTIAL",
+      "processing_status": "COMPLETED",
+      "ai_score": null,
+      "risk_score": null,
+      "coverage": {
+        "total": 5,
+        "failed": 0,
+        "evaluated": 1,
+        "not_evaluated": 4
+      },
+      "unscored_reason": "MODEL_FEATURES_MISSING",
+      "observed_seconds": 1.234,
+      "transaction_id": "dc65960b-b8b0-421b-a239-c61f81f2ddde",
+      "authenticated_detail_score_matches": true,
+      "exact_replay_same_receipt": true
+    },
+    {
+      "event_id": "AI-VERIFY-WRONG-CURRENCY",
+      "receipt_id": "0222596b-8da5-42f1-aadf-2b8fcf3d375a",
+      "post_status": 202,
+      "intake_status": "PARTIAL",
+      "processing_status": "COMPLETED",
+      "ai_score": null,
+      "risk_score": null,
+      "coverage": {
+        "total": 5,
+        "failed": 0,
+        "evaluated": 1,
+        "not_evaluated": 4
+      },
+      "unscored_reason": "MODEL_CURRENCY_UNSUPPORTED",
+      "observed_seconds": 1.531,
+      "transaction_id": "a231a0d8-63a8-48a7-9f50-dfe3b72d2268",
+      "authenticated_detail_score_matches": true,
+      "exact_replay_same_receipt": true
+    }
+  ],
+  "input_provenance": "Three bounded existing local Payments source records with new test IDs; two altered negative controls. Not new fraud labels.",
+  "logout_status": 204,
+  "finished_at": "2026-11-02T07:05:57.873419+00:00",
+  "unassigned_source_denied_status": 403,
+  "test_harness_correction": "Unsupported currency is retained as PARTIAL with null canonical currency, not rejected; actual AI withholding verified without inserting another record.",
+  "verification_finalized_at": "2026-11-02T07:17:39.039728+00:00"
+}

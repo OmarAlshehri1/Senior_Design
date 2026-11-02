@@ -1,0 +1,19 @@
+{
+  "status": "PASS",
+  "story": "Browser file -> real API -> local PostgreSQL -> real validation/audit workers -> displayed progress",
+  "checks": [
+    "CSV mapping and confirmed completion",
+    "saved mapping reuse",
+    "identical-file deduplication",
+    "existing-reference conflict preview blocks confirmation",
+    "invalid-row confirmation disabled",
+    "XLSX worksheet selection and completed auditing",
+    "progress restored from history after reload",
+    "390px no page overflow",
+    "zero runtime exceptions",
+    "loopback-only requests"
+  ],
+  "identity": "substituted synthetic Admin; hosted authentication not tested",
+  "database": "in-memory PGlite; no hosted state changed",
+  "private_artifacts": "backend\\.feed-simulator\\company-import-browser-5cc135f682"
+}

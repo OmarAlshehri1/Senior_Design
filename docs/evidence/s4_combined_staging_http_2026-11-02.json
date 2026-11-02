@@ -1,0 +1,795 @@
+{
+  "environment": "staging",
+  "production_changed": false,
+  "source_id": "SYNTHETIC-combined-s4-20261102",
+  "plan_sha256": "876bd8218565f966ab68f215a127b8c16a45ba14d80be7b6dea6e40e3308773f",
+  "status": "INTERRUPTED",
+  "load": "30 sequential posts, waiting for each completion; no starting backlog",
+  "alert_policy": "Existing combined HIGH only; thresholds unchanged",
+  "expected_high_cases": [
+    "S4-1-high_four_rules",
+    "S4-2-high_four_rules",
+    "S4-3-high_four_rules"
+  ],
+  "latency_boundary": "Monotonic producer HTTP posting start to observed committed HIGH result; actual alert rows verified separately",
+  "cases": [
+    {
+      "event_id": "S4-1-control",
+      "expected_failed_rules": [],
+      "posting_started_at": "2026-11-02T07:31:34.696660+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 1.086296,
+      "receipt_id": "3b5c9933-d5d1-41f2-bc33-3b8ac4436d72",
+      "received_at": "2026-11-02T07:31:35.190596+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 6.977866,
+      "transaction_id": "87ab6315-c579-4fcb-8b6e-a6c15fdf48e4",
+      "coverage": {
+        "total": 5,
+        "failed": 0,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 0.0,
+      "ai_score": 89.66,
+      "risk_score": 35.86,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-1-sod",
+      "expected_failed_rules": [
+        "segregation_of_duties"
+      ],
+      "posting_started_at": "2026-11-02T07:31:41.685027+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.703783,
+      "receipt_id": "d7eafe78-8084-4a80-abf1-a98d9519ca50",
+      "received_at": "2026-11-02T07:31:42.173248+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.719314,
+      "transaction_id": "91c3479f-2192-4f56-9866-d3dac91e2aa4",
+      "coverage": {
+        "total": 5,
+        "failed": 1,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 20.0,
+      "ai_score": 89.66,
+      "risk_score": 47.86,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-1-approval",
+      "expected_failed_rules": [
+        "approval_limits"
+      ],
+      "posting_started_at": "2026-11-02T07:31:44.401109+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.508528,
+      "receipt_id": "1fd8819d-0a1d-4d08-b8aa-8a52445b1ec5",
+      "received_at": "2026-11-02T07:31:44.692352+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.236308,
+      "transaction_id": "48e68ba4-ff39-4137-a91b-571bbfd0d6f1",
+      "coverage": {
+        "total": 5,
+        "failed": 1,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 20.0,
+      "ai_score": 66.46,
+      "risk_score": 38.58,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-1-ghost",
+      "expected_failed_rules": [
+        "ghost_vendors"
+      ],
+      "posting_started_at": "2026-11-02T07:31:46.645271+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.61827,
+      "receipt_id": "9c8dabc9-1d2b-4e41-b641-de9665e79175",
+      "received_at": "2026-11-02T07:31:47.026898+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.323522,
+      "transaction_id": "4f04f545-45cc-40e3-ae01-1deecfe651f1",
+      "coverage": {
+        "total": 5,
+        "failed": 1,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 20.0,
+      "ai_score": 89.66,
+      "risk_score": 47.86,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-1-duplicate_seed",
+      "expected_failed_rules": [],
+      "posting_started_at": "2026-11-02T07:31:48.969964+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.55808,
+      "receipt_id": "712b732b-a985-42c1-bea1-a1d4f705a1c0",
+      "received_at": "2026-11-02T07:31:49.302766+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.211855,
+      "transaction_id": "bbda08b7-3789-48e8-9bcc-867aeeb35151",
+      "coverage": {
+        "total": 5,
+        "failed": 0,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 0.0,
+      "ai_score": 63.32,
+      "risk_score": 25.33,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-1-duplicate",
+      "expected_failed_rules": [
+        "duplicate_payment"
+      ],
+      "posting_started_at": "2026-11-02T07:31:51.187134+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.535562,
+      "receipt_id": "3a802ad3-2a22-4eb9-bcf0-554a13f70472",
+      "received_at": "2026-11-02T07:31:51.496329+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 1.486565,
+      "transaction_id": "6980afee-025e-4aec-adc2-993a599b4566",
+      "coverage": {
+        "total": 5,
+        "failed": 1,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 20.0,
+      "ai_score": 63.32,
+      "risk_score": 37.33,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-1-split_seed",
+      "expected_failed_rules": [],
+      "posting_started_at": "2026-11-02T07:31:52.673949+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.638961,
+      "receipt_id": "c0c2d155-f65e-4fd6-bbd5-bfd17591b575",
+      "received_at": "2026-11-02T07:31:53.060459+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.768941,
+      "transaction_id": "caf070c4-0365-4846-bb30-eea22cc198c9",
+      "coverage": {
+        "total": 5,
+        "failed": 0,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 0.0,
+      "ai_score": 43.34,
+      "risk_score": 17.34,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-1-split",
+      "expected_failed_rules": [
+        "invoice_splitting"
+      ],
+      "posting_started_at": "2026-11-02T07:31:55.445245+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.530946,
+      "receipt_id": "56fe2169-0bcf-4e4c-8a0b-822b6f3cb999",
+      "received_at": "2026-11-02T07:31:55.741959+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.197241,
+      "transaction_id": "5b2c8dd7-4187-4a3e-ad3f-743c2a7deecf",
+      "coverage": {
+        "total": 5,
+        "failed": 1,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 20.0,
+      "ai_score": 43.34,
+      "risk_score": 29.34,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-1-high_seed",
+      "expected_failed_rules": [
+        "segregation_of_duties",
+        "ghost_vendors"
+      ],
+      "posting_started_at": "2026-11-02T07:31:57.631473+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.600921,
+      "receipt_id": "189549b2-bfca-403f-9eda-669ef4ca5d9c",
+      "received_at": "2026-11-02T07:31:58.018271+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.177857,
+      "transaction_id": "21441ad0-4b9e-4207-8290-483247e12dd4",
+      "coverage": {
+        "total": 5,
+        "failed": 2,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 40.0,
+      "ai_score": 43.34,
+      "risk_score": 41.34,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-1-high_four_rules",
+      "expected_failed_rules": [
+        "segregation_of_duties",
+        "duplicate_payment",
+        "invoice_splitting",
+        "ghost_vendors"
+      ],
+      "posting_started_at": "2026-11-02T07:31:59.813497+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.595474,
+      "receipt_id": "03fdf3c0-5a85-4718-a80e-f06b2c6f655a",
+      "received_at": "2026-11-02T07:32:00.187732+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.769422,
+      "transaction_id": "d244624e-503c-4858-b2e3-67de1fe21e50",
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80.0,
+      "ai_score": 43.34,
+      "risk_score": 65.34,
+      "risk_level": "MEDIUM",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-2-control",
+      "expected_failed_rules": [],
+      "posting_started_at": "2026-11-02T07:32:02.593015+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.5615,
+      "receipt_id": "3c2d8ee8-7b8f-4810-843c-e0d0562baf06",
+      "received_at": "2026-11-02T07:32:02.930271+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.089758,
+      "transaction_id": "7f3b3dea-eb4b-48a6-b58c-65215d3301e9",
+      "coverage": {
+        "total": 5,
+        "failed": 0,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 0.0,
+      "ai_score": 89.66,
+      "risk_score": 35.86,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-2-sod",
+      "expected_failed_rules": [
+        "segregation_of_duties"
+      ],
+      "posting_started_at": "2026-11-02T07:32:04.675792+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.558616,
+      "receipt_id": "18ec0f97-1400-4d98-b724-0e6e923b440e",
+      "received_at": "2026-11-02T07:32:05.023581+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.348247,
+      "transaction_id": "8598d07c-abba-437e-b0ba-c9ad8d84ad8d",
+      "coverage": {
+        "total": 5,
+        "failed": 1,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 20.0,
+      "ai_score": 89.66,
+      "risk_score": 47.86,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-2-approval",
+      "expected_failed_rules": [
+        "approval_limits"
+      ],
+      "posting_started_at": "2026-11-02T07:32:07.033983+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.571206,
+      "receipt_id": "28580df6-1983-4510-b3d1-a4ce5c89c72d",
+      "received_at": "2026-11-02T07:32:07.38327+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.394383,
+      "transaction_id": "2a2eca89-d281-4cab-85cd-e67f9957a87c",
+      "coverage": {
+        "total": 5,
+        "failed": 1,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 20.0,
+      "ai_score": 66.46,
+      "risk_score": 38.58,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-2-ghost",
+      "expected_failed_rules": [
+        "ghost_vendors"
+      ],
+      "posting_started_at": "2026-11-02T07:32:09.434164+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.856459,
+      "receipt_id": "75c0a469-d73c-42b4-80ce-841f80c187e4",
+      "received_at": "2026-11-02T07:32:10.081833+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.419786,
+      "transaction_id": "6f275bb4-b063-41fb-b0ad-a8b518d964ce",
+      "coverage": {
+        "total": 5,
+        "failed": 1,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 20.0,
+      "ai_score": 89.66,
+      "risk_score": 47.86,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-2-duplicate_seed",
+      "expected_failed_rules": [],
+      "posting_started_at": "2026-11-02T07:32:11.858078+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.573836,
+      "receipt_id": "1e0c85fa-4fc3-4c83-b0ec-900de4076805",
+      "received_at": "2026-11-02T07:32:12.197189+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.400111,
+      "transaction_id": "5dba18cd-0fc2-490f-8dc2-ae45fc44e7a9",
+      "coverage": {
+        "total": 5,
+        "failed": 0,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 0.0,
+      "ai_score": 63.32,
+      "risk_score": 25.33,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-2-duplicate",
+      "expected_failed_rules": [
+        "duplicate_payment"
+      ],
+      "posting_started_at": "2026-11-02T07:32:14.256941+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.607634,
+      "receipt_id": "75266a8c-9eb3-41a5-a8ba-6c741115c456",
+      "received_at": "2026-11-02T07:32:14.637384+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.475441,
+      "transaction_id": "a0371f98-5736-45e0-bdc3-649c2ad68974",
+      "coverage": {
+        "total": 5,
+        "failed": 1,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 20.0,
+      "ai_score": 63.32,
+      "risk_score": 37.33,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-2-split_seed",
+      "expected_failed_rules": [],
+      "posting_started_at": "2026-11-02T07:32:16.739409+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.681339,
+      "receipt_id": "708c33e4-1251-470d-a6e5-69355941d05d",
+      "received_at": "2026-11-02T07:32:17.178702+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.408014,
+      "transaction_id": "6d70486a-ab3e-4ba3-9b47-692d0a4589c3",
+      "coverage": {
+        "total": 5,
+        "failed": 0,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 0.0,
+      "ai_score": 43.34,
+      "risk_score": 17.34,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-2-split",
+      "expected_failed_rules": [
+        "invoice_splitting"
+      ],
+      "posting_started_at": "2026-11-02T07:32:19.146682+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.579862,
+      "receipt_id": "ea3e1817-bf0f-430b-9750-029b7ebbe6db",
+      "received_at": "2026-11-02T07:32:19.498774+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.405695,
+      "transaction_id": "ec4d3a74-5399-4d08-aa4d-3f438691c2c8",
+      "coverage": {
+        "total": 5,
+        "failed": 1,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 20.0,
+      "ai_score": 43.34,
+      "risk_score": 29.34,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-2-high_seed",
+      "expected_failed_rules": [
+        "segregation_of_duties",
+        "ghost_vendors"
+      ],
+      "posting_started_at": "2026-11-02T07:32:21.558322+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.593888,
+      "receipt_id": "9747e623-b250-4d8a-b58e-965408d49d26",
+      "received_at": "2026-11-02T07:32:21.915841+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.151579,
+      "transaction_id": "3d5cebff-e6bb-4070-b435-e5ee8db877d6",
+      "coverage": {
+        "total": 5,
+        "failed": 2,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 40.0,
+      "ai_score": 43.34,
+      "risk_score": 41.34,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-2-high_four_rules",
+      "expected_failed_rules": [
+        "segregation_of_duties",
+        "duplicate_payment",
+        "invoice_splitting",
+        "ghost_vendors"
+      ],
+      "posting_started_at": "2026-11-02T07:32:23.710053+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.557577,
+      "receipt_id": "26c5a399-7578-4221-9084-d812c6977673",
+      "received_at": "2026-11-02T07:32:24.043725+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.121483,
+      "transaction_id": "1107fcf2-5218-4c55-8226-f3a86e6c79fd",
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80.0,
+      "ai_score": 43.34,
+      "risk_score": 65.34,
+      "risk_level": "MEDIUM",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-3-control",
+      "expected_failed_rules": [],
+      "posting_started_at": "2026-11-02T07:32:25.838596+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.598911,
+      "receipt_id": "83b7a11c-ee4b-4d2c-97fc-3afcaeb2de74",
+      "received_at": "2026-11-02T07:32:26.205372+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.509005,
+      "transaction_id": "070a64d3-d8aa-4d40-bee9-ffdba2580f99",
+      "coverage": {
+        "total": 5,
+        "failed": 0,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 0.0,
+      "ai_score": 89.66,
+      "risk_score": 35.86,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-3-sod",
+      "expected_failed_rules": [
+        "segregation_of_duties"
+      ],
+      "posting_started_at": "2026-11-02T07:32:28.346913+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.596256,
+      "receipt_id": "b64884e9-8a72-46ca-8e66-0504637fb45d",
+      "received_at": "2026-11-02T07:32:28.714846+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.518375,
+      "transaction_id": "3264b831-0a0d-40e0-8eaa-d8a737935038",
+      "coverage": {
+        "total": 5,
+        "failed": 1,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 20.0,
+      "ai_score": 89.66,
+      "risk_score": 47.86,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-3-approval",
+      "expected_failed_rules": [
+        "approval_limits"
+      ],
+      "posting_started_at": "2026-11-02T07:32:30.872817+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.522233,
+      "receipt_id": "9a579738-169e-4f67-8ffc-130c5e46ea9a",
+      "received_at": "2026-11-02T07:32:31.17177+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.249993,
+      "transaction_id": "dfe14d57-a1ef-49ec-b127-ef9a187ac16d",
+      "coverage": {
+        "total": 5,
+        "failed": 1,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 20.0,
+      "ai_score": 66.46,
+      "risk_score": 38.58,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-3-ghost",
+      "expected_failed_rules": [
+        "ghost_vendors"
+      ],
+      "posting_started_at": "2026-11-02T07:32:33.121506+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.537509,
+      "receipt_id": "789b778b-6a01-496f-8fad-fbc43947c5fa",
+      "received_at": "2026-11-02T07:32:33.436774+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.186333,
+      "transaction_id": "99f7af72-8f4c-465b-97f2-ccf567dbe897",
+      "coverage": {
+        "total": 5,
+        "failed": 1,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 20.0,
+      "ai_score": 89.66,
+      "risk_score": 47.86,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-3-duplicate_seed",
+      "expected_failed_rules": [],
+      "posting_started_at": "2026-11-02T07:32:35.311559+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.557421,
+      "receipt_id": "ffba855f-628a-4ae1-acf8-2dd54d297c6c",
+      "received_at": "2026-11-02T07:32:35.647681+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.371172,
+      "transaction_id": "2ef500c1-a820-41c0-81a9-586bac3c1e0f",
+      "coverage": {
+        "total": 5,
+        "failed": 0,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 0.0,
+      "ai_score": 63.32,
+      "risk_score": 25.33,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-3-duplicate",
+      "expected_failed_rules": [
+        "duplicate_payment"
+      ],
+      "posting_started_at": "2026-11-02T07:32:37.691122+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.58922,
+      "receipt_id": "880dce9e-d535-49b1-b89c-2fdc1c9f7a3f",
+      "received_at": "2026-11-02T07:32:38.043069+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.346142,
+      "transaction_id": "39acbb8b-6e2e-4416-9fc2-aceaa6da81e9",
+      "coverage": {
+        "total": 5,
+        "failed": 1,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 20.0,
+      "ai_score": 63.32,
+      "risk_score": 37.33,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-3-split_seed",
+      "expected_failed_rules": [],
+      "posting_started_at": "2026-11-02T07:32:40.042468+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.605039,
+      "receipt_id": "051a3056-6522-410b-a8d4-44cd5b70c798",
+      "received_at": "2026-11-02T07:32:40.414515+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.398941,
+      "transaction_id": "0e2b8403-c409-409a-a30b-3c6c44bb47d1",
+      "coverage": {
+        "total": 5,
+        "failed": 0,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 0.0,
+      "ai_score": 43.34,
+      "risk_score": 17.34,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-3-split",
+      "expected_failed_rules": [
+        "invoice_splitting"
+      ],
+      "posting_started_at": "2026-11-02T07:32:42.440994+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.579543,
+      "receipt_id": "52459fda-7a9d-4915-b8e1-b3f4bcd5e943",
+      "received_at": "2026-11-02T07:32:42.791838+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.133235,
+      "transaction_id": "70663c22-f32c-4a72-897a-9ebbafbd4a34",
+      "coverage": {
+        "total": 5,
+        "failed": 1,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 20.0,
+      "ai_score": 43.34,
+      "risk_score": 29.34,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-3-high_seed",
+      "expected_failed_rules": [
+        "segregation_of_duties",
+        "ghost_vendors"
+      ],
+      "posting_started_at": "2026-11-02T07:32:44.580097+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.585939,
+      "receipt_id": "f9fd70f8-209d-4b2c-af20-cb6b5e15916c",
+      "received_at": "2026-11-02T07:32:44.938117+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.25601,
+      "transaction_id": "a797369a-375f-4d14-96cc-b67fc05fe7e6",
+      "coverage": {
+        "total": 5,
+        "failed": 2,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 40.0,
+      "ai_score": 43.34,
+      "risk_score": 41.34,
+      "risk_level": "LOW",
+      "unscored_reason": null
+    },
+    {
+      "event_id": "S4-3-high_four_rules",
+      "expected_failed_rules": [
+        "segregation_of_duties",
+        "duplicate_payment",
+        "invoice_splitting",
+        "ghost_vendors"
+      ],
+      "posting_started_at": "2026-11-02T07:32:46.841874+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.53666,
+      "receipt_id": "903e13e4-098d-4ecb-b78f-21f6a38eb7f9",
+      "received_at": "2026-11-02T07:32:47.151614+00:00",
+      "processing_status": "COMPLETED",
+      "intake_status": "ACCEPTED",
+      "observed_committed_result_seconds": 2.213019,
+      "transaction_id": "e87c596a-5fee-4cab-b0aa-04d2acbffe7a",
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80.0,
+      "ai_score": 43.34,
+      "risk_score": 65.34,
+      "risk_level": "MEDIUM",
+      "unscored_reason": null
+    }
+  ],
+  "health_warmup_seconds": 63.658305,
+  "error_type": "AssertionError",
+  "error_code": "HIGH_CASE_EXPECTATION_MISMATCH",
+  "finished_at": "2026-11-02T07:32:49.057912+00:00"
+}

@@ -1,0 +1,11 @@
+{
+  "environment": "staging",
+  "status": "FINISHED",
+  "updated_at": "2026-11-02T12:20:45.550623+00:00",
+  "elapsed_seconds": 601.8,
+  "planned_requests": 86,
+  "observations": 86,
+  "within_5_seconds": 84,
+  "late_or_incomplete": 2,
+  "maximum_confirmation_seconds": 6.38025
+}

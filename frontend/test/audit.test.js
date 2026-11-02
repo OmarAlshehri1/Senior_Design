@@ -34,6 +34,7 @@ const events = Object.freeze([
 
 test('audit action definitions contain the stable accountability actions', () => {
   assert.deepEqual(Object.values(AUDIT_ACTIONS), [
+    'TRANSACTIONS_IMPORTED',
     'LOGIN_SUCCESS', 'LOGIN_FAILED', 'LOGOUT', 'ACCOUNT_LOCKED', 'ACCOUNT_UNLOCKED',
     'ACCOUNT_DISABLED', 'ACCOUNT_ENABLED', 'TRANSACTION_REVIEWED', 'TRANSACTION_REOPENED',
     'REVIEW_NOTE_ADDED', 'ALERT_REVIEWED', 'ALERT_REOPENED', 'ACCOUNT_UNLOCK_REJECTED', 'ALERT_ASSIGNED', 'ALERT_REASSIGNED',
@@ -55,7 +56,7 @@ test('audit outcomes are exactly success, failed, and denied', () => {
 });
 
 test('audit resource types cover the approved accountable resources', () => {
-  assert.deepEqual(Object.values(AUDIT_RESOURCE_TYPES), ['ACCOUNT', 'TRANSACTION', 'ALERT', 'ACCESS_REQUEST', 'USER', 'CASE', 'VENDOR', 'EVIDENCE', 'SETTINGS', 'REPORT', 'TEAM', 'TEAM_MEMBER']);
+  assert.deepEqual(Object.values(AUDIT_RESOURCE_TYPES), ['IMPORT', 'ACCOUNT', 'TRANSACTION', 'ALERT', 'ACCESS_REQUEST', 'USER', 'CASE', 'VENDOR', 'EVIDENCE', 'SETTINGS', 'REPORT', 'TEAM', 'TEAM_MEMBER']);
 });
 
 test('ReviewRecord normalization preserves immutable supported history fields', () => {

@@ -1,0 +1,134 @@
+{
+  "environment": "staging",
+  "production_changed": false,
+  "billing_changed": false,
+  "deployed_commit": "82d40138225356686d2129f3b725378a09975d30",
+  "started_at": "2026-11-02T12:10:43.727303+00:00",
+  "finished_at": "2026-11-02T12:20:45.525160+00:00",
+  "elapsed_seconds": 601.797,
+  "completed_rounds": 10,
+  "max_round_scheduling_drift_seconds": 0.313,
+  "request_retries": 0,
+  "result": "84_OF_86_CLIENT_CONFIRMATIONS_WITHIN_FIVE_SECONDS",
+  "overall_S4": "PARTIAL_UNDER_CLIENT_CONFIRMATION_CHECK",
+  "cases": {
+    "count": 86,
+    "within_5_seconds": 84,
+    "minimum_seconds": 1.430563,
+    "median_seconds": 2.1199715,
+    "p95_nearest_rank_seconds": 3.360304,
+    "p99_nearest_rank_seconds": 6.38025,
+    "maximum_seconds": 6.38025
+  },
+  "by_payload_size": {
+    "small": {
+      "count": 30,
+      "within_5_seconds": 30,
+      "minimum_seconds": 1.477746,
+      "median_seconds": 1.7584084999999998,
+      "p95_nearest_rank_seconds": 2.925683,
+      "p99_nearest_rank_seconds": 3.360304,
+      "maximum_seconds": 3.360304
+    },
+    "medium": {
+      "count": 28,
+      "within_5_seconds": 28,
+      "minimum_seconds": 1.430563,
+      "median_seconds": 2.030032,
+      "p95_nearest_rank_seconds": 3.288341,
+      "p99_nearest_rank_seconds": 3.299747,
+      "maximum_seconds": 3.299747
+    },
+    "large": {
+      "count": 28,
+      "within_5_seconds": 26,
+      "minimum_seconds": 1.6282,
+      "median_seconds": 2.651294,
+      "p95_nearest_rank_seconds": 5.62566,
+      "p99_nearest_rank_seconds": 6.38025,
+      "maximum_seconds": 6.38025
+    }
+  },
+  "sequential_seeds": {
+    "count": 31,
+    "within_5_seconds": 30,
+    "minimum_seconds": 1.430563,
+    "median_seconds": 1.687115,
+    "p95_nearest_rank_seconds": 2.234072,
+    "p99_nearest_rank_seconds": 5.62566,
+    "maximum_seconds": 5.62566
+  },
+  "duplicate_targets_by_burst_width": {
+    "1": {
+      "count": 1,
+      "within_5_seconds": 1,
+      "minimum_seconds": 1.503592,
+      "median_seconds": 1.503592,
+      "p95_nearest_rank_seconds": 1.503592,
+      "p99_nearest_rank_seconds": 1.503592,
+      "maximum_seconds": 1.503592
+    },
+    "3": {
+      "count": 9,
+      "within_5_seconds": 9,
+      "minimum_seconds": 1.477746,
+      "median_seconds": 1.892666,
+      "p95_nearest_rank_seconds": 2.826711,
+      "p99_nearest_rank_seconds": 2.826711,
+      "maximum_seconds": 2.826711
+    },
+    "6": {
+      "count": 18,
+      "within_5_seconds": 18,
+      "minimum_seconds": 1.547234,
+      "median_seconds": 2.6998715,
+      "p95_nearest_rank_seconds": 4.580449,
+      "p99_nearest_rank_seconds": 4.580449,
+      "maximum_seconds": 4.580449
+    },
+    "9": {
+      "count": 27,
+      "within_5_seconds": 26,
+      "minimum_seconds": 1.576058,
+      "median_seconds": 2.818876,
+      "p95_nearest_rank_seconds": 3.424891,
+      "p99_nearest_rank_seconds": 6.38025,
+      "maximum_seconds": 6.38025
+    }
+  },
+  "late_cases": [
+    {
+      "event_id": "PERF-soak-07-large-duplicate-5",
+      "round": 7,
+      "size": "large",
+      "kind": "duplicate",
+      "payload_bytes": 192596,
+      "confirmation_seconds": 6.38025,
+      "post_wall_seconds": 4.478644,
+      "post_app_seconds": 3.612273,
+      "body_read_and_parse_seconds": 2.997998,
+      "persist_rpc_seconds": 0.21910400000000002,
+      "receipt_to_alert_insertion_seconds": 0.699476
+    },
+    {
+      "event_id": "PERF-soak-09-large-seed-0",
+      "round": 9,
+      "size": "large",
+      "kind": "seed",
+      "payload_bytes": 192586,
+      "confirmation_seconds": 5.62566,
+      "post_wall_seconds": 4.404609,
+      "post_app_seconds": 3.684986,
+      "body_read_and_parse_seconds": 3.310238,
+      "persist_rpc_seconds": 0.268425,
+      "receipt_to_alert_insertion_seconds": 0.681217
+    }
+  ],
+  "database_high_alerts": 86,
+  "verified_rule_outcomes": 430,
+  "max_database_receipt_to_alert_insertion_seconds": 1.530439,
+  "original_6_second_persist_rpc_delay_reproduced": false,
+  "post_persist_rpc_max_seconds": 0.6014489999999999,
+  "unique_processes": 1,
+  "next_diagnostic": "Separate request-body receiving from JSON validation/fingerprinting; current parse metric combines both."
+}

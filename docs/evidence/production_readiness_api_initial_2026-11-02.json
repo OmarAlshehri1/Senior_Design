@@ -1,0 +1,26 @@
+{
+  "environment": "staging",
+  "production_changed": false,
+  "checks": {
+    "unauthenticated_import_denied": true,
+    "real_login_SUPERVISOR": true,
+    "import_capability_SUPERVISOR": true,
+    "import_denied_SUPERVISOR": true,
+    "real_login_AUDITOR": true,
+    "import_capability_AUDITOR": true,
+    "import_denied_AUDITOR": true,
+    "real_login_ADMIN": true,
+    "import_capability_ADMIN": true,
+    "request__company-imports_sources": true,
+    "assigned_source_available": true,
+    "other_source_import_denied": true,
+    "other_source_export_denied": true,
+    "request__dashboard_categories": true,
+    "dashboard_category_counts_reconcile": true
+  },
+  "logout_statuses": [
+    204,
+    204,
+    204
+  ]
+}

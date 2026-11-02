@@ -1,0 +1,828 @@
+{
+  "environment": "staging",
+  "production_changed": false,
+  "source_id": "SYNTHETIC-s4-latency-20261102",
+  "phase": "baseline_pooled",
+  "mode": "pooled",
+  "cases": [
+    {
+      "event_id": "PERF-baseline_pooled-1-seed",
+      "phase": "baseline_pooled",
+      "kind": "seed",
+      "posting_started_at": "2026-11-02T08:17:13.445424+00:00",
+      "calls": [
+        {
+          "method": "POST",
+          "http_status": 202,
+          "wall_seconds": 0.938563,
+          "server_seconds": {
+            "auth_rpc": 0.138037,
+            "parse": 0.000157,
+            "persist_rpc": 0.153917,
+            "app": 0.292238
+          },
+          "tcp_tls_seconds": 0.367828,
+          "phases": [
+            {
+              "phase": "connection.connect_tcp",
+              "seconds": 0.150439,
+              "failed": false
+            },
+            {
+              "phase": "connection.start_tls",
+              "seconds": 0.217389,
+              "failed": false
+            },
+            {
+              "phase": "http11.send_request_headers",
+              "seconds": 0.000611,
+              "failed": false
+            },
+            {
+              "phase": "http11.send_request_body",
+              "seconds": 0.000503,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_headers",
+              "seconds": 0.566113,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_body",
+              "seconds": 0.000353,
+              "failed": false
+            },
+            {
+              "phase": "http11.response_closed",
+              "seconds": 3.4e-05,
+              "failed": false
+            }
+          ],
+          "instance": "6ccae3ce5bbc48f9aabd1180442dd381",
+          "uptime_seconds": "228.248"
+        },
+        {
+          "method": "GET",
+          "http_status": 200,
+          "wall_seconds": 0.751395,
+          "server_seconds": {
+            "auth_rpc": 0.23095500000000002,
+            "read_rpc": 0.17772200000000002,
+            "app": 0.408866
+          },
+          "tcp_tls_seconds": 0,
+          "phases": [
+            {
+              "phase": "http11.send_request_headers",
+              "seconds": 0.000443,
+              "failed": false
+            },
+            {
+              "phase": "http11.send_request_body",
+              "seconds": 8.3e-05,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_headers",
+              "seconds": 0.748765,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_body",
+              "seconds": 0.000441,
+              "failed": false
+            },
+            {
+              "phase": "http11.response_closed",
+              "seconds": 4e-05,
+              "failed": false
+            }
+          ],
+          "instance": "6ccae3ce5bbc48f9aabd1180442dd381",
+          "uptime_seconds": "228.989"
+        },
+        {
+          "method": "GET",
+          "http_status": 200,
+          "wall_seconds": 0.565927,
+          "server_seconds": {
+            "auth_rpc": 0.107447,
+            "read_rpc": 0.119539,
+            "app": 0.227193
+          },
+          "tcp_tls_seconds": 0,
+          "phases": [
+            {
+              "phase": "http11.send_request_headers",
+              "seconds": 0.000521,
+              "failed": false
+            },
+            {
+              "phase": "http11.send_request_body",
+              "seconds": 8.5e-05,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_headers",
+              "seconds": 0.56338,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_body",
+              "seconds": 0.00033,
+              "failed": false
+            },
+            {
+              "phase": "http11.response_closed",
+              "seconds": 5.8e-05,
+              "failed": false
+            }
+          ],
+          "instance": "6ccae3ce5bbc48f9aabd1180442dd381",
+          "uptime_seconds": "229.680"
+        }
+      ],
+      "acknowledgment_seconds": 0.938661,
+      "receipt_id": "711948cd-a9fd-4bf9-ad5e-4fb6745a5e53",
+      "received_at": "2026-11-02T08:17:14.14267+00:00",
+      "processing_status": "COMPLETED",
+      "transaction_id": "78e9782a-8b64-4838-9785-4805a12e8a3c",
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60.0,
+      "ai_score": 100.0,
+      "risk_score": 76.0,
+      "risk_level": "HIGH",
+      "completion_upper_bound_seconds": 2.406979,
+      "fully_scored": true,
+      "confirmed_within_5_seconds": true,
+      "status": "OBSERVED"
+    },
+    {
+      "event_id": "PERF-baseline_pooled-1-duplicate",
+      "phase": "baseline_pooled",
+      "kind": "duplicate",
+      "posting_started_at": "2026-11-02T08:17:15.850855+00:00",
+      "calls": [
+        {
+          "method": "POST",
+          "http_status": 202,
+          "wall_seconds": 0.713568,
+          "server_seconds": {
+            "auth_rpc": 0.118661,
+            "parse": 0.000175,
+            "persist_rpc": 0.138042,
+            "app": 0.257031
+          },
+          "tcp_tls_seconds": 0,
+          "phases": [
+            {
+              "phase": "http11.send_request_headers",
+              "seconds": 0.000479,
+              "failed": false
+            },
+            {
+              "phase": "http11.send_request_body",
+              "seconds": 0.000342,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_headers",
+              "seconds": 0.71103,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_body",
+              "seconds": 0.000268,
+              "failed": false
+            },
+            {
+              "phase": "http11.response_closed",
+              "seconds": 2.5e-05,
+              "failed": false
+            }
+          ],
+          "instance": "6ccae3ce5bbc48f9aabd1180442dd381",
+          "uptime_seconds": "230.352"
+        },
+        {
+          "method": "GET",
+          "http_status": 200,
+          "wall_seconds": 0.92189,
+          "server_seconds": {
+            "auth_rpc": 0.313517,
+            "read_rpc": 0.200659,
+            "app": 0.514299
+          },
+          "tcp_tls_seconds": 0,
+          "phases": [
+            {
+              "phase": "http11.send_request_headers",
+              "seconds": 0.000386,
+              "failed": false
+            },
+            {
+              "phase": "http11.send_request_body",
+              "seconds": 7.7e-05,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_headers",
+              "seconds": 0.919337,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_body",
+              "seconds": 0.00061,
+              "failed": false
+            },
+            {
+              "phase": "http11.response_closed",
+              "seconds": 2.1e-05,
+              "failed": false
+            }
+          ],
+          "instance": "6ccae3ce5bbc48f9aabd1180442dd381",
+          "uptime_seconds": "231.301"
+        }
+      ],
+      "acknowledgment_seconds": 0.713646,
+      "receipt_id": "e984ac8f-f419-4a01-91bb-06ed389bf29c",
+      "received_at": "2026-11-02T08:17:16.243962+00:00",
+      "processing_status": "COMPLETED",
+      "transaction_id": "fb7feb80-b3f7-498d-ba0e-f0737827c725",
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80.0,
+      "ai_score": 100.0,
+      "risk_score": 88.0,
+      "risk_level": "HIGH",
+      "completion_upper_bound_seconds": 1.635753,
+      "fully_scored": true,
+      "confirmed_within_5_seconds": true,
+      "status": "OBSERVED"
+    },
+    {
+      "event_id": "PERF-baseline_pooled-2-seed",
+      "phase": "baseline_pooled",
+      "kind": "seed",
+      "posting_started_at": "2026-11-02T08:17:17.492056+00:00",
+      "calls": [
+        {
+          "method": "POST",
+          "http_status": 202,
+          "wall_seconds": 0.612429,
+          "server_seconds": {
+            "auth_rpc": 0.120262,
+            "parse": 0.00015099999999999998,
+            "persist_rpc": 0.133813,
+            "app": 0.254377
+          },
+          "tcp_tls_seconds": 0,
+          "phases": [
+            {
+              "phase": "http11.send_request_headers",
+              "seconds": 0.000635,
+              "failed": false
+            },
+            {
+              "phase": "http11.send_request_body",
+              "seconds": 0.000324,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_headers",
+              "seconds": 0.609055,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_body",
+              "seconds": 0.000318,
+              "failed": false
+            },
+            {
+              "phase": "http11.response_closed",
+              "seconds": 2.7e-05,
+              "failed": false
+            }
+          ],
+          "instance": "6ccae3ce5bbc48f9aabd1180442dd381",
+          "uptime_seconds": "231.894"
+        },
+        {
+          "method": "GET",
+          "http_status": 200,
+          "wall_seconds": 0.920507,
+          "server_seconds": {
+            "auth_rpc": 0.448507,
+            "read_rpc": 0.206308,
+            "app": 0.654982
+          },
+          "tcp_tls_seconds": 0,
+          "phases": [
+            {
+              "phase": "http11.send_request_headers",
+              "seconds": 0.000387,
+              "failed": false
+            },
+            {
+              "phase": "http11.send_request_body",
+              "seconds": 7.1e-05,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_headers",
+              "seconds": 0.91804,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_body",
+              "seconds": 0.000452,
+              "failed": false
+            },
+            {
+              "phase": "http11.response_closed",
+              "seconds": 3.2e-05,
+              "failed": false
+            }
+          ],
+          "instance": "6ccae3ce5bbc48f9aabd1180442dd381",
+          "uptime_seconds": "232.903"
+        }
+      ],
+      "acknowledgment_seconds": 0.612506,
+      "receipt_id": "4bc73cdd-107d-4185-ba95-58f26a4081e3",
+      "received_at": "2026-11-02T08:17:17.785485+00:00",
+      "processing_status": "COMPLETED",
+      "transaction_id": "ed3c7b09-f184-4df4-9809-bf9773e51ee9",
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60.0,
+      "ai_score": 100.0,
+      "risk_score": 76.0,
+      "risk_level": "HIGH",
+      "completion_upper_bound_seconds": 1.533263,
+      "fully_scored": true,
+      "confirmed_within_5_seconds": true,
+      "status": "OBSERVED"
+    },
+    {
+      "event_id": "PERF-baseline_pooled-2-duplicate",
+      "phase": "baseline_pooled",
+      "kind": "duplicate",
+      "posting_started_at": "2026-11-02T08:17:19.034714+00:00",
+      "calls": [
+        {
+          "method": "POST",
+          "http_status": 202,
+          "wall_seconds": 0.606374,
+          "server_seconds": {
+            "auth_rpc": 0.132467,
+            "parse": 0.000205,
+            "persist_rpc": 0.127571,
+            "app": 0.260381
+          },
+          "tcp_tls_seconds": 0,
+          "phases": [
+            {
+              "phase": "http11.send_request_headers",
+              "seconds": 0.000657,
+              "failed": false
+            },
+            {
+              "phase": "http11.send_request_body",
+              "seconds": 0.000395,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_headers",
+              "seconds": 0.603406,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_body",
+              "seconds": 0.000281,
+              "failed": false
+            },
+            {
+              "phase": "http11.response_closed",
+              "seconds": 2.5e-05,
+              "failed": false
+            }
+          ],
+          "instance": "6ccae3ce5bbc48f9aabd1180442dd381",
+          "uptime_seconds": "233.456"
+        },
+        {
+          "method": "GET",
+          "http_status": 200,
+          "wall_seconds": 0.719786,
+          "server_seconds": {
+            "auth_rpc": 0.253774,
+            "read_rpc": 0.16342500000000001,
+            "app": 0.417361
+          },
+          "tcp_tls_seconds": 0,
+          "phases": [
+            {
+              "phase": "http11.send_request_headers",
+              "seconds": 0.000396,
+              "failed": false
+            },
+            {
+              "phase": "http11.send_request_body",
+              "seconds": 7.5e-05,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_headers",
+              "seconds": 0.717328,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_body",
+              "seconds": 0.000456,
+              "failed": false
+            },
+            {
+              "phase": "http11.response_closed",
+              "seconds": 6.1e-05,
+              "failed": false
+            }
+          ],
+          "instance": "6ccae3ce5bbc48f9aabd1180442dd381",
+          "uptime_seconds": "234.196"
+        },
+        {
+          "method": "GET",
+          "http_status": 200,
+          "wall_seconds": 0.564561,
+          "server_seconds": {
+            "auth_rpc": 0.125741,
+            "read_rpc": 0.119619,
+            "app": 0.245535
+          },
+          "tcp_tls_seconds": 0,
+          "phases": [
+            {
+              "phase": "http11.send_request_headers",
+              "seconds": 0.000533,
+              "failed": false
+            },
+            {
+              "phase": "http11.send_request_body",
+              "seconds": 0.00011,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_headers",
+              "seconds": 0.561692,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_body",
+              "seconds": 0.000364,
+              "failed": false
+            },
+            {
+              "phase": "http11.response_closed",
+              "seconds": 2.7e-05,
+              "failed": false
+            }
+          ],
+          "instance": "6ccae3ce5bbc48f9aabd1180442dd381",
+          "uptime_seconds": "234.921"
+        }
+      ],
+      "acknowledgment_seconds": 0.606448,
+      "receipt_id": "dc5b5a92-93f5-4c4f-80b3-080eb37b0b01",
+      "received_at": "2026-11-02T08:17:19.353678+00:00",
+      "processing_status": "COMPLETED",
+      "transaction_id": "2dc016c5-eed0-431b-a08e-4303e1ec771e",
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80.0,
+      "ai_score": 100.0,
+      "risk_score": 88.0,
+      "risk_level": "HIGH",
+      "completion_upper_bound_seconds": 2.041489,
+      "fully_scored": true,
+      "confirmed_within_5_seconds": true,
+      "status": "OBSERVED"
+    },
+    {
+      "event_id": "PERF-baseline_pooled-3-seed",
+      "phase": "baseline_pooled",
+      "kind": "seed",
+      "posting_started_at": "2026-11-02T08:17:21.072926+00:00",
+      "calls": [
+        {
+          "method": "POST",
+          "http_status": 202,
+          "wall_seconds": 0.608963,
+          "server_seconds": {
+            "auth_rpc": 0.113767,
+            "parse": 0.00014000000000000001,
+            "persist_rpc": 0.136733,
+            "app": 0.250791
+          },
+          "tcp_tls_seconds": 0,
+          "phases": [
+            {
+              "phase": "http11.send_request_headers",
+              "seconds": 0.000708,
+              "failed": false
+            },
+            {
+              "phase": "http11.send_request_body",
+              "seconds": 0.000413,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_headers",
+              "seconds": 0.605808,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_body",
+              "seconds": 0.000275,
+              "failed": false
+            },
+            {
+              "phase": "http11.response_closed",
+              "seconds": 2.6e-05,
+              "failed": false
+            }
+          ],
+          "instance": "6ccae3ce5bbc48f9aabd1180442dd381",
+          "uptime_seconds": "235.476"
+        },
+        {
+          "method": "GET",
+          "http_status": 200,
+          "wall_seconds": 0.717486,
+          "server_seconds": {
+            "auth_rpc": 0.142987,
+            "read_rpc": 0.228816,
+            "app": 0.37197
+          },
+          "tcp_tls_seconds": 0,
+          "phases": [
+            {
+              "phase": "http11.send_request_headers",
+              "seconds": 0.000378,
+              "failed": false
+            },
+            {
+              "phase": "http11.send_request_body",
+              "seconds": 7.5e-05,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_headers",
+              "seconds": 0.714507,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_body",
+              "seconds": 0.000504,
+              "failed": false
+            },
+            {
+              "phase": "http11.response_closed",
+              "seconds": 4.2e-05,
+              "failed": false
+            }
+          ],
+          "instance": "6ccae3ce5bbc48f9aabd1180442dd381",
+          "uptime_seconds": "236.198"
+        },
+        {
+          "method": "GET",
+          "http_status": 200,
+          "wall_seconds": 0.566527,
+          "server_seconds": {
+            "auth_rpc": 0.129468,
+            "read_rpc": 0.134466,
+            "app": 0.264073
+          },
+          "tcp_tls_seconds": 0,
+          "phases": [
+            {
+              "phase": "http11.send_request_headers",
+              "seconds": 0.001042,
+              "failed": false
+            },
+            {
+              "phase": "http11.send_request_body",
+              "seconds": 0.000449,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_headers",
+              "seconds": 0.562698,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_body",
+              "seconds": 0.000392,
+              "failed": false
+            },
+            {
+              "phase": "http11.response_closed",
+              "seconds": 2.8e-05,
+              "failed": false
+            }
+          ],
+          "instance": "6ccae3ce5bbc48f9aabd1180442dd381",
+          "uptime_seconds": "236.985"
+        }
+      ],
+      "acknowledgment_seconds": 0.609046,
+      "receipt_id": "425484c6-c91b-4296-91ec-b2dbd3b53fe3",
+      "received_at": "2026-11-02T08:17:21.367982+00:00",
+      "processing_status": "COMPLETED",
+      "transaction_id": "ef42635a-bdfb-41d1-b214-f582a109ab57",
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60.0,
+      "ai_score": 100.0,
+      "risk_score": 76.0,
+      "risk_level": "HIGH",
+      "completion_upper_bound_seconds": 2.043893,
+      "fully_scored": true,
+      "confirmed_within_5_seconds": true,
+      "status": "OBSERVED"
+    },
+    {
+      "event_id": "PERF-baseline_pooled-3-duplicate",
+      "phase": "baseline_pooled",
+      "kind": "duplicate",
+      "posting_started_at": "2026-11-02T08:17:23.122594+00:00",
+      "calls": [
+        {
+          "method": "POST",
+          "http_status": 202,
+          "wall_seconds": 0.550298,
+          "server_seconds": {
+            "auth_rpc": 0.136542,
+            "parse": 0.000155,
+            "persist_rpc": 0.134201,
+            "app": 0.27104
+          },
+          "tcp_tls_seconds": 0,
+          "phases": [
+            {
+              "phase": "http11.send_request_headers",
+              "seconds": 0.00066,
+              "failed": false
+            },
+            {
+              "phase": "http11.send_request_body",
+              "seconds": 0.000613,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_headers",
+              "seconds": 0.546454,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_body",
+              "seconds": 0.000409,
+              "failed": false
+            },
+            {
+              "phase": "http11.response_closed",
+              "seconds": 3.9e-05,
+              "failed": false
+            }
+          ],
+          "instance": "6ccae3ce5bbc48f9aabd1180442dd381",
+          "uptime_seconds": "237.550"
+        },
+        {
+          "method": "GET",
+          "http_status": 200,
+          "wall_seconds": 0.875667,
+          "server_seconds": {
+            "auth_rpc": 0.31313,
+            "read_rpc": 0.225198,
+            "app": 0.5384800000000001
+          },
+          "tcp_tls_seconds": 0,
+          "phases": [
+            {
+              "phase": "http11.send_request_headers",
+              "seconds": 0.000658,
+              "failed": false
+            },
+            {
+              "phase": "http11.send_request_body",
+              "seconds": 0.00012,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_headers",
+              "seconds": 0.872838,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_body",
+              "seconds": 0.000338,
+              "failed": false
+            },
+            {
+              "phase": "http11.response_closed",
+              "seconds": 2.6e-05,
+              "failed": false
+            }
+          ],
+          "instance": "6ccae3ce5bbc48f9aabd1180442dd381",
+          "uptime_seconds": "238.422"
+        },
+        {
+          "method": "GET",
+          "http_status": 200,
+          "wall_seconds": 0.566867,
+          "server_seconds": {
+            "auth_rpc": 0.11984099999999999,
+            "read_rpc": 0.12253,
+            "app": 0.24251499999999998
+          },
+          "tcp_tls_seconds": 0,
+          "phases": [
+            {
+              "phase": "http11.send_request_headers",
+              "seconds": 0.00062,
+              "failed": false
+            },
+            {
+              "phase": "http11.send_request_body",
+              "seconds": 0.000259,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_headers",
+              "seconds": 0.56364,
+              "failed": false
+            },
+            {
+              "phase": "http11.receive_response_body",
+              "seconds": 0.000322,
+              "failed": false
+            },
+            {
+              "phase": "http11.response_closed",
+              "seconds": 2.6e-05,
+              "failed": false
+            }
+          ],
+          "instance": "6ccae3ce5bbc48f9aabd1180442dd381",
+          "uptime_seconds": "239.100"
+        }
+      ],
+      "acknowledgment_seconds": 0.550411,
+      "receipt_id": "ce7ebc23-90e1-4865-ba31-f44a32bc0314",
+      "received_at": "2026-11-02T08:17:23.442458+00:00",
+      "processing_status": "COMPLETED",
+      "transaction_id": "ec02af6a-a49c-4560-8989-ddfeace83261",
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80.0,
+      "ai_score": 100.0,
+      "risk_score": 88.0,
+      "risk_level": "HIGH",
+      "completion_upper_bound_seconds": 2.143779,
+      "fully_scored": true,
+      "confirmed_within_5_seconds": true,
+      "status": "OBSERVED"
+    }
+  ],
+  "finished_at": "2026-11-02T08:17:25.271898+00:00"
+}

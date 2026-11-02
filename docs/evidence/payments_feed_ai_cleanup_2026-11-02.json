@@ -1,0 +1,12 @@
+{
+  "environment": "staging",
+  "production_changed": false,
+  "source_credential_rejected_status": 401,
+  "disabled_test_account_login_status": 403,
+  "test_receipts_retained": 7,
+  "test_completed": 7,
+  "test_ai_scored": 5,
+  "other_receipts_unchanged": 51038,
+  "active_payments_unchanged": 10001,
+  "new_security_advisor_warnings": 0
+}

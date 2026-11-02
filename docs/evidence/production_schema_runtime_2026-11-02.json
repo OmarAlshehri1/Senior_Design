@@ -1,0 +1,7 @@
+{
+  "environment": "production",
+  "health_http_status": 200,
+  "openapi_http_status": 200,
+  "new_company_import_api_deployed": false,
+  "read_only": true
+}

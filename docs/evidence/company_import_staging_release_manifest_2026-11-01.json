@@ -1,0 +1,200 @@
+﻿{
+    "date":  "2026-11-01",
+    "target_branch":  "staging/dashboard-business-reports-20261101",
+    "repository":  "https://github.com/OmarAlshehri1/Senior_Design",
+    "source_base":  "71ca4a0d5d12e1082ca3f415d5de7e99ca8f056f",
+    "preserved_staging_parent":  "a8492e5fe940ddd804144fd986e1a0fae036757c",
+    "files":  [
+                  {
+                      "path":  "backend/app/api/company_imports.py",
+                      "sha256":  "ad7f3e78e2f02adb0858ed7a367562a0454a8c3933c289f677345a88b462f30b"
+                  },
+                  {
+                      "path":  "backend/app/main.py",
+                      "sha256":  "1ff0aba8b8bee800731307ec981f30dde8324c0a70701668f5bb350a864d13c2"
+                  },
+                  {
+                      "path":  "backend/app/repositories/identity.py",
+                      "sha256":  "e8a9dcc35a8a25d186d90ba1cb99e0160e92cf86f1c915b76d1d6877fedecec8"
+                  },
+                  {
+                      "path":  "backend/app/services/company_imports.py",
+                      "sha256":  "8a85f9efb7de64af83ced7b8314e19b19aa148f5c4e8a60352142b9db2d19607"
+                  },
+                  {
+                      "path":  "backend/migrations/026_create_ingestion_receipts.sql",
+                      "sha256":  "757263d07a382994bcd1bbaa43610d881501b478e957da98bf58bea236a50e34"
+                  },
+                  {
+                      "path":  "backend/migrations/027_create_ingestion_validation.sql",
+                      "sha256":  "873247883295fafa4c8c60e87c280721978c129a2170e177d87ed6ef7cec3a5a"
+                  },
+                  {
+                      "path":  "backend/migrations/028_create_scoped_feed_auditing.sql",
+                      "sha256":  "dc7dbeaa72a75de3dda846de52be5fc67bdca0bfec39b7b3e35acc8de520ee2c"
+                  },
+                  {
+                      "path":  "backend/migrations/029_add_simulation_arrival_clock.sql",
+                      "sha256":  "fdf583871c654bb8b851665f1c83c44f6cc66c0b9fa3fcdbe28634cc4648904f"
+                  },
+                  {
+                      "path":  "backend/migrations/030_add_simulated_name_window_indicator.sql",
+                      "sha256":  "554d6bae79d52ca239e83a98af28865e987bca9e6c27fe6ed1f91b017aa4777d"
+                  },
+                  {
+                      "path":  "backend/migrations/031_optimize_feed_history_readiness.sql",
+                      "sha256":  "479dd415dadc1902c16a33fd223be293286d5bbfa77d4e9e332832b30e4db24b"
+                  },
+                  {
+                      "path":  "backend/migrations/032_add_subthreshold_splitting_context.sql",
+                      "sha256":  "c5e61f7c3fe8955f1d452e4f75f941d63bfe86b373275f10f94b9229de8018ce"
+                  },
+                  {
+                      "path":  "backend/migrations/033_configure_source_intake_rate.sql",
+                      "sha256":  "1a12e39cd8b1fc7377c1488d1f6ebb962bdbb0e7a41847796f92fad66b55afec"
+                  },
+                  {
+                      "path":  "backend/migrations/034_share_pinned_feed_configuration.sql",
+                      "sha256":  "87955f4024865a1c8e3786468a94215ae5afc445b943ffc694b78000dc277e4e"
+                  },
+                  {
+                      "path":  "backend/migrations/035_project_feed_result_summary.sql",
+                      "sha256":  "c3550e9ca4b56ac1039d459f18973c9deb0f1dde4612f9d35584e8a60888ba1c"
+                  },
+                  {
+                      "path":  "backend/migrations/036_index_and_queue_feed_preparation.sql",
+                      "sha256":  "548e3007e6a0f91e9b50058da59c077c01c7161fe69642bd98ba2de2297331e2"
+                  },
+                  {
+                      "path":  "backend/migrations/037_add_authenticated_feed_review.sql",
+                      "sha256":  "bdda1670e605c61689cdb0e607041558d9aaa1f2eaae1499654ebf34d92a871b"
+                  },
+                  {
+                      "path":  "backend/migrations/038_add_feed_exception_review.sql",
+                      "sha256":  "55bbc6ba5494949315e41e7ab5c57535a2ac08dd80582000988faac63ac71d30"
+                  },
+                  {
+                      "path":  "backend/migrations/039_add_feed_summary_report.sql",
+                      "sha256":  "567553d9579b3f75a97b4dd9fc996dd6a4de7b7e3d533eaee87deb23eb8bbd29"
+                  },
+                  {
+                      "path":  "backend/migrations/20261101181927_company_transaction_imports.sql",
+                      "sha256":  "9c846499c108a9adaf2a0bb01863c25d8089d0dba9b4f36383ebbae3d9322ef6"
+                  },
+                  {
+                      "path":  "backend/scripts/check_company_import_ui.py",
+                      "sha256":  "e941a1846507d1543a12751eaa2e8240c446d918192bd2785d01ea48f9ccad03"
+                  },
+                  {
+                      "path":  "backend/test-support/company-import-bridge.mjs",
+                      "sha256":  "d6d49608afa18fc3a2d92de31e48fdac4d1813dcb71b3516dff1e178800ea70f"
+                  },
+                  {
+                      "path":  "backend/test-support/company-imports.test.mjs",
+                      "sha256":  "cca249f139079d5c52cc61403dc9383cf30d8789a45803cd1a3549c548b061ac"
+                  },
+                  {
+                      "path":  "backend/test-support/company_imports_local.py",
+                      "sha256":  "5e705933f34b69cafe152e76f34bae190a8f707eb9c8f08e10acfccd0fe064f5"
+                  },
+                  {
+                      "path":  "backend/tests/test_company_import_pipeline.py",
+                      "sha256":  "c17ab789f181337e405516a7e298c56c5c8a5026dc16b64b4d0dd69a31053323"
+                  },
+                  {
+                      "path":  "backend/tests/test_company_imports.py",
+                      "sha256":  "55dca022716135ac00def5365f40dd8d815a2ecd3c284833ea4170975a5bff6e"
+                  },
+                  {
+                      "path":  "docs/COMPANY_TRANSACTION_IMPORTS.md",
+                      "sha256":  "c2f19c54229c0fea5dfc6226935b704c5d7fb6e9398421487d8bd2b370e8d36d"
+                  },
+                  {
+                      "path":  "docs/evidence/company_import_browser_acceptance_2026-11-01.json",
+                      "sha256":  "48c25b389f66e90d095a2329bf9905287f18e822ed89ccf4df41d221792f9cd1"
+                  },
+                  {
+                      "path":  "docs/evidence/company_import_large_file_acceptance_2026-11-01.json",
+                      "sha256":  "dccf23134509e677b86f16c38829d2b57bc5a7aae93f6e836ad93703cf86c98c"
+                  },
+                  {
+                      "path":  "docs/evidence/company_import_large_limits_browser_2026-11-01.json",
+                      "sha256":  "86e00b8f1c2ff8ddb58eb46294ab4869e0882e30493269598d8889cdbc80c2cb"
+                  },
+                  {
+                      "path":  "docs/evidence/company_import_local_acceptance_2026-11-01.json",
+                      "sha256":  "8302b6884d3ba45164b285f098b7d315b9f58e732244aab1ca202ee1359abf27"
+                  },
+                  {
+                      "path":  "frontend/company-import-check.html",
+                      "sha256":  "f3edb2dd7321e31f7654c3ab2ac994c687c45179b65e8b2ba1c5fc4871618095"
+                  },
+                  {
+                      "path":  "frontend/src/App.jsx",
+                      "sha256":  "9fc9f16e252e16bccc6e462797fde46507eadfa41cee1de5553b4c4816908cb8"
+                  },
+                  {
+                      "path":  "frontend/src/audit/auditEvents.js",
+                      "sha256":  "fdee6caf59580601fac4356ccd6eda50816b75d75f88679e556952a4ea5a29a4"
+                  },
+                  {
+                      "path":  "frontend/src/auth/RequirePermission.jsx",
+                      "sha256":  "3f84115d122bd0f39ad4a1a7529c7fc7dec3c6ec4b8fac1d35c6c60ebf379354"
+                  },
+                  {
+                      "path":  "frontend/src/auth/navigationConfig.js",
+                      "sha256":  "f743503e756490ad25a4ba1ab6747b76e492812b83419dd6463554d93987394f"
+                  },
+                  {
+                      "path":  "frontend/src/auth/roles.js",
+                      "sha256":  "1b3f318a64f4e18fc8c9a955d770b851cf8a69358a000c7d19da47ad10f47096"
+                  },
+                  {
+                      "path":  "frontend/src/auth/routeAccess.js",
+                      "sha256":  "ce5440a3991e3eea0eb4bca8df017a99d9dc76e0f6eeec44ba2d1907b438ec41"
+                  },
+                  {
+                      "path":  "frontend/src/components/Sidebar.jsx",
+                      "sha256":  "02c7b616c4f77d39c77da583f27d9c41b1c3d683362380fe833e5ec198cc8366"
+                  },
+                  {
+                      "path":  "frontend/src/pages/CompanyImports.jsx",
+                      "sha256":  "7a859b7cb3f3a5881205f301fbf0f00a71d13ec6b6fda7143ea4fbfded210e48"
+                  },
+                  {
+                      "path":  "frontend/src/pages/companyImports.css",
+                      "sha256":  "c34ce076684e04cc8bd027cd61c35116063a3fdc7976aaa8f0e75a56c6557996"
+                  },
+                  {
+                      "path":  "frontend/src/services/companyImportMapping.js",
+                      "sha256":  "74325613454eed623e2583605cef6c591d1f5dd318fa6edc895035de953ec0a2"
+                  },
+                  {
+                      "path":  "frontend/staging-server.mjs",
+                      "sha256":  "48a8aa81e282b1d4bb7153cbc19bf1c3bfa696234e3995de82f0ebaa06008a85"
+                  },
+                  {
+                      "path":  "frontend/test/audit.test.js",
+                      "sha256":  "064cb3ae532b0105342d9c53fbd7dfef953530ea2cdc5fec9294f571301cc349"
+                  },
+                  {
+                      "path":  "frontend/test/authorization.test.js",
+                      "sha256":  "1c4b352148b7db9c1f5ffe909de2e17d67772967c0d0a244c1d97e30f3ad785f"
+                  },
+                  {
+                      "path":  "frontend/test/companyImports.test.js",
+                      "sha256":  "acaf51fb8590b190ce02570dc38f60c125688f93938098ae11f74d8aebf328d3"
+                  },
+                  {
+                      "path":  "frontend/test/stagingServer.test.js",
+                      "sha256":  "3a3d4dbe3f879b85e11728905b7c531809fdd673d9501e6db67d1813b196d201"
+                  },
+                  {
+                      "path":  ".github/workflows/telegram-notify.yml",
+                      "sha256":  "5a7ab9d009f2dd59fb6b08f08fbe1a7c34b0f841bd1468c3f2b4f6f475598944"
+                  }
+              ],
+    "excluded":  "Credentials, env files, payment records, private browser profiles and unrelated working changes",
+    "production":  "No main push or production deployment",
+    "staging_notification_policy":  "Telegram push workflow restricted to main in staging candidate; staging pushes send no messages."
+}

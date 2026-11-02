@@ -1,0 +1,12 @@
+{
+  "environment": "staging",
+  "artifact_sha256": "85b034c6c247e4be4532e7b1f76bd2ec1ab7eac4a76514edccd9ce83910bdbc8",
+  "actual_model_loaded": true,
+  "rows": 30,
+  "feed_vs_direct_source_scores_equal": 30,
+  "missing_rule_context_keeps_combined_risk_null": true,
+  "original_source_fields_only": true,
+  "seconds": 19.494,
+  "production_changed": false,
+  "fraud_accuracy_measured": false
+}
