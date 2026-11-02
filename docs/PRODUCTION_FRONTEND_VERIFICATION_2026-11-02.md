@@ -1,5 +1,12 @@
 # Production frontend verification - 2 November 2026
 
+Current activation update: the user approved a separate remaining-Payments source
+and its first 100-row import. Import/intake/validation/audit/review are now enabled;
+AI remains off. Import and report checks passed, but all five rules are unavailable
+until reference context is configured. Existing Payments counts/checksums are unchanged.
+See [the first import and its limits](REMAINING_PAYMENTS_FIRST_IMPORT_2026-11-02.md).
+The rollout status below records the earlier deployment checkpoint.
+
 The owner clarified that frontend deployment-trigger commit `d81279c` is live at
 https://senior-design-gold.vercel.app. Public asset and signed-in Admin browser
 checks passed against the production backend. The application rollout is complete;

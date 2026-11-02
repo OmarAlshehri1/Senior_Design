@@ -1,0 +1,56 @@
+{
+  "checked_at_utc": "2026-11-02T19:14:39.972967+00:00",
+  "project_id": "sqiqspqfpbotmwrerbsi",
+  "source_id": "payments-workbook-remaining-20261102",
+  "source_active": true,
+  "source_audit_enabled": true,
+  "direct_admin_assignments": 1,
+  "other_sources": 0,
+  "explicit_activation_approval_received": true,
+  "render_deploy": "dep-dbkdvue7bikc73fefkeg",
+  "backend_commit": "d81279c6c3898663087bba7740b3d6774d50e315",
+  "enabled_flags": [
+    "COMPANY_IMPORTS_ENABLED",
+    "INGESTION_ENABLED",
+    "INGESTION_VALIDATION_ENABLED",
+    "INGESTION_AUDIT_ENABLED",
+    "FEED_REVIEW_ENABLED"
+  ],
+  "disabled_flags": [
+    "INGESTION_FEED_ANOMALY_ENABLED",
+    "INGESTION_TIMING_ENABLED"
+  ],
+  "legacy_before": {
+    "transactions": {
+      "count": 57384,
+      "digest": "62627a774ad2604ceced658421b445b1"
+    },
+    "alerts": {
+      "count": 4150,
+      "digest": "2d2caebe25fe05dc359d7780b30cc15a"
+    }
+  },
+  "legacy_after": {
+    "transactions": {
+      "count": 57384,
+      "digest": "62627a774ad2604ceced658421b445b1"
+    },
+    "alerts": {
+      "count": 4150,
+      "digest": "2d2caebe25fe05dc359d7780b30cc15a"
+    }
+  },
+  "legacy_checksums_unchanged": true,
+  "active_payments_dashboard": 47531,
+  "migration_history_count": 34,
+  "migrations_run": 0,
+  "receipts": 100,
+  "feed_transactions": 100,
+  "saved_results": 100,
+  "model_approval_present": false,
+  "evaluated_rules_per_transaction": 0,
+  "rules_per_transaction": 5,
+  "initial_scope_rows": 100,
+  "additional_rows_uploaded": 0,
+  "cleanup_cron_activated": false
+}

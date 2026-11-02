@@ -1,0 +1,111 @@
+{
+  "status": "IMPORT_AND_REPORTS_VERIFIED_AUDIT_CONTEXT_INCOMPLETE",
+  "source_id": "payments-workbook-remaining-20261102",
+  "approved_rows": 100,
+  "existing_payments_population_modified": false,
+  "ai_enabled": false,
+  "source_fields_include_simulation": true,
+  "checks": {
+    "completed": true,
+    "reload_recovery": true,
+    "feed_total": 100,
+    "pdf_and_excel_downloads": true,
+    "mobile_390px": true,
+    "export_totals_match_100": true,
+    "export_unscored_total_matches_100": true,
+    "pdf_title_and_source_verified": true
+  },
+  "batch_id": "f948a097-78d5-47aa-a69e-790ca94763c5",
+  "preview_counts": {
+    "Limited evaluation": 100,
+    "Ready": 0,
+    "Needs correction": 0
+  },
+  "progress": {
+    "id": "f948a097-78d5-47aa-a69e-790ca94763c5",
+    "total": 100,
+    "blocked": 0,
+    "pending": 0,
+    "inserted": 100,
+    "rejected": 0,
+    "completed": 100,
+    "confirmed": true,
+    "duplicates": 0
+  },
+  "summary": {
+    "counts": {
+      "blocked": 0,
+      "pending": 0,
+      "completed": 100,
+      "in_review": 0,
+      "transactions": 100,
+      "open_exceptions": 0,
+      "closed_exceptions": 0,
+      "other_unprocessed": 0,
+      "failed_transactions": 0,
+      "combined_risk_scored": 0,
+      "combined_risk_unscored": 100
+    },
+    "departments": [
+      {
+        "category": "Uncategorized",
+        "currency": "USD",
+        "completed": 100,
+        "transactions": 100,
+        "amounts_recorded": 100,
+        "failed_transactions": 0
+      }
+    ],
+    "rules": [
+      {
+        "failed": 0,
+        "passed": 0,
+        "rule_key": "approval_limits",
+        "not_evaluated": 100,
+        "missing_or_unknown": 0
+      },
+      {
+        "failed": 0,
+        "passed": 0,
+        "rule_key": "duplicate_payment",
+        "not_evaluated": 100,
+        "missing_or_unknown": 0
+      },
+      {
+        "failed": 0,
+        "passed": 0,
+        "rule_key": "ghost_vendors",
+        "not_evaluated": 100,
+        "missing_or_unknown": 0
+      },
+      {
+        "failed": 0,
+        "passed": 0,
+        "rule_key": "invoice_splitting",
+        "not_evaluated": 100,
+        "missing_or_unknown": 0
+      },
+      {
+        "failed": 0,
+        "passed": 0,
+        "rule_key": "segregation_of_duties",
+        "not_evaluated": 100,
+        "missing_or_unknown": 0
+      }
+    ]
+  },
+  "browser_runtime_exceptions": 0,
+  "browser_flow_status": "PASSED_FIRST_CONTROLLED_PRODUCTION_IMPORT",
+  "verified_rule_coverage_per_transaction": {
+    "evaluated": 0,
+    "total": 5
+  },
+  "audit_context_complete": false,
+  "limitations": [
+    "Actor comparison semantics not verified",
+    "Date-only timestamp has no exact event time",
+    "Approval policies, authoritative registry and history not configured",
+    "Department missing; shown as Uncategorized",
+    "AI has no approval and remains disabled"
+  ]
+}

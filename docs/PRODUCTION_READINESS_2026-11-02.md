@@ -1,5 +1,12 @@
 # Company imports and feed reports: production readiness
 
+Current activation update: the user approved a separate remaining-Payments source
+and its first 100-row import. Import/intake/validation/audit/review are now enabled;
+AI remains off. Import and report checks passed, but all five rules are unavailable
+until reference context is configured. Existing Payments counts/checksums are unchanged.
+See [the first import and its limits](REMAINING_PAYMENTS_FIRST_IMPORT_2026-11-02.md).
+The rollout status below records the earlier deployment checkpoint.
+
 Current update: all 26 schema migrations are applied, PR #40 is merged, and the
 production backend is live on `39011d8`. New import/feed/AI flags are explicitly
 held off; existing transaction/alert checksums are unchanged. The owner-published

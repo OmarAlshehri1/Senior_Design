@@ -1,5 +1,12 @@
 # Production application rollout - 2 November 2026
 
+Current activation update: the user approved a separate remaining-Payments source
+and its first 100-row import. Import/intake/validation/audit/review are now enabled;
+AI remains off. Import and report checks passed, but all five rules are unavailable
+until reference context is configured. Existing Payments counts/checksums are unchanged.
+See [the first import and its limits](REMAINING_PAYMENTS_FIRST_IMPORT_2026-11-02.md).
+The rollout status below records the earlier deployment checkpoint.
+
 **PR #40 is merged and the production backend is live.** New company imports,
 feed processing, feed AI and diagnostic timing remain disabled. The owner has now
 published the frontend, and public-asset plus signed-in Admin checks passed.
