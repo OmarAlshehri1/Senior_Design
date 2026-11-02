@@ -5,8 +5,14 @@ diagnose successful producer POST and receipt GET requests. Default is off.
 Response bodies, source scope, rate limits and durable worker processing retain
 their existing contracts.
 
+Receipt reads now call `read_ingestion_receipts` directly after credential-format
+validation. That restricted function validates the currently active credential
+and source/organization scope atomically. Removing the earlier redundant
+`ingestion_source` lookup saves one database HTTP round trip per poll, without
+authorization caching. POST retains its pre-parse source authentication.
+
 `Server-Timing` reports milliseconds spent in `auth_rpc`, `parse`, `persist_rpc`
-or `read_rpc`, and total `app` time. RPC durations include thread-pool waiting,
+for POST, `read_rpc` for receipt GET, and total `app` time. RPC durations include thread-pool waiting,
 database HTTP transport and database execution; they do not isolate SQL time.
 Application time begins in the producer authentication dependency and ends when
 the handler prepares its successful response. It excludes platform wake-up,

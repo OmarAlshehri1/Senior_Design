@@ -112,8 +112,28 @@ def test_opt_in_timing_headers_preserve_payload_and_hide_source_details(intake, 
         read = client.get(path, headers=HEADERS, params=params)
         assert read.status_code == 200
         assert read.headers["x-ingestion-instance"] == replay.headers["x-ingestion-instance"]
-        assert {part.strip().split(";dur=")[0] for part in read.headers["server-timing"].split(",")} == {"auth_rpc", "read_rpc", "app"}
+        assert {part.strip().split(";dur=")[0] for part in read.headers["server-timing"].split(",")} == {"read_rpc", "app"}
     assert "server-timing" not in client.get(f"/api/v1/ingestion/receipts/{RECEIPT}").headers
+
+
+def test_receipt_lookup_uses_one_fresh_authorized_rpc(intake, monkeypatch):
+    client, calls, _ = intake
+    assert client.post("/api/v1/ingestion/events", headers=HEADERS, json=event()).status_code == 202
+    for path, params in [(f"/api/v1/ingestion/receipts/{RECEIPT}", {}),
+                         ("/api/v1/ingestion/receipts", {"event_id": "event-1"})]:
+        calls.clear()
+        assert client.get(path, headers=HEADERS, params=params).status_code == 200
+        assert [name for name, _ in calls] == ["read_ingestion_receipts"]
+        calls.clear()
+        assert client.get(path, headers={"Authorization": "Bearer " + "z" * 43}, params=params).status_code == 401
+        assert [name for name, _ in calls] == ["read_ingestion_receipts"]
+    def revoked(name, payload):
+        assert name == "read_ingestion_receipts"
+        return {"error": "UNAUTHORIZED"}
+    monkeypatch.setattr(repository, "rpc", revoked)
+    assert client.get(f"/api/v1/ingestion/receipts/{RECEIPT}", headers=HEADERS).status_code == 401
+    monkeypatch.setenv("INGESTION_ENABLED", "false")
+    assert client.get(f"/api/v1/ingestion/receipts/{RECEIPT}", headers=HEADERS).status_code == 404
 
 
 @pytest.mark.parametrize("change", [

@@ -59,7 +59,7 @@ async def call(name: str, **payload: Any) -> Any:
     return result
 
 
-async def source(request: Request) -> tuple[str, str]:
+async def credential(request: Request) -> str:
     if os.getenv("INGESTION_TIMING_ENABLED", "false").lower() == "true":
         request.state.ingestion_started = perf_counter()
         request.state.ingestion_timings = {}
@@ -70,7 +70,10 @@ async def source(request: Request) -> tuple[str, str]:
     match = re.fullmatch(r"Bearer ([A-Za-z0-9_-]{43,128})", authorization)
     if not match:
         raise HTTPException(401, detail={"code": "SOURCE_CREDENTIAL_REQUIRED"})
-    digest = hashlib.sha256(match[1].encode("ascii")).hexdigest()
+    return hashlib.sha256(match[1].encode("ascii")).hexdigest()
+
+
+async def source(request: Request, digest: str = Depends(credential)) -> tuple[str, str]:
     registered = await timed_call(request, "auth_rpc", "ingestion_source", p_credential_hash=digest)
     if not isinstance(registered, dict) or not isinstance(registered.get("source_id"), str):
         raise HTTPException(401, detail={"code": "UNAUTHORIZED"})
@@ -111,15 +114,17 @@ async def receive_event(request: Request, identity: tuple[str, str] = Depends(so
 
 @router.get("/receipts")
 async def find_receipt(request: Request, response: Response, event_id: str = Query(min_length=1, max_length=128),
-                       identity: tuple[str, str] = Depends(source)):
-    result = await timed_call(request, "read_rpc", "read_ingestion_receipts", p_credential_hash=identity[0], p_event_id=event_id)
+                       identity: str = Depends(credential)):
+    # The restricted lookup authenticates an active source and scopes the row in
+    # one database operation; no cached authorization or second preflight call.
+    result = await timed_call(request, "read_rpc", "read_ingestion_receipts", p_credential_hash=identity, p_event_id=event_id)
     attach_timings(request, response)
     return {"items": [result] if result else [], "total": int(result is not None)}
 
 
 @router.get("/receipts/{receipt_id}")
-async def read_receipt(receipt_id: UUID, request: Request, response: Response, identity: tuple[str, str] = Depends(source)):
-    result = await timed_call(request, "read_rpc", "read_ingestion_receipts", p_credential_hash=identity[0], p_receipt_id=str(receipt_id))
+async def read_receipt(receipt_id: UUID, request: Request, response: Response, identity: str = Depends(credential)):
+    result = await timed_call(request, "read_rpc", "read_ingestion_receipts", p_credential_hash=identity, p_receipt_id=str(receipt_id))
     if result is None:
         raise HTTPException(404, detail={"code": "RECEIPT_NOT_FOUND"})
     attach_timings(request, response)
