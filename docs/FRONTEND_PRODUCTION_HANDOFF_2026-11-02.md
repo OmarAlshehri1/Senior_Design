@@ -2,7 +2,9 @@
 
 The production backend is live on merged PR #40, commit
 `39011d838e8f009d61ffd2ec1e462ee54f9b0562`. Database migrations are complete.
-The user has deferred frontend publication to its Vercel owner.
+The Vercel owner has now reported `39011d8` live, and public-asset plus Admin
+browser checks passed. See [the completed verification](PRODUCTION_FRONTEND_VERIFICATION_2026-11-02.md).
+The handoff below is retained as history; no redeployment is needed.
 
 Message to the frontend teammate:
 

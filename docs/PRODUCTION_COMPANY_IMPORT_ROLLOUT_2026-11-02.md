@@ -5,8 +5,8 @@ migrations have now been applied once and verified. Do not repeat section 3.
 See [the schema execution record](PRODUCTION_SCHEMA_ROLLOUT_2026-11-02.md).
 The approved backend application deployment is also complete: PR #40 merged and
 `39011d8` is live with new features held off. Do not repeat that merge/deployment.
-Frontend publication was deferred to its owner; source onboarding/activation
-remain pending. See [the application rollout record](PRODUCTION_APPLICATION_ROLLOUT_2026-11-02.md)
+The owner-published frontend passed [production verification](PRODUCTION_FRONTEND_VERIFICATION_2026-11-02.md).
+Source onboarding/activation remain pending. See [the application rollout record](PRODUCTION_APPLICATION_ROLLOUT_2026-11-02.md)
 and [frontend handoff](FRONTEND_PRODUCTION_HANDOFF_2026-11-02.md). Use remaining
 activation steps only after their approval and the conditions in
 [the readiness review](PRODUCTION_READINESS_2026-11-02.md).

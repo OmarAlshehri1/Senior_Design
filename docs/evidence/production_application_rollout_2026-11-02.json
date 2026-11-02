@@ -1,5 +1,5 @@
 {
-  "scope": "approved application rollout; frontend deferred by user",
+  "scope": "approved application rollout; backend live and owner-published frontend verified",
   "pr": {
     "number": 40,
     "state": "MERGED",
@@ -93,21 +93,29 @@
     "business_records_modified_by_smoke_checks": false
   },
   "frontend": {
-    "status": "DEFERRED_BY_USER_TO_TEAMMATE",
+    "status": "OWNER_PUBLISHED_AND_BROWSER_VERIFIED",
     "project": "senior-design",
     "owner_scope": "omar22222",
     "production_url": "https://senior-design-gold.vercel.app",
     "required_main_commit": "39011d838e8f009d61ffd2ec1e462ee54f9b0562",
-    "observed_script": "/assets/index-CyHVaEqz.js",
-    "observed_script_sha256": "44c97e8ca8c937d4d61e66f09c46a1bcd6fd9c271ce5e552ca8d63cf4db67e13",
-    "company_import_module_present": false,
+    "observed_script": "/assets/index-DZUv1KLE.js",
+    "observed_script_sha256": "df79ec8733bdf346d639bed4aefa0438955bd99fb9555fb095a598b6c69934b0",
+    "company_import_module_present": true,
     "production_backend_reference_correct": true,
     "staging_backend_reference_present": false,
     "connected_account_authorized": false,
     "vercel_api_status": 403,
     "git_deployment_block_reason": "Commit author is not a member of the teammate's private Hobby team",
     "existing_frontend_compatibility_checks": "PASSED",
-    "new_frontend_publication_and_verification": "PENDING_OWNER_DEPLOYMENT"
+    "new_frontend_publication_and_verification": "PASSED",
+    "previous_publication_status": "DEFERRED_BY_USER_TO_TEAMMATE",
+    "previous_observed_script": "/assets/index-CyHVaEqz.js",
+    "previous_observed_script_sha256": "44c97e8ca8c937d4d61e66f09c46a1bcd6fd9c271ce5e552ca8d63cf4db67e13",
+    "owner_reported_commit": "39011d838e8f009d61ffd2ec1e462ee54f9b0562",
+    "provider_commit_metadata_verified": false,
+    "public_evidence": "production_frontend_publication_2026-11-02.json",
+    "browser_evidence": "production_frontend_admin_verification_2026-11-02.json",
+    "test_session_cleanup": "production_frontend_session_cleanup_2026-11-02.json"
   },
   "S4": "PARTIAL",
   "schema_rollout_evidence": "production_schema_rollout_2026-11-02.json"

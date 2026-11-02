@@ -2,8 +2,8 @@
 
 Current update: all 26 schema migrations are applied, PR #40 is merged, and the
 production backend is live on `39011d8`. New import/feed/AI flags are explicitly
-held off; existing transaction/alert checksums are unchanged. The user deferred
-frontend publication to its Vercel owner. See [the application rollout](PRODUCTION_APPLICATION_ROLLOUT_2026-11-02.md)
+held off; existing transaction/alert checksums are unchanged. The owner-published
+frontend passed [production verification](PRODUCTION_FRONTEND_VERIFICATION_2026-11-02.md). See [the application rollout](PRODUCTION_APPLICATION_ROLLOUT_2026-11-02.md)
 and [schema execution record](PRODUCTION_SCHEMA_ROLLOUT_2026-11-02.md).
 The pre-rollout review below is retained as a dated checkpoint.
 

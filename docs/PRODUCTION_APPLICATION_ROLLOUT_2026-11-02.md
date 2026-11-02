@@ -1,9 +1,9 @@
 # Production application rollout - 2 November 2026
 
 **PR #40 is merged and the production backend is live.** New company imports,
-feed processing, feed AI and diagnostic timing remain disabled. The user chose
-to have the frontend teammate publish later; the frontend step is therefore
-**pending**, not complete.
+feed processing, feed AI and diagnostic timing remain disabled. The owner has now
+published the frontend, and public-asset plus signed-in Admin checks passed.
+See [new-frontend verification](PRODUCTION_FRONTEND_VERIFICATION_2026-11-02.md).
 
 ## Release and configuration
 
@@ -66,7 +66,14 @@ Whole-table counts and the active-dataset dashboard count use different
 populations. No reset, reimport or business-record mutation was used during
 rollout or smoke testing. Normal sign-in/sign-out session bookkeeping is separate.
 
-## Deferred frontend publication
+## Frontend publication history
+
+The initial deferral below is historical. The owner subsequently reported
+`39011d8` live; the new public bundle and Admin flows are now verified.
+[Current verification](PRODUCTION_FRONTEND_VERIFICATION_2026-11-02.md) records
+the checks and the distinction between owner-reported commit and public evidence.
+
+### Earlier owner handoff
 
 The Vercel Git status reports a blocked deployment because the commit author is
 not a member of the teammate's private Hobby team. The connected account also

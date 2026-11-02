@@ -1,0 +1,17 @@
+{
+  "checked_at_utc": "2026-11-02T18:55:29.579090+00:00",
+  "url": "https://senior-design-gold.vercel.app",
+  "http_status": 200,
+  "owner_reported_commit": "39011d838e8f009d61ffd2ec1e462ee54f9b0562",
+  "provider_commit_metadata_verified": false,
+  "assets": [
+    {
+      "path": "/assets/index-DZUv1KLE.js",
+      "sha256": "df79ec8733bdf346d639bed4aefa0438955bd99fb9555fb095a598b6c69934b0",
+      "contains_import_capabilities": true,
+      "production_backend": true,
+      "staging_backend": false
+    }
+  ],
+  "status": "PUBLIC_ASSET_CHECKS_PASSED"
+}
