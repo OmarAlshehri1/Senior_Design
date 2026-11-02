@@ -31,7 +31,11 @@ test('custom-planned progress preserves batch/source/actor boundaries and mixed 
     const empty = await progress(users.admin,'SYNTHETIC-A',draft);
     assert.equal(empty.confirmed,false); assert.equal(empty.total,0); assert.equal(empty.inserted,null);
     assert.equal(empty.completed+empty.pending+empty.blocked+empty.rejected,0);
+    // A corrupted derived queue marker must never promote rejected evidence.
+    await db.query('insert into feed_audit_preparations(receipt_id,received_at) select id,received_at from ingestion_receipts where id=$1', [rejected]);
     assert.equal((await db.query('select prepare_feed_audits(25) value')).rows[0].value,0);
+    assert.equal((await db.query('select count(*)::int n from feed_audit_preparations where receipt_id=$1', [rejected])).rows[0].n,0);
+    assert.equal((await db.query("select result->>'intake_status' state from ingestion_validations where receipt_id=$1", [rejected])).rows[0].state,'REJECTED');
     assert.equal((await db.query("select count(*)::int n from feed_transactions where source_id='SYNTHETIC-A'")).rows[0].n,5);
     for (const role of ['anon','authenticated']) {
       await db.exec(`set role ${role}`);

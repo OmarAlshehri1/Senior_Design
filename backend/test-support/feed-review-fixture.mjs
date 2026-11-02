@@ -25,13 +25,13 @@ export async function createReviewFixture() {
   await db.query("insert into feed_review_users values('SYNTHETIC-A',$1)",[users.admin]);
   for(const team of Object.values(teams)) await db.query("insert into feed_review_teams values('SYNTHETIC-A',$1)",[team]);
   const keys=['segregation_of_duties','approval_limits','duplicate_payment','invoice_splitting','ghost_vendors'];
-  async function add(i,{source='SYNTHETIC-A',amount='10.00',currency='USD',category=null,failure=null,pending=false,blocked=false}={}) {
-    const received=new Date(Date.UTC(2026,9,24,10,i)).toISOString();
+  async function add(i,{source='SYNTHETIC-A',amount='10.00',currency='USD',category=null,failure=null,pending=false,blocked=false,canonical={},identityContext={},receivedAt=null}={}) {
+    const received=receivedAt||new Date(Date.UTC(2026,9,24,10,i)).toISOString();
     const receipt=(await db.query(`insert into ingestion_receipts(source_id,organization_id,event_id,record_id,schema_version,event_type,
       mapping_version,fingerprint,original_payload,envelope,received_at) values($1,'30000000-0000-4000-8000-000000000001',
       $2,$2,'1.0','transaction.created','v1',repeat('d',64),'{}','{}',$3) returning id`,[source,`SYNTHETIC-row-${i}`,received])).rows[0].id;
-    await db.query('insert into ingestion_validations(receipt_id,result) values($1,$2)',[receipt,JSON.stringify({engine_version:'1.0.0',intake_status:'ACCEPTED',reasons:[],identity_context:{},
-      canonical:{amount,currency,category,vendor_id:'SYNTHETIC-VENDOR',vendor_name:'SYNTHETIC Vendor',invoice_number:`SYNTHETIC-invoice-${i}`,source_date:'2022-01-03'}})]);
+    await db.query('insert into ingestion_validations(receipt_id,result) values($1,$2)',[receipt,JSON.stringify({engine_version:'1.0.0',intake_status:'ACCEPTED',reasons:[],identity_context:identityContext,
+      canonical:{amount,currency,category,vendor_id:'SYNTHETIC-VENDOR',vendor_name:'SYNTHETIC Vendor',invoice_number:`SYNTHETIC-invoice-${i}`,source_date:'2022-01-03',...canonical}})]);
     await db.query('select prepare_feed_audits(25)');
     const id=(await db.query('select id from feed_transactions where receipt_id=$1',[receipt])).rows[0].id;
     if(!pending&&!blocked) {
