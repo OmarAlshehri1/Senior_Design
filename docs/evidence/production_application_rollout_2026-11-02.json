@@ -1,0 +1,114 @@
+{
+  "scope": "approved application rollout; frontend deferred by user",
+  "pr": {
+    "number": 40,
+    "state": "MERGED",
+    "reviewed_head": "2163dbd9240ba1f524184a9525812105f0e2a546",
+    "merge_commit": "39011d838e8f009d61ffd2ec1e462ee54f9b0562",
+    "merged_at": "2026-11-02T17:03:59Z",
+    "normal_merge": true,
+    "administrative_override_used": false
+  },
+  "backend": {
+    "service_id": "srv-db14j6m0tbcc739gavig",
+    "plan": "1c-2g",
+    "configuration_deploy": "dep-dbkc3fk9v7es73cb30eg",
+    "rollback_commit": "71ca4a0d5d12e1082ca3f415d5de7e99ca8f056f",
+    "deploy_id": "dep-dbkc50h5efls73f016k0",
+    "status": "LIVE",
+    "commit": "39011d838e8f009d61ffd2ec1e462ee54f9b0562",
+    "finished_at": "2026-11-02T17:04:59.023868Z",
+    "application_tree_matches_reviewed_candidate": true
+  },
+  "configuration": {
+    "replace": false,
+    "unrelated_values_preserved": true,
+    "non_secret_changes": [
+      {
+        "key": "COMPANY_IMPORTS_ENABLED",
+        "value": "false"
+      },
+      {
+        "key": "INGESTION_ENABLED",
+        "value": "false"
+      },
+      {
+        "key": "INGESTION_VALIDATION_ENABLED",
+        "value": "false"
+      },
+      {
+        "key": "INGESTION_AUDIT_ENABLED",
+        "value": "false"
+      },
+      {
+        "key": "FEED_REVIEW_ENABLED",
+        "value": "false"
+      },
+      {
+        "key": "INGESTION_FEED_ANOMALY_ENABLED",
+        "value": "false"
+      },
+      {
+        "key": "INGESTION_TIMING_ENABLED",
+        "value": "false"
+      },
+      {
+        "key": "INGESTION_PREWARM_PAYMENTS_BINDING",
+        "value": ""
+      }
+    ]
+  },
+  "database": {
+    "migrations_rerun": false,
+    "migration_count": 34,
+    "sources": 0,
+    "receipts": 0,
+    "imports": 0,
+    "feed_results": 0,
+    "transactions": {
+      "count": 57384,
+      "digest": "62627a774ad2604ceced658421b445b1"
+    },
+    "alerts": {
+      "count": 4150,
+      "digest": "2d2caebe25fe05dc359d7780b30cc15a"
+    },
+    "legacy_transaction_and_alert_data_unchanged": true
+  },
+  "verification": {
+    "health": 200,
+    "new_routes_loaded": true,
+    "producer_intake_disabled_status": 404,
+    "producer_lookup_disabled_status": 404,
+    "authenticated_import_capability": false,
+    "authenticated_feed_review_capability": false,
+    "active_dashboard_transactions": 47531,
+    "dashboard_category_reconciliation": true,
+    "alert_filters": true,
+    "vendor_search": true,
+    "existing_business_report_pdf_and_xlsx": true,
+    "mobile_390px_no_page_overflow": true,
+    "browser_runtime_exceptions": 0,
+    "production_admin_test_session_logged_out": true,
+    "business_records_modified_by_smoke_checks": false
+  },
+  "frontend": {
+    "status": "DEFERRED_BY_USER_TO_TEAMMATE",
+    "project": "senior-design",
+    "owner_scope": "omar22222",
+    "production_url": "https://senior-design-gold.vercel.app",
+    "required_main_commit": "39011d838e8f009d61ffd2ec1e462ee54f9b0562",
+    "observed_script": "/assets/index-CyHVaEqz.js",
+    "observed_script_sha256": "44c97e8ca8c937d4d61e66f09c46a1bcd6fd9c271ce5e552ca8d63cf4db67e13",
+    "company_import_module_present": false,
+    "production_backend_reference_correct": true,
+    "staging_backend_reference_present": false,
+    "connected_account_authorized": false,
+    "vercel_api_status": 403,
+    "git_deployment_block_reason": "Commit author is not a member of the teammate's private Hobby team",
+    "existing_frontend_compatibility_checks": "PASSED",
+    "new_frontend_publication_and_verification": "PENDING_OWNER_DEPLOYMENT"
+  },
+  "S4": "PARTIAL",
+  "schema_rollout_evidence": "production_schema_rollout_2026-11-02.json"
+}

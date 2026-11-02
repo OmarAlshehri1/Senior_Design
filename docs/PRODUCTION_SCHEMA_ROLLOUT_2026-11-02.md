@@ -1,5 +1,7 @@
 # Production schema-only rollout - 2 November 2026
 
+Later update: the separately approved [backend application rollout](PRODUCTION_APPLICATION_ROLLOUT_2026-11-02.md) is complete on `39011d8`, with new features held off. Frontend publication is deferred to its owner. The schema-only execution snapshot below is preserved.
+
 **All 26 approved migrations were applied once, in order, and verified.**
 The rollout completed verification at 16:52:55 UTC. Existing transactions and
 alerts are unchanged. Application code was not deployed, PR #40 remains a draft,

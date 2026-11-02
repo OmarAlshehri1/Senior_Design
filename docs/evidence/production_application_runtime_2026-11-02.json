@@ -1,0 +1,8 @@
+{
+  "health_http": 200,
+  "company_import_routes_loaded": true,
+  "producer_post_disabled_status": 404,
+  "producer_read_disabled_status": 404,
+  "unauthorized_timing_headers_absent": true,
+  "business_records_modified": false
+}

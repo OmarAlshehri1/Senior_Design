@@ -1,0 +1,69 @@
+{
+  "status": "PASSED_ADMIN_PRODUCTION_BROWSER_CHECKS",
+  "frontend": "https://senior-design-gold.vercel.app",
+  "backend": "https://senior-design-1ypl.onrender.com/api/v1",
+  "business_records_modified": false,
+  "checks": {
+    "new_features_held_off": {
+      "company_imports_enabled": false,
+      "feed_review_enabled": false
+    },
+    "dashboard": {
+      "transactions": 47531,
+      "category_total": 47531,
+      "category_count": 1,
+      "category_selection": true,
+      "mobile_page_overflow": false
+    },
+    "alerts": {
+      "rules": [
+        {
+          "rule": "segregation_of_duties",
+          "total": 0,
+          "matching_ui_rows": true
+        },
+        {
+          "rule": "approval_limits",
+          "total": 2904,
+          "matching_ui_rows": true
+        },
+        {
+          "rule": "duplicate_payment",
+          "total": 957,
+          "matching_ui_rows": true
+        },
+        {
+          "rule": "invoice_splitting",
+          "total": 577,
+          "matching_ui_rows": true
+        },
+        {
+          "rule": "ghost_vendors",
+          "total": 0,
+          "matching_ui_rows": true
+        }
+      ],
+      "status_and_severity": true,
+      "search": true,
+      "mobile_page_overflow": false
+    },
+    "vendors": {
+      "name_search": true,
+      "matching_rows": true,
+      "mobile_page_overflow": false
+    },
+    "reports": {
+      "existing_report_downloaded": true,
+      "transaction_count": 182,
+      "pdf_pages": 5,
+      "pdf_and_excel_valid": true,
+      "preview_plain_language": true,
+      "mobile_page_overflow": false
+    }
+  },
+  "private_artifacts": "backend\\.feed-simulator\\production-rollout-browser-585040c643",
+  "role": "ADMIN",
+  "backend_release": "39011d838e8f009d61ffd2ec1e462ee54f9b0562",
+  "browser_runtime_exceptions": 0,
+  "other_roles": "Not tested in this browser session"
+}

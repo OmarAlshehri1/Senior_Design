@@ -3,9 +3,13 @@
 **Status update:** the owner approved the schema-only step, and all 26 reviewed
 migrations have now been applied once and verified. Do not repeat section 3.
 See [the schema execution record](PRODUCTION_SCHEMA_ROLLOUT_2026-11-02.md).
-Application deployment and activation remain pending. Use those remaining steps
-only after their separate approval and resolution or explicit acceptance of
-the conditions in [the readiness review](PRODUCTION_READINESS_2026-11-02.md).
+The approved backend application deployment is also complete: PR #40 merged and
+`39011d8` is live with new features held off. Do not repeat that merge/deployment.
+Frontend publication was deferred to its owner; source onboarding/activation
+remain pending. See [the application rollout record](PRODUCTION_APPLICATION_ROLLOUT_2026-11-02.md)
+and [frontend handoff](FRONTEND_PRODUCTION_HANDOFF_2026-11-02.md). Use remaining
+activation steps only after their approval and the conditions in
+[the readiness review](PRODUCTION_READINESS_2026-11-02.md).
 
 ## 1. Pin the release and rollback points
 

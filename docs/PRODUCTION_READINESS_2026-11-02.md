@@ -1,9 +1,10 @@
 # Company imports and feed reports: production readiness
 
-Later update: the owner approved the schema-only step. All 26 migrations are now
-applied and verified in production, with existing transaction/alert checksums
-unchanged. Application deployment and activation remain pending; no feature
-flags were updated. See [the schema execution record](PRODUCTION_SCHEMA_ROLLOUT_2026-11-02.md).
+Current update: all 26 schema migrations are applied, PR #40 is merged, and the
+production backend is live on `39011d8`. New import/feed/AI flags are explicitly
+held off; existing transaction/alert checksums are unchanged. The user deferred
+frontend publication to its Vercel owner. See [the application rollout](PRODUCTION_APPLICATION_ROLLOUT_2026-11-02.md)
+and [schema execution record](PRODUCTION_SCHEMA_ROLLOUT_2026-11-02.md).
 The pre-rollout review below is retained as a dated checkpoint.
 
 The staging candidate passed the functional release review. **Production has
