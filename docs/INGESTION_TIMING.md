@@ -1,5 +1,30 @@
 # Staging ingestion timing
 
+With the same opt-in flag, each RPC also reports duration-only fields prefixed
+by its route phase (for example, `persist_rpc_tcp` and `read_rpc_wait`):
+
+- `dispatch`: elapsed time before the repository begins, including thread dispatch.
+- `lease`: acquiring the shared HTTP client, including initial construction or shutdown waiting.
+- `http`: the complete HTTP call, including transport/pool/upstream waiting.
+- `tcp`: observed TCP connection events, including DNS work within that event.
+- `tls`: observed TLS setup events.
+- `send`: observed HTTP/1.1 header/body sends.
+- `wait`: waiting for HTTP/1.1 response headers; this includes network and upstream waiting, not just SQL.
+- `body`: observed response-body reads.
+- `decode`: JSON decoding after the HTTP response succeeds.
+
+Zero TCP/TLS duration means no such event was observed, as with a reused
+connection. These subdurations overlap the enclosing RPC/http durations and
+must not be summed with their parents. Unattributed HTTP time can include pool
+waiting and scheduling; it is not separately established as pool contention.
+The collector uses request context propagated into the worker thread and is
+reset after every call. Background worker calls do not enable it implicitly.
+The trace callback ignores all transport event metadata and records only a
+fixed allowlist of phase durations. No headers, URLs, payloads, response bodies,
+credentials, retry behavior or network settings are changed by tracing.
+
+The HTTP trace interface is documented in [HTTPX extensions](https://www.python-httpx.org/advanced/extensions/).
+
 Set `INGESTION_TIMING_ENABLED=true` only on the intended staging backend to
 diagnose successful producer POST and receipt GET requests. Default is off.
 Response bodies, source scope, rate limits and durable worker processing retain

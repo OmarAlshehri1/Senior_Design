@@ -38,11 +38,16 @@ def attach_timings(request: Request, response: Response) -> None:
 
 
 async def timed_call(request: Request, phase: str, name: str, **payload: Any) -> Any:
-    started = perf_counter()
-    try:
+    timings = getattr(request.state, "ingestion_timings", None)
+    if timings is None:
         return await call(name, **payload)
-    finally:
-        record_timing(request, phase, started)
+    started = perf_counter()
+    with repository.capture_rpc_timings() as downstream:
+        try:
+            return await call(name, **payload)
+        finally:
+            record_timing(request, phase, started)
+            timings.update({f"{phase}_{key}": value for key, value in downstream.items()})
 
 
 async def call(name: str, **payload: Any) -> Any:
