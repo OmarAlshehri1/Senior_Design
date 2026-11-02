@@ -41,7 +41,8 @@ for POST, `read_rpc` for receipt GET, and total `app` time. RPC durations includ
 database HTTP transport and database execution; they do not isolate SQL time.
 Application time begins in the producer authentication dependency and ends when
 the handler prepares its successful response. It excludes platform wake-up,
-connection/TLS setup and response transmission. Receipt response serialization
+producer-to-backend connection/TLS setup and response transmission. Backend-to-database
+transport is included in the RPC measurements. Receipt response serialization
 after the handler is also outside this duration.
 
 `X-Ingestion-Instance` is a random process tag and `X-Ingestion-Uptime` reports

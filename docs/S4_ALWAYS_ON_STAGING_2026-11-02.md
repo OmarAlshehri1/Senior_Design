@@ -1,5 +1,10 @@
 # Always-on staging latency verification - 2 November 2026
 
+Later follow-up: [detailed intake transport investigation](S4_INTAKE_TRANSPORT_2026-11-02.md)
+added duration-only tracing and measured 37 additional requests, all confirmed
+within 2.125896 seconds. The earlier 8.059360-second miss was not reproduced;
+its exact cause remains unestablished. The observations below are preserved.
+
 ## Scope
 
 The user upgraded only `m004-reports-staging-api` to the `0.5c-512mb` compute
