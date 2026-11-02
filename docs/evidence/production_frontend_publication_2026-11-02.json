@@ -2,7 +2,7 @@
   "checked_at_utc": "2026-11-02T18:55:29.579090+00:00",
   "url": "https://senior-design-gold.vercel.app",
   "http_status": 200,
-  "owner_reported_commit": "39011d838e8f009d61ffd2ec1e462ee54f9b0562",
+  "owner_reported_commit": "d81279c6c3898663087bba7740b3d6774d50e315",
   "provider_commit_metadata_verified": false,
   "assets": [
     {
@@ -13,5 +13,13 @@
       "staging_backend": false
     }
   ],
-  "status": "PUBLIC_ASSET_CHECKS_PASSED"
+  "status": "PUBLIC_ASSET_CHECKS_PASSED",
+  "initial_owner_reported_commit": "39011d838e8f009d61ffd2ec1e462ee54f9b0562",
+  "remote_main_confirmed": "d81279c6c3898663087bba7740b3d6774d50e315",
+  "source_tree_comparison": {
+    "baseline": "39011d838e8f009d61ffd2ec1e462ee54f9b0562",
+    "deployment_trigger": "d81279c6c3898663087bba7740b3d6774d50e315",
+    "repository_diff_empty": true,
+    "frontend_tree": "0b951b3fc11f69964e8232739c5a3e47473255be"
+  }
 }

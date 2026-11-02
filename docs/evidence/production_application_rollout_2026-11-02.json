@@ -111,11 +111,12 @@
     "previous_publication_status": "DEFERRED_BY_USER_TO_TEAMMATE",
     "previous_observed_script": "/assets/index-CyHVaEqz.js",
     "previous_observed_script_sha256": "44c97e8ca8c937d4d61e66f09c46a1bcd6fd9c271ce5e552ca8d63cf4db67e13",
-    "owner_reported_commit": "39011d838e8f009d61ffd2ec1e462ee54f9b0562",
+    "owner_reported_commit": "d81279c6c3898663087bba7740b3d6774d50e315",
     "provider_commit_metadata_verified": false,
     "public_evidence": "production_frontend_publication_2026-11-02.json",
     "browser_evidence": "production_frontend_admin_verification_2026-11-02.json",
-    "test_session_cleanup": "production_frontend_session_cleanup_2026-11-02.json"
+    "test_session_cleanup": "production_frontend_session_cleanup_2026-11-02.json",
+    "deployment_trigger_source_identical_to_merge": true
   },
   "S4": "PARTIAL",
   "schema_rollout_evidence": "production_schema_rollout_2026-11-02.json"
