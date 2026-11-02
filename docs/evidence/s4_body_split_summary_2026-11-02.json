@@ -1,0 +1,106 @@
+{
+  "environment": "staging",
+  "production_changed": false,
+  "billing_changed": false,
+  "deployed_commit": "474165891d8c88c884742eb8d404a97efb6ebc89",
+  "deploy_id": "dep-dbkalkp42hec73f4j3qg",
+  "started_at": "2026-11-02T15:25:03.054062+00:00",
+  "finished_at": "2026-11-02T15:26:30.077424+00:00",
+  "result": "60_OF_60_CLIENT_CONFIRMATIONS_WITHIN_FIVE_SECONDS",
+  "overall_S4": "PARTIAL_PREVIOUS_MISSES_RETAINED",
+  "prior_three_second_combined_phase_reproduced": false,
+  "confirmed_prior_delay_cause": null,
+  "request_retries": 0,
+  "fault_injection": false,
+  "tests_passed": 90,
+  "cases": {
+    "count": 60,
+    "minimum_seconds": 1.429598,
+    "median_seconds": 2.4446165,
+    "p95_nearest_rank_seconds": 3.368723,
+    "maximum_seconds": 3.529236
+  },
+  "by_cohort": {
+    "sequential": {
+      "count": 12,
+      "minimum_seconds": 1.429598,
+      "median_seconds": 1.6402269999999999,
+      "p95_nearest_rank_seconds": 3.154706,
+      "maximum_seconds": 3.154706
+    },
+    "burst_setup": {
+      "count": 12,
+      "minimum_seconds": 1.433025,
+      "median_seconds": 1.8477755,
+      "p95_nearest_rank_seconds": 2.163026,
+      "maximum_seconds": 2.163026
+    },
+    "burst_9": {
+      "count": 36,
+      "minimum_seconds": 1.726603,
+      "median_seconds": 2.892578,
+      "p95_nearest_rank_seconds": 3.520138,
+      "maximum_seconds": 3.529236
+    }
+  },
+  "post_stages": {
+    "body_read": {
+      "count": 60,
+      "minimum_seconds": 0.000243,
+      "median_seconds": 0.0007665,
+      "p95_nearest_rank_seconds": 0.487728,
+      "maximum_seconds": 0.5126219999999999
+    },
+    "validate": {
+      "count": 60,
+      "minimum_seconds": 0.000254,
+      "median_seconds": 0.0004285,
+      "p95_nearest_rank_seconds": 0.0005639999999999999,
+      "maximum_seconds": 0.008622
+    },
+    "fingerprint": {
+      "count": 60,
+      "minimum_seconds": 0.000585,
+      "median_seconds": 0.0008935,
+      "p95_nearest_rank_seconds": 0.002451,
+      "maximum_seconds": 0.0051210000000000006
+    },
+    "parse": {
+      "count": 60,
+      "minimum_seconds": 0.001149,
+      "median_seconds": 0.002,
+      "p95_nearest_rank_seconds": 0.488854,
+      "maximum_seconds": 0.515356
+    },
+    "auth_rpc": {
+      "count": 60,
+      "minimum_seconds": 0.098887,
+      "median_seconds": 0.133016,
+      "p95_nearest_rank_seconds": 0.28587,
+      "maximum_seconds": 0.36279500000000003
+    },
+    "persist_rpc": {
+      "count": 60,
+      "minimum_seconds": 0.14648,
+      "median_seconds": 0.268619,
+      "p95_nearest_rank_seconds": 0.5551649999999999,
+      "maximum_seconds": 0.705609
+    },
+    "app": {
+      "count": 60,
+      "minimum_seconds": 0.25636200000000003,
+      "median_seconds": 0.477744,
+      "p95_nearest_rank_seconds": 0.903686,
+      "maximum_seconds": 1.321824
+    }
+  },
+  "maximum_validation_plus_fingerprint_seconds": 0.009798,
+  "payload_bytes": {
+    "minimum": 192586,
+    "maximum": 192609
+  },
+  "database_high_alerts": 60,
+  "verified_rule_outcomes": 300,
+  "max_database_receipt_to_alert_insertion_seconds": 1.659924,
+  "unique_processes": 1
+}

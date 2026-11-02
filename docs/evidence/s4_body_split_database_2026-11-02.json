@@ -1,0 +1,1806 @@
+{
+  "environment": "staging",
+  "production_changed": false,
+  "rows": [
+    {
+      "event_id": "PERF-body-01-large-seed-0",
+      "receipt_id": "88a4c916-5159-47cb-b24a-333d465336ee",
+      "transaction_id": "e301ccf5-d5dd-4651-b521-258e25b79f10",
+      "received_at": "2026-11-02 15:25:05.197082+00",
+      "payload_bytes": 192586,
+      "evaluated_at": "2026-11-02 15:25:06.177353+00",
+      "alert_id": "c4dbd4fc-c2f2-4957-a426-3961a91f981f",
+      "alert_inserted_at": "2026-11-02 15:25:06.188407+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60,
+      "ai_score": 100,
+      "risk_score": 76,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "PASSED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.991325"
+    },
+    {
+      "event_id": "PERF-body-02-large-seed-0",
+      "receipt_id": "4a0c81a4-8fbb-4943-b809-31f7abe9217a",
+      "transaction_id": "d4870c7f-e44d-40b7-acdf-de6f22652c29",
+      "received_at": "2026-11-02 15:25:06.935003+00",
+      "payload_bytes": 192586,
+      "evaluated_at": "2026-11-02 15:25:07.66735+00",
+      "alert_id": "c4ff6a8c-392b-4f11-bb75-edd4ed66b8e3",
+      "alert_inserted_at": "2026-11-02 15:25:07.675353+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60,
+      "ai_score": 100,
+      "risk_score": 76,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "PASSED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.740350"
+    },
+    {
+      "event_id": "PERF-body-03-large-seed-0",
+      "receipt_id": "94955ae8-b98f-4fdc-bb66-cb46e76fd611",
+      "transaction_id": "064e3b6b-e147-4134-845b-88c88671269b",
+      "received_at": "2026-11-02 15:25:08.624433+00",
+      "payload_bytes": 192586,
+      "evaluated_at": "2026-11-02 15:25:09.458176+00",
+      "alert_id": "261dd2bf-4c9b-48ec-8d62-5587da80096e",
+      "alert_inserted_at": "2026-11-02 15:25:09.462111+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60,
+      "ai_score": 100,
+      "risk_score": 76,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "PASSED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.837678"
+    },
+    {
+      "event_id": "PERF-body-04-large-seed-0",
+      "receipt_id": "8ea0e7e7-58fc-445b-a2d2-fda3bd9c0a48",
+      "transaction_id": "1a2d9dfe-e549-4a1d-9c7c-3801f9711cda",
+      "received_at": "2026-11-02 15:25:10.281663+00",
+      "payload_bytes": 192586,
+      "evaluated_at": "2026-11-02 15:25:10.983843+00",
+      "alert_id": "0393b731-fadd-4b12-8733-d228875d64e9",
+      "alert_inserted_at": "2026-11-02 15:25:10.985415+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60,
+      "ai_score": 100,
+      "risk_score": 76,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "PASSED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.703752"
+    },
+    {
+      "event_id": "PERF-body-05-large-seed-0",
+      "receipt_id": "918e793b-c88e-4db6-997e-45646cc4db02",
+      "transaction_id": "01d7de50-4b69-4307-90fe-0ecc2f5c3b7e",
+      "received_at": "2026-11-02 15:25:11.892005+00",
+      "payload_bytes": 192586,
+      "evaluated_at": "2026-11-02 15:25:12.657659+00",
+      "alert_id": "24e4f2a0-1b91-496e-9bcd-079a5176e8b4",
+      "alert_inserted_at": "2026-11-02 15:25:12.659512+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60,
+      "ai_score": 100,
+      "risk_score": 76,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "PASSED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.767507"
+    },
+    {
+      "event_id": "PERF-body-06-large-seed-0",
+      "receipt_id": "dbd93046-c376-4c49-adc2-2943f011e82d",
+      "transaction_id": "7538ae56-1aa3-4a3d-95a5-2b73c9b5f403",
+      "received_at": "2026-11-02 15:25:13.852426+00",
+      "payload_bytes": 192586,
+      "evaluated_at": "2026-11-02 15:25:14.570408+00",
+      "alert_id": "34340fbc-52ba-4d31-8c8a-6fd2c5634f05",
+      "alert_inserted_at": "2026-11-02 15:25:14.573347+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60,
+      "ai_score": 100,
+      "risk_score": 76,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "PASSED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.720921"
+    },
+    {
+      "event_id": "PERF-body-07-large-seed-0",
+      "receipt_id": "a5e57ea4-f655-4331-b70b-241da8c07f3b",
+      "transaction_id": "d2dab94f-1296-4c7f-bdc5-0ab4bd9388b5",
+      "received_at": "2026-11-02 15:25:15.470743+00",
+      "payload_bytes": 192586,
+      "evaluated_at": "2026-11-02 15:25:16.166926+00",
+      "alert_id": "4b464322-043f-46f0-a42e-a2f2a5521570",
+      "alert_inserted_at": "2026-11-02 15:25:16.16738+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60,
+      "ai_score": 100,
+      "risk_score": 76,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "PASSED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.696637"
+    },
+    {
+      "event_id": "PERF-body-08-large-seed-0",
+      "receipt_id": "839d80e8-a1a8-4307-9c7d-d64efb672a3a",
+      "transaction_id": "09869b48-0375-4730-9156-ca2d88825b1d",
+      "received_at": "2026-11-02 15:25:17.119359+00",
+      "payload_bytes": 192586,
+      "evaluated_at": "2026-11-02 15:25:17.870872+00",
+      "alert_id": "9b27deb0-fe9e-4ec9-ae5e-d53b94e70462",
+      "alert_inserted_at": "2026-11-02 15:25:17.875242+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60,
+      "ai_score": 100,
+      "risk_score": 76,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "PASSED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.755883"
+    },
+    {
+      "event_id": "PERF-body-09-large-seed-0",
+      "receipt_id": "cf460051-116d-45fd-b34d-2435da7e43ec",
+      "transaction_id": "17541f51-4aa6-412f-a0bd-80274c61da7d",
+      "received_at": "2026-11-02 15:25:18.619029+00",
+      "payload_bytes": 192586,
+      "evaluated_at": "2026-11-02 15:25:19.309509+00",
+      "alert_id": "516a5a4d-bba1-48ff-88a4-620dd8676b75",
+      "alert_inserted_at": "2026-11-02 15:25:19.309902+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60,
+      "ai_score": 100,
+      "risk_score": 76,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "PASSED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.690873"
+    },
+    {
+      "event_id": "PERF-body-10-large-seed-0",
+      "receipt_id": "24254e58-9aa1-47eb-9db3-eba691e13962",
+      "transaction_id": "94834130-af3a-4e26-8831-fcf64c8d7549",
+      "received_at": "2026-11-02 15:25:20.4871+00",
+      "payload_bytes": 192589,
+      "evaluated_at": "2026-11-02 15:25:21.163965+00",
+      "alert_id": "e3e91171-d678-4e80-9b19-861cd3e41261",
+      "alert_inserted_at": "2026-11-02 15:25:21.165702+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60,
+      "ai_score": 100,
+      "risk_score": 76,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "PASSED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.678602"
+    },
+    {
+      "event_id": "PERF-body-11-large-seed-0",
+      "receipt_id": "235e5001-93bc-403a-b58e-21c02a152df2",
+      "transaction_id": "85fff94e-950c-4ae7-a918-c6a0b38891e0",
+      "received_at": "2026-11-02 15:25:21.895724+00",
+      "payload_bytes": 192589,
+      "evaluated_at": "2026-11-02 15:25:22.59136+00",
+      "alert_id": "44a9c51c-f716-4154-ada1-19116b04a4c1",
+      "alert_inserted_at": "2026-11-02 15:25:22.592801+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60,
+      "ai_score": 100,
+      "risk_score": 76,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "PASSED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.697077"
+    },
+    {
+      "event_id": "PERF-body-12-large-seed-0",
+      "receipt_id": "8822fafc-0c87-45f6-a5ea-dbd28e61c1ed",
+      "transaction_id": "422fa162-5de3-490f-8f7a-dfd78b18d494",
+      "received_at": "2026-11-02 15:25:23.519766+00",
+      "payload_bytes": 192589,
+      "evaluated_at": "2026-11-02 15:25:24.268186+00",
+      "alert_id": "572bb814-fd2a-42c4-a063-29585ec32dd1",
+      "alert_inserted_at": "2026-11-02 15:25:24.26978+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60,
+      "ai_score": 100,
+      "risk_score": 76,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "PASSED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.750014"
+    },
+    {
+      "event_id": "PERF-body-1010-large-seed-0",
+      "receipt_id": "fc949623-dad9-49d2-a298-71cbdb2111b6",
+      "transaction_id": "8e623246-8356-4561-a90b-d97ff91e5f38",
+      "received_at": "2026-11-02 15:25:24.987627+00",
+      "payload_bytes": 192599,
+      "evaluated_at": "2026-11-02 15:25:25.639581+00",
+      "alert_id": "f351a252-5321-40b3-8900-8928923ced06",
+      "alert_inserted_at": "2026-11-02 15:25:25.63989+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60,
+      "ai_score": 100,
+      "risk_score": 76,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "PASSED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.652263"
+    },
+    {
+      "event_id": "PERF-body-1011-large-seed-0",
+      "receipt_id": "8f058d53-6bde-4bb6-a956-8334f8c5b123",
+      "transaction_id": "9c10aca8-2051-4b8b-b1c3-3ecf0b1d1453",
+      "received_at": "2026-11-02 15:25:26.55995+00",
+      "payload_bytes": 192599,
+      "evaluated_at": "2026-11-02 15:25:27.346076+00",
+      "alert_id": "bdd1d28b-994d-4cdc-b6b5-329cf98340fb",
+      "alert_inserted_at": "2026-11-02 15:25:27.346583+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60,
+      "ai_score": 100,
+      "risk_score": 76,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "PASSED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.786633"
+    },
+    {
+      "event_id": "PERF-body-1012-large-seed-0",
+      "receipt_id": "af2373aa-7274-4340-b9dc-dc9735847093",
+      "transaction_id": "912a1dbb-43b4-41d1-817c-3c3efbf6be36",
+      "received_at": "2026-11-02 15:25:28.164316+00",
+      "payload_bytes": 192599,
+      "evaluated_at": "2026-11-02 15:25:28.831692+00",
+      "alert_id": "4b47c64c-9f5c-4e01-8521-64267111eb42",
+      "alert_inserted_at": "2026-11-02 15:25:28.833399+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60,
+      "ai_score": 100,
+      "risk_score": 76,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "PASSED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.669083"
+    },
+    {
+      "event_id": "PERF-body-1010-large-duplicate-0",
+      "receipt_id": "166f95fe-a2c7-4a28-af97-5f1db68c5ebb",
+      "transaction_id": "e78effd7-0584-4cfa-8e0e-8629eff2f007",
+      "received_at": "2026-11-02 15:25:29.619018+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:25:30.435585+00",
+      "alert_id": "2cb8152e-e1f5-461b-ab76-04171062bf99",
+      "alert_inserted_at": "2026-11-02 15:25:30.439889+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.820871"
+    },
+    {
+      "event_id": "PERF-body-1011-large-duplicate-4",
+      "receipt_id": "cbbc6f42-d7c4-4b65-802e-6fd583e35241",
+      "transaction_id": "ecd33bfc-2125-48be-932d-7ddf54605d7a",
+      "received_at": "2026-11-02 15:25:30.247099+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:25:31.443978+00",
+      "alert_id": "99a8d333-fa48-4096-96ce-d2b669ee3635",
+      "alert_inserted_at": "2026-11-02 15:25:31.448343+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.201244"
+    },
+    {
+      "event_id": "PERF-body-1012-large-duplicate-8",
+      "receipt_id": "4dcf4d1a-b38b-4a5c-a930-9ff828ee745d",
+      "transaction_id": "feef6771-5ac8-4c5b-b3eb-f93160db32d9",
+      "received_at": "2026-11-02 15:25:30.612623+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:25:31.485851+00",
+      "alert_id": "9150f5b3-8423-473e-839d-6f822c405ab8",
+      "alert_inserted_at": "2026-11-02 15:25:31.487463+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.874840"
+    },
+    {
+      "event_id": "PERF-body-1012-large-duplicate-5",
+      "receipt_id": "c3c1d5da-eb92-49a7-ab67-8d7344c24c50",
+      "transaction_id": "25aaed59-0be3-4b26-a005-bd7826e4f179",
+      "received_at": "2026-11-02 15:25:30.694073+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:25:31.776183+00",
+      "alert_id": "7860f1ab-c204-4a81-a4c1-4f459cb1985e",
+      "alert_inserted_at": "2026-11-02 15:25:31.778694+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.084621"
+    },
+    {
+      "event_id": "PERF-body-1011-large-duplicate-1",
+      "receipt_id": "30adfa9d-e18f-4171-b9fe-614ec1023f39",
+      "transaction_id": "dd03fa22-7d31-4848-83e6-96ef3bca5f94",
+      "received_at": "2026-11-02 15:25:30.812943+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:25:32.095633+00",
+      "alert_id": "8f280202-dc41-48ec-af07-d14aefb539b0",
+      "alert_inserted_at": "2026-11-02 15:25:32.096321+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.283378"
+    },
+    {
+      "event_id": "PERF-body-1012-large-duplicate-2",
+      "receipt_id": "6d43a475-8e08-4523-84ab-4370cadbf3ca",
+      "transaction_id": "705ccae2-70da-497e-8162-97fb999b0ac2",
+      "received_at": "2026-11-02 15:25:30.843518+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:25:32.090676+00",
+      "alert_id": "10f9244d-177a-4987-8a40-5e854698b60f",
+      "alert_inserted_at": "2026-11-02 15:25:32.091389+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.247871"
+    },
+    {
+      "event_id": "PERF-body-1011-large-duplicate-7",
+      "receipt_id": "f184ad8b-79f0-4892-b0fb-de6d05f0c066",
+      "transaction_id": "dda92a68-2514-4630-86da-d23cc6b1713c",
+      "received_at": "2026-11-02 15:25:30.869361+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:25:32.111687+00",
+      "alert_id": "16be87fb-b052-435a-963f-851b056631e2",
+      "alert_inserted_at": "2026-11-02 15:25:32.112092+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.242731"
+    },
+    {
+      "event_id": "PERF-body-1010-large-duplicate-3",
+      "receipt_id": "dd5ed688-8707-4757-bed7-b1fb3211f406",
+      "transaction_id": "64be989f-99c7-4450-8623-d89d4ee698bb",
+      "received_at": "2026-11-02 15:25:30.927105+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:25:31.863843+00",
+      "alert_id": "c737b94f-d354-45d5-9eda-f1b751aa646a",
+      "alert_inserted_at": "2026-11-02 15:25:31.866405+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.939300"
+    },
+    {
+      "event_id": "PERF-body-1010-large-duplicate-6",
+      "receipt_id": "0a1daf76-7ee3-4401-ad84-a603aca4f56f",
+      "transaction_id": "29b075f2-8845-47b0-b95c-3f0d2d90c88e",
+      "received_at": "2026-11-02 15:25:31.055874+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:25:32.435408+00",
+      "alert_id": "a4049f35-c5d7-44c9-965e-bb8efc31d661",
+      "alert_inserted_at": "2026-11-02 15:25:32.439477+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.383603"
+    },
+    {
+      "event_id": "PERF-body-1020-large-seed-0",
+      "receipt_id": "80180b85-2ff8-4b78-bb9d-70c5df3a8850",
+      "transaction_id": "f396e296-94f0-40e9-bf06-ebdf6bc4d35f",
+      "received_at": "2026-11-02 15:25:43.60839+00",
+      "payload_bytes": 192599,
+      "evaluated_at": "2026-11-02 15:25:44.460821+00",
+      "alert_id": "db2c66c1-bf63-4ac9-acad-b99579a863bd",
+      "alert_inserted_at": "2026-11-02 15:25:44.462528+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60,
+      "ai_score": 100,
+      "risk_score": 76,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "PASSED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.854138"
+    },
+    {
+      "event_id": "PERF-body-1021-large-seed-0",
+      "receipt_id": "74079032-5ff7-43a5-8b66-1b84b3f00734",
+      "transaction_id": "f9ce952c-17da-4fe3-abf2-37857857d058",
+      "received_at": "2026-11-02 15:25:45.164066+00",
+      "payload_bytes": 192599,
+      "evaluated_at": "2026-11-02 15:25:45.870862+00",
+      "alert_id": "dde66237-db3d-450a-bd8a-0e1d5ef75cb9",
+      "alert_inserted_at": "2026-11-02 15:25:45.872732+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60,
+      "ai_score": 100,
+      "risk_score": 76,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "PASSED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.708666"
+    },
+    {
+      "event_id": "PERF-body-1022-large-seed-0",
+      "receipt_id": "e885fc08-7139-4130-8f95-278f16414b08",
+      "transaction_id": "8f0d058b-7ff3-423c-8833-d054ad0ac5bd",
+      "received_at": "2026-11-02 15:25:47.270758+00",
+      "payload_bytes": 192599,
+      "evaluated_at": "2026-11-02 15:25:48.070022+00",
+      "alert_id": "3de827e6-f587-4eae-addb-2638a3c9369e",
+      "alert_inserted_at": "2026-11-02 15:25:48.071168+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60,
+      "ai_score": 100,
+      "risk_score": 76,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "PASSED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.800410"
+    },
+    {
+      "event_id": "PERF-body-1021-large-duplicate-1",
+      "receipt_id": "a5e85e88-707a-4da2-9430-b59da74fa0b3",
+      "transaction_id": "b59bd121-08c7-4466-a56c-87fd094e360c",
+      "received_at": "2026-11-02 15:25:49.104764+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:25:50.14947+00",
+      "alert_id": "e52b0dee-2879-4e96-9a6c-2a33d5ae86f3",
+      "alert_inserted_at": "2026-11-02 15:25:50.151313+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.046549"
+    },
+    {
+      "event_id": "PERF-body-1020-large-duplicate-3",
+      "receipt_id": "5c765e1c-fc1b-4506-9c8e-5009d0c10a76",
+      "transaction_id": "1ac57606-5653-4ea7-8906-edb213e23936",
+      "received_at": "2026-11-02 15:25:49.262538+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:25:50.101988+00",
+      "alert_id": "f1fdc395-0809-4001-bf84-4d73162e3d3c",
+      "alert_inserted_at": "2026-11-02 15:25:50.105676+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.843138"
+    },
+    {
+      "event_id": "PERF-body-1021-large-duplicate-7",
+      "receipt_id": "bb04bee5-ba65-4321-b04d-8ad37bb68589",
+      "transaction_id": "bc2ab0ce-912d-4134-9971-f2f9ef32cda1",
+      "received_at": "2026-11-02 15:25:49.344476+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:25:50.211379+00",
+      "alert_id": "4cde0480-a94d-4266-b6c1-2a0abe60c773",
+      "alert_inserted_at": "2026-11-02 15:25:50.213216+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.868740"
+    },
+    {
+      "event_id": "PERF-body-1021-large-duplicate-4",
+      "receipt_id": "50ea77b5-f4f9-4f15-9811-f9b4258e9614",
+      "transaction_id": "540ef3aa-edec-47c1-a74d-aaf4dce897ef",
+      "received_at": "2026-11-02 15:25:49.370554+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:25:50.627576+00",
+      "alert_id": "093a6f7b-8e85-4b11-8bfb-0c7cd6b94f87",
+      "alert_inserted_at": "2026-11-02 15:25:50.629282+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.258728"
+    },
+    {
+      "event_id": "PERF-body-1020-large-duplicate-6",
+      "receipt_id": "da6d6ef8-5afa-4740-9c21-a14ea91b933f",
+      "transaction_id": "b7c56cae-5636-4042-bbd0-ad0a0ee4cb18",
+      "received_at": "2026-11-02 15:25:49.388433+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:25:50.771076+00",
+      "alert_id": "c4a83f56-057d-47bf-b473-079f76a7496f",
+      "alert_inserted_at": "2026-11-02 15:25:50.771528+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.383095"
+    },
+    {
+      "event_id": "PERF-body-1022-large-duplicate-8",
+      "receipt_id": "c064d3f9-832b-4ebf-af37-b20d282a9821",
+      "transaction_id": "fa8c747b-8cca-4bd0-a646-205c912dc920",
+      "received_at": "2026-11-02 15:25:49.538832+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:25:50.988466+00",
+      "alert_id": "1b447c30-1a48-49c3-a2ca-07983df703f2",
+      "alert_inserted_at": "2026-11-02 15:25:50.994086+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.455254"
+    },
+    {
+      "event_id": "PERF-body-1022-large-duplicate-5",
+      "receipt_id": "d463c8cf-6715-4b9d-ace6-47c6e9b35ae5",
+      "transaction_id": "3cb54850-8104-4bef-9bf9-ee805ee4815a",
+      "received_at": "2026-11-02 15:25:49.695285+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:25:50.606876+00",
+      "alert_id": "2ea78589-781d-4c56-85b3-d8b166ad17b0",
+      "alert_inserted_at": "2026-11-02 15:25:50.609561+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.914276"
+    },
+    {
+      "event_id": "PERF-body-1022-large-duplicate-2",
+      "receipt_id": "1c85a38d-0cca-410f-86de-60017487415d",
+      "transaction_id": "bc5d4ce3-2e06-47ce-b0de-043fe48b0252",
+      "received_at": "2026-11-02 15:25:49.744693+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:25:51.036387+00",
+      "alert_id": "96afa790-c709-4597-b948-02c83c4d5928",
+      "alert_inserted_at": "2026-11-02 15:25:51.036755+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.292062"
+    },
+    {
+      "event_id": "PERF-body-1020-large-duplicate-0",
+      "receipt_id": "5a139fc0-729d-434a-a381-9ff093fed4b8",
+      "transaction_id": "ef141dfe-d22f-49fc-9049-be315992bc05",
+      "received_at": "2026-11-02 15:25:49.766265+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:25:50.856573+00",
+      "alert_id": "145a02a4-e33e-4b80-8a4a-fb44426a7dfe",
+      "alert_inserted_at": "2026-11-02 15:25:50.857244+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.090979"
+    },
+    {
+      "event_id": "PERF-body-1030-large-seed-0",
+      "receipt_id": "9093c749-b5aa-423f-a209-f24287816ce8",
+      "transaction_id": "09bd54c9-8549-4476-9fa1-59d9c31719be",
+      "received_at": "2026-11-02 15:26:02.369975+00",
+      "payload_bytes": 192599,
+      "evaluated_at": "2026-11-02 15:26:03.122051+00",
+      "alert_id": "c6c618fd-df83-42f1-a67e-0809b80bca6f",
+      "alert_inserted_at": "2026-11-02 15:26:03.124122+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60,
+      "ai_score": 100,
+      "risk_score": 76,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "PASSED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.754147"
+    },
+    {
+      "event_id": "PERF-body-1031-large-seed-0",
+      "receipt_id": "ef132d9d-96d4-4a4e-9838-3b250d4173d7",
+      "transaction_id": "2ad7dcb7-c129-42be-86ed-f3c28d282986",
+      "received_at": "2026-11-02 15:26:04.430548+00",
+      "payload_bytes": 192599,
+      "evaluated_at": "2026-11-02 15:26:05.173901+00",
+      "alert_id": "f63cc599-bc5a-4cbb-82e5-660f7a4f35c9",
+      "alert_inserted_at": "2026-11-02 15:26:05.175644+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60,
+      "ai_score": 100,
+      "risk_score": 76,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "PASSED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.745096"
+    },
+    {
+      "event_id": "PERF-body-1032-large-seed-0",
+      "receipt_id": "4e5af71c-504c-4caf-8993-f751ae444a1b",
+      "transaction_id": "c8350e6a-6f1d-4204-867a-d95eafb6b36c",
+      "received_at": "2026-11-02 15:26:06.394472+00",
+      "payload_bytes": 192599,
+      "evaluated_at": "2026-11-02 15:26:07.117406+00",
+      "alert_id": "d1ffd51b-6095-4f88-a970-a9a08e84505f",
+      "alert_inserted_at": "2026-11-02 15:26:07.119019+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60,
+      "ai_score": 100,
+      "risk_score": 76,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "PASSED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.724547"
+    },
+    {
+      "event_id": "PERF-body-1032-large-duplicate-2",
+      "receipt_id": "d95ef58a-8e38-4dc4-9a3d-3f0bbeaaf91e",
+      "transaction_id": "fd22984e-ea66-40f1-ab4b-1873a67494c0",
+      "received_at": "2026-11-02 15:26:08.27745+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:26:09.506847+00",
+      "alert_id": "6b6b9133-0d75-4872-97d6-9856b42ee121",
+      "alert_inserted_at": "2026-11-02 15:26:09.508606+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.231156"
+    },
+    {
+      "event_id": "PERF-body-1031-large-duplicate-4",
+      "receipt_id": "5f20670d-1966-4d67-ac1f-ef6d4d3badc6",
+      "transaction_id": "1b59e28d-0d8b-4163-9674-8b2bc8b1a4b7",
+      "received_at": "2026-11-02 15:26:08.306144+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:26:09.291403+00",
+      "alert_id": "fbbd6992-3308-4713-bad3-db158f348dc7",
+      "alert_inserted_at": "2026-11-02 15:26:09.291754+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.985610"
+    },
+    {
+      "event_id": "PERF-body-1030-large-duplicate-6",
+      "receipt_id": "d2d718a7-c3b4-437b-b5a3-7dcee4607a3c",
+      "transaction_id": "3061ce6e-1da1-40cf-8f51-df8e34b0124a",
+      "received_at": "2026-11-02 15:26:08.433704+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:26:09.543134+00",
+      "alert_id": "798a8abf-d53b-4753-ae3a-fd4534981995",
+      "alert_inserted_at": "2026-11-02 15:26:09.545174+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.111470"
+    },
+    {
+      "event_id": "PERF-body-1030-large-duplicate-3",
+      "receipt_id": "b9074714-db3c-4872-bd49-55ffabfbffc2",
+      "transaction_id": "dc20ebe5-4d64-460d-ace2-88c767e321f7",
+      "received_at": "2026-11-02 15:26:08.46748+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:26:10.12704+00",
+      "alert_id": "4d4a27d2-29fc-4b78-afce-27d49a85704e",
+      "alert_inserted_at": "2026-11-02 15:26:10.127404+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.659924"
+    },
+    {
+      "event_id": "PERF-body-1032-large-duplicate-5",
+      "receipt_id": "74efd52b-d9fd-4407-90b0-6ff1271401aa",
+      "transaction_id": "65253f7c-d283-47f6-8466-2f7ca23d03c0",
+      "received_at": "2026-11-02 15:26:08.48388+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:26:09.959907+00",
+      "alert_id": "b94cb9df-ac48-4909-882a-dd38052d39c3",
+      "alert_inserted_at": "2026-11-02 15:26:09.963158+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.479278"
+    },
+    {
+      "event_id": "PERF-body-1031-large-duplicate-7",
+      "receipt_id": "e2df652d-ca94-47a9-b8f7-7668c1a8f216",
+      "transaction_id": "36e4ebca-5bc0-4e77-98ac-0397271c9f19",
+      "received_at": "2026-11-02 15:26:08.663748+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:26:10.006805+00",
+      "alert_id": "b891be1c-820f-439d-b8ec-b9a2e02a440b",
+      "alert_inserted_at": "2026-11-02 15:26:10.00787+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.344122"
+    },
+    {
+      "event_id": "PERF-body-1031-large-duplicate-1",
+      "receipt_id": "edeba1fa-29e4-4ac0-9b25-4f07338ed822",
+      "transaction_id": "22ee2934-ac0d-4302-a3f7-a0299b072efd",
+      "received_at": "2026-11-02 15:26:08.878112+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:26:09.872239+00",
+      "alert_id": "269125c3-6dcc-4b34-8091-f12302fb85dc",
+      "alert_inserted_at": "2026-11-02 15:26:09.873479+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.995367"
+    },
+    {
+      "event_id": "PERF-body-1030-large-duplicate-0",
+      "receipt_id": "f41707fe-ad03-4b40-9479-3e129958354f",
+      "transaction_id": "f7828e7c-9877-4ca2-aa2e-df68af3d08a0",
+      "received_at": "2026-11-02 15:26:08.9069+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:26:10.291684+00",
+      "alert_id": "43306813-bd5a-45db-8013-8cc51be9dfbb",
+      "alert_inserted_at": "2026-11-02 15:26:10.292061+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.385161"
+    },
+    {
+      "event_id": "PERF-body-1032-large-duplicate-8",
+      "receipt_id": "e8229053-c254-4e8f-8cb0-39c4b6aeac02",
+      "transaction_id": "e0e07c6c-acde-4ee1-86be-c12a52fffa47",
+      "received_at": "2026-11-02 15:26:09.131401+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:26:10.483352+00",
+      "alert_id": "a0e4ef1b-6451-4414-8bdd-0f3b7610fa79",
+      "alert_inserted_at": "2026-11-02 15:26:10.483807+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.352406"
+    },
+    {
+      "event_id": "PERF-body-1040-large-seed-0",
+      "receipt_id": "814dfbaa-c3f1-4abd-bb6e-dd6d1c3197b0",
+      "transaction_id": "1c839f6a-b115-46a7-a562-a9b04346ec35",
+      "received_at": "2026-11-02 15:26:21.816833+00",
+      "payload_bytes": 192599,
+      "evaluated_at": "2026-11-02 15:26:22.513749+00",
+      "alert_id": "9d9e43fe-b57f-4d57-a953-5903f205190c",
+      "alert_inserted_at": "2026-11-02 15:26:22.516198+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60,
+      "ai_score": 100,
+      "risk_score": 76,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "PASSED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.699365"
+    },
+    {
+      "event_id": "PERF-body-1041-large-seed-0",
+      "receipt_id": "bad48c4c-f7a9-4555-bebf-2b4b30d45131",
+      "transaction_id": "b427f640-a9b7-422c-ab8b-bddf0bef2eab",
+      "received_at": "2026-11-02 15:26:23.980204+00",
+      "payload_bytes": 192599,
+      "evaluated_at": "2026-11-02 15:26:24.648871+00",
+      "alert_id": "7979e798-4e20-4b1e-ba21-a914abc202ab",
+      "alert_inserted_at": "2026-11-02 15:26:24.649256+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60,
+      "ai_score": 100,
+      "risk_score": 76,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "PASSED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.669052"
+    },
+    {
+      "event_id": "PERF-body-1042-large-seed-0",
+      "receipt_id": "95d558e0-f176-4d3f-84cf-d1b44fb3e09b",
+      "transaction_id": "570a62ea-99c0-4b5d-9e41-6111fa81fc08",
+      "received_at": "2026-11-02 15:26:25.562527+00",
+      "payload_bytes": 192599,
+      "evaluated_at": "2026-11-02 15:26:26.243414+00",
+      "alert_id": "2e062174-fd7b-4e8b-ac55-a69901369051",
+      "alert_inserted_at": "2026-11-02 15:26:26.244351+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60,
+      "ai_score": 100,
+      "risk_score": 76,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "PASSED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "0.681824"
+    },
+    {
+      "event_id": "PERF-body-1040-large-duplicate-0",
+      "receipt_id": "7b0a9b34-ac34-4d00-bcf2-3c11a57a5fc6",
+      "transaction_id": "09ebf780-902e-4cc0-b06e-929cfd2a0d8c",
+      "received_at": "2026-11-02 15:26:27.257351+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:26:28.303361+00",
+      "alert_id": "9312be53-53c1-449a-8322-7a86c11d319d",
+      "alert_inserted_at": "2026-11-02 15:26:28.303877+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.046526"
+    },
+    {
+      "event_id": "PERF-body-1040-large-duplicate-6",
+      "receipt_id": "25a8f762-14f8-46b8-b044-83856394e180",
+      "transaction_id": "22b71af7-9cb4-48af-b6a2-adc9f680c663",
+      "received_at": "2026-11-02 15:26:27.594301+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:26:28.597234+00",
+      "alert_id": "97b7afb0-40c4-4b69-8746-353b1f35f040",
+      "alert_inserted_at": "2026-11-02 15:26:28.599362+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.005061"
+    },
+    {
+      "event_id": "PERF-body-1042-large-duplicate-5",
+      "receipt_id": "12e2468a-ba02-4894-8bab-7ec1b8f0c1a7",
+      "transaction_id": "6069ef0c-4fad-40bd-88b0-32b8ea9abe84",
+      "received_at": "2026-11-02 15:26:27.732098+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:26:28.737424+00",
+      "alert_id": "1d6327f3-9d33-457c-9753-8b09a795e63c",
+      "alert_inserted_at": "2026-11-02 15:26:28.74953+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.017432"
+    },
+    {
+      "event_id": "PERF-body-1040-large-duplicate-3",
+      "receipt_id": "4ba4fd3d-d81c-4706-b9c7-6740b12a49fa",
+      "transaction_id": "ee4c1d19-bada-4b7a-ad60-80141632d871",
+      "received_at": "2026-11-02 15:26:27.772835+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:26:28.844012+00",
+      "alert_id": "0599504c-43cb-407c-b364-37c7dfef4f4c",
+      "alert_inserted_at": "2026-11-02 15:26:28.845031+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.072196"
+    },
+    {
+      "event_id": "PERF-body-1042-large-duplicate-2",
+      "receipt_id": "4e002acd-308b-4563-ade4-67c072fbc835",
+      "transaction_id": "655e6a87-915c-41cd-88aa-cf4bba005cbe",
+      "received_at": "2026-11-02 15:26:27.881067+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:26:28.990362+00",
+      "alert_id": "cde3e775-efe6-4942-882e-082483129256",
+      "alert_inserted_at": "2026-11-02 15:26:28.993541+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.112474"
+    },
+    {
+      "event_id": "PERF-body-1041-large-duplicate-1",
+      "receipt_id": "3c914726-aa4b-4010-ba76-44b492e623ba",
+      "transaction_id": "472d02a7-c7c8-4d06-a0e6-8966eb845901",
+      "received_at": "2026-11-02 15:26:27.915638+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:26:29.058571+00",
+      "alert_id": "b9d31341-9a74-40c8-b4ca-6974869c74a3",
+      "alert_inserted_at": "2026-11-02 15:26:29.05914+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.143502"
+    },
+    {
+      "event_id": "PERF-body-1041-large-duplicate-4",
+      "receipt_id": "a21e0612-d58d-4031-bb44-6cb7490c0c84",
+      "transaction_id": "af07cc13-ee69-4709-8b32-df401b4d9fa0",
+      "received_at": "2026-11-02 15:26:28.028016+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:26:29.535679+00",
+      "alert_id": "f6e75459-f625-461e-baf1-5733bad0563c",
+      "alert_inserted_at": "2026-11-02 15:26:29.537102+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.509086"
+    },
+    {
+      "event_id": "PERF-body-1041-large-duplicate-7",
+      "receipt_id": "f65a3c0e-f570-485c-9325-e21ebbc49cbb",
+      "transaction_id": "332c1646-6d4d-4e39-ac2b-73b0142fe77c",
+      "received_at": "2026-11-02 15:26:28.141353+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:26:29.308857+00",
+      "alert_id": "ce218995-d9da-45c3-875e-17f3ad218a7b",
+      "alert_inserted_at": "2026-11-02 15:26:29.311856+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.170503"
+    },
+    {
+      "event_id": "PERF-body-1042-large-duplicate-8",
+      "receipt_id": "1fa21f71-58d9-4f72-ae9a-423b7ba6dd24",
+      "transaction_id": "7ee29eb1-d246-4c43-974b-a4fb24951a31",
+      "received_at": "2026-11-02 15:26:28.250397+00",
+      "payload_bytes": 192609,
+      "evaluated_at": "2026-11-02 15:26:29.373403+00",
+      "alert_id": "7f86c059-6d6c-4b97-bed7-2395ee576550",
+      "alert_inserted_at": "2026-11-02 15:26:29.375176+00",
+      "audit_status": "COMPLETED",
+      "audit_attempts": 1,
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80,
+      "ai_score": 100,
+      "risk_score": 88,
+      "risk_level": "HIGH",
+      "rule_statuses": {
+        "ghost_vendors": "FAILED",
+        "approval_limits": "FAILED",
+        "duplicate_payment": "FAILED",
+        "invoice_splitting": "PASSED",
+        "segregation_of_duties": "FAILED"
+      },
+      "receipt_to_alert_insert_seconds": "1.124779"
+    }
+  ]
+}

@@ -1,5 +1,10 @@
 # Varied-payload staging soak - 2 November 2026
 
+Later follow-up: [separate body-reading, validation and fingerprint timings](S4_BODY_SPLIT_STAGING_2026-11-02.md)
+are now deployed. Sixty additional large-payload requests all confirmed within
+3.529236 seconds. The earlier three-second combined-stage delay did not recur;
+its exact cause remains unconfirmed. The observations below remain preserved.
+
 **Completed:** 86/86 transactions received full scoring and saved HIGH alerts.
 **84/86 client confirmations met five seconds.** Two large-payload requests
 took 5.625660 and 6.380250 seconds. Overall S4 remains partial under the existing
