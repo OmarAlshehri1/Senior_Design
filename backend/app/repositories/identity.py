@@ -14,14 +14,14 @@ class IdentityError(Exception):
 
 
 def request(method: str, path: str, *, body: Any = None, token: str | None = None,
-            query: dict | None = None, auth: bool = False) -> Any:
+            query: dict | None = None, auth: bool = False, timeout: float = 15) -> Any:
     url, _ = _get_configuration()
     headers = _get_headers()
     headers["Prefer"] = "return=representation,count=exact"
     if token is not None:
         headers["Authorization"] = f"Bearer {token}"
     try:
-        with httpx.Client(timeout=15, follow_redirects=False) as client:
+        with httpx.Client(timeout=timeout, follow_redirects=False) as client:
             response = client.request(method, f"{url}{'/auth/v1' if auth else '/rest/v1'}/{path}",
                                       headers=headers, json=body, params=query)
         if not response.is_success:
@@ -53,6 +53,10 @@ def request(method: str, path: str, *, body: Any = None, token: str | None = Non
 
 
 def rpc(name: str, **payload) -> Any:
+    if name in {"store_company_import", "get_company_import", "preview_company_import", "confirm_company_import",
+                "company_import_history", "company_import_progress"}:
+        # Bounded extra time for large snapshots; confirmation is safe to retry.
+        return request("POST", f"rpc/{name}", body=payload, timeout=60)
     return request("POST", f"rpc/{name}", body=payload)
 
 

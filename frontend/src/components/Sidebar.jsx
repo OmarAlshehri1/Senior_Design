@@ -39,9 +39,16 @@ const NAVIGATION_ICONS = Object.freeze({
 export default function Sidebar({ containerRef, closeButtonRef, isOpen, onClose }) {
   const { effectiveRole } = useAuthorization();
   const [feedAvailable, setFeedAvailable] = useState(false);
+  const [importsAvailable, setImportsAvailable] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
     setFeedAvailable(false);
+    setImportsAvailable(false);
+    if (effectiveRole === 'ADMIN') {
+      apiClient.get('/company-imports/capabilities', { signal: controller.signal })
+        .then((value) => { if (!controller.signal.aborted) setImportsAvailable(value.enabled === true); })
+        .catch(() => { if (!controller.signal.aborted) setImportsAvailable(false); });
+    }
     apiClient.get('/feed-review/capabilities', { signal: controller.signal })
       .then((value) => { if (!controller.signal.aborted) setFeedAvailable(value.enabled === true); })
       .catch(() => { if (!controller.signal.aborted) setFeedAvailable(false); });
@@ -66,6 +73,7 @@ export default function Sidebar({ containerRef, closeButtonRef, isOpen, onClose 
             <span className="sidebar-nav-label">{group.label}</span>
             {group.links.map(({ to, label, icon, end, restricted = false }) => {
               if (to === APPLICATION_ROUTES.FEED_REVIEW && !feedAvailable) return null;
+              if (to === APPLICATION_ROUTES.COMPANY_IMPORTS && !importsAvailable) return null;
               const Icon = NAVIGATION_ICONS[icon];
               if (restricted) {
                 return (

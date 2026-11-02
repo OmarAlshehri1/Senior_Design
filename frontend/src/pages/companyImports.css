@@ -1,0 +1,6 @@
+.company-imports fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.company-imports .import-table { overflow-x: auto; max-width: 100%; }
+.company-imports td { overflow-wrap: anywhere; min-width: 75px; }
+.company-imports input, .company-imports select { max-width: 100%; }
+.company-imports section, .company-imports label { min-width: 0; }
+.company-imports li { overflow-wrap: anywhere; line-height: 1.8; }

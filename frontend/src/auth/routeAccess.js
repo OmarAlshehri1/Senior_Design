@@ -6,6 +6,7 @@ export const APPLICATION_ROUTES = Object.freeze({
   DASHBOARD_ALIAS: '/dashboard',
   TRANSACTIONS: '/transactions',
   FEED_REVIEW: '/feed-review',
+  COMPANY_IMPORTS: '/imports',
   TRANSACTION_DETAIL: '/transactions/:id',
   ALERTS: '/alerts',
   AUDIT_RULES: '/audit-rules',
@@ -24,6 +25,7 @@ export const APPLICATION_ROUTES = Object.freeze({
 });
 
 export const APPLICATION_ROUTE_ACCESS = Object.freeze([
+  Object.freeze({ key: 'company-imports', path: APPLICATION_ROUTES.COMPANY_IMPORTS, permission: PERMISSIONS.IMPORT_TRANSACTIONS }),
   Object.freeze({ key: 'dashboard', path: APPLICATION_ROUTES.DASHBOARD, permission: PERMISSIONS.VIEW_DASHBOARD }),
   Object.freeze({ key: 'dashboard-alias', path: APPLICATION_ROUTES.DASHBOARD_ALIAS, permission: PERMISSIONS.VIEW_DASHBOARD }),
   Object.freeze({ key: 'transactions', path: APPLICATION_ROUTES.TRANSACTIONS, permission: PERMISSIONS.VIEW_TRANSACTIONS }),

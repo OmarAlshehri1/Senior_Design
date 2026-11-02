@@ -1,0 +1,7 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Local import verification</title></head><body style="margin:24px;font-family:Arial,sans-serif"><div id="root"></div><script type="module">
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import {BrowserRouter} from 'react-router-dom';
+import CompanyImports from '/src/pages/CompanyImports.jsx';
+createRoot(document.getElementById('root')).render(React.createElement(BrowserRouter,null,React.createElement(CompanyImports)));
+</script></body></html>

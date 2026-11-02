@@ -24,6 +24,7 @@ from app.api.business_reports import router as business_reports_router
 from app.api.ingestion import router as ingestion_router
 from app.api.feed_review import router as feed_review_router
 from app.api.payments_model_review import router as payments_model_review_router
+from app.api.company_imports import router as company_imports_router
 
 
 LOCAL_FRONTEND_ORIGINS = (
@@ -131,6 +132,7 @@ app.include_router(business_reports_router, prefix="/api/v1")
 app.include_router(ingestion_router, prefix="/api/v1")
 app.include_router(feed_review_router, prefix="/api/v1")
 app.include_router(payments_model_review_router, prefix="/api/v1")
+app.include_router(company_imports_router, prefix="/api/v1")
 app.include_router(alerts_websocket_router)
 app.include_router(identity_router, prefix="/api/v1")
 app.include_router(accountability_router, prefix="/api/v1")

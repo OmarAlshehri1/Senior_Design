@@ -1,0 +1,59 @@
+{
+  "date": "2026-11-01",
+  "status": "LOCAL_ACCEPTANCE_PASS",
+  "supersedes": "Initial 1,000-row / 5 MiB upload limits only; earlier evidence retains its historical scope.",
+  "limits": {
+    "max_rows": 50000,
+    "max_file_bytes": 26214400,
+    "max_columns": 64,
+    "max_expanded_workbook_bytes": 134217728,
+    "max_expanded_row_json_bytes": 67108864,
+    "per_transaction": "Must fit the existing 256 KiB ingestion envelope, with reserved envelope overhead.",
+    "scope": "Per upload; not total database capacity."
+  },
+  "implementation": [
+    "Backend parser and capability endpoint share row/file limits",
+    "Frontend displays and enforces backend-advertised limits",
+    "Chosen-sheet streaming XML extraction preserves exact XLSX numeric lexemes",
+    "Bulk receipt/job insertion and one final receipt-array aggregation replace row-by-row confirmation",
+    "Source locks, immutable mappings, conflict rollback, duplicate handling and safe replay retained",
+    "Large import RPCs have a bounded 60-second transport timeout; other identity operations unchanged"
+  ],
+  "verification": {
+    "backend_regression": {
+      "passed": 167,
+      "command": "backend/.venv/Scripts/python.exe -m pytest backend/tests/test_company_imports.py backend/tests/test_company_import_pipeline.py backend/tests/test_ingestion.py backend/tests/test_ingestion_mapping.py backend/tests/test_feed_auditing.py backend/tests/test_reports.py backend/tests/test_identity.py -q -p no:cacheprovider --basetemp backend/.feed-simulator/import-large-regression-20261101C",
+      "warnings": [
+        "Existing Starlette/httpx deprecation warning"
+      ]
+    },
+    "large_file_checks": [
+      "50,000-row CSV larger than 5 MiB parsed and fully previewed",
+      "50,000-row XLSX parsed with exact numeric text",
+      "50,000-row CSV passed real local HTTP upload, preview, confirmation and durable progress checks",
+      "Files above 25 MiB rejected",
+      "50,001 rows rejected",
+      "A row exceeding the durable envelope budget rejected before queueing"
+    ],
+    "database": {
+      "engine": "in-memory PGlite",
+      "rows_inserted": 50000,
+      "jobs_queued": 50000,
+      "confirmation_replay": "No additional jobs",
+      "observed_confirmation_seconds": 6.3464028,
+      "limits": "Queue acceptance only; not completion/scoring of 50,000 jobs or hosted throughput."
+    },
+    "frontend": {
+      "lint": "passed",
+      "build": "passed",
+      "build_note": "Existing-style main bundle size warning above 500 kB."
+    },
+    "browser_evidence": "company_import_large_limits_browser_2026-11-01.json"
+  },
+  "deployment": {
+    "hosted_migrations_applied": false,
+    "production_data_changed": false,
+    "hosted_configuration_changed": false,
+    "status": "Local implementation only; staging request limits, real sign-in and hosted performance remain unverified."
+  }
+}
