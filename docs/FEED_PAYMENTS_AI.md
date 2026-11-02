@@ -54,3 +54,11 @@ The existing source-model validation and provenance are documented in
 [the Payments release](PAYMENTS_PRIMARY_DATASET_RELEASE.md). Runtime integration
 acceptance does not establish detection or false-positive rates for new company
 data, and AI scoring alone does not establish S4 alert timing.
+
+Staging acceptance on November 2 passed actual-model parity on 30 inputs and
+real JSON/CSV/XLSX inference, negative controls, authenticated reads, replay and
+browser display. Both staging services run release `845318b`. The active
+`payments-file-local` context is `payments-source-ai-20261102`; existing saved
+results were not rescored. Reference policies still need renewal before complete
+combined-risk auditing can resume. See the
+[dated acceptance and evidence](FEED_PAYMENTS_AI_ACCEPTANCE_2026-11-02.md).

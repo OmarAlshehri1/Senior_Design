@@ -1,0 +1,11 @@
+{
+  "environment": "staging",
+  "artifact_sha256": "85b034c6c247e4be4532e7b1f76bd2ec1ab7eac4a76514edccd9ce83910bdbc8",
+  "artifact_bytes": 2903899,
+  "bucket": "payments-primary-models",
+  "object": "payments-primary-no-calendar-1.0.0/85b034c6c247e4be4532e7b1f76bd2ec1ab7eac4a76514edccd9ce83910bdbc8.joblib",
+  "bucket_public": false,
+  "authenticated_download_hash_verified": true,
+  "anonymous_public_download_http_status": 400,
+  "production_changed": false
+}
