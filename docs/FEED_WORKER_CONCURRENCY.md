@@ -10,6 +10,13 @@ enable flags remain required. Set both values to 4 for the initial staging trial
 This uses the existing service and does not require a paid instance or extra
 service. Production retains its existing configuration.
 
+For large queues, install `20261102031416_optimize_ingestion_open_queue.sql`
+before raising concurrency. The original claim query sorted/scanned the backlog;
+raising worker counts without the ordered partial index caused hosted timeouts.
+The index matches `(available_at, created_at, receipt_id)` for open jobs and
+preserves claim ordering and lease checks. Verify the claim query plan uses
+`ingestion_jobs_open_order_idx` without a backlog Sort node.
+
 Each worker uses the existing single-job claim/finish RPCs and existing 25-job
 drain passes. Database leases, `FOR UPDATE SKIP LOCKED`, source authorization,
 snapshot capture, audit calculations and retry limits remain unchanged. This
