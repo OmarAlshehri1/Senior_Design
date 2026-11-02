@@ -1,0 +1,14 @@
+{
+  "environment": "staging",
+  "real_browser_admin_sign_in": true,
+  "dashboard_business_categories_visible": true,
+  "csv_upload_mapping_confirm_worker_completion": true,
+  "saved_mapping_reuse": true,
+  "durable_processing_after_reload": true,
+  "advertised_rows": 50000,
+  "advertised_MiB": 25,
+  "mobile_390px_no_overflow": true,
+  "runtime_exceptions": 0,
+  "production_changed": false,
+  "private_artifacts": "backend\\.feed-simulator\\hosted-company-browser-290cfcceb0"
+}

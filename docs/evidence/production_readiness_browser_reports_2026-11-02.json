@@ -1,0 +1,10 @@
+{
+  "environment": "staging",
+  "real_admin_sign_in": true,
+  "listing_and_detail_departments": true,
+  "summary_five_departments": true,
+  "runtime_exceptions": 0,
+  "mobile_390px_overflow": false,
+  "production_changed": false,
+  "private_artifacts": "backend\\.feed-simulator\\department-browser-c5bbc1905f"
+}

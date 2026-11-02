@@ -1,0 +1,139 @@
+{
+  "base_main": "71ca4a0d5d12e1082ca3f415d5de7e99ca8f056f",
+  "production_changed": false,
+  "migration_count": 26,
+  "migrations": [
+    {
+      "order": 1,
+      "path": "backend/migrations/026_create_ingestion_receipts.sql",
+      "sha256_git_content": "757263d07a382994bcd1bbaa43610d881501b478e957da98bf58bea236a50e34"
+    },
+    {
+      "order": 2,
+      "path": "backend/migrations/027_create_ingestion_validation.sql",
+      "sha256_git_content": "873247883295fafa4c8c60e87c280721978c129a2170e177d87ed6ef7cec3a5a"
+    },
+    {
+      "order": 3,
+      "path": "backend/migrations/028_create_scoped_feed_auditing.sql",
+      "sha256_git_content": "dc7dbeaa72a75de3dda846de52be5fc67bdca0bfec39b7b3e35acc8de520ee2c"
+    },
+    {
+      "order": 4,
+      "path": "backend/migrations/029_add_simulation_arrival_clock.sql",
+      "sha256_git_content": "b65830345d831e5f0f374a67f12c19d8f6ea19a14d65413acd8564ea5cc09b5e"
+    },
+    {
+      "order": 5,
+      "path": "backend/migrations/030_add_simulated_name_window_indicator.sql",
+      "sha256_git_content": "554d6bae79d52ca239e83a98af28865e987bca9e6c27fe6ed1f91b017aa4777d"
+    },
+    {
+      "order": 6,
+      "path": "backend/migrations/031_optimize_feed_history_readiness.sql",
+      "sha256_git_content": "479dd415dadc1902c16a33fd223be293286d5bbfa77d4e9e332832b30e4db24b"
+    },
+    {
+      "order": 7,
+      "path": "backend/migrations/032_add_subthreshold_splitting_context.sql",
+      "sha256_git_content": "c5e61f7c3fe8955f1d452e4f75f941d63bfe86b373275f10f94b9229de8018ce"
+    },
+    {
+      "order": 8,
+      "path": "backend/migrations/033_configure_source_intake_rate.sql",
+      "sha256_git_content": "fa55945513fdd5b99a3ced70ff220528456c667612aec66029946859dfea7e5e"
+    },
+    {
+      "order": 9,
+      "path": "backend/migrations/034_share_pinned_feed_configuration.sql",
+      "sha256_git_content": "c0f69d663b5e47d45a52fc242e0e66c090c98bfd0ff6b76733e2fe18b7f96ecd"
+    },
+    {
+      "order": 10,
+      "path": "backend/migrations/035_project_feed_result_summary.sql",
+      "sha256_git_content": "c3550e9ca4b56ac1039d459f18973c9deb0f1dde4612f9d35584e8a60888ba1c"
+    },
+    {
+      "order": 11,
+      "path": "backend/migrations/036_index_and_queue_feed_preparation.sql",
+      "sha256_git_content": "548e3007e6a0f91e9b50058da59c077c01c7161fe69642bd98ba2de2297331e2"
+    },
+    {
+      "order": 12,
+      "path": "backend/migrations/037_add_authenticated_feed_review.sql",
+      "sha256_git_content": "bdda1670e605c61689cdb0e607041558d9aaa1f2eaae1499654ebf34d92a871b"
+    },
+    {
+      "order": 13,
+      "path": "backend/migrations/038_add_feed_exception_review.sql",
+      "sha256_git_content": "55bbc6ba5494949315e41e7ab5c57535a2ac08dd80582000988faac63ac71d30"
+    },
+    {
+      "order": 14,
+      "path": "backend/migrations/039_add_feed_summary_report.sql",
+      "sha256_git_content": "567553d9579b3f75a97b4dd9fc996dd6a4de7b7e3d533eaee87deb23eb8bbd29"
+    },
+    {
+      "order": 15,
+      "path": "backend/migrations/20261101181927_company_transaction_imports.sql",
+      "sha256_git_content": "9c846499c108a9adaf2a0bb01863c25d8089d0dba9b4f36383ebbae3d9322ef6"
+    },
+    {
+      "order": 16,
+      "path": "backend/migrations/20261102025407_company_import_request_timeouts.sql",
+      "sha256_git_content": "690cad563c69e42efa60cb7ec859767bf42ae271e8fe43b02888ee7334455f68"
+    },
+    {
+      "order": 17,
+      "path": "backend/migrations/20261102031416_optimize_ingestion_open_queue.sql",
+      "sha256_git_content": "32f4f19f7917774548be0e3ce1538ec86e21b774df6a1f6c33ec3a7d6357bb3b"
+    },
+    {
+      "order": 18,
+      "path": "backend/migrations/20261102032159_company_import_progress_timeout.sql",
+      "sha256_git_content": "c3bf8fec0f1544800a7779c5a62138d69537f18bf8236e2ea7d6df986df9d04b"
+    },
+    {
+      "order": 19,
+      "path": "backend/migrations/20261102033856_feed_department_reporting.sql",
+      "sha256_git_content": "158f11f89e23c37af1cede51c0bcd1fa929599891ce85127c7483b16669387e2"
+    },
+    {
+      "order": 20,
+      "path": "backend/migrations/20261102041731_company_import_draft_cleanup.sql",
+      "sha256_git_content": "ec5dc7fe4ef88f7ce95c7615022cc02f5411801181d1ad8e17d2a5dff473235e"
+    },
+    {
+      "order": 21,
+      "path": "backend/migrations/20261102043639_optimize_import_progress_and_preparation.sql",
+      "sha256_git_content": "75ad629050aa946e1f1d4242fda9eed38bd358f1a247095de6a2f65372c6445b"
+    },
+    {
+      "order": 22,
+      "path": "backend/migrations/20261102044800_narrow_feed_preparation_and_progress.sql",
+      "sha256_git_content": "aa67aed6685747be646e7eb6d2bab6c33acaf4d27aa94c647ba65fa9463cb0a1"
+    },
+    {
+      "order": 23,
+      "path": "backend/migrations/20261102045703_bound_feed_preparation_queue_reads.sql",
+      "sha256_git_content": "1b6ca245d7c16877ea200180932bcdb0bf1266de95cfe9442df656ea0ac54666"
+    },
+    {
+      "order": 24,
+      "path": "backend/migrations/20261102051123_indexed_feed_history_counts.sql",
+      "sha256_git_content": "272a61ae03e4a86f9b9e4fea4d396908377833d7ce6923ed21f9043d0df52523"
+    },
+    {
+      "order": 25,
+      "path": "backend/migrations/20261102064921_payments_feed_source_model.sql",
+      "sha256_git_content": "bb4d3322a87505639b1997b227368b8d95e9b0f603c2e80854a4ea39b0ac55ea"
+    },
+    {
+      "order": 26,
+      "path": "backend/migrations/20261102065319_feed_ai_score_visibility.sql",
+      "sha256_git_content": "56c4e44c25df80f14b2766ddf4bc2fb71c3f9dada4b18cc3f56098b4c502df36"
+    }
+  ],
+  "checksum_basis": "SHA-256 of Git blob contents at source_candidate_commit (not Windows checkout CRLF bytes)",
+  "source_candidate_commit": "b1ca6416d32454ae0218ed446bc0cda09b087331"
+}
