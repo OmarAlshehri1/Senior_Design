@@ -1,5 +1,11 @@
 # Company imports and feed reports: production readiness
 
+Later update: the owner approved the schema-only step. All 26 migrations are now
+applied and verified in production, with existing transaction/alert checksums
+unchanged. Application deployment and activation remain pending; no feature
+flags were updated. See [the schema execution record](PRODUCTION_SCHEMA_ROLLOUT_2026-11-02.md).
+The pre-rollout review below is retained as a dated checkpoint.
+
 The staging candidate passed the functional release review. **Production has
 not been changed, and the release is not yet approved for activation.** The
 remaining conditions are the ordered database rollout, production source

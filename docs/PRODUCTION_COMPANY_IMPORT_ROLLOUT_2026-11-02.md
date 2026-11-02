@@ -1,8 +1,11 @@
 # Company import release: production rollout checklist
 
-This is a prepared procedure, **not an executed production change**. Use it only
-after the owner approves the reviewed candidate and resolves or explicitly
-accepts the conditions in [the readiness review](PRODUCTION_READINESS_2026-11-02.md).
+**Status update:** the owner approved the schema-only step, and all 26 reviewed
+migrations have now been applied once and verified. Do not repeat section 3.
+See [the schema execution record](PRODUCTION_SCHEMA_ROLLOUT_2026-11-02.md).
+Application deployment and activation remain pending. Use those remaining steps
+only after their separate approval and resolution or explicit acceptance of
+the conditions in [the readiness review](PRODUCTION_READINESS_2026-11-02.md).
 
 ## 1. Pin the release and rollback points
 
