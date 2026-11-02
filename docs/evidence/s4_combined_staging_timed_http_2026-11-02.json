@@ -1,0 +1,227 @@
+{
+  "environment": "staging",
+  "production_changed": false,
+  "source_id": "SYNTHETIC-combined-s4-20261102",
+  "plan_sha256": "19da73be1492c76cfe175327d0820bce1b318381c97395fe2c8c00d1ae297dc6",
+  "status": "HTTP_COMPLETE_AWAITING_DATABASE_ALERT_VERIFICATION",
+  "plan": {
+    "source_id": "SYNTHETIC-combined-s4-20261102",
+    "amount": "1000000000000.00",
+    "repetitions": 3,
+    "cases": [
+      [
+        "seed",
+        [
+          "segregation_of_duties",
+          "approval_limits",
+          "ghost_vendors"
+        ]
+      ],
+      [
+        "duplicate",
+        [
+          "segregation_of_duties",
+          "approval_limits",
+          "duplicate_payment",
+          "ghost_vendors"
+        ]
+      ]
+    ],
+    "expected_high_cases": [
+      "S4-FINAL-1-seed",
+      "S4-FINAL-1-duplicate",
+      "S4-FINAL-2-seed",
+      "S4-FINAL-2-duplicate",
+      "S4-FINAL-3-seed",
+      "S4-FINAL-3-duplicate"
+    ],
+    "purpose": "Engineering alert-path timing; extreme synthetic values, not model-quality assessment",
+    "thresholds_unchanged": true,
+    "load": "Six sequential posts, waiting for completion after each; warmed host/model"
+  },
+  "cases": [
+    {
+      "event_id": "S4-FINAL-1-seed",
+      "expected_failed_rules": [
+        "segregation_of_duties",
+        "approval_limits",
+        "ghost_vendors"
+      ],
+      "posting_started_at": "2026-11-02T07:39:44.521791+00:00",
+      "read_transport_errors": [],
+      "post_http_status": 202,
+      "acknowledgment_seconds": 1.405011,
+      "receipt_id": "e17a7f2f-c490-4035-bc1a-17ef58c59a4e",
+      "received_at": "2026-11-02T07:39:45.686651+00:00",
+      "processing_status": "COMPLETED",
+      "transaction_id": "4d43f285-7786-4d16-8925-c598bb86ea75",
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60.0,
+      "ai_score": 100.0,
+      "risk_score": 76.0,
+      "risk_level": "HIGH",
+      "observed_committed_result_seconds": 4.853992,
+      "posting_to_alert_commit_upper_bound_seconds": 4.853992,
+      "within_five_seconds": true
+    },
+    {
+      "event_id": "S4-FINAL-1-duplicate",
+      "expected_failed_rules": [
+        "segregation_of_duties",
+        "approval_limits",
+        "duplicate_payment",
+        "ghost_vendors"
+      ],
+      "posting_started_at": "2026-11-02T07:39:49.381926+00:00",
+      "read_transport_errors": [],
+      "post_http_status": 202,
+      "acknowledgment_seconds": 1.292602,
+      "receipt_id": "dada4ec9-3296-4a69-8086-32bb2932fc4f",
+      "received_at": "2026-11-02T07:39:50.418505+00:00",
+      "processing_status": "COMPLETED",
+      "transaction_id": "e6016d87-b342-4adc-aa25-16af6abb3d45",
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80.0,
+      "ai_score": 100.0,
+      "risk_score": 88.0,
+      "risk_level": "HIGH",
+      "observed_committed_result_seconds": 2.668787,
+      "posting_to_alert_commit_upper_bound_seconds": 2.668787,
+      "within_five_seconds": true
+    },
+    {
+      "event_id": "S4-FINAL-2-seed",
+      "expected_failed_rules": [
+        "segregation_of_duties",
+        "approval_limits",
+        "ghost_vendors"
+      ],
+      "posting_started_at": "2026-11-02T07:39:52.052808+00:00",
+      "read_transport_errors": [],
+      "post_http_status": 202,
+      "acknowledgment_seconds": 2.109818,
+      "receipt_id": "557c3548-d031-49ab-a374-3f1930bee324",
+      "received_at": "2026-11-02T07:39:53.924652+00:00",
+      "processing_status": "COMPLETED",
+      "transaction_id": "5dead5b2-9b02-4901-8e5e-e84cfdcf45e5",
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60.0,
+      "ai_score": 100.0,
+      "risk_score": 76.0,
+      "risk_level": "HIGH",
+      "observed_committed_result_seconds": 3.327055,
+      "posting_to_alert_commit_upper_bound_seconds": 3.327055,
+      "within_five_seconds": true
+    },
+    {
+      "event_id": "S4-FINAL-2-duplicate",
+      "expected_failed_rules": [
+        "segregation_of_duties",
+        "approval_limits",
+        "duplicate_payment",
+        "ghost_vendors"
+      ],
+      "posting_started_at": "2026-11-02T07:39:55.381538+00:00",
+      "read_transport_errors": [],
+      "post_http_status": 202,
+      "acknowledgment_seconds": 4.302846,
+      "receipt_id": "cf021cf4-48ad-4d06-ae53-dda4b9651e73",
+      "received_at": "2026-11-02T07:39:59.460729+00:00",
+      "processing_status": "COMPLETED",
+      "transaction_id": "d2c07d11-f936-4e94-b4c6-295c66dbc2a5",
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80.0,
+      "ai_score": 100.0,
+      "risk_score": 88.0,
+      "risk_level": "HIGH",
+      "observed_committed_result_seconds": 6.939203,
+      "posting_to_alert_commit_upper_bound_seconds": 6.939203,
+      "within_five_seconds": false
+    },
+    {
+      "event_id": "S4-FINAL-3-seed",
+      "expected_failed_rules": [
+        "segregation_of_duties",
+        "approval_limits",
+        "ghost_vendors"
+      ],
+      "posting_started_at": "2026-11-02T07:40:02.323552+00:00",
+      "read_transport_errors": [],
+      "post_http_status": 202,
+      "acknowledgment_seconds": 1.144118,
+      "receipt_id": "80a62d43-f662-4cdc-b8e0-b25d11a8141c",
+      "received_at": "2026-11-02T07:40:03.221315+00:00",
+      "processing_status": "COMPLETED",
+      "transaction_id": "278659c7-0ce3-4827-aa0b-b0555ca22b4c",
+      "coverage": {
+        "total": 5,
+        "failed": 3,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 60.0,
+      "ai_score": 100.0,
+      "risk_score": 76.0,
+      "risk_level": "HIGH",
+      "observed_committed_result_seconds": 2.638734,
+      "posting_to_alert_commit_upper_bound_seconds": 2.638734,
+      "within_five_seconds": true
+    },
+    {
+      "event_id": "S4-FINAL-3-duplicate",
+      "expected_failed_rules": [
+        "segregation_of_duties",
+        "approval_limits",
+        "duplicate_payment",
+        "ghost_vendors"
+      ],
+      "posting_started_at": "2026-11-02T07:40:04.968188+00:00",
+      "read_transport_errors": [],
+      "post_http_status": 202,
+      "acknowledgment_seconds": 1.08225,
+      "receipt_id": "8b9a6e78-5bff-43ad-9545-33f08e3d3818",
+      "received_at": "2026-11-02T07:40:05.812304+00:00",
+      "processing_status": "COMPLETED",
+      "transaction_id": "2d077f20-6673-45ee-9828-89e2bd4cef65",
+      "coverage": {
+        "total": 5,
+        "failed": 4,
+        "evaluated": 5,
+        "not_evaluated": 0
+      },
+      "rule_score": 80.0,
+      "ai_score": 100.0,
+      "risk_score": 88.0,
+      "risk_level": "HIGH",
+      "observed_committed_result_seconds": 2.149187,
+      "posting_to_alert_commit_upper_bound_seconds": 2.149187,
+      "within_five_seconds": true
+    }
+  ],
+  "boundary": "Monotonic logical posting start through observed committed HIGH result; all client retries included",
+  "earlier_attempts_retained": [
+    "s4_combined_staging_http_2026-11-02.json",
+    "s4_combined_staging_extreme_http_2026-11-02.json"
+  ],
+  "finished_at": "2026-11-02T07:40:07.113116+00:00"
+}

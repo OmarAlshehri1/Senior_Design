@@ -58,7 +58,10 @@ data, and AI scoring alone does not establish S4 alert timing.
 Staging acceptance on November 2 passed actual-model parity on 30 inputs and
 real JSON/CSV/XLSX inference, negative controls, authenticated reads, replay and
 browser display. Both staging services run release `845318b`. The active
-`payments-file-local` context is `payments-source-ai-20261102`; existing saved
-results were not rescored. Reference policies still need renewal before complete
-combined-risk auditing can resume. See the
+`payments-file-local` context was `payments-source-ai-20261102`; existing saved
+results were not rescored. A subsequent explicit staging renewal now selects
+`payments-simulation-ai-20261102`, with fictional references valid until November
+9 at 03:00 Riyadh time. Complete combined-risk scoring and HIGH alert creation
+are verified; the five-second requirement remains partial. See
+[combined-risk verification](S4_COMBINED_STAGING_2026-11-02.md) and the
 [dated acceptance and evidence](FEED_PAYMENTS_AI_ACCEPTANCE_2026-11-02.md).

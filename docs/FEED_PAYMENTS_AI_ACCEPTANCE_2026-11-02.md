@@ -1,5 +1,10 @@
-# Payments feed AI staging acceptance ? 2 November 2026
+# Payments feed AI staging acceptance - 2 November 2026
 
+
+Subsequent update: simulation references were renewed and complete combined-risk
+scoring/HIGH alerts were verified. S4 remains partial after one late confirmation;
+see [combined-risk verification](S4_COMBINED_STAGING_2026-11-02.md). The checkpoint
+below retains the earlier activation evidence and its then-current limits.
 
 The source-specific Payments model is now connected to newly received eligible
 Payments records on staging. Application release

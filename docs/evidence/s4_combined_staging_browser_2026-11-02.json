@@ -1,0 +1,15 @@
+{
+  "environment": "staging",
+  "production_changed": false,
+  "source_id": "SYNTHETIC-combined-s4-20261102",
+  "real_admin_sign_in": true,
+  "status": "PASSED",
+  "saved_ai_score_visible": 100,
+  "combined_risk_visible": 88,
+  "complete_rule_coverage": true,
+  "score_meaning_explained": true,
+  "mobile_390px_no_overflow": true,
+  "runtime_exceptions": 0,
+  "private_artifacts": "backend\\.feed-simulator\\combined-s4-browser-bcb872e5e2",
+  "logout_status": 204
+}

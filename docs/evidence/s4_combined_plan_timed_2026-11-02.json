@@ -1,0 +1,35 @@
+{
+  "source_id": "SYNTHETIC-combined-s4-20261102",
+  "amount": "1000000000000.00",
+  "repetitions": 3,
+  "cases": [
+    [
+      "seed",
+      [
+        "segregation_of_duties",
+        "approval_limits",
+        "ghost_vendors"
+      ]
+    ],
+    [
+      "duplicate",
+      [
+        "segregation_of_duties",
+        "approval_limits",
+        "duplicate_payment",
+        "ghost_vendors"
+      ]
+    ]
+  ],
+  "expected_high_cases": [
+    "S4-FINAL-1-seed",
+    "S4-FINAL-1-duplicate",
+    "S4-FINAL-2-seed",
+    "S4-FINAL-2-duplicate",
+    "S4-FINAL-3-seed",
+    "S4-FINAL-3-duplicate"
+  ],
+  "purpose": "Engineering alert-path timing; extreme synthetic values, not model-quality assessment",
+  "thresholds_unchanged": true,
+  "load": "Six sequential posts, waiting for completion after each; warmed host/model"
+}

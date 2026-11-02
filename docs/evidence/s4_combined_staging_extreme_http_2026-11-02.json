@@ -1,0 +1,34 @@
+{
+  "environment": "staging",
+  "production_changed": false,
+  "source_id": "SYNTHETIC-combined-s4-20261102",
+  "plan_sha256": "abfbcbaa425106b8e721aa00291ae8bfdd56c0ccf09697f7fdd3549f971e71b6",
+  "status": "INTERRUPTED",
+  "load": "6 extreme extension posts; sequential, waiting for each completion; no starting backlog",
+  "alert_policy": "Existing combined HIGH only; thresholds unchanged",
+  "expected_high_cases": [
+    "S4-1-extreme_duplicate",
+    "S4-2-extreme_duplicate",
+    "S4-3-extreme_duplicate"
+  ],
+  "latency_boundary": "Monotonic producer HTTP posting start to observed committed HIGH result; actual alert rows verified separately",
+  "cases": [
+    {
+      "event_id": "S4-1-extreme_seed",
+      "expected_failed_rules": [
+        "segregation_of_duties",
+        "approval_limits",
+        "ghost_vendors"
+      ],
+      "posting_started_at": "2026-11-02T07:34:24.052526+00:00",
+      "post_http_status": 202,
+      "acknowledgment_seconds": 0.75665,
+      "receipt_id": "d1ae3db2-04ec-4108-b3a3-100c309c5922",
+      "received_at": "2026-11-02T07:34:24.492349+00:00"
+    }
+  ],
+  "health_warmup_seconds": 3.486496,
+  "error_type": "RemoteProtocolError",
+  "error_code": null,
+  "finished_at": "2026-11-02T07:34:46.310828+00:00"
+}

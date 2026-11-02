@@ -1,0 +1,16 @@
+{
+  "environment": "staging",
+  "production_changed": false,
+  "disabled_producer_credential_http_status": 401,
+  "cleanup": {
+    "test_alerts": 7,
+    "test_receipts": 37,
+    "other_receipts": 51045,
+    "test_source_active": false,
+    "active_payments_records": 10001,
+    "payments_source_context": "payments-simulation-ai-20261102",
+    "payments_source_records": 1001,
+    "temporary_account_status": "DISABLED",
+    "replayed_transaction_alert_count": 1
+  }
+}

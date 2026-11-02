@@ -1,0 +1,17 @@
+{
+  "environment": "staging",
+  "production_changed": false,
+  "fictional_references_only": true,
+  "renewal": {
+    "valid_to": "2026-11-09T00:00:00Z",
+    "source_id": "payments-file-local",
+    "active_context": "payments-simulation-ai-20261102",
+    "model_unchanged": true,
+    "previous_valid_to": "2026-10-25T19:13:19.917692+00:00",
+    "existing_source_records": 1001,
+    "existing_source_results": 1001,
+    "approval_values_unchanged": true,
+    "registry_entries_unchanged": true,
+    "non_reference_settings_unchanged": true
+  }
+}
