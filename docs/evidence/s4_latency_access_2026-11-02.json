@@ -1,0 +1,10 @@
+{
+  "environment": "staging",
+  "production_changed": false,
+  "authorized_read": 200,
+  "foreign_receipt_denied": 404,
+  "invalid_source_denied": 401,
+  "single_atomic_lookup_timing_header": true,
+  "unauthorized_timing_header_absent": true,
+  "checked_at": "2026-11-02T08:40:20.118414+00:00"
+}

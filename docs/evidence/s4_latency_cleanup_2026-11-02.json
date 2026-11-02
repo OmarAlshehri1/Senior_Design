@@ -1,0 +1,13 @@
+{
+  "environment": "staging",
+  "production_changed": false,
+  "revoked_source_credential_status": 401,
+  "unauthorized_timings_absent": true,
+  "test_receipts_retained": 33,
+  "test_completed": 33,
+  "test_alerts_retained": 33,
+  "other_receipts_unchanged": 51082,
+  "active_payments_unchanged": 10001,
+  "original_payments_source_records_unchanged": 1001,
+  "temporary_admin_remained_disabled": true
+}

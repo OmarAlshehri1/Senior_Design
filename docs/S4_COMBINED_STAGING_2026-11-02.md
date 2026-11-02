@@ -1,5 +1,10 @@
 # Combined-risk and alert verification - 2 November 2026
 
+Later update: [latency diagnosis and fixes](S4_LATENCY_DIAGNOSIS_2026-11-02.md)
+verified faster warm/concurrent requests, but an actual idle cold post took
+66.40 seconds on Free hosting. Overall S4 remains open. The observations below
+are retained as the earlier checkpoint.
+
 **Combined-risk scoring and HIGH alerts work on staging. S4 remains partial.**
 Five of six timed HIGH results were confirmed within five seconds of posting;
 one confirmation took 6.939203 seconds. A separate earlier HIGH alert has no
