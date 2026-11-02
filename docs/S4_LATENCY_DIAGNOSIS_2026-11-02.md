@@ -1,5 +1,11 @@
 # S4 latency diagnosis - 2 November 2026
 
+Later update: the user upgraded staging to always-on compute. The successful
+after-inactivity follow-up took 2.347501 seconds on the same process, while an
+8.059360-second intake outlier and an interrupted connection attempt remain
+recorded. See [the paid-instance verification](S4_ALWAYS_ON_STAGING_2026-11-02.md).
+The Free-service findings below are retained as historical evidence.
+
 Warmed and small-concurrency staging checks now meet the five-second confirmation
 target in the measured samples. The actual idle cold post took **66.404687
 seconds**, with a verified new process. **Overall S4 remains not attained for

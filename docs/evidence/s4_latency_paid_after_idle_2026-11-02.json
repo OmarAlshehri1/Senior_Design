@@ -1,0 +1,36 @@
+{
+  "environment": "staging",
+  "production_changed": false,
+  "source_id": "SYNTHETIC-s4-latency-20261102",
+  "phase": "paid_after_idle",
+  "mode": "cold",
+  "cases": [
+    {
+      "event_id": "PERF-paid_after_idle-1-seed",
+      "phase": "paid_after_idle",
+      "kind": "seed",
+      "posting_started_at": "2026-11-02T10:31:08.628176+00:00",
+      "calls": [
+        {
+          "method": "POST",
+          "http_status": null,
+          "wall_seconds": 0.027193,
+          "server_seconds": {},
+          "phases": [
+            {
+              "phase": "connection.connect_tcp",
+              "seconds": 0.023045,
+              "failed": true
+            }
+          ],
+          "error_type": "ConnectError"
+        }
+      ],
+      "status": "INTERRUPTED",
+      "error_type": "ConnectError",
+      "error_code": null,
+      "elapsed_seconds": 0.027297
+    }
+  ],
+  "finished_at": "2026-11-02T10:31:08.658276+00:00"
+}
