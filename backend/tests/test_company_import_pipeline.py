@@ -58,6 +58,41 @@ def pipeline(monkeypatch):
         process.stderr.close()
 
 
+def test_parallel_workers_process_each_imported_receipt_once_with_source_isolation(pipeline):
+    client, ready, actor = pipeline
+    source = 'unapproved-company'
+    content = ('reference,Value,CCY\n' + ''.join(
+        f'PARALLEL-{index:03d},25.75,USD\n' for index in range(50))).encode()
+    upload = client.post('/api/v1/company-imports/uploads',
+        params={'source_id': source, 'filename': 'parallel.csv'}, content=content)
+    assert upload.status_code == 201
+    batch = upload.json()['id']
+    preview = client.post(f'/api/v1/company-imports/{batch}/preview', json={
+        'source_id': source, 'identity_column': 'reference', 'mapping': {
+            'schema_version': '1.0', 'supported_currencies': ['USD'],
+            'fields': {'amount': {'path': ['Value']}, 'currency': {'path': ['CCY']}}}})
+    assert preview.status_code == 200
+    confirmation = {'source_id': source, 'revision': preview.json()['revision']}
+    assert client.post(f'/api/v1/company-imports/{batch}/confirm', json=confirmation).status_code == 200
+
+    async def drain():
+        assert sum(await asyncio.gather(*(validate_once() for _ in range(4)))) == 50
+        assert sum(await asyncio.gather(*(audit_once() for _ in range(4)))) == 50
+        assert sum(await asyncio.gather(*(validate_once() for _ in range(4)))) == 0
+        assert sum(await asyncio.gather(*(audit_once() for _ in range(4)))) == 0
+
+    asyncio.run(drain())
+    progress = client.get(f'/api/v1/company-imports/{batch}/progress', params={'source_id': source}).json()
+    assert progress['total'] == progress['completed'] == 50
+    assert progress['pending'] == progress['blocked'] == progress['rejected'] == 0
+    rows = client.get('/api/v1/feed-review/transactions', params={'source_id': source, 'page_size': 100}).json()
+    assert rows['total'] == len({row['id'] for row in rows['items']}) == 50
+    assert all(row['processing_status'] == 'COMPLETED' and row['risk_score'] is None for row in rows['items'])
+    assert client.get('/api/v1/feed-review/transactions', params={'source_id': 'fixture-company'}).json()['total'] == 0
+    assert client.post(f'/api/v1/company-imports/{batch}/confirm', json=confirmation).status_code == 200
+    assert client.get('/api/v1/feed-review/transactions', params={'source_id': source}).json()['total'] == 50
+
+
 def test_file_and_json_intake_reach_real_saved_audits_without_mixing_sources(pipeline):
     client, ready, actor = pipeline
     fields = ['reference', 'amount', 'currency', 'timestamp', 'vendor_id', 'vendor_name', 'invoice_number', 'created_by', 'approved_by', 'category', 'approver_role']

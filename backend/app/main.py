@@ -56,24 +56,26 @@ async def lifespan(app: FastAPI):
     from app.services.daily_report_scheduler import daily_report_loop
     from app.services.ingestion_validation import enabled as validation_enabled, validation_loop
     from app.services.feed_auditing import enabled as feed_audit_enabled, audit_loop
+    from app.services.feed_worker_concurrency import worker_count
+    validation_count = worker_count("VALIDATION") if validation_enabled() else 0
+    audit_count = worker_count("AUDIT") if feed_audit_enabled() else 0
     task = asyncio.create_task(recovery_loop()) if enabled() else None
     sla_enabled = os.getenv("CASE_SLA_ESCALATION_ENABLED", "false").lower() == "true"
     sla_task = asyncio.create_task(escalation_loop()) if sla_enabled else None
     reports_enabled = os.getenv("DAILY_REPORT_SCHEDULER_ENABLED", "false").lower() == "true"
     report_task = asyncio.create_task(daily_report_loop()) if reports_enabled else None
-    validation_task = asyncio.create_task(validation_loop()) if validation_enabled() else None
-    feed_audit_task = asyncio.create_task(audit_loop()) if feed_audit_enabled() else None
+    feed_tasks = [asyncio.create_task(validation_loop(), name=f"feed-validation-{index}")
+                  for index in range(validation_count)]
+    feed_tasks.extend(asyncio.create_task(audit_loop(), name=f"feed-audit-{index}")
+                      for index in range(audit_count))
     try:
         yield
     finally:
-        if feed_audit_task is not None:
-            feed_audit_task.cancel()
-            with suppress(asyncio.CancelledError):
-                await feed_audit_task
-        if validation_task is not None:
-            validation_task.cancel()
-            with suppress(asyncio.CancelledError):
-                await validation_task
+        # Cancel all feed workers before awaiting any one worker, then let the
+        # RPC client drain in-flight calls below before its connection pool closes.
+        for feed_task in feed_tasks:
+            feed_task.cancel()
+        await asyncio.gather(*feed_tasks, return_exceptions=True)
         if task is not None:
             task.cancel()
             with suppress(asyncio.CancelledError):
