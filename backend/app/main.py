@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.concurrency import run_in_threadpool
 
 from app.api.alerts import (
     router as alerts_router,
@@ -55,10 +56,11 @@ async def lifespan(app: FastAPI):
     from app.services.case_sla import escalation_loop
     from app.services.daily_report_scheduler import daily_report_loop
     from app.services.ingestion_validation import enabled as validation_enabled, validation_loop
-    from app.services.feed_auditing import enabled as feed_audit_enabled, audit_loop
+    from app.services.feed_auditing import enabled as feed_audit_enabled, audit_loop, prewarm_configured_payments_model
     from app.services.feed_worker_concurrency import worker_count
     validation_count = worker_count("VALIDATION") if validation_enabled() else 0
     audit_count = worker_count("AUDIT") if feed_audit_enabled() else 0
+    await run_in_threadpool(prewarm_configured_payments_model)
     task = asyncio.create_task(recovery_loop()) if enabled() else None
     sla_enabled = os.getenv("CASE_SLA_ESCALATION_ENABLED", "false").lower() == "true"
     sla_task = asyncio.create_task(escalation_loop()) if sla_enabled else None
@@ -89,7 +91,6 @@ async def lifespan(app: FastAPI):
             with suppress(asyncio.CancelledError):
                 await report_task
         from app.repositories.ingestion import close_rpc_client
-        from starlette.concurrency import run_in_threadpool
         await run_in_threadpool(close_rpc_client)
 
 

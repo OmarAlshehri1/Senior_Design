@@ -8,6 +8,7 @@ import logging
 import math
 import os
 from pathlib import Path
+from time import perf_counter
 from typing import Any, Literal
 
 from pydantic import Field, ValidationError, model_validator
@@ -186,6 +187,26 @@ def approved_payments_model(digest: str, dataset_key: str, bucket: str, name: st
         return model_for_source_binding(digest, dataset_key, bucket, name)
     except (httpx.HTTPError, OSError, ValueError, TypeError, KeyError) as exc:
         raise ModelUnavailable("Approved Payments model unavailable") from exc
+
+
+def prewarm_configured_payments_model() -> bool:
+    """Optional readiness requirement; this never approves a source for scoring."""
+    binding = os.getenv("INGESTION_PREWARM_PAYMENTS_BINDING", "")
+    if not binding or not enabled() or os.getenv("INGESTION_FEED_ANOMALY_ENABLED", "false").lower() != "true":
+        return False
+    started = perf_counter()
+    try:
+        if len(binding.encode("utf-8")) > 4096:
+            raise ValueError("Oversized model binding")
+        approval = PaymentsModelApproval.model_validate_json(binding)
+        model = approved_payments_model(approval.artifact_sha256, approval.dataset_key,
+                                        approval.model_bucket, approval.model_object)
+        if model.version != approval.model_version:
+            raise ModelUnavailable("Model version differs from prewarm binding")
+    except (ValidationError, ValueError, ModelUnavailable):
+        raise ModelUnavailable("Configured Payments model is not ready") from None
+    logger.info("Approved Payments model ready before feed workers (%.3f seconds).", perf_counter() - started)
+    return True
 
 
 def payments_source_row(transaction: dict[str, Any]) -> dict[str, str] | None:

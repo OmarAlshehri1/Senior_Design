@@ -379,3 +379,32 @@ def test_payments_download_failure_blocks_instead_of_faking_scores(monkeypatch):
     audit.approved_payments_model.cache_clear()
     with pytest.raises(audit.ModelUnavailable):
         audit.approved_payments_model('b'*64,'payments-source-v1','private-models','model.joblib')
+
+
+def test_prewarm_is_opt_in_and_never_bypasses_feature_flags(monkeypatch):
+    import json
+    calls=[]
+    monkeypatch.setattr(audit,'approved_payments_model',lambda *args:calls.append(args))
+    monkeypatch.delenv('INGESTION_PREWARM_PAYMENTS_BINDING',raising=False)
+    assert audit.prewarm_configured_payments_model() is False
+    monkeypatch.setenv('INGESTION_PREWARM_PAYMENTS_BINDING',json.dumps(payments_approval()))
+    monkeypatch.setenv('INGESTION_ENABLED','true');monkeypatch.setenv('INGESTION_AUDIT_ENABLED','true')
+    monkeypatch.setenv('INGESTION_FEED_ANOMALY_ENABLED','false')
+    assert audit.prewarm_configured_payments_model() is False and not calls
+
+
+def test_prewarm_loads_the_pinned_model_and_rejects_invalid_bindings(monkeypatch):
+    import json
+    for key in ('INGESTION_ENABLED','INGESTION_AUDIT_ENABLED','INGESTION_FEED_ANOMALY_ENABLED'):
+        monkeypatch.setenv(key,'true')
+    calls=[]
+    class Model:version='payments-primary-no-calendar-1.0.0'
+    def load(*args):calls.append(args);return Model()
+    monkeypatch.setattr(audit,'approved_payments_model',load)
+    monkeypatch.setenv('INGESTION_PREWARM_PAYMENTS_BINDING',json.dumps(payments_approval()))
+    assert audit.prewarm_configured_payments_model() is True
+    assert calls==[('a'*64,'payments-source-v1','private-models','payments/model.joblib')]
+    for bad in ('not-json',json.dumps({**payments_approval(),'model_object':'../model.joblib'}),'x'*4097):
+        monkeypatch.setenv('INGESTION_PREWARM_PAYMENTS_BINDING',bad)
+        with pytest.raises(audit.ModelUnavailable,match='not ready'):audit.prewarm_configured_payments_model()
+    assert len(calls)==1

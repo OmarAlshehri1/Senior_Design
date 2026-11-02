@@ -37,3 +37,24 @@ Cold testing requires a declared idle/startup condition and an observed process
 tag/uptime. Do not claim a cold-start pass from a warm-up health request followed
 by a warmed transaction. Disable the timing flag to remove these headers; this
 does not change source credentials or stored transactions.
+
+## Preparing the approved model before readiness
+
+For the scoped Payments model, an operator can set
+`INGESTION_PREWARM_PAYMENTS_BINDING` to a JSON `PaymentsModelApproval` binding.
+It must identify the already-approved model version, feature version, artifact
+hash, dataset key and private storage object, with the existing validation and
+population references. This is server configuration, not producer input, and
+must not contain credentials or model bytes.
+
+When ingestion, audit and feed AI are enabled, app startup loads and verifies
+that binding before starting workers or yielding readiness. Source-specific
+eligibility checks still apply to every job. Missing configuration preserves the
+previous lazy loading behavior; disabled AI never preloads a model. Invalid or
+unavailable required bindings fail startup without accepting requests or starting
+workers, rather than inventing a score. The shared locked model cache is reused
+by normal inference. Existing saved results are not changed.
+
+This moves model download/deserialization out of the first admitted transaction.
+It does not eliminate a hosting platform's idle spin-up time, which remains part
+of a real cold posting request and must be measured separately.

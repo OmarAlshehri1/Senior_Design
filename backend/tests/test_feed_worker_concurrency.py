@@ -33,8 +33,11 @@ def test_feed_worker_pool_runs_both_stages_concurrently_and_cleans_up(monkeypatc
     active = {"validation": 0, "audit": 0}
     peaks = active.copy()
     closed = []
+    warmed = []
+    monkeypatch.setattr(feed_auditing, "prewarm_configured_payments_model", lambda: warmed.append(active.copy()))
 
     async def worker(stage):
+        assert warmed == [{"validation": 0, "audit": 0}]
         active[stage] += 1
         peaks[stage] = max(peaks[stage], active[stage])
         try:
@@ -55,3 +58,18 @@ def test_feed_worker_pool_runs_both_stages_concurrently_and_cleans_up(monkeypatc
     asyncio.run(exercise())
     assert peaks == {"validation": 4, "audit": 4}
     assert closed == [{"validation": 0, "audit": 0}]
+
+
+def test_prewarm_failure_prevents_starting_workers_or_accepting_requests(monkeypatch):
+    from app.main import app, lifespan
+    from app.services import feed_auditing, ingestion_validation
+    monkeypatch.setattr(ingestion_validation,"enabled",lambda:True)
+    monkeypatch.setattr(feed_auditing,"enabled",lambda:True)
+    def unavailable():raise feed_auditing.ModelUnavailable('not ready')
+    monkeypatch.setattr(feed_auditing,'prewarm_configured_payments_model',unavailable)
+    async def exercise():
+        with pytest.raises(feed_auditing.ModelUnavailable):
+            async with lifespan(app):
+                pytest.fail('Unready model must not yield a ready application')
+        assert not [task for task in asyncio.all_tasks() if task.get_name().startswith('feed-')]
+    asyncio.run(exercise())
