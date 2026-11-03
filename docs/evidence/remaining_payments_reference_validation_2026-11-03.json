@@ -1,0 +1,108 @@
+{
+  "status": "LOCAL_REFERENCE_CONTEXT_VERIFIED",
+  "date": "2026-11-03",
+  "rows": 100,
+  "source_id": "payments-workbook-remaining-20261102",
+  "simulation_only": true,
+  "simulated_clock": "Explicit local arrival-order fixture; not historical payment times or an exact production receipt replay",
+  "actor_registry_count": 19,
+  "casefold_collisions": 0,
+  "all_sample_actors_resolved": true,
+  "all_sample_limits_match_reference": true,
+  "full_vendor_registry_entries": 68117,
+  "sample_vendor_entries": 25,
+  "all_sample_vendors_matched_full_registry": true,
+  "sample_original_records_match_preparation": true,
+  "cohort_only_rules": {
+    "segregation_of_duties": {
+      "PASSED": 100
+    },
+    "approval_limits": {
+      "PASSED": 92,
+      "FAILED": 8
+    },
+    "duplicate_payment": {
+      "PASSED": 100
+    },
+    "invoice_splitting": {
+      "PASSED": 86,
+      "FAILED": 14
+    },
+    "ghost_vendors": {
+      "PASSED": 100
+    }
+  },
+  "safe_future_context_rules": {
+    "segregation_of_duties": {
+      "PASSED": 100
+    },
+    "approval_limits": {
+      "PASSED": 92,
+      "FAILED": 8
+    },
+    "duplicate_payment": {
+      "PASSED": 100
+    },
+    "invoice_splitting": {
+      "PASSED": 86,
+      "FAILED": 14
+    },
+    "ghost_vendors": {
+      "NOT_EVALUATED": 100
+    }
+  },
+  "cohort_coverage": {
+    "evaluated": 5,
+    "total": 5
+  },
+  "safe_future_context_coverage": {
+    "evaluated": 4,
+    "total": 5
+  },
+  "full_registry_exceeds_current_10000_entry_context_limit": true,
+  "cohort_registry_projection_safe_for_general_uploads": false,
+  "ai_enabled": false,
+  "old_saved_results_rewritten": false,
+  "new_records_imported": 0,
+  "verified_context_sha256": "7f1825bbba5afa50a873dd2d3f2c025e12094f630eec7f8f9df60a195cecb791",
+  "reference_file_sha256": "9d98542cba1cc1eb88f101e29cb11516024b2c7155be4f85f19dc6641bf4456f",
+  "live_aggregate_history_parity": {
+    "records_compared": 100,
+    "mismatches": 0
+  },
+  "live_arrival_span_seconds": 0.06238,
+  "original_results_digest": "1542ad1998d60bc6e19c9f79bddfa53b",
+  "production_registration_status": "REGISTERED_AND_VERIFIED_AFTER_EXPLICIT_APPROVAL",
+  "production_context_pointer_unchanged": false,
+  "source_context_candidate": "simulated-arrival-references-v2",
+  "boundary_checks": {
+    "expiry_end_exclusive_enforced": true,
+    "unverified_actor_comparison_denied": true,
+    "missing_policy_denied": true,
+    "missing_full_registry_denied": true
+  },
+  "engine_matches_deployed_commit": "d81279c6c3898663087bba7740b3d6774d50e315",
+  "engine_files_sha256": {
+    "backend/app/services/feed_auditing.py": "71cfbcad74ff3276219ad3642a0c017b7d83073974e1a60fec5d25060d9b0073",
+    "backend/app/services/audit_rules.py": "e81ead7cddeb2c42b34d1ea34083e058a5542bc6aa65555208c4d09a73db826e",
+    "backend/app/services/risk_scoring.py": "80616eedc457c53785a696535f089fad3cbe8885f13f334f0cfa0abd3ccea56d",
+    "backend/app/services/ingestion_mapping.py": "95881d5a50a1e5a75902008c4c74530caa9e4d8ebaaba6a745bd4a09bcee7edc"
+  },
+  "source_context_active": "simulated-arrival-references-v2",
+  "old_saved_results_digest_unchanged": true,
+  "old_context_records": 100,
+  "new_context_records": 0,
+  "configuration_shared_reference_verified": true,
+  "policy_entries": 19,
+  "reference_expiry_utc": "2026-11-10T00:00:00+00:00",
+  "legacy_transactions": {
+    "count": 57384,
+    "digest": "62627a774ad2604ceced658421b445b1"
+  },
+  "legacy_alerts": {
+    "count": 4150,
+    "digest": "2d2caebe25fe05dc359d7780b30cc15a"
+  },
+  "migrations_run": 0,
+  "migration_history_count": 34
+}

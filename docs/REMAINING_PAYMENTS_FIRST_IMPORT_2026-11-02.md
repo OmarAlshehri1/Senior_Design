@@ -1,5 +1,10 @@
 # First remaining-Payments production import
 
+3 November update: [the verified v2 context](REMAINING_PAYMENTS_AUDIT_CONTEXT_2026-11-03.md)
+is registered for future source records after explicit approval. Four rules are
+eligible under that simulation context; Ghost Vendors and AI remain unavailable.
+The original 100 saved outcomes below retain v1 unchanged. No new rows were imported.
+
 2 November 2026 (Asia/Riyadh). The user selected the existing Payments remainder,
 provided the existing Admin account and explicitly approved production activation
 and a controlled 100-row import. No new-company identity was invented.
