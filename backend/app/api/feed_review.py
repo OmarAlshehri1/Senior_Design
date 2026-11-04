@@ -1,4 +1,5 @@
 """Application-session reads of explicitly assigned feed evidence."""
+import os
 from uuid import UUID
 from datetime import datetime
 from typing import Literal
@@ -32,6 +33,63 @@ async def read(name, user, **values):
 async def capabilities(response: Response, user: dict = Depends(get_current_user)):
     response.headers['Cache-Control'] = 'no-store'
     return {'enabled': feed_review_enabled() and user['role'] in ('ADMIN', 'SUPERVISOR', 'AUDITOR')}
+
+
+@router.get('/assessment-capabilities')
+async def assessment_capabilities(response: Response, user: dict = Depends(get_current_user)):
+    response.headers['Cache-Control'] = 'no-store'
+    available = feed_review_enabled()
+    return {'history': available, 'enabled': available and user['role'] == 'ADMIN'
+            and os.getenv('FEED_REEVALUATION_ENABLED', 'false').lower() == 'true'}
+
+
+class AssessmentRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    source_id: str = Field(min_length=1, max_length=128)
+    transaction_ids: list[UUID] = Field(min_length=1, max_length=100)
+    reason: str = Field(min_length=1, max_length=500)
+    request_key: UUID
+
+    @field_validator('transaction_ids')
+    @classmethod
+    def distinct_ids(cls, value):
+        if len(value) != len(set(value)):
+            raise ValueError('Choose distinct transaction records.')
+        return value
+
+    @field_validator('reason')
+    @classmethod
+    def meaningful_reason(cls, value):
+        if not value.strip():
+            raise ValueError('A reason is required.')
+        return value.strip()
+
+
+@router.post('/assessments', status_code=202)
+async def request_assessments(body: AssessmentRequest, user: dict = Depends(get_current_user)):
+    if user['role'] != 'ADMIN':
+        raise HTTPException(403, detail='FORBIDDEN')
+    if os.getenv('FEED_REEVALUATION_ENABLED', 'false').lower() != 'true':
+        raise HTTPException(404, detail='REEVALUATION_DISABLED')
+    return await read('request_feed_assessments', user, p_source=body.source_id,
+                      p_transactions=[str(value) for value in body.transaction_ids],
+                      p_reason=body.reason, p_request_key=str(body.request_key))
+
+
+@router.get('/assessments/{batch_id}')
+async def assessment_progress(batch_id: UUID, source_id: str = Query(min_length=1, max_length=128),
+                              user: dict = Depends(get_current_user)):
+    if user['role'] != 'ADMIN':
+        raise HTTPException(403, detail='FORBIDDEN')
+    return await read('read_feed_assessment_batch', user, p_source=source_id, p_batch=str(batch_id))
+
+
+@router.get('/transactions/{transaction_id}/assessments')
+async def assessment_history(transaction_id: UUID, source_id: str = Query(min_length=1, max_length=128),
+                              page: int = Query(1, ge=1, le=1000000), page_size: int = Query(20, ge=1, le=100),
+                              user: dict = Depends(get_current_user)):
+    return await read('read_feed_assessment_history', user, p_source=source_id,
+                      p_transaction=str(transaction_id), p_page=page, p_page_size=page_size)
 
 
 @router.get("/sources")

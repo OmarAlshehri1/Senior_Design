@@ -5,6 +5,7 @@ from app.services.feed_exception_report import build_rows_export
 def summary_rows(report):
     rows = [
         ['Feed audit summary', 'Live saved-outcome summary; not an approved management memorandum'],
+        ['Assessment basis', 'Each transaction uses its latest completed assessment; earlier results remain in assessment history.'],
         ['As of (UTC)', report['as_of']], ['Source', report['source_id']], ['Scope', report['scope']],
         ['Team filter', report.get('team_id')], ['Period start (inclusive)', report.get('period_start')],
         ['Period end (exclusive)', report.get('period_end')], ['Period basis', report['period_basis']],

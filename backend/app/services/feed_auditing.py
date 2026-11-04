@@ -70,12 +70,18 @@ class VendorEntry(StrictModel):
 class VendorRegistry(EffectiveReference):
     authoritative: bool
     vendor_namespace: str = Field(min_length=1, max_length=128)
-    entries: list[VendorEntry] = Field(max_length=10000)
+    entries: list[VendorEntry] = Field(default_factory=list, max_length=10000)
+    registry_version: str | None = Field(default=None, min_length=1, max_length=128)
+    registry_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
 
     @model_validator(mode="after")
     def unique_ids(self):
         if len({item.id for item in self.entries}) != len(self.entries):
             raise ValueError("Ambiguous vendor identities")
+        if (self.registry_version is None) != (self.registry_sha256 is None):
+            raise ValueError("Registry version and digest must be declared together")
+        if self.registry_version is not None and self.entries:
+            raise ValueError("Choose a sealed registry reference or inline entries")
         return self
 
 
@@ -312,9 +318,27 @@ def build_bundle(job: dict[str, Any], *, allow_model: bool = False, model_loader
             or not registry.covers(point)):
         gates["ghost_vendors"].append("AUTHORITATIVE_VENDOR_REGISTRY_UNAVAILABLE")
     if not gates["ghost_vendors"]:
-        entry = next((entry for entry in registry.entries if entry.id == transaction["vendor_id"]), None)
-        rule_context["ghost_vendor_context"] = {"registry_authoritative": True,
-            "vendor_registered": entry is not None,"vendor_active": entry.active if entry else False}
+        if registry.registry_version is not None:
+            membership = snapshot.get("vendor_registry_membership")
+            verified = (isinstance(membership, dict)
+                and bool(job.get("source_id")) and membership.get("source_id") == job["source_id"]
+                and membership.get("registry_version") == registry.registry_version
+                and membership.get("registry_sha256") == registry.registry_sha256
+                and membership.get("vendor_namespace") == registry.vendor_namespace
+                and membership.get("vendor_id") == transaction["vendor_id"]
+                and membership.get("sealed") is True
+                and type(membership.get("found")) is bool
+                and (not membership["found"] or type(membership.get("active")) is bool))
+            if verified:
+                rule_context["ghost_vendor_context"] = {"registry_authoritative": True,
+                    "vendor_registered": membership["found"],
+                    "vendor_active": membership.get("active") if membership["found"] else False}
+            else:
+                gates["ghost_vendors"].append("SEALED_VENDOR_REGISTRY_SNAPSHOT_UNAVAILABLE")
+        else:
+            entry = next((entry for entry in registry.entries if entry.id == transaction["vendor_id"]), None)
+            rule_context["ghost_vendor_context"] = {"registry_authoritative": True,
+                "vendor_registered": entry is not None,"vendor_active": entry.active if entry else False}
     rule_transaction = dict(transaction)
     if simulated:
         rule_transaction["timestamp"] = point.isoformat() if point else None
@@ -405,13 +429,19 @@ def enabled() -> bool:
     return all(os.getenv(key,"false").lower()=="true" for key in ("INGESTION_ENABLED","INGESTION_AUDIT_ENABLED"))
 
 
+_prefer_assessment = False
+
+
 async def audit_once(limit: int = 25) -> int:
+    global _prefer_assessment
     if not enabled():
         return 0
     await run_in_threadpool(repository.rpc,"prepare_feed_audits",{"p_limit": max(1,min(limit,25))})
     completed = 0
     for _ in range(max(0,min(limit,25))):
-        job = await run_in_threadpool(repository.rpc,"claim_feed_audit",{})
+        _prefer_assessment = not _prefer_assessment
+        job = await run_in_threadpool(repository.rpc,"claim_feed_work",{
+            "p_prefer_assessment": _prefer_assessment})
         if job is None:
             break
         if not isinstance(job,dict):
@@ -427,8 +457,11 @@ async def audit_once(limit: int = 25) -> int:
             else:
                 bundle = await run_in_threadpool(build_bundle,job,
                     allow_model=os.getenv("INGESTION_FEED_ANOMALY_ENABLED","false").lower()=="true")
-                saved = await run_in_threadpool(repository.rpc,"finish_feed_audit",{
-                    "p_transaction_id":job["transaction_id"],"p_lease_token":job["lease_token"],"p_bundle":bundle})
+                revision = job.get("assessment_id")
+                saved = await run_in_threadpool(repository.rpc,
+                    "finish_feed_assessment" if revision else "finish_feed_audit",{
+                    ("p_assessment" if revision else "p_transaction_id"):revision or job["transaction_id"],
+                    "p_lease_token":job["lease_token"],"p_bundle":bundle})
                 if saved is True:
                     completed += 1
                 else:
@@ -440,8 +473,11 @@ async def audit_once(limit: int = 25) -> int:
         except (SupabaseConfigurationError,SupabasePersistenceError,ValueError,OverflowError,InvalidOperation,TypeError,KeyError):
             code = "AUDIT_UNAVAILABLE"
         if code:
-            await run_in_threadpool(repository.rpc,"release_feed_audit",{
-                "p_transaction_id":job["transaction_id"],"p_lease_token":job["lease_token"],"p_code":code})
+            revision = job.get("assessment_id")
+            await run_in_threadpool(repository.rpc,
+                "release_feed_assessment" if revision else "release_feed_audit",{
+                ("p_assessment" if revision else "p_transaction_id"):revision or job["transaction_id"],
+                "p_lease_token":job["lease_token"],"p_code":code})
     return completed
 
 

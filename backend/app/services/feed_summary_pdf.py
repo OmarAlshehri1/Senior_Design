@@ -56,6 +56,7 @@ def build_summary_pdf(report):
 
     story.extend([p('Feed audit summary', 'title'),
                   p(f"Saved-outcome snapshot | As of {timestamp(report['as_of'])}", 'note'),
+                  p('Each transaction uses its latest completed assessment. Earlier results remain in assessment history.', 'note'),
                   p(f"Source: {report['source_id']} | Scope: {label(report['scope'])} | Team filter: {display(report.get('team_id'))}", 'note'),
                   p(f"Arrival period: {timestamp(report.get('period_start'))} (inclusive) to {timestamp(report.get('period_end'))} (exclusive)", 'note'),
                   p(f"Period basis: {label(report['period_basis'])}", 'note')])
