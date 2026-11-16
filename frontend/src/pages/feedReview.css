@@ -19,3 +19,44 @@
 .feed-review th { background: #f4f7fb; color: #49627a; font-size: 12px; text-align: left; }
 .feed-review th, .feed-review td { padding: 12px; border-bottom: 1px solid #d9e2ed; vertical-align: top; }
 .feed-review [role=alert] { padding: 12px; border: 1px solid #e4b1a9; border-radius: 6px; background: #fff4f1; color: #9b392a; }
+
+/* Feed Review uses the shared application primitives. Import screens retain their existing layout. */
+.feed-review-page { min-width: 0; }
+.feed-review-page .feed-review-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.feed-review-toolbar > .select-field { flex: 1 1 300px; max-width: 520px; }
+.feed-review-toolbar > .select-field select { flex: 1; width: 0; max-width: none; }
+.feed-review-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.feed-review-page > section[aria-label]:not(.filter-bar):not(.panel) { padding: var(--space-5) var(--space-6); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-sm); min-width: 0; }
+.feed-review-page h2 { font: var(--text-section-title); }
+.feed-review-page h3 { margin-block: var(--space-5) var(--space-2); font: var(--text-card-title); }
+.feed-review-page p { margin-block: var(--space-2); color: var(--color-text-secondary); font: var(--text-meta); }
+.feed-review-page .panel > p { margin: var(--space-4) var(--space-6); }
+.feed-review-page form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3); margin-block: var(--space-4); }
+.feed-review-page form .field { flex: 1 1 180px; }
+.feed-review-page .field { max-width: 100%; font: var(--text-label); }
+.feed-review-page .field select { min-width: 0; max-width: 100%; text-overflow: ellipsis; }
+.feed-review-page dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 165px), 1fr)); gap: var(--space-3); margin-block: var(--space-4); }
+.feed-review-page dl > div { padding: var(--space-3); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-sm); background: var(--color-surface-subtle); }
+.feed-review-page dt { color: var(--color-text-muted); font: var(--text-caption); }
+.feed-review-page dd { margin-top: var(--space-2); font: var(--text-card-title); overflow-wrap: anywhere; }
+.feed-review-page td, .feed-review-page li { overflow-wrap: anywhere; }
+.feed-review-page li + li { margin-top: var(--space-2); }
+.feed-review-page [role='alert'] { padding: var(--space-3); border: 1px solid var(--color-high-border); border-radius: var(--radius-sm); background: var(--color-high-soft); color: var(--color-high); }
+@media (min-width: 768px) {
+  .feed-review-page td[data-label='Record'], .feed-review-page td[data-label='Amount'],
+  .feed-review-page td[data-label='Original date'], .feed-review-page td[data-label='Processing'],
+  .feed-review-page td[data-label='Coverage'] { white-space: nowrap; }
+}
+@media (max-width: 767px) {
+  .feed-review-toolbar > .select-field { max-width: none; }
+  .feed-review-actions { width: 100%; }
+  .feed-review-actions .btn { flex: 1 1 auto; }
+  .feed-review-page > section[aria-label]:not(.filter-bar):not(.panel) { padding: var(--space-4); }
+  /* Aggregate matrices keep their column headings inside a contained horizontal scroll area. */
+  .feed-review-page table.feed-summary-table { display: table; min-width: 600px; }
+  .feed-review-page table.feed-summary-table thead { display: table-header-group; position: static; width: auto; height: auto; overflow: visible; clip: auto; }
+  .feed-review-page table.feed-summary-table tbody { display: table-row-group; }
+  .feed-review-page table.feed-summary-table tr { display: table-row; padding: 0; }
+  .feed-review-page table.feed-summary-table th, .feed-review-page table.feed-summary-table td { display: table-cell; width: auto; padding: 12px var(--space-4); }
+  .feed-review-page table.feed-summary-table td::before { content: none; }
+}

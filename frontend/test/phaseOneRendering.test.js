@@ -40,6 +40,23 @@ test('both transaction tables render recorded currencies and never fill missing 
   }
 });
 
+test('temporary demo row is labelled, has no navigation, and preserves the real transaction row', async () => {
+  const { default: Table } = await vite.ssrLoadModule('/src/components/RecentTransactionsTable.jsx');
+  const real = { id: 'original-payment', vendor: 'Recorded Vendor', amount: 42, currency: 'SAR' };
+  const demo = { id: 'TR-DEMO-001', vendor: 'Demo Vendor', amount: 1250, currency: 'USD', category: 'Presentation demo', riskLevel: 'Medium Risk' };
+  const html = render(Table, { transactions: [real], demoTransaction: demo });
+  assert.match(html, /Demo transaction, simulated result/);
+  assert.match(html, />Demo<\/span>/);
+  assert.match(html, /1,250 USD/);
+  assert.match(html, /42 SAR/);
+  assert.equal((html.match(/role="link"/g) ?? []).length, 1);
+  assert.match(html, /aria-label="View transaction original-payment/);
+  const withoutDemo = render(Table, { transactions: [real] });
+  assert.doesNotMatch(withoutDemo, /Demo Vendor|TR-DEMO/);
+  assert.equal((withoutDemo.match(/role="link"/g) ?? []).length, 1);
+  assert.deepEqual(real, { id: 'original-payment', vendor: 'Recorded Vendor', amount: 42, currency: 'SAR' });
+});
+
 test('legacy report rows retain their own currency and missing amounts', async () => {
   const { LegacyReportTransactions } = await vite.ssrLoadModule('/src/pages/Reports.jsx');
   const html = render(LegacyReportTransactions, { transactions: [

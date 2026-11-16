@@ -114,7 +114,6 @@ export default function CompanyImports() {
 
   return <div className="feed-review company-imports">
     <h1>Import transactions</h1>
-    <p>Upload company transactions, match the columns, and check the preview before importing. Supports CSV and Excel (.xlsx){limits ? `, up to ${limits.rows.toLocaleString()} rows and ${limits.bytes / (1024 * 1024)} MiB per file` : ''}.</p>
     {error && <p role="alert">{error}</p>}
     {available === null ? <p role="status">Checking import availability…</p> : !available
       ? <p>Transaction imports are not enabled for this environment. Contact your administrator.</p>

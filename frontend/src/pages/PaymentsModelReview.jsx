@@ -8,12 +8,12 @@ function ReviewForm({ item, onSave, saving }) {
   const [outcome, setOutcome] = useState(item.review.outcome || '');
   const [note, setNote] = useState(item.review.note || '');
   return <form onSubmit={(event) => { event.preventDefault(); onSave({ outcome, note, expected_version: item.review.version }); }}>
-    <label>Needs investigation?<select required value={outcome} disabled={saving} onChange={(event) => setOutcome(event.target.value)}>
+    <label className="field">Needs investigation?<select required value={outcome} disabled={saving} onChange={(event) => setOutcome(event.target.value)}>
       <option value="">Choose an assessment</option><option value="YES">Yes</option><option value="NO">No</option>
       <option value="INSUFFICIENT_INFORMATION">Insufficient information</option>
     </select></label>
-    <label>Reason<textarea required maxLength={2000} value={note} disabled={saving} onChange={(event) => setNote(event.target.value)} /></label>
-    <button type="submit" disabled={saving || !outcome || !note.trim()}>{saving ? 'Saving…' : 'Save my review'}</button>
+    <label className="field">Reason<textarea required maxLength={2000} value={note} disabled={saving} onChange={(event) => setNote(event.target.value)} /></label>
+    <button className="btn btn-secondary" type="submit" disabled={saving || !outcome || !note.trim()}>{saving ? 'Saving…' : 'Save my review'}</button>
   </form>;
 }
 
@@ -55,20 +55,20 @@ export default function PaymentsModelReview() {
     <p>Historical Validation sample · No-calendar model · Combined Risk is not scored.</p>
     <p>30 model-nominated and 30 non-nominated payments. Scores indicate unusual patterns, not fraud probability. Assess whether investigation is useful.</p>
     <p>Your assessment is saved under your signed-in account on this staging backend. This source-scoped pilot is separate from team exception reviews.</p>
-    <button type="button" disabled={saving || loading} onClick={() => setReload((value) => value + 1)}>Reload sample</button>
+    <button className="btn btn-secondary" type="button" disabled={saving || loading} onClick={() => setReload((value) => value + 1)}>Reload sample</button>
     {loading && <p role="status">Loading Validation sample…</p>}
     {error && <p role="alert">{error}</p>}
     {message && <p role="status">{message}</p>}
     {data && <>
       <div aria-label="Review pagination">
-        <button type="button" disabled={saving || page === 1} onClick={() => setPage((value) => value - 1)}>Previous page</button>
+        <button className="btn btn-secondary" type="button" disabled={saving || page === 1} onClick={() => setPage((value) => value - 1)}>Previous page</button>
         <span> Page {page} </span>
-        <button type="button" disabled={saving || page * data.page_size >= data.total} onClick={() => setPage((value) => value + 1)}>Next page</button>
+        <button className="btn btn-secondary" type="button" disabled={saving || page * data.page_size >= data.total} onClick={() => setPage((value) => value + 1)}>Next page</button>
       </div>
       <h3>My Review Summary</h3>
       <p>{summary.reviewed} / {summary.total} reviewed by you. Pending cases are not counted as No.</p>
       {!summary.reviewed && <p>No assessments saved yet. No model-quality conclusion is available.</p>}
-      <div className="table-container"><table aria-label="My review summary">
+      <div className="table-container"><table className="data-table feed-summary-table" aria-label="My review summary">
         <thead><tr><th>Sample group</th><th>Needs investigation: Yes</th><th>No</th><th>Insufficient information</th><th>Pending</th><th>Total</th></tr></thead>
         <tbody>{summary.groups.map((group) => <tr key={String(group.nominated)}>
           <td>{group.nominated ? 'Model nominated' : 'Not nominated'}</td><td>{group.yes}</td><td>{group.no}</td>
@@ -76,7 +76,7 @@ export default function PaymentsModelReview() {
         </tr>)}</tbody>
       </table></div>
       <p>These are your current investigation-usefulness assessments, not fraud labels or model accuracy. This balanced 30/30 sample does not represent population prevalence.</p>
-      <label>Payment<select value={selected} disabled={saving} onChange={(event) => { setSelected(event.target.value); setMessage(''); setError(''); }}>
+      <label className="field">Payment<select value={selected} disabled={saving} onChange={(event) => { setSelected(event.target.value); setMessage(''); setError(''); }}>
         {data.items.map((row) => <option key={row.case_id} value={row.case_id}>{row.case_id} — {row.source['VENDOR NAME']} {row.review.version ? '(reviewed)' : ''}</option>)}
       </select></label>
     </>}
@@ -95,7 +95,7 @@ export default function PaymentsModelReview() {
       <p>Voucher: {item.source['VOUCHER NUMBER'] || 'Missing'} · Department: {item.source['DEPARTMENT NAME'] || 'Missing'} · Contract: {item.source['CONTRACT NUMBER'] || 'Missing'}</p>
       <p>Comparison uses the exact source display name, not verified supplier identity. Fit statistics cover the earlier Fit period; invoices and contracts may be needed to explain differences.</p>
       <h3>Latest available Fit examples (up to five)</h3>
-      {item.fit_examples.length ? <div className="table-container"><table>
+      {item.fit_examples.length ? <div className="table-container"><table className="data-table feed-summary-table">
         <thead><tr><th>Source record</th><th>Original date (MM/DD/YYYY)</th><th>Amount</th><th>Voucher</th></tr></thead>
         <tbody>{item.fit_examples.map((row) => <tr key={row.record_id}><td>{row.record_id}</td><td>{row.source['CHECK DATE']}</td><td>{money(row.source.AMOUNT)}</td><td>{row.source['VOUCHER NUMBER'] || 'Missing'}</td></tr>)}</tbody>
       </table></div> : <p>No exact-name Fit history is available. This does not mean the vendor is unregistered.</p>}

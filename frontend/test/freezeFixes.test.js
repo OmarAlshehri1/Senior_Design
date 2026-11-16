@@ -2,14 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-test('test-transaction control is gated by the Vite development flag', async () => {
+test('Dashboard presentation demo cannot call the former shared transaction simulation or persistence', async () => {
   const source = await readFile(
     new URL('../src/pages/Dashboard.jsx', import.meta.url),
     'utf8'
   );
 
-  assert.match(source, /import\.meta\.env\.DEV\s*&&/);
-  assert.doesNotMatch(source, /import\.meta\.env\.(?:MODE|PROD)/);
+  assert.match(source, /Real-time test/);
+  assert.match(source, /frontend timer/);
+  assert.doesNotMatch(source, /simulateNewTransaction|localStorage|sessionStorage|\.post\(|\.patch\(|\.put\(/);
 });
 
 test('vendor profile renders authoritative records, decisions, and monitoring history', async () => {

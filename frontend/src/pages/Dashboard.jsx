@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import useApp from '../context/useApp';
 import SummaryCards from '../components/SummaryCards';
@@ -13,7 +13,8 @@ import { dashboardService, dashboardCategoryFilter } from '../services/dashboard
 import { transactionsService } from '../services/transactionsService.js';
 import AuditAnalytics from '../components/AuditAnalytics.jsx';
 import { PRESENTATION_FEATURES } from '../config/presentation.js';
-import { PageHeader, Panel } from '../components/ui/Layout.jsx';
+import { Badge, PageHeader, Panel } from '../components/ui/Layout.jsx';
+import { SelectField } from '../components/ui/Filters.jsx';
 import { EmptyState, ErrorState, LoadingState } from '../components/RequestStateView.jsx';
 import { ArrowRightIcon } from '../components/icons.jsx';
 
@@ -28,6 +29,24 @@ export default function Dashboard() {
   const [recentLoading, setRecentLoading] = useState(true);
   const [recentError, setRecentError] = useState('');
   const [summaryRequest, setSummaryRequest] = useState(0);
+  const [demo, setDemo] = useState(null);
+  const demoTimer = useRef(null);
+  useEffect(() => {
+    setDemo(null);
+    return () => { clearTimeout(demoTimer.current); demoTimer.current = null; };
+  }, [effectiveRole]);
+  const startDemo = () => {
+    if (demoTimer.current !== null) return;
+    const startedAt = performance.now();
+    setDemo({ status: 'processing' });
+    // Presentation only: never send this fixture to a service or shared store.
+    demoTimer.current = setTimeout(() => {
+      setDemo({ status: 'complete', elapsed: ((performance.now() - startedAt) / 1000).toFixed(1),
+        transaction: { id: 'TR-DEMO-001', vendor: 'Demo Vendor', amount: 1250, currency: 'USD',
+          category: 'Presentation demo', riskLevel: 'Medium Risk' } });
+      demoTimer.current = null;
+    }, 1100);
+  };
   useEffect(() => {
     let active = true;
     setSummaryError(null);
@@ -41,9 +60,6 @@ export default function Dashboard() {
     alerts,
     alertsLoading,
     alertsError,
-    simulateNewTransaction,
-    simulating,
-    lastSimulatedTransactionId,
     lastUpdated,
   } = useApp();
   useEffect(() => {
@@ -80,14 +96,14 @@ export default function Dashboard() {
   return (
     <div className="page dashboard-page">
       <PageHeader title="Dashboard" description="Where risk sits today and what needs attention next."
-        actions={import.meta.env.DEV && (
+        actions={(
           <button
             type="button"
             className="btn btn-secondary"
-            onClick={simulateNewTransaction}
-            disabled={simulating}
+            onClick={startDemo}
+            disabled={demo?.status === 'processing'}
           >
-            {simulating ? 'Adding Test Transaction...' : 'Add Test Transaction'}
+            Real-time test
           </button>
         )} />
 
@@ -112,32 +128,45 @@ export default function Dashboard() {
 
       <Panel id="recent-transactions-heading" title="Recent transactions" description="Latest evaluated payments." flush
         actions={<Link className="text-link" to="/transactions">View transactions<ArrowRightIcon aria-hidden="true" /></Link>}>
-          <label className="dashboard-category-filter">Transaction category <select value={category} onChange={(event) => setCategory(event.target.value)}>
-            <option value="">All categories</option>
-            {categories.map((item) => <option key={item.key} value={item.key}>{item.name}</option>)}
-          </select></label>
-          <p className="dashboard-active-alerts">Showing up to six recent transactions in the selected category across your authorized view.</p>
+        <div className="dashboard-recent-toolbar">
+          <SelectField label="Transaction category" value={category} onChange={setCategory}
+            options={[{ value: '', label: 'All categories' }, ...categories.map((item) => ({ value: item.key, label: item.name }))]} />
+          <p>Up to six recent transactions in the selected category.</p>
+        </div>
+        {demo && <div className="dashboard-demo-status" role="status" aria-live="polite">
+          <Badge tone="info">Demo</Badge>
+          <span>{demo.status === 'processing' ? 'Evaluating transaction…' : `Demo complete · UI demo elapsed: ${demo.elapsed} s (frontend timer)`}</span>
+          <span className="muted">Simulated workflow and risk result.</span>
+          {demo.status === 'complete' && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setDemo(null)}>Dismiss demo</button>}
+        </div>}
+        {demo?.transaction && (recentLoading || recentError || recentTransactions.length === 0) &&
+          <RecentTransactionsTable transactions={[]} demoTransaction={demo.transaction} />}
         <RecentCollectionState loading={recentLoading} error={recentError}
           empty={recentTransactions.length === 0} label="recent transactions" onRetry={() => setSummaryRequest((value) => value + 1)}>
-          <RecentTransactionsTable transactions={recentTransactions} highlightId={lastSimulatedTransactionId} />
+          <RecentTransactionsTable transactions={recentTransactions} demoTransaction={demo?.transaction} />
         </RecentCollectionState>
       </Panel>
 
-      <section className="panel dashboard-category-card" aria-labelledby="category-heading">
-        <div className="card-header"><h2 id="category-heading">Transactions by business category</h2></div>
-        {categoryTotals && <p>All {categoryTotals.totalTransactions} transactions in your authorized view, grouped by recorded business activity.</p>}
-        {!categoryTotals && !categoryError && <p role="status">Loading category totals…</p>}
-        {categoryError && <p role="alert">Category totals are unavailable. {categoryError}</p>}
+      <Panel id="category-heading" className="dashboard-category-card" title="Transactions by business category"
+        description={categoryTotals ? `${categoryTotals.totalTransactions.toLocaleString('en-US')} transactions in your authorized view, grouped by recorded business activity.` : undefined}>
+        {!categoryTotals && !categoryError && <LoadingState compact message="Loading category totals…" />}
+        {categoryError && <ErrorState compact title="Category totals are unavailable." message={categoryError} />}
         <div className="dashboard-category-grid">
           {categories.map((item) => {
             return <button type="button" className="dashboard-category-item" key={item.key} onClick={() => setCategory(item.key)} aria-pressed={category === item.key}>
-              <strong>{item.name}</strong><span>{item.transactions} transactions · {item.highRiskTransactions} high risk</span>
-              <meter min="0" max={Math.max(categoryTotals.totalTransactions, 1)} value={item.transactions} aria-label={`${item.name}: ${item.transactions} of ${categoryTotals.totalTransactions} transactions`} />
+              <span className="dashboard-category-summary"><strong>{item.name}</strong>
+                <span className="dashboard-category-count">{item.transactions.toLocaleString('en-US')} transactions</span>
+                <Badge tone={item.highRiskTransactions ? 'high' : 'neutral'}>{item.highRiskTransactions.toLocaleString('en-US')} high risk</Badge>
+              </span>
+              <span className="dashboard-category-bar" role="meter" aria-valuemin={0} aria-valuemax={Math.max(categoryTotals.totalTransactions, 1)} aria-valuenow={item.transactions}
+                aria-label={`${item.name}: ${item.transactions} of ${categoryTotals.totalTransactions} transactions`}>
+                <span style={{ width: `${(item.transactions / Math.max(categoryTotals.totalTransactions, 1)) * 100}%` }} />
+              </span>
             </button>;
           })}
         </div>
-        {categoryTotals && !categories.length && <p role="status">No transactions to classify.</p>}
-      </section>
+        {categoryTotals && !categories.length && <EmptyState compact title="No transactions to classify." />}
+      </Panel>
 
       {PRESENTATION_FEATURES.assuranceAnalytics && <AuditAnalytics />}
 
