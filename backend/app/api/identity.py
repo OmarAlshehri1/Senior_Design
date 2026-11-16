@@ -1,10 +1,10 @@
 from datetime import datetime, timezone
 import os
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 from starlette.concurrency import run_in_threadpool
 
 from app.repositories import identity as store
@@ -34,7 +34,7 @@ class EmailInput(BaseModel):
 
 class LoginInput(EmailInput):
     # Password whitespace is meaningful; do not strip it.
-    password: str = Field(min_length=1, max_length=1024)
+    password: Annotated[str, StringConstraints(strip_whitespace=False)] = Field(min_length=1, max_length=1024)
     model_config = ConfigDict(extra="forbid")
 
 

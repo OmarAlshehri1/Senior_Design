@@ -46,6 +46,9 @@ export function createCasesService(client = apiClient) {
       `/cases/${encodeURIComponent(caseId)}/evidence/${encodeURIComponent(evidenceId)}`,
       { ...options, headers: { Accept: 'application/octet-stream', ...options.headers } },
     ),
+    rescanCaseEvidence: (caseId, evidenceId, options = {}) => client.post(
+      `/cases/${encodeURIComponent(caseId)}/evidence/${encodeURIComponent(evidenceId)}/scan`, {}, options,
+    ),
     async getCaseActivity(caseId, options = {}) {
       return (await client.get(`/cases/${encodeURIComponent(caseId)}`, options))?.activity ?? [];
     },

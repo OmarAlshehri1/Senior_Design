@@ -54,7 +54,8 @@ def request(method: str, path: str, *, body: Any = None, token: str | None = Non
 
 def rpc(name: str, **payload) -> Any:
     if name in {"store_company_import", "get_company_import", "preview_company_import", "confirm_company_import",
-                "company_import_history", "company_import_progress", "read_feed_summary_report"}:
+                "company_import_history", "company_import_progress", "read_feed_summary_report",
+                "request_feed_assessments"}:
         # Bounded extra time for large snapshots; confirmation is safe to retry.
         return request("POST", f"rpc/{name}", body=payload, timeout=60)
     return request("POST", f"rpc/{name}", body=payload)

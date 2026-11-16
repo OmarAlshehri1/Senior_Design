@@ -88,7 +88,8 @@ def rpc(name: str, payload: dict[str, Any]) -> Any:
     if name not in {"ingestion_source", "submit_ingestion_event", "read_ingestion_receipts",
                     "claim_ingestion_validation", "finish_ingestion_validation",
                     "release_ingestion_validation", "resume_ingestion_validation",
-                    "prepare_feed_audits", "claim_feed_audit", "finish_feed_audit", "release_feed_audit", "resume_feed_audit"}:
+                    "prepare_feed_audits", "claim_feed_audit", "finish_feed_audit", "release_feed_audit", "resume_feed_audit",
+                    "claim_feed_work", "finish_feed_assessment", "release_feed_assessment"}:
         raise ValueError("Unsupported ingestion operation.")
     captured = _timings.get()
     durations = captured[1] if captured is not None else None

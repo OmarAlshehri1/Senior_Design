@@ -13,6 +13,11 @@ client = TestClient(app)
 CASE_ID = str(uuid4())
 
 
+@pytest.fixture(autouse=True)
+def forbid_hosted_case_requests(monkeypatch):
+    monkeypatch.setattr('app.repositories.identity.request',lambda *a,**k:pytest.fail('Unmocked hosted persistence is forbidden'))
+
+
 def test_evidence_validation_checks_signature_and_normalizes_path(monkeypatch):
     assert validate_filename(r"folder\report.pdf", "application/pdf", b"%PDF-1.7") == ("report.pdf", ".pdf")
     with pytest.raises(EvidenceError) as invalid_type:
@@ -37,6 +42,10 @@ def test_evidence_scanner_rejects_infected_files_without_shell(monkeypatch):
         scan_clean_file(b"%PDF-1.7", ".pdf")
     assert rejected.value.code == "EVIDENCE_REJECTED_BY_SCANNER"
     assert seen["arguments"][1] == "--no-summary"
+    assert "--official-db-only=yes" in seen["arguments"]
+    assert "--fail-if-cvd-older-than=7" in seen["arguments"]
+    assert "--alert-exceeds-max=yes" in seen["arguments"]
+    assert "--alert-encrypted=yes" in seen["arguments"]
     assert seen["kwargs"].get("shell", False) is False
 
 
@@ -105,6 +114,7 @@ def test_evidence_upload_fails_closed_without_private_storage_and_scanner(monkey
 
 def test_evidence_upload_rejects_public_or_unavailable_bucket(monkeypatch):
     monkeypatch.setenv("CASE_EVIDENCE_BUCKET", "case-evidence")
+    monkeypatch.setenv('CASE_EVIDENCE_QUARANTINE_ENABLED','true')
     monkeypatch.setenv("CASE_ANTIVIRUS_EXECUTABLE", "clamscan")
     monkeypatch.setattr("app.api.cases.case_storage.bucket_available", lambda _bucket: False)
     app.dependency_overrides[get_current_user] = lambda: {"id": "auditor-1", "role": "AUDITOR", "account_status": "ACTIVE"}

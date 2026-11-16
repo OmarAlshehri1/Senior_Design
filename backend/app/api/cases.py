@@ -1,4 +1,5 @@
 import os
+import hashlib
 from typing import Literal
 from urllib.parse import quote
 from uuid import UUID, uuid4
@@ -7,9 +8,11 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import Response
+from starlette.responses import JSONResponse
 
 from app.repositories import case_storage, cases, identity
 from app.services.case_evidence import EvidenceError, MAX_EVIDENCE_BYTES, scan_clean_file, validate_filename
+from app.services.case_evidence import external_scanner_configured
 from app.services.identity import get_current_user, require_roles
 
 
@@ -141,7 +144,7 @@ async def upload_case_evidence(
     user: dict = Depends(get_current_user),
 ):
     bucket = os.getenv("CASE_EVIDENCE_BUCKET", "").strip()
-    if not bucket or not os.getenv("CASE_ANTIVIRUS_EXECUTABLE", "").strip():
+    if not bucket or os.getenv('CASE_EVIDENCE_QUARANTINE_ENABLED','false').lower() != 'true':
         raise HTTPException(status_code=503, detail="EVIDENCE_STORAGE_OR_SCANNER_UNAVAILABLE")
     if not await run_in_threadpool(case_storage.bucket_available, bucket):
         raise HTTPException(status_code=503, detail="PRIVATE_EVIDENCE_BUCKET_UNAVAILABLE")
@@ -161,31 +164,71 @@ async def upload_case_evidence(
         content.extend(chunk)
     try:
         safe_name, extension = validate_filename(file_name, request.headers.get("Content-Type", ""), bytes(content))
-        await run_in_threadpool(scan_clean_file, bytes(content), extension)
     except EvidenceError as exc:
         if exc.reason:
             await _rpc(cases.record_evidence_rejection, actor_id=user["id"], case_id=case_id_text, reason=exc.reason)
         raise HTTPException(status_code=exc.status, detail=exc.code) from exc
 
-    evidence_id = str(uuid4())
-    object_key = f"{case_id_text}/{evidence_id}{extension}"
+    object_key = f"quarantine/{case_id_text}/{uuid4()}{extension}"
     mime_type = request.headers.get("Content-Type", "").lower().split(";", 1)[0].strip()
+    digest = hashlib.sha256(content).hexdigest()
+    metadata = await _rpc(cases.reserve_evidence, actor_id=user['id'], case_id=case_id_text,
+        p_file_name=safe_name, p_file_size=len(content), p_mime_type=mime_type,
+        p_category=category, p_description=description, p_storage_key=object_key, p_sha256=digest)
     try:
         await run_in_threadpool(case_storage.upload, bucket, object_key, bytes(content), mime_type)
     except identity.IdentityError as exc:
+        await _rpc(cases.finish_evidence_scan, actor_id=user['id'], case_id=case_id_text,
+                   evidence_id=metadata['id'], status='ERROR', sha256=digest)
         _raise_identity_error(exc)
-    try:
-        result = await _rpc(cases.add_evidence, actor_id=user["id"], case_id=case_id_text,
-            p_file_name=safe_name, p_file_size=len(content), p_mime_type=mime_type,
-            p_category=category, p_description=description, p_storage_key=object_key, p_scan_status="CLEAN")
-    except HTTPException:
+    if external_scanner_configured():
+        return await _queue_external_scan(metadata, user['id'], case_id_text)
+    return await _scan_quarantined(metadata, bytes(content), user['id'], case_id_text)
+
+
+async def _queue_external_scan(metadata, actor_id, case_id):
+    result = await _rpc(cases.queue_evidence_scan, actor_id=actor_id, case_id=case_id,
+                        evidence_id=metadata['id'])
+    result.pop('storage_key', None)
+    return JSONResponse(result, status_code=202)
+
+
+async def _scan_quarantined(metadata, content, actor_id, case_id):
+    expected = metadata['content_sha256']
+    state = 'ERROR'
+    if len(content) == metadata['file_size'] and hashlib.sha256(content).hexdigest() == expected:
         try:
-            await run_in_threadpool(case_storage.remove, bucket, object_key)
-        except identity.IdentityError as cleanup_error:
-            raise HTTPException(status_code=503, detail=cleanup_error.code) from cleanup_error
-        raise
-    result.pop("storage_key", None)
-    return result
+            _, extension = validate_filename(metadata['file_name'], metadata['mime_type'], content)
+            await run_in_threadpool(scan_clean_file, content, extension)
+            state = 'CLEAN'
+        except EvidenceError as exc:
+            state = 'INFECTED' if exc.code == 'EVIDENCE_REJECTED_BY_SCANNER' else 'ERROR'
+    result = await _rpc(cases.finish_evidence_scan, actor_id=actor_id, case_id=case_id,
+                       evidence_id=metadata['id'], status=state, sha256=expected)
+    result.pop('storage_key', None)
+    return JSONResponse(result, status_code=200 if result['scan_status']=='CLEAN' else 202)
+
+
+@router.post('/{case_id}/evidence/{evidence_id}/scan', dependencies=[Depends(require_roles('AUDITOR','SUPERVISOR','ADMIN'))])
+async def rescan_case_evidence(case_id: UUID, evidence_id: UUID, user: dict = Depends(get_current_user)):
+    if os.getenv('CASE_EVIDENCE_QUARANTINE_ENABLED','false').lower() != 'true':
+        raise HTTPException(status_code=503, detail='EVIDENCE_QUARANTINE_UNAVAILABLE')
+    metadata = await _rpc(cases.evidence_for_scan, actor_id=user['id'], case_id=str(case_id), evidence_id=str(evidence_id))
+    if metadata['scan_status'] in ('CLEAN','INFECTED'):
+        metadata.pop('storage_key', None)
+        return JSONResponse(metadata, status_code=200 if metadata['scan_status']=='CLEAN' else 202)
+    if external_scanner_configured():
+        return await _queue_external_scan(metadata, user['id'], str(case_id))
+    bucket = os.getenv('CASE_EVIDENCE_BUCKET','').strip()
+    if not bucket or not await run_in_threadpool(case_storage.bucket_available, bucket):
+        raise HTTPException(status_code=503, detail='PRIVATE_EVIDENCE_BUCKET_UNAVAILABLE')
+    try:
+        content, content_type = await run_in_threadpool(case_storage.download, bucket, metadata['storage_key'])
+    except identity.IdentityError as exc:
+        _raise_identity_error(exc)
+    if content_type.split(';',1)[0].lower() != metadata['mime_type']:
+        content = b''
+    return await _scan_quarantined(metadata, content, user['id'], str(case_id))
 
 
 @router.get("/{case_id}/evidence/{evidence_id}", dependencies=[Depends(require_roles("AUDITOR", "SUPERVISOR", "ADMIN"))])
@@ -196,12 +239,16 @@ async def download_case_evidence(case_id: UUID, evidence_id: UUID, user: dict = 
     if not await run_in_threadpool(case_storage.bucket_available, bucket):
         raise HTTPException(status_code=503, detail="PRIVATE_EVIDENCE_BUCKET_UNAVAILABLE")
     metadata = await _rpc(cases.get_evidence, actor_id=user["id"], case_id=str(case_id), evidence_id=str(evidence_id))
+    if metadata.get('scan_status') != 'CLEAN':
+        raise HTTPException(status_code=423, detail='EVIDENCE_QUARANTINED')
     try:
         content, stored_type = await run_in_threadpool(case_storage.download, bucket, metadata["storage_key"])
     except identity.IdentityError as exc:
         _raise_identity_error(exc)
     if len(content) != metadata["file_size"] or stored_type.split(";", 1)[0].lower() != metadata["mime_type"]:
         raise HTTPException(status_code=503, detail="EVIDENCE_STORAGE_INTEGRITY_ERROR")
+    if metadata.get('content_sha256') and hashlib.sha256(content).hexdigest() != metadata['content_sha256']:
+        raise HTTPException(status_code=503, detail='EVIDENCE_STORAGE_INTEGRITY_ERROR')
     return Response(content=content, media_type=metadata["mime_type"], headers={
         "Content-Disposition": f"attachment; filename*=UTF-8''{quote(metadata['file_name'], safe='')}",
         "X-Content-Type-Options": "nosniff",

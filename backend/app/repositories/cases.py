@@ -69,15 +69,33 @@ def get_evidence(*, actor_id: str, case_id: str, evidence_id: str) -> dict:
     return result
 
 
+def reserve_evidence(*, actor_id: str, case_id: str, **values) -> dict:
+    return _rpc('reserve_case_evidence', p_actor=actor_id, p_case=case_id, **values)
+
+
+def evidence_for_scan(*, actor_id: str, case_id: str, evidence_id: str) -> dict:
+    return _rpc('read_case_evidence_for_scan', p_actor=actor_id, p_case=case_id, p_evidence=evidence_id)
+
+
+def finish_evidence_scan(*, actor_id: str, case_id: str, evidence_id: str, status: str, sha256: str) -> dict:
+    return _rpc('finish_case_evidence_scan', p_actor=actor_id, p_case=case_id, p_evidence=evidence_id,
+                p_status=status, p_sha256=sha256)
+
+
+def queue_evidence_scan(*, actor_id: str, case_id: str, evidence_id: str) -> dict:
+    return _rpc('queue_case_evidence_scan', p_actor=actor_id, p_case=case_id, p_evidence=evidence_id)
+
+
 def record_evidence_rejection(*, actor_id: str, case_id: str, reason: str) -> None:
     identity.rpc("record_case_evidence_rejection", p_actor=actor_id, p_case=case_id, p_reason=reason)
 
 
 def capabilities() -> dict:
     from app.repositories import case_storage
-    from app.services.case_evidence import scanner_available
     bucket = os.getenv("CASE_EVIDENCE_BUCKET", "").strip()
-    return {"evidence_uploads_enabled": bool(bucket and scanner_available() and case_storage.bucket_available(bucket))}
+    return {"evidence_uploads_enabled": bool(bucket and os.getenv('CASE_EVIDENCE_QUARANTINE_ENABLED','false').lower()=='true'
+            and case_storage.bucket_available(bucket)), 'evidence_max_bytes': 5 * 1024 * 1024,
+            'quarantine_until_clean': True}
 
 
 def escalate_overdue(*, batch: int = 100) -> int:

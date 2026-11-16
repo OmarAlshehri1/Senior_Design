@@ -7,14 +7,18 @@ from openpyxl import load_workbook
 from io import BytesIO
 
 from app.services import report_narratives as service
+from app.services import free_gemini
 from app.services import business_reports
 from tests.test_business_reports import source, REPORT_ID
 
 
 @pytest.fixture(autouse=True)
 def isolated_provider(monkeypatch):
+    monkeypatch.setenv('GEMINI_FREE_TIER_CONFIRMED','true')
+    monkeypatch.setenv('GEMINI_FREE_PROJECT_ID','synthetic-free-project')
+    monkeypatch.setattr(free_gemini,'_blocked_until',0.0)
     monkeypatch.setenv('REPORT_GEMINI_ENABLED','true')
-    monkeypatch.setenv('GEMINI_API_KEY','test-only-key')
+    monkeypatch.setenv('GEMINI_FREE_API_KEY','test-only-key')
     monkeypatch.setenv('GEMINI_MODEL','gemini-3.8-flash')
     monkeypatch.setattr(service,'sleep',lambda _seconds: None)
     def no_network(*args,**kwargs):
@@ -45,6 +49,7 @@ def install_client(monkeypatch,payload,status=200,error=None,responses=None):
     class FakeClient:
         def __init__(self,**kwargs):
             assert kwargs['follow_redirects'] is False
+            assert kwargs['trust_env'] is False
             assert kwargs['timeout'].connect == 10.0
             assert kwargs['timeout'].read == 90.0
             assert kwargs['timeout'].write == 10.0
@@ -115,12 +120,12 @@ def test_review_templates_pass_existing_safety_guards(title):
 
 
 @pytest.mark.parametrize('mode,status',[
-    ('disabled','DISABLED'),('not_requested','DISABLED'),('missing_key','NOT_CONFIGURED'),('empty','EMPTY_PERIOD'),
+    ('disabled','DISABLED'),('not_requested','DISABLED'),('missing_key','UNAVAILABLE'),('empty','EMPTY_PERIOD'),
 ])
 def test_no_provider_call_when_disabled_unconfigured_or_empty(monkeypatch,mode,status):
     doc = document()
     if mode=='disabled': monkeypatch.setenv('REPORT_GEMINI_ENABLED','false')
-    if mode=='missing_key': monkeypatch.delenv('GEMINI_API_KEY',raising=False)
+    if mode=='missing_key': monkeypatch.delenv('GEMINI_FREE_API_KEY',raising=False)
     if mode=='empty': doc['metrics']['total_transactions']=0
     result = service.enrich_findings(doc,requested=mode!='not_requested')
     assert result['narrative']['status']==status
@@ -204,14 +209,13 @@ def test_invalid_provider_json_gets_safe_code(monkeypatch,caplog):
     assert 'private' not in caplog.text
 
 
-def test_non_gemini_three_override_keeps_compatible_generation_config(monkeypatch):
+def test_non_approved_model_override_makes_no_request(monkeypatch):
     monkeypatch.setenv('GEMINI_MODEL','gemini-2.5-flash')
-    doc = document()
-    calls = install_client(monkeypatch,envelope(response_items(doc)))
-    assert service.enrich_findings(doc)['narrative']['status']=='GENERATED'
-    config = calls[0][1]['json']['generationConfig']
-    assert 'thinkingConfig' not in config
-    assert config['temperature']==0.1
+    calls = install_client(monkeypatch,{})
+    result = service.enrich_findings(document())
+    assert result['narrative']['status']=='UNAVAILABLE'
+    assert result['narrative']['failure_code']=='MODEL_NOT_APPROVED_FOR_FREE_TIER'
+    assert calls==[]
 
 
 @pytest.mark.parametrize('status,error,code',[

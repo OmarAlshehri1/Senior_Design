@@ -89,7 +89,7 @@ export default function CaseDetail() {
       <div className="detail-main">
         <Panel id="case-summary-heading" title="Summary"><p className="case-description">{caseRecord.description || 'No description recorded.'}</p></Panel>
         <CaseDiscussion comments={comments} canComment={canWork && caseRecord.status !== 'CLOSED'} busy={busy} onSubmit={(message) => perform(() => casesService.addCaseComment(caseId, message))} />
-        <CaseEvidencePanel evidence={evidence} canAdd={canWork && caseRecord.status !== 'CLOSED'} enabled={evidenceEnabled} onUpload={(file, category, description) => perform(() => casesService.addCaseEvidence(caseId, file, { category, description }))} onDownload={(evidenceId) => casesService.getCaseEvidence(caseId, evidenceId)} />
+        <CaseEvidencePanel evidence={evidence} canAdd={canWork && caseRecord.status !== 'CLOSED'} enabled={evidenceEnabled} onUpload={(file, category, description) => perform(() => casesService.addCaseEvidence(caseId, file, { category, description }))} onDownload={(evidenceId) => casesService.getCaseEvidence(caseId, evidenceId)} onScan={(evidenceId) => perform(() => casesService.rescanCaseEvidence(caseId, evidenceId))} />
         <Panel id="case-activity-heading" title="Activity" description="Assignment, status, evidence, discussion and closure events."><CaseActivityTimeline events={activity} /></Panel>
       </div>
       <aside className="detail-side" aria-label="Case actions">

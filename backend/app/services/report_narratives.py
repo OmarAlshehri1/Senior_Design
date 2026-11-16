@@ -15,6 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 from pydantic_core import PydanticCustomError
 
 from app.services.gemini_explanations import get_gemini_model_name
+from app.services import free_gemini
 
 PROMPT_VERSION = 'business-findings-1.0.2'
 PROVIDER_TIMEOUT = httpx.Timeout(connect=10.0, read=90.0, write=10.0, pool=10.0)
@@ -208,11 +209,12 @@ def enrich_findings(document: dict, *, requested: bool = True) -> dict:
     if not document['metrics']['total_transactions']:
         status['status'] = 'EMPTY_PERIOD'
         return result
-    key = os.getenv('GEMINI_API_KEY','').strip()
-    if not key:
-        status['status'] = 'NOT_CONFIGURED'
-        return result
     model = get_gemini_model_name()
+    try:
+        key = free_gemini.configuration(model)
+    except free_gemini.FreeTierUnavailable as exc:
+        status.update(status='UNAVAILABLE', failure_code=str(exc))
+        return result
     status['attempted_model'] = model
     schema = CommentaryResponse.model_json_schema()
     schema['$defs']['FindingCommentary']['properties']['finding_id']['enum'] = [f['id'] for f in document['findings']]
@@ -225,9 +227,9 @@ def enrich_findings(document: dict, *, requested: bool = True) -> dict:
     if model.startswith('gemini-3'):
         # Gemini 3 uses thinking levels; deprecated sampling parameters are omitted.
         request['generationConfig'].pop('temperature')
-        request['generationConfig']['thinkingConfig'] = {'thinkingLevel': 'low'}
+        request['generationConfig']['thinkingConfig'] = free_gemini.thinking_options(model)
     try:
-        with httpx.Client(timeout=PROVIDER_TIMEOUT,follow_redirects=False) as client:
+        with httpx.Client(timeout=PROVIDER_TIMEOUT,follow_redirects=False,trust_env=False) as client:
             deadline = monotonic() + RETRY_WINDOW_SECONDS
             for attempt in range(1, MAX_PROVIDER_ATTEMPTS + 1):
                 remaining = max(0.1, deadline - monotonic())
@@ -236,6 +238,8 @@ def enrich_findings(document: dict, *, requested: bool = True) -> dict:
                                        headers={'Content-Type':'application/json','x-goog-api-key':key},json=request,
                                        timeout=httpx.Timeout(connect=min(10.0, remaining), read=remaining,
                                                              write=min(10.0, remaining), pool=min(10.0, remaining)))
+                if response.status_code == 429:
+                    free_gemini.quota_exhausted()
                 # Retry only explicit transient service errors, never a rejected
                 # narrative, credentials/quota errors or an ambiguous timeout.
                 if response.status_code not in (502, 503, 504) or attempt == MAX_PROVIDER_ATTEMPTS:

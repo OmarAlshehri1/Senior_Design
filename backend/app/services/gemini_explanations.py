@@ -6,11 +6,12 @@ from typing import Any
 
 import httpx
 from dotenv import load_dotenv
+from app.services import free_gemini
 
 
 load_dotenv()
 
-DEFAULT_GEMINI_MODEL = "gemini-3.8-flash"
+DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite"
 GEMINI_PROMPT_VERSION = "1.0.0"
 GEMINI_TIMEOUT_SECONDS = 20.0
 MAX_EXPLANATION_LENGTH = 2000
@@ -198,7 +199,7 @@ def _extract_response_text(
 
 def get_gemini_model_name() -> str:
     return (
-        os.getenv(
+        os.getenv('GEMINI_FREE_MODEL', '').strip() or os.getenv(
             "GEMINI_MODEL",
             DEFAULT_GEMINI_MODEL,
         ).strip()
@@ -215,13 +216,11 @@ def generate_risk_explanation(
     risk_score: float,
     risk_level: str,
 ) -> str:
-    api_key = os.getenv("GEMINI_API_KEY", "").strip()
     model_name = get_gemini_model_name()
-
-    if not api_key:
-        raise GeminiConfigurationError(
-            "GEMINI_API_KEY is not configured."
-        )
+    try:
+        api_key = free_gemini.configuration(model_name)
+    except free_gemini.FreeTierUnavailable as exc:
+        raise GeminiConfigurationError(str(exc)) from None
 
     endpoint = (
         "https://generativelanguage.googleapis.com/"
@@ -261,10 +260,15 @@ def generate_risk_explanation(
             },
         },
     }
+    thinking = free_gemini.thinking_options(model_name)
+    if thinking:
+        request_payload['generationConfig']['thinkingConfig'] = thinking
+    else:
+        request_payload['generationConfig'].pop('thinkingConfig', None)
 
     try:
         with httpx.Client(
-            timeout=GEMINI_TIMEOUT_SECONDS
+            timeout=GEMINI_TIMEOUT_SECONDS, trust_env=False, follow_redirects=False
         ) as client:
             response = client.post(
                 endpoint,
@@ -274,6 +278,8 @@ def generate_risk_explanation(
                 },
                 json=request_payload,
             )
+            if response.status_code == 429:
+                free_gemini.quota_exhausted()
             response.raise_for_status()
             payload = response.json()
     except (httpx.HTTPError, ValueError) as exc:

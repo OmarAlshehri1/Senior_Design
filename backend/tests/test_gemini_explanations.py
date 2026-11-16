@@ -5,6 +5,13 @@ import httpx
 import pytest
 
 from app.services import gemini_explanations as service
+from app.services import free_gemini
+
+@pytest.fixture(autouse=True)
+def free_project(monkeypatch):
+    monkeypatch.setenv("GEMINI_FREE_TIER_CONFIRMED", "true")
+    monkeypatch.setenv("GEMINI_FREE_PROJECT_ID", "synthetic-free-project")
+    monkeypatch.setattr(free_gemini, "_blocked_until", 0.0)
 
 
 def build_transaction() -> dict[str, Any]:
@@ -77,6 +84,7 @@ def test_generate_risk_explanation(
     original_rules = deepcopy(rules)
 
     class FakeResponse:
+        status_code = 200
         def raise_for_status(self) -> None:
             return None
 
@@ -100,7 +108,7 @@ def test_generate_risk_explanation(
             }
 
     class FakeClient:
-        def __init__(self, timeout: float) -> None:
+        def __init__(self, timeout: float, **options: Any) -> None:
             request["timeout"] = timeout
 
         def __enter__(self) -> "FakeClient":
@@ -131,7 +139,7 @@ def test_generate_risk_explanation(
             return FakeResponse()
 
     monkeypatch.setenv(
-        "GEMINI_API_KEY",
+        "GEMINI_FREE_API_KEY",
         "gemini_test_key",
     )
     monkeypatch.setenv(
@@ -180,7 +188,7 @@ def test_missing_api_key_does_not_call_gemini(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.delenv(
-        "GEMINI_API_KEY",
+        "GEMINI_FREE_API_KEY",
         raising=False,
     )
     monkeypatch.setattr(
@@ -193,7 +201,7 @@ def test_missing_api_key_does_not_call_gemini(
 
     with pytest.raises(
         service.GeminiConfigurationError,
-        match="GEMINI_API_KEY",
+        match="FREE_KEY_NOT_CONFIGURED",
     ):
         service.generate_risk_explanation(
             transaction=build_transaction(),
@@ -209,7 +217,7 @@ def test_gemini_network_failure_is_wrapped(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     class FakeClient:
-        def __init__(self, timeout: float) -> None:
+        def __init__(self, timeout: float, **options: Any) -> None:
             self.timeout = timeout
 
         def __enter__(self) -> "FakeClient":
@@ -235,7 +243,7 @@ def test_gemini_network_failure_is_wrapped(
             )
 
     monkeypatch.setenv(
-        "GEMINI_API_KEY",
+        "GEMINI_FREE_API_KEY",
         "gemini_test_key",
     )
     monkeypatch.setattr(

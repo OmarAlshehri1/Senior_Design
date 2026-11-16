@@ -17,6 +17,7 @@ from app.api.accountability import router as accountability_router
 from app.api.teams import router as teams_router
 from app.api.notifications import router as notifications_router
 from app.api.cases import router as cases_router
+from app.api.evidence_scanner import router as evidence_scanner_router
 from app.api.vendors import router as vendors_router
 from app.api.analytics import router as analytics_router
 from app.api.settings import router as settings_router
@@ -142,6 +143,7 @@ app.include_router(accountability_router, prefix="/api/v1")
 app.include_router(teams_router, prefix="/api/v1")
 app.include_router(notifications_router, prefix="/api/v1")
 app.include_router(cases_router, prefix="/api/v1")
+app.include_router(evidence_scanner_router, prefix="/api/v1")
 app.include_router(vendors_router, prefix="/api/v1")
 app.include_router(analytics_router, prefix="/api/v1")
 app.include_router(settings_router, prefix="/api/v1")

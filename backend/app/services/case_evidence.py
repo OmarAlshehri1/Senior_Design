@@ -4,10 +4,15 @@ import os
 import shutil
 import subprocess
 import tempfile
+import re
 from pathlib import Path
 
 
-MAX_EVIDENCE_BYTES = 10 * 1024 * 1024
+MAX_EVIDENCE_BYTES = 5 * 1024 * 1024
+
+
+def external_scanner_configured() -> bool:
+    return bool(re.fullmatch(r'[0-9a-f]{64}', os.getenv('CASE_SCANNER_TOKEN_SHA256', '')))
 ALLOWED_TYPES = {
     "application/pdf": (".pdf", lambda data: data.startswith(b"%PDF-")),
     "image/png": (".png", lambda data: data.startswith(b"\x89PNG\r\n\x1a\n")),
@@ -55,7 +60,12 @@ def scan_clean_file(content: bytes, extension: str) -> None:
             temporary.write(content)
             temporary_path = temporary.name
         result = subprocess.run(
-            [executable, "--no-summary", temporary_path],
+            [executable, "--no-summary", "--official-db-only=yes",
+             "--fail-if-cvd-older-than=7", "--alert-exceeds-max=yes",
+             "--alert-encrypted=yes"]
+            + (["--database=" + os.environ['CASE_ANTIVIRUS_DATABASE']]
+               if os.getenv('CASE_ANTIVIRUS_DATABASE', '').strip() else [])
+            + [temporary_path],
             capture_output=True,
             timeout=30,
             check=False,
@@ -71,5 +81,12 @@ def scan_clean_file(content: bytes, extension: str) -> None:
     if result.returncode == 0:
         return
     if result.returncode == 1:
+        output = getattr(result, 'stdout', b'') or b''
+        errors = getattr(result, 'stderr', b'') or b''
+        diagnostic = (output.encode() if isinstance(output, str) else output) + (errors.encode() if isinstance(errors, str) else errors)
+        if b'Heuristics.Encrypted' in diagnostic:
+            raise EvidenceError('EVIDENCE_ENCRYPTED', 422, 'ENCRYPTED_CONTENT')
+        if b'Heuristics.Limits.Exceeded' in diagnostic:
+            raise EvidenceError('EVIDENCE_SCAN_LIMIT', 422, 'SCANNER_LIMIT')
         raise EvidenceError("EVIDENCE_REJECTED_BY_SCANNER", 422, "MALWARE_DETECTED")
     raise EvidenceError("EVIDENCE_STORAGE_OR_SCANNER_UNAVAILABLE", 503)
