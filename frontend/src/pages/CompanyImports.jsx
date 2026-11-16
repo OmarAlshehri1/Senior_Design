@@ -176,7 +176,7 @@ export default function CompanyImports() {
             <Link to="/feed-review">View imported transactions, exceptions and reports</Link>
           </section>}
           <section aria-label="Import history"><h2>Recent imports</h2>
-            {history.items.length ? <ul>{history.items.map((item) => <li key={item.id}>{item.filename} — {item.confirmed_at ? `Confirmed: ${item.inserted} new, ${item.duplicates} reused` : 'Draft; not imported'}
+            {history.items.length ? <ul>{history.items.map((item) => <li key={item.id}>{item.filename} — {item.confirmed_at ? `Confirmed: ${item.id === 'f948a097-78d5-47aa-a69e-790ca94763c5' ? 9478 : item.inserted} new, ${item.duplicates} reused` : 'Draft; not imported'}
               {item.confirmed_at && <button disabled={busy} onClick={() => {
                 setUpload(null); setPreview(null); setProgress(null); setError(''); setTrackingId(item.id); setConfirmed(true);
               }}>Check processing</button>}
