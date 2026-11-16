@@ -40,20 +40,27 @@ test('both transaction tables render recorded currencies and never fill missing 
   }
 });
 
-test('temporary demo row is labelled, has no navigation, and preserves the real transaction row', async () => {
+test('temporary rows use normal reference and risk cells without navigating or mutating real rows', async () => {
   const { default: Table } = await vite.ssrLoadModule('/src/components/RecentTransactionsTable.jsx');
   const real = { id: 'original-payment', vendor: 'Recorded Vendor', amount: 42, currency: 'SAR' };
-  const demo = { id: 'TR-DEMO-001', vendor: 'Demo Vendor', amount: 1250, currency: 'USD', category: 'Presentation demo', riskLevel: 'Medium Risk' };
-  const html = render(Table, { transactions: [real], demoTransaction: demo });
-  assert.match(html, /Demo transaction, simulated result/);
-  assert.match(html, />Demo<\/span>/);
-  assert.match(html, /1,250 USD/);
+  const temporaryTransactions = [
+    { id: 'TR-F42B81D3', vendor: 'Gulf Retail Services', amount: 28400, currency: 'SAR', category: 'Services', riskLevel: 'High Risk' },
+    { id: 'TR-C91E42A6', vendor: 'Riyadh Supplies Co.', amount: 12750, currency: 'SAR', category: 'Inventory', riskLevel: 'Low Risk' },
+    { id: 'TR-A7F21C8D', vendor: 'Al Noor Trading', amount: 4850, currency: 'SAR', category: 'Office Supplies', riskLevel: 'Medium Risk' },
+  ];
+  const html = render(Table, { transactions: [real], temporaryTransactions });
+  assert.doesNotMatch(html, /Demo|Test|Fake|Simulation|Presentation/);
+  assert.match(html, /4,850 SAR/);
+  assert.match(html, /12,750 SAR/);
+  assert.match(html, /28,400 SAR/);
+  assert.equal((html.match(/class="reference-text truncate"/g) ?? []).length, 4);
+  assert.equal((html.match(/class="badge badge-(?:low|medium|high) badge-risk"/g) ?? []).length, 3);
   assert.match(html, /42 SAR/);
   assert.equal((html.match(/role="link"/g) ?? []).length, 1);
   assert.match(html, /aria-label="View transaction original-payment/);
-  const withoutDemo = render(Table, { transactions: [real] });
-  assert.doesNotMatch(withoutDemo, /Demo Vendor|TR-DEMO/);
-  assert.equal((withoutDemo.match(/role="link"/g) ?? []).length, 1);
+  const withoutTemporaryRows = render(Table, { transactions: [real] });
+  assert.doesNotMatch(withoutTemporaryRows, /Al Noor Trading|TR-A7F21C8D/);
+  assert.equal((withoutTemporaryRows.match(/role="link"/g) ?? []).length, 1);
   assert.deepEqual(real, { id: 'original-payment', vendor: 'Recorded Vendor', amount: 42, currency: 'SAR' });
 });
 

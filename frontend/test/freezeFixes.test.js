@@ -9,7 +9,8 @@ test('Dashboard presentation demo cannot call the former shared transaction simu
   );
 
   assert.match(source, /Real-time test/);
-  assert.match(source, /frontend timer/);
+  assert.match(source, /PRESENTATION-ONLY IN-MEMORY UI FIXTURES\./);
+  assert.match(source, /NEVER PERSIST OR SEND TO THE API\./);
   assert.doesNotMatch(source, /simulateNewTransaction|localStorage|sessionStorage|\.post\(|\.patch\(|\.put\(/);
 });
 

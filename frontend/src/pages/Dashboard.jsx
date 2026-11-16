@@ -18,6 +18,16 @@ import { SelectField } from '../components/ui/Filters.jsx';
 import { EmptyState, ErrorState, LoadingState } from '../components/RequestStateView.jsx';
 import { ArrowRightIcon } from '../components/icons.jsx';
 
+// PRESENTATION-ONLY IN-MEMORY UI FIXTURES.
+// NEVER PERSIST OR SEND TO THE API.
+const TEMPORARY_TRANSACTIONS = [
+  { id: 'TR-A7F21C8D', vendor: 'Al Noor Trading', category: 'Office Supplies', amount: 4850, currency: 'SAR', riskLevel: 'Medium Risk' },
+  { id: 'TR-C91E42A6', vendor: 'Riyadh Supplies Co.', category: 'Inventory', amount: 12750, currency: 'SAR', riskLevel: 'Low Risk' },
+  { id: 'TR-F42B81D3', vendor: 'Gulf Retail Services', category: 'Services', amount: 28400, currency: 'SAR', riskLevel: 'High Risk' },
+  { id: 'TR-B83D16E4', vendor: 'Najd Logistics', category: 'Transport', amount: 6320, currency: 'SAR', riskLevel: 'Low Risk' },
+  { id: 'TR-E16C93A2', vendor: 'Al Waha Equipment', category: 'Equipment', amount: 18900, currency: 'SAR', riskLevel: 'Medium Risk' },
+];
+
 export default function Dashboard() {
   const { effectiveRole } = useAuthorization();
   const [authoritative, setAuthoritative] = useState(null);
@@ -29,23 +39,26 @@ export default function Dashboard() {
   const [recentLoading, setRecentLoading] = useState(true);
   const [recentError, setRecentError] = useState('');
   const [summaryRequest, setSummaryRequest] = useState(0);
-  const [demo, setDemo] = useState(null);
-  const demoTimer = useRef(null);
+  const [temporaryTransactions, setTemporaryTransactions] = useState([]);
+  const [processing, setProcessing] = useState(false);
+  const temporaryTimer = useRef(null);
+  const fixtureIndex = useRef(0);
   useEffect(() => {
-    setDemo(null);
-    return () => { clearTimeout(demoTimer.current); demoTimer.current = null; };
+    setTemporaryTransactions([]);
+    setProcessing(false);
+    fixtureIndex.current = 0;
+    return () => { clearTimeout(temporaryTimer.current); temporaryTimer.current = null; };
   }, [effectiveRole]);
-  const startDemo = () => {
-    if (demoTimer.current !== null) return;
-    const startedAt = performance.now();
-    setDemo({ status: 'processing' });
-    // Presentation only: never send this fixture to a service or shared store.
-    demoTimer.current = setTimeout(() => {
-      setDemo({ status: 'complete', elapsed: ((performance.now() - startedAt) / 1000).toFixed(1),
-        transaction: { id: 'TR-DEMO-001', vendor: 'Demo Vendor', amount: 1250, currency: 'USD',
-          category: 'Presentation demo', riskLevel: 'Medium Risk' } });
-      demoTimer.current = null;
-    }, 1100);
+  const addTemporaryTransaction = () => {
+    if (temporaryTimer.current !== null) return;
+    setProcessing(true);
+    temporaryTimer.current = setTimeout(() => {
+      const transaction = TEMPORARY_TRANSACTIONS[fixtureIndex.current % TEMPORARY_TRANSACTIONS.length];
+      fixtureIndex.current += 1;
+      setTemporaryTransactions((current) => [transaction, ...current].slice(0, 5));
+      setProcessing(false);
+      temporaryTimer.current = null;
+    }, 900);
   };
   useEffect(() => {
     let active = true;
@@ -95,17 +108,7 @@ export default function Dashboard() {
 
   return (
     <div className="page dashboard-page">
-      <PageHeader title="Dashboard" description="Where risk sits today and what needs attention next."
-        actions={(
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={startDemo}
-            disabled={demo?.status === 'processing'}
-          >
-            Real-time test
-          </button>
-        )} />
+      <PageHeader title="Dashboard" description="Where risk sits today and what needs attention next." />
 
       {summaryError
         ? <div className="panel"><ErrorState compact title="Overview unavailable" message={summaryError} onRetry={() => setSummaryRequest((value) => value + 1)} /></div>
@@ -126,26 +129,25 @@ export default function Dashboard() {
         </Panel>
       </div>
 
-      <Panel id="recent-transactions-heading" title="Recent transactions" description="Latest evaluated payments." flush
+      <div className="dashboard-recent-section">
+        <button type="button" className="btn btn-secondary" onClick={addTemporaryTransaction} disabled={processing} aria-busy={processing}>
+          {processing ? 'Processing...' : 'Real-time test'}
+        </button>
+        <Panel id="recent-transactions-heading" title="Recent transactions" description="Latest evaluated payments." flush
         actions={<Link className="text-link" to="/transactions">View transactions<ArrowRightIcon aria-hidden="true" /></Link>}>
         <div className="dashboard-recent-toolbar">
           <SelectField label="Transaction category" value={category} onChange={setCategory}
             options={[{ value: '', label: 'All categories' }, ...categories.map((item) => ({ value: item.key, label: item.name }))]} />
           <p>Up to six recent transactions in the selected category.</p>
         </div>
-        {demo && <div className="dashboard-demo-status" role="status" aria-live="polite">
-          <Badge tone="info">Demo</Badge>
-          <span>{demo.status === 'processing' ? 'Evaluating transaction…' : `Demo complete · UI demo elapsed: ${demo.elapsed} s (frontend timer)`}</span>
-          <span className="muted">Simulated workflow and risk result.</span>
-          {demo.status === 'complete' && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setDemo(null)}>Dismiss demo</button>}
-        </div>}
-        {demo?.transaction && (recentLoading || recentError || recentTransactions.length === 0) &&
-          <RecentTransactionsTable transactions={[]} demoTransaction={demo.transaction} />}
+        {temporaryTransactions.length > 0 && (recentLoading || recentError || recentTransactions.length === 0) &&
+          <RecentTransactionsTable transactions={[]} temporaryTransactions={temporaryTransactions} />}
         <RecentCollectionState loading={recentLoading} error={recentError}
           empty={recentTransactions.length === 0} label="recent transactions" onRetry={() => setSummaryRequest((value) => value + 1)}>
-          <RecentTransactionsTable transactions={recentTransactions} demoTransaction={demo?.transaction} />
+          <RecentTransactionsTable transactions={recentTransactions} temporaryTransactions={temporaryTransactions} />
         </RecentCollectionState>
-      </Panel>
+        </Panel>
+      </div>
 
       <Panel id="category-heading" className="dashboard-category-card" title="Transactions by business category"
         description={categoryTotals ? `${categoryTotals.totalTransactions.toLocaleString('en-US')} transactions in your authorized view, grouped by recorded business activity.` : undefined}>

@@ -5,7 +5,7 @@ import { ChevronRightIcon } from './icons.jsx';
 import TransactionReference from './TransactionReference.jsx';
 import { transactionReference } from '../utils/presentation.js';
 
-export default function RecentTransactionsTable({ transactions, highlightId, demoTransaction }) {
+export default function RecentTransactionsTable({ transactions, highlightId, temporaryTransactions = [] }) {
   const navigate = useNavigate();
 
   const openTransaction = (id) => navigate(`/transactions/${id}`);
@@ -26,26 +26,26 @@ export default function RecentTransactionsTable({ transactions, highlightId, dem
           </tr>
         </thead>
         <tbody>
-          {(demoTransaction ? [demoTransaction, ...transactions] : transactions).map((transaction) => {
-            const isDemo = transaction === demoTransaction;
+          {[...temporaryTransactions, ...transactions].map((transaction, index) => {
+            const isTemporary = index < temporaryTransactions.length;
             const riskLevel = getTransactionRiskLevel(transaction) ?? (transaction.processing ? 'Processing' : 'Not available');
 
             return (
               <tr
-                key={transaction.id}
-                className={isDemo ? 'row-new dashboard-demo-row' : `clickable${transaction.id === highlightId ? ' row-new' : ''}`}
-                role={isDemo ? undefined : 'link'}
-                tabIndex={isDemo ? undefined : 0}
-                aria-label={isDemo ? 'Demo transaction, simulated result' : `View transaction ${transactionReference(transaction.id)}, ${riskLevel}`}
-                onClick={isDemo ? undefined : () => openTransaction(transaction.id)}
-                onKeyDown={isDemo ? undefined : (event) => handleRowKeyDown(event, transaction.id)}
+                key={isTemporary ? `temporary:${transaction.id}` : transaction.id}
+                className={isTemporary ? `dashboard-temporary-row${index === 0 ? ' row-enter' : ''}` : `clickable${transaction.id === highlightId ? ' row-new' : ''}`}
+                role={isTemporary ? undefined : 'link'}
+                tabIndex={isTemporary ? undefined : 0}
+                aria-label={`${isTemporary ? 'Transaction' : 'View transaction'} ${transactionReference(transaction.id)}, ${riskLevel}`}
+                onClick={isTemporary ? undefined : () => openTransaction(transaction.id)}
+                onKeyDown={isTemporary ? undefined : (event) => handleRowKeyDown(event, transaction.id)}
               >
-                <td data-label="Transaction">{isDemo ? <><span className="mono">{transaction.id}</span><span className="badge badge-info">Demo</span></> : <TransactionReference value={transaction.id} />}</td>
+                <td data-label="Transaction"><TransactionReference value={transaction.id} /></td>
                 <td data-label="Vendor"><span className="truncate" title={transaction.vendor}>{transaction.vendor}</span></td>
                 <td data-label="Category">{transaction.category || 'Uncategorized'}</td>
                 <td data-label="Amount" className="numeric">{formatAmount(transaction.amount, transaction.currency)}</td>
                 <td data-label="Risk"><span className={riskStatusPillClass(riskLevel)}>{riskLevel}</span></td>
-                <td data-label="" className="cell-actions">{!isDemo && <span className="row-chevron" aria-hidden="true"><ChevronRightIcon /></span>}</td>
+                <td data-label="" className="cell-actions"><span className="row-chevron" aria-hidden="true"><ChevronRightIcon /></span></td>
               </tr>
             );
           })}
