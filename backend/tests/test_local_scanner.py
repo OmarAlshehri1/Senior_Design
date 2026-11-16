@@ -46,3 +46,39 @@ def test_stale_or_broken_database_never_produces_acceptance(files,monkeypatch):
     monkeypatch.setattr(scanner,'available_memory',lambda:4*1024**3)
     monkeypatch.setattr(scanner.subprocess,'run',lambda *a,**k:type('Result',(),{'returncode':2})())
     assert scanner.verify(*files)['status']=='FAILED_REAL_SCAN'
+
+
+def memory_reader(values):
+    def read(path):
+        if path not in values:raise FileNotFoundError(path)
+        return values[path]
+    return read
+
+
+def test_linux_host_available_memory_without_container_limit():
+    assert scanner.linux_available_memory(memory_reader({'/proc/meminfo':'MemAvailable: 4194304 kB\n',
+        '/sys/fs/cgroup/memory.max':'max'}))==4*1024**3
+
+
+def test_linux_container_limit_prevents_host_ram_false_readiness():
+    values={'/proc/meminfo':'MemAvailable: 8388608 kB\n','/sys/fs/cgroup/memory.max':str(2*1024**3),
+            '/sys/fs/cgroup/memory.current':str(512*1024**2)}
+    assert scanner.linux_available_memory(memory_reader(values))==1536*1024**2
+
+
+def test_linux_cgroup_v1_limit_is_respected():
+    values={'/proc/meminfo':'MemAvailable: 4194304 kB\n',
+            '/sys/fs/cgroup/memory/memory.limit_in_bytes':str(6*1024**3),
+            '/sys/fs/cgroup/memory/memory.usage_in_bytes':str(4*1024**3)}
+    assert scanner.linux_available_memory(memory_reader(values))==2*1024**3
+
+
+def test_linux_unknown_memory_cannot_pass():
+    with pytest.raises(RuntimeError,match='MEMORY_CHECK_FAILED'):
+        scanner.linux_available_memory(memory_reader({'/proc/meminfo':'MemFree: 123 kB\n'}))
+
+
+def test_linux_invalid_container_accounting_cannot_pass():
+    with pytest.raises(RuntimeError,match='CGROUP_MEMORY_CHECK_FAILED'):
+        scanner.linux_available_memory(memory_reader({'/proc/meminfo':'MemAvailable: 4194304 kB\n',
+            '/sys/fs/cgroup/memory.max':'not-a-limit'}))

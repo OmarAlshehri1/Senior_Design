@@ -1,4 +1,4 @@
-"""Bounded real ClamAV acceptance on existing Windows hardware; no hosted access.
+"""Bounded real ClamAV acceptance on existing Windows/Linux hardware; no hosted access.
 
 Requires current official main/daily/bytecode databases and 3 GiB free RAM.
 Writes no EICAR test file unless that resource gate passes. Never claims a stub
@@ -12,9 +12,35 @@ import json
 from pathlib import Path
 import subprocess
 import tempfile
+import re
+import sys
+
+
+def linux_available_memory(read_text=lambda path: Path(path).read_text()):
+    """Respect container limits as well as host RAM; never infer availability."""
+    match=re.search(r'^MemAvailable:\s+(\d+)\s+kB\s*$',read_text('/proc/meminfo'),re.MULTILINE)
+    if not match:raise RuntimeError('MEMORY_CHECK_FAILED')
+    available=int(match.group(1))*1024
+    for limit_path,current_path in (
+        ('/sys/fs/cgroup/memory.max','/sys/fs/cgroup/memory.current'),
+        ('/sys/fs/cgroup/memory/memory.limit_in_bytes','/sys/fs/cgroup/memory/memory.usage_in_bytes')):
+        try:limit=read_text(limit_path).strip()
+        except FileNotFoundError:continue
+        if limit=='max':continue
+        try:
+            maximum=int(limit);current=int(read_text(current_path).strip())
+            if maximum<=0 or current<0:raise ValueError('Invalid memory accounting')
+            available=min(available,max(0,maximum-current))
+        except (ValueError,FileNotFoundError) as error:
+            raise RuntimeError('CGROUP_MEMORY_CHECK_FAILED') from error
+    return available
 
 
 def available_memory():
+    if sys.platform.startswith('linux'):
+        return linux_available_memory()
+    if sys.platform!='win32':
+        raise RuntimeError('SCANNER_PLATFORM_MEMORY_CHECK_NOT_SUPPORTED')
     class Memory(ctypes.Structure):
         _fields_=[('length',ctypes.c_ulong),('load',ctypes.c_ulong)]+[(name,ctypes.c_ulonglong) for name in
             ('total','available','page_total','page_available','virtual_total','virtual_available','extended')]
