@@ -61,10 +61,15 @@ def _load_labels(
         ) or {}
         transaction_id = transaction.get("id")
 
-        if isinstance(transaction_id, str):
-            labels[transaction_id] = bool(
-                ground_truth.get("is_anomaly")
-            )
+        label = ground_truth.get("is_anomaly")
+        # Missing/ambiguous labels are not verified negative examples.
+        # The synthetic retail workbook uses integer 0/1 labels.
+        valid_label = isinstance(label, bool) or (type(label) is int and label in (0, 1))
+        if isinstance(transaction_id, str) and valid_label:
+            label = bool(label)
+            if transaction_id in labels and labels[transaction_id] != label:
+                raise ValueError("Conflicting labels for the same transaction.")
+            labels[transaction_id] = label
 
     return labels
 
